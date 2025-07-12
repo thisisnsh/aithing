@@ -9,9 +9,11 @@ import SwiftUI
 
 @main
 struct AIThingApp: App {
+    @NSApplicationDelegateAdaptor(AppDelegate.self) var appDelegate
+
     var body: some Scene {
-        WindowGroup {
-            ContentView()
+        Settings {
+            EmptyView()  // no standard window
         }
     }
 }
