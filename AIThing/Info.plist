@@ -17,5 +17,9 @@
             </dict>
         </dict>
     </dict>
+    <key>NSAppleEventsUsageDescription</key>
+    <string>We need this to access the frontmost window context.</string>
+    <key>NSAccessibilityUsageDescription</key>
+    <string>We use Accessibility API to access app screen data.</string>
 </dict>
 </plist>

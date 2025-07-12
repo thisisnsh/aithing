@@ -11,8 +11,10 @@ struct FloatingTextBoxView: View {
     var onClose: () -> Void
     var onSizeChange: (Bool) -> Void  // 👈 Callback to AppDelegate
 
+    @EnvironmentObject var appContext: AppContext
+
     @State private var query = ""
-    @State private var selectedOption = "Local"
+    @State private var selectedOption = ""
     @State private var aiResponse: String = ""
     @State private var isLoading: Bool = false
     @State private var isBlinking = true
@@ -24,10 +26,9 @@ struct FloatingTextBoxView: View {
                 .contentShape(Rectangle())  // ✅ clickable for dragging
 
             VStack(spacing: 0) {
-
                 HStack(spacing: 8) {
                     Menu {
-                        Button("Local") { selectedOption = "Local" }
+                        Button(appContext.appName) { selectedOption = appContext.appName }
                             .keyboardShortcut("l", modifiers: [.command])  // ⌘L
 
                         Button("Global") { selectedOption = "Global" }
@@ -40,7 +41,7 @@ struct FloatingTextBoxView: View {
                             .padding(.horizontal, 2)
                     }
                     .menuStyle(BorderlessButtonMenuStyle())
-                    .frame(width: 64)
+                    .fixedSize()
 
                     FocusableTextField(
                         text: $query,
@@ -105,6 +106,25 @@ struct FloatingTextBoxView: View {
         )
         .cornerRadius(showResponseArea ? 24 : 32)
         .onExitCommand(perform: handleClose)
+        .onAppear {
+            NSEvent.addLocalMonitorForEvents(matching: .keyDown) { event in
+                if event.modifierFlags.contains(.command) {
+                    if event.charactersIgnoringModifiers == "l" {
+                        selectedOption = appContext.appName
+                        return nil
+                    } else if event.charactersIgnoringModifiers == "g" {
+                        selectedOption = "Global"
+                        return nil
+                    }
+                }
+                return event
+            }
+        }
+        .onChange(of: appContext.appName) {
+            if selectedOption.isEmpty || selectedOption != "Global" {
+                selectedOption = appContext.appName
+            }
+        }
     }
 
     func handleQuery() async {
