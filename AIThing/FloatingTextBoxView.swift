@@ -15,9 +15,8 @@ struct FloatingTextBoxView: View {
     @State private var selectedOption = "Local"
     @State private var aiResponse: String = ""
     @State private var isLoading: Bool = false
+    @State private var isBlinking = true
     @State private var showResponseArea = false
-
-    @State private var selectedAI = "Sonnet 4"
 
     var body: some View {
         ZStack {
@@ -36,13 +35,12 @@ struct FloatingTextBoxView: View {
 
                     } label: {
                         Text(selectedOption)
-                            .foregroundColor(.white)
-                            .font(.system(size: 14, weight: .regular))
+                            .foregroundColor(.white.opacity(0.5))
+                            .font(.system(size: 14, weight: .regular, design: .monospaced))
                             .padding(.horizontal, 2)
                     }
                     .menuStyle(BorderlessButtonMenuStyle())
                     .frame(width: 64)
-                    .opacity(0.5)
 
                     FocusableTextField(
                         text: $query,
@@ -57,10 +55,9 @@ struct FloatingTextBoxView: View {
                         Image(systemName: "xmark.circle.fill")
                             .resizable()
                             .frame(width: 18, height: 18)
-                            .foregroundColor(.white)
+                            .foregroundColor(.white.opacity(0.5))
                     }
                     .buttonStyle(PlainButtonStyle())
-                    .opacity(0.5)
                 }
                 .frame(height: 32)
                 .padding(.horizontal, 24)
@@ -68,12 +65,29 @@ struct FloatingTextBoxView: View {
 
                 if showResponseArea {
                     ScrollView {
-                        Text(isLoading ? "Thinking..." : aiResponse)
-                            .foregroundColor(.white)
-                            .font(.system(size: 14))
-                            .frame(maxWidth: .infinity, alignment: .leading)
-                            .padding(.horizontal, 24)
-                            .padding(.vertical, 8)
+                        if isLoading {
+                            Text("Thinking...")
+                                .foregroundColor(.white)
+                                .font(.system(size: 14))
+                                .frame(maxWidth: .infinity, alignment: .leading)
+                                .padding(.horizontal, 24)
+                                .padding(.vertical, 16)
+                                .opacity(isBlinking ? 1 : 0.4)
+                                .onAppear {
+                                    withAnimation(
+                                        .easeInOut(duration: 0.6).repeatForever(autoreverses: true)
+                                    ) {
+                                        isBlinking.toggle()
+                                    }
+                                }
+                        } else {
+                            Text(.init(aiResponse))
+                                .foregroundColor(.white)
+                                .font(.system(size: 14))
+                                .frame(maxWidth: .infinity, alignment: .leading)
+                                .padding(.horizontal, 24)
+                                .padding(.vertical, 16)
+                        }
                     }
                     .frame(height: 200)
                     .background(Color.black.opacity(0.3))
@@ -103,14 +117,6 @@ struct FloatingTextBoxView: View {
         onSizeChange(true)
 
         await callAI(query: trimmed)
-
-        isLoading = false
-    }
-
-    func callAI(query: String) async {
-        // use selectedOption
-        try? await Task.sleep(nanoseconds: 2_000_000_000)
-        aiResponse = "This is the response to: \"\(query)\""
     }
 
     func handleClose() {
@@ -120,5 +126,97 @@ struct FloatingTextBoxView: View {
         showResponseArea = false
         onSizeChange(false)
         onClose()
+    }
+
+    func callAI(query: String) async {
+        //        isLoading = false
+        //        aiResponse = """
+        //            ## "Vishal" can refer to several things:
+        //
+        //            1. **As a name**: Vishal is a `popular Indian name`, particularly common in Hindi-speaking regions. It means "large," "vast," or "magnificent" in Sanskrit.
+        //
+        //            2. **As a person**: There are many notable people named Vishal, including:
+        //               - Vishal Krishna (Tamil actor and producer)
+        //               - Various other actors, directors, and public figures
+        //
+        //            3. **As a business**: Vishal Mega Mart is a popular retail chain in India that sells clothing, accessories, and household items.
+        //
+        //            Could you provide more `context about` which "Vishal" you're asking about? That would help me give you a more specific answer.
+        //            """
+        //        return
+
+        let model = "claude-sonnet-4-20250514"
+
+        guard let apiKey = Env.get("ANTHROPIC_API_KEY") else {
+            aiResponse = "[Missing LLM API Key]"
+            return
+        }
+
+        guard let url = URL(string: "https://api.anthropic.com/v1/messages") else { return }
+
+        var request = URLRequest(url: url)
+        request.httpMethod = "POST"
+        request.setValue("application/json", forHTTPHeaderField: "Content-Type")
+        request.setValue("2023-06-01", forHTTPHeaderField: "anthropic-version")
+        request.setValue("\(apiKey)", forHTTPHeaderField: "x-api-key")
+
+        let body: [String: Any] = [
+            "model": model,
+            "stream": true,
+            "max_tokens": 1024,
+            "temperature": 0.7,
+            "messages": [
+                ["role": "user", "content": query]
+            ],
+        ]
+
+        request.httpBody = try? JSONSerialization.data(withJSONObject: body)
+
+        do {
+            let (stream, response) = try await URLSession.shared.bytes(for: request)
+
+            guard let httpResponse = response as? HTTPURLResponse, httpResponse.statusCode == 200
+            else {
+                aiResponse = "[Error: Invalid response]"
+                return
+            }
+
+            var partial = ""
+            for try await line in stream.lines {
+                if line.starts(with: "data: ") {
+                    let jsonString = line.replacingOccurrences(of: "data: ", with: "")
+                    if jsonString == "[DONE]" { break }
+
+                    if let data = jsonString.data(using: .utf8),
+                        let json = try? JSONSerialization.jsonObject(with: data) as? [String: Any],
+                        let content = (json["delta"] as? [String: Any])?["text"] as? String
+                    {
+                        isLoading = false
+
+                        for char in content {
+                            partial += String(char)
+                            await MainActor.run {
+                                self.aiResponse = partial + " " + shimmerPlaceholder()
+                            }
+                        }
+                    }
+                }
+            }
+
+            // Remove shimmer after final token
+            await MainActor.run {
+                self.aiResponse = partial
+                print(self.aiResponse)
+            }
+
+        } catch {
+            await MainActor.run {
+                aiResponse = "[Error streaming Claude response: \(error.localizedDescription)]"
+            }
+        }
+    }
+
+    func shimmerPlaceholder() -> String {
+        return "▌"  // or use "…" or a flashing cursor symbol
     }
 }

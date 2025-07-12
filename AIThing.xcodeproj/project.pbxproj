@@ -8,6 +8,9 @@
 
 /* Begin PBXBuildFile section */
 		AAF11D042E22DE9100E2743E /* HotKey in Frameworks */ = {isa = PBXBuildFile; productRef = AAF11D032E22DE9100E2743E /* HotKey */; };
+		AAF11D0C2E22F5AB00E2743E /* README.md in Resources */ = {isa = PBXBuildFile; fileRef = AAF11D0B2E22F5AB00E2743E /* README.md */; };
+		AAF11D0E2E22F5D600E2743E /* .env in Resources */ = {isa = PBXBuildFile; fileRef = AAF11D0D2E22F5C200E2743E /* .env */; };
+		AAF11D172E2306C800E2743E /* MarkdownUI in Frameworks */ = {isa = PBXBuildFile; productRef = AAF11D162E2306C800E2743E /* MarkdownUI */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -31,6 +34,8 @@
 		AAF11CCB2E22DE1500E2743E /* AIThing.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = AIThing.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		AAF11CD92E22DE1700E2743E /* AIThingTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = AIThingTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 		AAF11CE32E22DE1700E2743E /* AIThingUITests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = AIThingUITests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
+		AAF11D0B2E22F5AB00E2743E /* README.md */ = {isa = PBXFileReference; lastKnownFileType = net.daringfireball.markdown; path = README.md; sourceTree = "<group>"; };
+		AAF11D0D2E22F5C200E2743E /* .env */ = {isa = PBXFileReference; lastKnownFileType = text; path = .env; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFileSystemSynchronizedRootGroup section */
@@ -57,6 +62,7 @@
 			buildActionMask = 2147483647;
 			files = (
 				AAF11D042E22DE9100E2743E /* HotKey in Frameworks */,
+				AAF11D172E2306C800E2743E /* MarkdownUI in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -80,6 +86,8 @@
 		AAF11CC22E22DE1500E2743E = {
 			isa = PBXGroup;
 			children = (
+				AAF11D0D2E22F5C200E2743E /* .env */,
+				AAF11D0B2E22F5AB00E2743E /* README.md */,
 				AAF11CCD2E22DE1500E2743E /* AIThing */,
 				AAF11CDC2E22DE1700E2743E /* AIThingTests */,
 				AAF11CE62E22DE1700E2743E /* AIThingUITests */,
@@ -118,6 +126,7 @@
 			name = AIThing;
 			packageProductDependencies = (
 				AAF11D032E22DE9100E2743E /* HotKey */,
+				AAF11D162E2306C800E2743E /* MarkdownUI */,
 			);
 			productName = AIThing;
 			productReference = AAF11CCB2E22DE1500E2743E /* AIThing.app */;
@@ -203,6 +212,7 @@
 			minimizedProjectReferenceProxies = 1;
 			packageReferences = (
 				AAF11D022E22DE9100E2743E /* XCRemoteSwiftPackageReference "HotKey" */,
+				AAF11D152E2306C800E2743E /* XCRemoteSwiftPackageReference "swift-markdown-ui" */,
 			);
 			preferredProjectObjectVersion = 77;
 			productRefGroup = AAF11CCC2E22DE1500E2743E /* Products */;
@@ -221,6 +231,8 @@
 			isa = PBXResourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				AAF11D0E2E22F5D600E2743E /* .env in Resources */,
+				AAF11D0C2E22F5AB00E2743E /* README.md in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -404,6 +416,7 @@
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
 				CODE_SIGN_ENTITLEMENTS = AIThing/AIThing.entitlements;
+				"CODE_SIGN_IDENTITY[sdk=macosx*]" = "Apple Development";
 				CODE_SIGN_STYLE = Automatic;
 				COMBINE_HIDPI_IMAGES = YES;
 				CURRENT_PROJECT_VERSION = 1;
@@ -411,6 +424,9 @@
 				ENABLE_HARDENED_RUNTIME = YES;
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_FILE = AIThing/Info.plist;
+				INFOPLIST_KEY_CFBundleDisplayName = "";
+				INFOPLIST_KEY_LSApplicationCategoryType = "";
 				INFOPLIST_KEY_NSHumanReadableCopyright = "";
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
@@ -431,6 +447,7 @@
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
 				CODE_SIGN_ENTITLEMENTS = AIThing/AIThing.entitlements;
+				"CODE_SIGN_IDENTITY[sdk=macosx*]" = "Apple Development";
 				CODE_SIGN_STYLE = Automatic;
 				COMBINE_HIDPI_IMAGES = YES;
 				CURRENT_PROJECT_VERSION = 1;
@@ -438,6 +455,9 @@
 				ENABLE_HARDENED_RUNTIME = YES;
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_FILE = AIThing/Info.plist;
+				INFOPLIST_KEY_CFBundleDisplayName = "";
+				INFOPLIST_KEY_LSApplicationCategoryType = "";
 				INFOPLIST_KEY_NSHumanReadableCopyright = "";
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
@@ -570,6 +590,14 @@
 				kind = branch;
 			};
 		};
+		AAF11D152E2306C800E2743E /* XCRemoteSwiftPackageReference "swift-markdown-ui" */ = {
+			isa = XCRemoteSwiftPackageReference;
+			repositoryURL = "https://github.com/gonzalezreal/swift-markdown-ui";
+			requirement = {
+				kind = upToNextMajorVersion;
+				minimumVersion = 2.4.1;
+			};
+		};
 /* End XCRemoteSwiftPackageReference section */
 
 /* Begin XCSwiftPackageProductDependency section */
@@ -577,6 +605,11 @@
 			isa = XCSwiftPackageProductDependency;
 			package = AAF11D022E22DE9100E2743E /* XCRemoteSwiftPackageReference "HotKey" */;
 			productName = HotKey;
+		};
+		AAF11D162E2306C800E2743E /* MarkdownUI */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = AAF11D152E2306C800E2743E /* XCRemoteSwiftPackageReference "swift-markdown-ui" */;
+			productName = MarkdownUI;
 		};
 /* End XCSwiftPackageProductDependency section */
 	};
