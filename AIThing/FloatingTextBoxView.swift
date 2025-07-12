@@ -129,22 +129,6 @@ struct FloatingTextBoxView: View {
     }
 
     func callAI(query: String) async {
-        //        isLoading = false
-        //        aiResponse = """
-        //            ## "Vishal" can refer to several things:
-        //
-        //            1. **As a name**: Vishal is a `popular Indian name`, particularly common in Hindi-speaking regions. It means "large," "vast," or "magnificent" in Sanskrit.
-        //
-        //            2. **As a person**: There are many notable people named Vishal, including:
-        //               - Vishal Krishna (Tamil actor and producer)
-        //               - Various other actors, directors, and public figures
-        //
-        //            3. **As a business**: Vishal Mega Mart is a popular retail chain in India that sells clothing, accessories, and household items.
-        //
-        //            Could you provide more `context about` which "Vishal" you're asking about? That would help me give you a more specific answer.
-        //            """
-        //        return
-
         let model = "claude-sonnet-4-20250514"
 
         guard let apiKey = Env.get("ANTHROPIC_API_KEY") else {
