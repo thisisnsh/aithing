@@ -5,6 +5,7 @@
 //  Created by Nishant Singh Hada on 7/12/25.
 //
 
+import AppKit
 import ApplicationServices
 import Cocoa
 import HotKey
@@ -15,7 +16,7 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate {
     var hotKey: HotKey?
 
     let width = 640
-    let height = 64
+    let height = 100
 
     let appContext = AppContext()
 
@@ -38,6 +39,7 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate {
         DispatchQueue.main.async {
             self.appContext.appName = context.appName
             self.appContext.visibleText = context.visibleText
+            self.appContext.clearClipboardText()  // ⬅️ clear clipboard context
         }
     }
 
@@ -86,6 +88,9 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate {
             floatingWindow.alphaValue = 0
             floatingWindow.center()
             floatingWindow.makeKeyAndOrderFront(nil)
+
+            appContext.markAppVisible()
+            appContext.updateClipboardIfRecent()
 
             NSAnimationContext.runAnimationGroup { context in
                 context.duration = 0.2

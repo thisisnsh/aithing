@@ -5,6 +5,7 @@
 //  Created by Nishant Singh Hada on 7/12/25.
 //
 
+import AppKit
 import SwiftUI
 
 struct FloatingTextBoxView: View {
@@ -21,11 +22,13 @@ struct FloatingTextBoxView: View {
     @State private var showResponseArea = false
 
     var body: some View {
-        ZStack {
-            BlurredBackground()
-                .contentShape(Rectangle())  // ✅ clickable for dragging
+        VStack {
+            StatusPill(status: appContext.mcpStatus)
 
-            VStack(spacing: 0) {
+            ZStack {
+                BlurredBackground()
+                    .contentShape(Rectangle())  // ✅ clickable for dragging
+
                 HStack(spacing: 8) {
                     Menu {
                         Button(appContext.appName) { selectedOption = appContext.appName }
@@ -94,35 +97,38 @@ struct FloatingTextBoxView: View {
                     .background(Color.black.opacity(0.3))
                 }
             }
-        }
-        .frame(width: 640, height: showResponseArea ? 248 : 48)
-        .background(Color.clear)  // make the full panel draggable
-        .overlay(
-            Group {
-                if isLoading {
-                    AnimatedGradientBorder(cornerRadius: showResponseArea ? 24 : 32, lineWidth: 2)
-                }
-            }
-        )
-        .cornerRadius(showResponseArea ? 24 : 32)
-        .onExitCommand(perform: handleClose)
-        .onAppear {
-            NSEvent.addLocalMonitorForEvents(matching: .keyDown) { event in
-                if event.modifierFlags.contains(.command) {
-                    if event.charactersIgnoringModifiers == "l" {
-                        selectedOption = appContext.appName
-                        return nil
-                    } else if event.charactersIgnoringModifiers == "g" {
-                        selectedOption = "Global"
-                        return nil
+            .frame(width: 640, height: showResponseArea ? 248 : 48)
+            .background(Color.clear)  // make the full panel draggable
+            .overlay(
+                Group {
+                    if isLoading {
+                        AnimatedGradientBorder(
+                            cornerRadius: showResponseArea ? 24 : 32,
+                            lineWidth: 2
+                        )
                     }
                 }
-                return event
+            )
+            .cornerRadius(showResponseArea ? 24 : 32)
+            .onExitCommand(perform: handleClose)
+            .onAppear {
+                NSEvent.addLocalMonitorForEvents(matching: .keyDown) { event in
+                    if event.modifierFlags.contains(.command) {
+                        if event.charactersIgnoringModifiers == "l" {
+                            selectedOption = appContext.appName
+                            return nil
+                        } else if event.charactersIgnoringModifiers == "g" {
+                            selectedOption = "Global"
+                            return nil
+                        }
+                    }
+                    return event
+                }
             }
-        }
-        .onChange(of: appContext.appName) {
-            if selectedOption.isEmpty || selectedOption != "Global" {
-                selectedOption = appContext.appName
+            .onChange(of: appContext.appName) {
+                if selectedOption.isEmpty || selectedOption != "Global" {
+                    selectedOption = appContext.appName
+                }
             }
         }
     }
