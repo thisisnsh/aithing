@@ -13,6 +13,9 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate {
     var floatingWindow: NonActivatingPanel!
     var hotKey: HotKey?
 
+    let width = 640
+    let height = 64
+
     func applicationDidFinishLaunching(_ notification: Notification) {
         NSApp.setActivationPolicy(.accessory)  // background-style app
 
@@ -21,27 +24,30 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate {
     }
 
     func setupWindow() {
-        let contentView = FloatingTextBoxView {
-            self.floatingWindow.orderOut(nil)
-        }
+        let contentView = FloatingTextBoxView(
+            onClose: { self.floatingWindow.orderOut(nil) },
+            onSizeChange: { expanded in
+                self.resizePanel(expanded: expanded)
+            }
+        )
 
         let hostingView = NSHostingView(rootView: contentView)
 
         floatingWindow = NonActivatingPanel(
-            contentRect: NSRect(x: 0, y: 0, width: 640, height: 64)
+            contentRect: NSRect(x: 0, y: 0, width: width, height: height)
         )
         floatingWindow.contentView = hostingView
         floatingWindow.alphaValue = 0
-        floatingWindow.center()
+        if !floatingWindow.isVisible {
+            floatingWindow.center()
+        }
         floatingWindow.orderFrontRegardless()  // no app activation
     }
 
     func setupHotKey() {
         hotKey = HotKey(key: .space, modifiers: [.control])
         hotKey?.keyDownHandler = { [weak self] in
-            self?.logFrontmostApp()  // ✅ Log before showing
             self?.toggleWindow()
-            print("App is active? \(NSApp.isActive)")
         }
     }
 
@@ -65,9 +71,13 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate {
         }
     }
 
-    func logFrontmostApp() {
-        if let frontApp = NSWorkspace.shared.frontmostApplication {
-            print("✅ Frontmost App: \(frontApp.localizedName ?? "Unknown")")
-        }
+    func resizePanel(expanded: Bool) {
+        let targetSize = NSSize(width: width, height: height)
+
+        var frame = floatingWindow.frame
+        frame.origin.y += frame.size.height - targetSize.height  // keep top aligned
+        frame.size = targetSize
+
+        floatingWindow.setFrame(frame, display: true, animate: false)
     }
 }

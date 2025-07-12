@@ -49,6 +49,7 @@ struct FocusableTextField: NSViewRepresentable {
         textField.focusRingType = .none
         textField.isEditable = true
         textField.isSelectable = true
+        textField.placeholderString = "Ask anything to this AI thing..."
 
         DispatchQueue.main.async {
             textField.becomeFirstResponder()
