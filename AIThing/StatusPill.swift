@@ -8,19 +8,18 @@
 import SwiftUI
 
 struct StatusPill: View {
-    let status: McpStatus
-
-    var isAvailable: Bool {
-        status == .available
-    }
+    let text: String
+    let status: McpStatus?
 
     var body: some View {
         HStack(spacing: 4) {
-            Image(systemName: "circle.fill")
-                .font(.system(size: 6))
-                .foregroundColor(isAvailable ? .green : .red)
+            if let status {
+                Image(systemName: "circle.fill")
+                    .font(.system(size: 6))
+                    .foregroundColor(status == .available ? .green : .red)
+            }
 
-            Text("MCP Server")
+            Text(text)
                 .font(.system(size: 10, weight: .regular, design: .monospaced))
                 .foregroundColor(.white)
         }

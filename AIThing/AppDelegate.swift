@@ -100,7 +100,7 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate {
     }
 
     func resizePanel(expanded: Bool) {
-        let targetSize = NSSize(width: width, height: height)
+        let targetSize = NSSize(width: width, height: expanded ? height + 200 : height)
 
         var frame = floatingWindow.frame
         frame.origin.y += frame.size.height - targetSize.height  // keep top aligned
