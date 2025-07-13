@@ -51,7 +51,7 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate {
             object: nil
         )
 
-        let contentView = FloatingTextBoxView(
+        let contentView = ContentView(
             onClose: { self.toggleWindow() },
             onSizeChange: { expanded in
                 self.resizePanel(expanded: expanded)

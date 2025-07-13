@@ -3,7 +3,6 @@
 Missing Features
 - No history 
 
-- No markdown 
 - No Clipboard/Selection pill 
 - No dynamic size of scroll view
 
