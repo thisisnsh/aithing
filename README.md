@@ -2,6 +2,6 @@
 
 Missing Features
 - No history 
-- No MCP server setup
+- No selection allowed
+- No multi MCP server 
 
-- Selection not allowed

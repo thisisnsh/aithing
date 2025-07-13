@@ -6,6 +6,7 @@
 //
 
 import AppKit
+import MCP
 import MarkdownUI
 import SwiftUI
 
@@ -20,12 +21,13 @@ struct ContentView: View {
     @State private var isThinkingBlinking = true
     @State private var isClipboardContext = false
     @State private var modelContext: String = ""
-    @State private var modelInput: [[String: String]] = []
+    @State private var modelInput: [[String: Any]] = []
     @State private var modelOutput: String = ""
     @State private var modelOutputError: String = ""
     @State private var query = ""
     @State private var resizeWorkItem: DispatchWorkItem?
     @State private var selectedContext = ""
+    @State private var selectedContextTools: [[String: Any]] = []
     @State private var showResponseArea = false
 
     var onClose: () -> Void
@@ -62,6 +64,12 @@ struct ContentView: View {
             .cornerRadius(showResponseArea ? 24 : 32)
             .onExitCommand(perform: handleClose)
             .onAppear {
+                Task {
+                    guard let mcpClientManager = appContext.mcpClientManager else {
+                        return
+                    }
+                    selectedContextTools = await mcpClientManager.getTools()
+                }
                 NSEvent.addLocalMonitorForEvents(matching: .keyDown) { event in
                     if event.modifierFlags.contains(.command) {
                         if event.charactersIgnoringModifiers == "l" {
@@ -95,7 +103,8 @@ struct ContentView: View {
             StatusPill(
                 text: "MCP Server",
                 help: "Status of MCP Server",
-                status: appContext.mcpStatus
+                status: (selectedContext == "Global" || selectedContext.isEmpty)
+                    ? .available : .unavailable,
             )
             if isClipboardContext {
                 StatusPill(
@@ -198,6 +207,7 @@ struct ContentView: View {
                         .frame(maxWidth: .infinity, alignment: .leading)
                         .padding(.horizontal, 24)
                         .padding(.vertical, 16)
+                        .background(NonDraggableArea())
                     }
 
                     Color.clear
@@ -248,7 +258,10 @@ struct ContentView: View {
         contentHeight = contentMinHeight
         onSizeChange(contentHeight)
 
-        await callModel(query: trimmed)
+        await callModel(query: trimmed, previousContext: "")
+
+        print("modelInput \(modelInput)")
+        print("modelOutput \(modelOutput)")
     }
 
     private func handleClose() {
@@ -263,7 +276,7 @@ struct ContentView: View {
         onClose()
     }
 
-    private func callModel(query: String) async {
+    private func callModel(query: String?, previousContext: String) async {
         let model = "claude-sonnet-4-20250514"
 
         guard let apiKey = Env.get("ANTHROPIC_API_KEY") else {
@@ -290,11 +303,10 @@ struct ContentView: View {
             ])
         }
 
-        if !modelContext.isEmpty && selectedContext != "Global" {
+        if previousContext != modelContext && !modelContext.isEmpty && selectedContext != "Global" {
             modelInput.append([
                 "role": "user",
-                "content":
-                    "I am providing the context in next message that I might refer in my query.",
+                "content": "I am providing the context below.",
             ])
             modelInput.append([
                 "role": "user",
@@ -302,8 +314,9 @@ struct ContentView: View {
             ])
         }
 
-        modelInput.append(["role": "user", "content": query])
-        //        return await fakeData()
+        if query != nil {
+            modelInput.append(["role": "user", "content": query!])
+        }
 
         let body: [String: Any] = [
             "model": model,
@@ -311,6 +324,7 @@ struct ContentView: View {
             "max_tokens": 1024,
             "temperature": 0.7,
             "messages": modelInput,
+            "tools": selectedContextTools,
         ]
 
         request.httpBody = try? JSONSerialization.data(withJSONObject: body)
@@ -325,34 +339,129 @@ struct ContentView: View {
                 return
             }
 
-            var partial = ""
+            var finalResponse = ""
+            var finalToolUseInputParam = ""
+            var finalToolUseId = ""
+            var finalToolUseName = ""
+            var finalToolResultContent = ""
+
             for try await line in stream.lines {
                 if line.starts(with: "data: ") {
                     let jsonString = line.replacingOccurrences(of: "data: ", with: "")
-                    if jsonString == "[DONE]" { break }
 
-                    if let data = jsonString.data(using: .utf8),
-                        let json = try? JSONSerialization.jsonObject(with: data) as? [String: Any],
-                        let content = (json["delta"] as? [String: Any])?["text"] as? String
-                    {
-                        isLoading = false
-                        for char in content {
-                            partial += String(char)
-                            await MainActor.run {
-                                modelOutput = partial + " " + shimmerPlaceholder()
-                            }
+                    guard let data = jsonString.data(using: .utf8) else { continue }
+                    guard let json = try? JSONSerialization.jsonObject(with: data) as? [String: Any]
+                    else { continue }
+
+                    guard let data_type = json["type"] as? String else { continue }
+
+                    switch data_type {
+                    case "content_block_start":
+                        guard let content_block = json["content_block"] as? [String: Any] else {
+                            continue
                         }
+                        guard let content_block_type = content_block["type"] as? String else {
+                            continue
+                        }
+
+                        switch content_block_type {
+                        case "text":
+                            continue
+                        case "tool_use":
+                            guard let id = content_block["id"] as? String else { continue }
+                            guard let name = content_block["name"] as? String else { continue }
+                            finalToolUseId = id
+                            finalToolUseName = name
+                        default:
+                            continue
+                        }
+
+                    case "content_block_delta":
+                        guard let delta = json["delta"] as? [String: Any] else { continue }
+                        guard let delta_type = delta["type"] as? String else { continue }
+
+                        switch delta_type {
+                        case "text_delta":
+                            guard let text = delta["text"] as? String else { continue }
+                            isLoading = false
+                            for char in text {
+                                finalResponse += String(char)
+                                await MainActor.run {
+                                    modelOutput = finalResponse + " " + shimmerPlaceholder()
+                                }
+                            }
+
+                        case "input_json_delta":
+                            guard let partial_json = delta["partial_json"] as? String else {
+                                continue
+                            }
+                            finalToolUseInputParam += partial_json
+
+                        default:
+                            continue
+                        }
+
+                    case "content_block_stop":
+                        await MainActor.run {
+                            modelOutput = finalResponse
+                        }
+
+                    case "message_delta":
+                        guard let delta = json["delta"] as? [String: Any] else { continue }
+                        guard let delta_stop_reason = delta["stop_reason"] as? String else {
+                            continue
+                        }
+
+                        modelInput.append(["role": "assistant", "content": modelOutput])
+
+                        switch delta_stop_reason {
+                        case "max_tokens":
+                            continue
+                        case "tool_use":
+                            guard let mcpClientManager = appContext.mcpClientManager else {
+                                continue
+                            }
+
+                            modelInput.append([
+                                "role": "assistant",
+                                "content": [
+                                    "type": "tool_use",
+                                    "id": finalToolUseId,
+                                    "name": finalToolUseName,
+                                    "input": parseJSONStringToDictObject(finalToolUseInputParam),
+                                ],
+                            ])
+
+                            finalResponse += "\n```Calling tool: \(finalToolUseName)...```\n"
+                            await MainActor.run {
+                                modelOutput = finalResponse
+                            }
+                            let result = await mcpClientManager.callTools(
+                                name: finalToolUseName,
+                                input: finalToolUseInputParam
+                            )
+
+                            modelInput.append([
+                                "role": "user",
+                                "content": [
+                                    "type": "tool_result",
+                                    "id": finalToolUseId,
+                                    "content": result,
+                                ],
+                            ])
+
+                            await callModel(query: nil, previousContext: modelContext)
+                            return
+
+                        default:
+                            continue
+                        }
+
+                    default:
+                        continue
                     }
                 }
             }
-
-            await MainActor.run {
-                modelOutput = partial
-                modelInput.append(["role": "assistant", "content": modelOutput])
-                print("messages")
-                print(modelInput)
-            }
-
         } catch {
             await MainActor.run {
                 isLoading = false
@@ -367,7 +476,6 @@ struct ContentView: View {
     }
 
     private func fakeData() async {
-        print(modelInput)
         isLoading = false
 
         let fakeContent = """

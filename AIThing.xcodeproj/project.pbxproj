@@ -12,6 +12,7 @@
 		AAF11D172E2306C800E2743E /* MarkdownUI in Frameworks */ = {isa = PBXBuildFile; productRef = AAF11D162E2306C800E2743E /* MarkdownUI */; };
 		AAF11D1D2E23085600E2743E /* .env in Resources */ = {isa = PBXBuildFile; fileRef = AAF11D1C2E23085300E2743E /* .env */; };
 		AAF11D1F2E23089400E2743E /* .gitignore in Resources */ = {isa = PBXBuildFile; fileRef = AAF11D1E2E23089100E2743E /* .gitignore */; };
+		AAF11D652E241EDA00E2743E /* MCP in Frameworks */ = {isa = PBXBuildFile; productRef = AAF11D642E241EDA00E2743E /* MCP */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -63,6 +64,7 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				AAF11D652E241EDA00E2743E /* MCP in Frameworks */,
 				AAF11D042E22DE9100E2743E /* HotKey in Frameworks */,
 				AAF11D172E2306C800E2743E /* MarkdownUI in Frameworks */,
 			);
@@ -130,6 +132,7 @@
 			packageProductDependencies = (
 				AAF11D032E22DE9100E2743E /* HotKey */,
 				AAF11D162E2306C800E2743E /* MarkdownUI */,
+				AAF11D642E241EDA00E2743E /* MCP */,
 			);
 			productName = AIThing;
 			productReference = AAF11CCB2E22DE1500E2743E /* AIThing.app */;
@@ -216,6 +219,7 @@
 			packageReferences = (
 				AAF11D022E22DE9100E2743E /* XCRemoteSwiftPackageReference "HotKey" */,
 				AAF11D152E2306C800E2743E /* XCRemoteSwiftPackageReference "swift-markdown-ui" */,
+				AAF11D632E241EDA00E2743E /* XCRemoteSwiftPackageReference "swift-sdk" */,
 			);
 			preferredProjectObjectVersion = 77;
 			productRefGroup = AAF11CCC2E22DE1500E2743E /* Products */;
@@ -602,6 +606,14 @@
 				minimumVersion = 2.4.1;
 			};
 		};
+		AAF11D632E241EDA00E2743E /* XCRemoteSwiftPackageReference "swift-sdk" */ = {
+			isa = XCRemoteSwiftPackageReference;
+			repositoryURL = "https://github.com/modelcontextprotocol/swift-sdk.git";
+			requirement = {
+				kind = upToNextMajorVersion;
+				minimumVersion = 0.9.0;
+			};
+		};
 /* End XCRemoteSwiftPackageReference section */
 
 /* Begin XCSwiftPackageProductDependency section */
@@ -614,6 +626,11 @@
 			isa = XCSwiftPackageProductDependency;
 			package = AAF11D152E2306C800E2743E /* XCRemoteSwiftPackageReference "swift-markdown-ui" */;
 			productName = MarkdownUI;
+		};
+		AAF11D642E241EDA00E2743E /* MCP */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = AAF11D632E241EDA00E2743E /* XCRemoteSwiftPackageReference "swift-sdk" */;
+			productName = MCP;
 		};
 /* End XCSwiftPackageProductDependency section */
 	};

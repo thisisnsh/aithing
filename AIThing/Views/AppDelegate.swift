@@ -19,6 +19,7 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate {
     let height: CGFloat = 100
 
     let appContext = AppContext()
+    let mcpClientManager = MCPClientManager()
 
     func applicationDidFinishLaunching(_ notification: Notification) {
         NSApp.setActivationPolicy(.accessory)  // background-style app
@@ -40,6 +41,7 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate {
             self.appContext.appName = context.appName
             self.appContext.visibleText = context.visibleText
             self.appContext.clearClipboardText()
+            self.appContext.mcpClientManager = self.mcpClientManager
         }
     }
 
@@ -67,6 +69,10 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate {
         floatingWindow.alphaValue = 1
         floatingWindow.center()
         floatingWindow.orderFrontRegardless()  // no app activation
+
+        Task {
+            await mcpClientManager.connect()
+        }
     }
 
     func setupHotKey() {
@@ -115,7 +121,7 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate {
         var frame = floatingWindow.frame
         frame.origin.y += (frame.size.height - targetSize.height)  // keep top aligned
         frame.size = targetSize
-        
+
         floatingWindow.setFrame(frame, display: true, animate: false)
     }
 

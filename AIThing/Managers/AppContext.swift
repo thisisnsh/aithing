@@ -18,7 +18,8 @@ class AppContext: ObservableObject {
     @Published var appName: String = ""
     @Published var visibleText: String = ""
     @Published var clipboardText: String = ""
-    @Published var mcpStatus: McpStatus = .unavailable
+    @Published var mcpStatus: McpStatus = .available
+    @Published var mcpClientManager: MCPClientManager?
 
     private var lastVisibleTime: Date?
 
