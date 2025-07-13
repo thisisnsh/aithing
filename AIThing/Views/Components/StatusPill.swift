@@ -8,9 +8,12 @@
 import SwiftUI
 
 struct StatusPill: View {
-    let text: String
-    let help: String
-    let status: McpStatus?
+    var text: String
+    var help: String
+    var status: McpStatus?
+    var showAnimation: Bool = false
+
+    @State private var showWhiteBackground = true
 
     var body: some View {
         HStack(spacing: 4) {
@@ -22,12 +25,31 @@ struct StatusPill: View {
 
             Text(text)
                 .font(.system(size: 10, weight: .regular, design: .monospaced))
-                .foregroundColor(.white)
+                .foregroundColor(showWhiteBackground ? .black : .white)
                 .help(help)
         }
         .padding(.horizontal, 6)
         .padding(.vertical, 2)
-        .background(BlurredBackground())
+        .background(
+            Group {
+                if showWhiteBackground {
+                    BlurredBackground(isDark: false)
+                } else {
+                    BlurredBackground()
+                }
+            }
+        )
         .clipShape(Capsule())
+        .onAppear {
+            if showAnimation {
+                DispatchQueue.main.asyncAfter(deadline: .now() + 0.3) {
+                    withAnimation(.easeInOut(duration: 0.2)) {
+                        showWhiteBackground = false
+                    }
+                }
+            } else {
+                showWhiteBackground = false
+            }
+        }
     }
 }

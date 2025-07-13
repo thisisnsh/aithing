@@ -9,6 +9,8 @@ import AppKit
 import SwiftUI
 
 struct BlurredBackground: NSViewRepresentable {
+    var isDark: Bool = true
+    
     func makeNSView(context: Context) -> NSVisualEffectView {
         let view = NSVisualEffectView()
         view.blendingMode = .withinWindow
@@ -16,7 +18,7 @@ struct BlurredBackground: NSViewRepresentable {
         view.state = .active
 
         // Optional: Force dark appearance even in light mode
-        view.appearance = NSAppearance(named: .vibrantDark)
+        view.appearance = NSAppearance(named: isDark ? .vibrantDark : .vibrantLight)
 
         return view
     }

@@ -101,13 +101,15 @@ struct ContentView: View {
                 StatusPill(
                     text: "Clipboard Context",
                     help: "Copied text on clipboard will be used as context for the model.",
-                    status: nil
+                    status: nil,
+                    showAnimation: true
                 )
             } else {
                 StatusPill(
                     text: "Selection Context",
                     help: "Selected text on the screen will be used as context for the model.",
-                    status: nil
+                    status: nil,
+                    showAnimation: true
                 )
             }
         }
@@ -243,6 +245,8 @@ struct ContentView: View {
         modelOutputError = ""
         isLoading = true
         showResponseArea = true
+        contentHeight = contentMinHeight
+        onSizeChange(contentHeight)
 
         await callModel(query: trimmed)
     }
@@ -254,8 +258,8 @@ struct ContentView: View {
         modelInput = []
         isLoading = false
         showResponseArea = false
-        onSizeChange(0.0)
         contentHeight = contentMinHeight
+        onSizeChange(0.0)
         onClose()
     }
 
@@ -299,7 +303,7 @@ struct ContentView: View {
         }
 
         modelInput.append(["role": "user", "content": query])
-        return await fakeData()
+        //        return await fakeData()
 
         let body: [String: Any] = [
             "model": model,
@@ -344,6 +348,9 @@ struct ContentView: View {
 
             await MainActor.run {
                 modelOutput = partial
+                modelInput.append(["role": "assistant", "content": modelOutput])
+                print("messages")
+                print(modelInput)
             }
 
         } catch {
