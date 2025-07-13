@@ -15,6 +15,7 @@ struct ContentView: View {
     @State private var debounceWorkItem: DispatchWorkItem?
     @State private var isLoading: Bool = false
     @State private var isThinkingBlinking = true
+    @State private var isClipboardContext = false
     @State private var modelContext: String = ""
     @State private var modelInput: [[String: String]] = []
     @State private var modelOutput: String = ""
@@ -83,7 +84,24 @@ struct ContentView: View {
 
     private func statusHeaderView() -> some View {
         HStack {
-            StatusPill(text: "MCP Server", status: self.appContext.mcpStatus)
+            StatusPill(
+                text: "MCP Server",
+                help: "Status of MCP Server",
+                status: self.appContext.mcpStatus
+            )
+            if self.isClipboardContext {
+                StatusPill(
+                    text: "Clipboard Context",
+                    help: "Copied text on clipboard will be used as context for the model.",
+                    status: nil
+                )
+            } else {
+                StatusPill(
+                    text: "Selection Context",
+                    help: "Selected text on the screen will be used as context for the model.",
+                    status: nil
+                )
+            }
         }
     }
 
@@ -101,6 +119,7 @@ struct ContentView: View {
                     .foregroundColor(.white.opacity(0.5))
                     .font(.system(size: 14, weight: .regular, design: .monospaced))
                     .padding(.horizontal, 2)
+                    .help("Scope of the context provided to the model.")
             }
             .menuStyle(BorderlessButtonMenuStyle())
             .fixedSize()
@@ -118,14 +137,9 @@ struct ContentView: View {
 
                 let task = DispatchWorkItem {
                     if self.appContext.getSelectedText() == nil {
-                        self.showResponseArea = true
-                        self.modelOutputError =
-                            "Usage of selected text not allowed. Copy text to use as AI context."
-                        onSizeChange(true)
+                        self.isClipboardContext = true
                     } else {
-                        self.modelOutputError = ""
-                        self.showResponseArea = false
-                        onSizeChange(false)
+                        self.isClipboardContext = false
                     }
                 }
 

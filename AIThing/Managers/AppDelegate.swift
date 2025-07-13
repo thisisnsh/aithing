@@ -39,7 +39,7 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate {
         DispatchQueue.main.async {
             self.appContext.appName = context.appName
             self.appContext.visibleText = context.visibleText
-            self.appContext.clearClipboardText()  // ⬅️ clear clipboard context
+            self.appContext.clearClipboardText()
         }
     }
 

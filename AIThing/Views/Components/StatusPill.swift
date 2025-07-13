@@ -9,6 +9,7 @@ import SwiftUI
 
 struct StatusPill: View {
     let text: String
+    let help: String
     let status: McpStatus?
 
     var body: some View {
@@ -22,6 +23,7 @@ struct StatusPill: View {
             Text(text)
                 .font(.system(size: 10, weight: .regular, design: .monospaced))
                 .foregroundColor(.white)
+                .help(help)
         }
         .padding(.horizontal, 6)
         .padding(.vertical, 2)
