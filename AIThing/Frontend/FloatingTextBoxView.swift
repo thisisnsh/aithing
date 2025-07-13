@@ -115,7 +115,7 @@ struct FloatingTextBoxView: View {
                                             }
                                         }
                                 } else {
-                                    MarkdownText(aiResponseError.isEmpty ? aiResponse : aiResponseError)
+                                    MarkdownText(text: aiResponseError.isEmpty ? aiResponse : aiResponseError)
                                         .foregroundColor(aiResponseError.isEmpty ? .white : .red)
                                         .font(.system(size: 14))
                                         .frame(maxWidth: .infinity, alignment: .leading)
