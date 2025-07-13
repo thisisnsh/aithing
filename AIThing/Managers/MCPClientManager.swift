@@ -82,7 +82,7 @@ class MCPClientManager: ObservableObject {
         }
     }
 
-    func callTools(name: String, input: String) async -> [Tool.Content] {
+    func callTools(name: String, input: String) async -> [[String: Any]] {
         do {
             guard let logger = logger else {
                 print("Logger is nil")
@@ -101,7 +101,19 @@ class MCPClientManager: ObservableObject {
                 print("Error in getting tools")
                 return []
             }
-            return content
+
+            var response: [[String: Any]] = []
+
+            for item in content {
+                switch item {
+                case .text(let text):
+                    response.append(["type": "text", "text": text])
+                default:
+                    continue
+                }
+            }
+
+            return response
         } catch {
             print("Error in getting tools: \(error.localizedDescription)")
             return []

@@ -41,7 +41,6 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate {
             self.appContext.appName = context.appName
             self.appContext.visibleText = context.visibleText
             self.appContext.clearClipboardText()
-            self.appContext.mcpClientManager = self.mcpClientManager
         }
     }
 
@@ -70,6 +69,7 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate {
         floatingWindow.center()
         floatingWindow.orderFrontRegardless()  // no app activation
 
+        self.appContext.mcpClientManager = self.mcpClientManager
         Task {
             await mcpClientManager.connect()
         }

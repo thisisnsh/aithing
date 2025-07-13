@@ -64,12 +64,6 @@ struct ContentView: View {
             .cornerRadius(showResponseArea ? 24 : 32)
             .onExitCommand(perform: handleClose)
             .onAppear {
-                Task {
-                    guard let mcpClientManager = appContext.mcpClientManager else {
-                        return
-                    }
-                    selectedContextTools = await mcpClientManager.getTools()
-                }
                 NSEvent.addLocalMonitorForEvents(matching: .keyDown) { event in
                     if event.modifierFlags.contains(.command) {
                         if event.charactersIgnoringModifiers == "l" {
@@ -92,6 +86,12 @@ struct ContentView: View {
                 if selectedContext.isEmpty || selectedContext != "Global" {
                     selectedContext = appContext.appName
                 }
+            }
+            .task {
+                guard let mcpClientManager = appContext.mcpClientManager else {
+                    return
+                }
+                selectedContextTools = await mcpClientManager.getTools()
             }
         }
     }
@@ -314,7 +314,7 @@ struct ContentView: View {
             ])
         }
 
-        if query != nil {
+        if query != nil && modelContext != query ?? "" {
             modelInput.append(["role": "user", "content": query!])
         }
 
@@ -326,7 +326,7 @@ struct ContentView: View {
             "messages": modelInput,
             "tools": selectedContextTools,
         ]
-
+        print("body \(body)")
         request.httpBody = try? JSONSerialization.data(withJSONObject: body)
 
         do {
