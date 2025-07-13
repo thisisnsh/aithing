@@ -77,35 +77,44 @@ struct FloatingTextBoxView: View {
                     .padding(.vertical, 8)
 
                     if showResponseArea {
-                        ScrollView {
-                            if isLoading {
-                                Text("Thinking...")
-                                    .foregroundColor(.white)
-                                    .font(.system(size: 14))
-                                    .frame(maxWidth: .infinity, alignment: .leading)
-                                    .padding(.horizontal, 24)
-                                    .padding(.vertical, 16)
-                                    .opacity(isBlinking ? 1 : 0.4)
-                                    .onAppear {
-                                        withAnimation(
-                                            .easeInOut(duration: 0.6).repeatForever(
-                                                autoreverses: true
-                                            )
-                                        ) {
-                                            isBlinking.toggle()
+                        ScrollViewReader { proxy in
+                            ScrollView {
+                                if isLoading {
+                                    Text("Thinking...")
+                                        .foregroundColor(.white)
+                                        .font(.system(size: 14))
+                                        .frame(maxWidth: .infinity, alignment: .leading)
+                                        .padding(.horizontal, 24)
+                                        .padding(.vertical, 16)
+                                        .opacity(isBlinking ? 1 : 0.4)
+                                        .onAppear {
+                                            withAnimation(
+                                                .easeInOut(duration: 0.6).repeatForever(
+                                                    autoreverses: true
+                                                )
+                                            ) {
+                                                isBlinking.toggle()
+                                            }
                                         }
-                                    }
-                            } else {
-                                Text(.init(aiResponse))
-                                    .foregroundColor(.white)
-                                    .font(.system(size: 14))
-                                    .frame(maxWidth: .infinity, alignment: .leading)
-                                    .padding(.horizontal, 24)
-                                    .padding(.vertical, 16)
+                                } else {
+                                    Text(.init(aiResponse))
+                                        .foregroundColor(.white)
+                                        .font(.system(size: 14))
+                                        .frame(maxWidth: .infinity, alignment: .leading)
+                                        .padding(.horizontal, 24)
+                                        .padding(.vertical, 16)
+
+                                    Color.clear
+                                        .frame(height: 1)
+                                        .id("BOTTOM")
+                                }
+                            }
+                            .frame(height: 200)
+                            .background(Color.black.opacity(0.3))
+                            .onChange(of: aiResponse) {
+                                proxy.scrollTo("BOTTOM", anchor: .bottom)
                             }
                         }
-                        .frame(height: 200)
-                        .background(Color.black.opacity(0.3))
                     }
                 }
             }
@@ -146,6 +155,8 @@ struct FloatingTextBoxView: View {
                 if selectedOption.isEmpty || selectedOption != "Global" {
                     selectedOption = appContext.appName
                 }
+                print(appContext.appName)
+                print(appContext.visibleText)
             }
         }
     }
@@ -195,7 +206,7 @@ struct FloatingTextBoxView: View {
                 "role": "user",
                 "content": "I am using \(selectedOption) application on mac and require help",
             ])
-            
+
             if !aiContext.isEmpty {
                 messages.append([
                     "role": "user",
