@@ -6,6 +6,7 @@
 //
 
 import AppKit
+import ApplicationServices
 import Foundation
 
 enum McpStatus {
@@ -44,4 +45,27 @@ class AppContext: ObservableObject {
     func clearClipboardText() {
         clipboardText = ""
     }
+
+    func getSelectedText() -> String? {
+        guard let frontApp = NSWorkspace.shared.frontmostApplication else {
+            return nil
+        }
+
+        let pid = frontApp.processIdentifier
+        let axApp = AXUIElementCreateApplication(pid)
+
+        var focusedElement: CFTypeRef?
+        if AXUIElementCopyAttributeValue(axApp, kAXFocusedUIElementAttribute as CFString, &focusedElement) == .success,
+           let element = focusedElement {
+            
+            var selectedTextValue: CFTypeRef?
+            if AXUIElementCopyAttributeValue(element as! AXUIElement, kAXSelectedTextAttribute as CFString, &selectedTextValue) == .success,
+               let selectedText = selectedTextValue as? String {
+                return selectedText
+            }
+        }
+
+        return nil
+    }
+
 }

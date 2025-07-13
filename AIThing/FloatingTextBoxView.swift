@@ -14,23 +14,20 @@ struct FloatingTextBoxView: View {
 
     @EnvironmentObject var appContext: AppContext
 
-    @State private var query = ""
-    @State private var selectedOption = ""
     @State private var aiContext: String = ""
     @State private var aiResponse: String = ""
-    @State private var isLoading: Bool = false
+    @State private var aiResponseError: String = ""
+    @State private var debounceWorkItem: DispatchWorkItem?
     @State private var isBlinking = true
+    @State private var isLoading: Bool = false
+    @State private var query = ""
+    @State private var selectedOption = ""
     @State private var showResponseArea = false
 
     var body: some View {
         VStack {
             HStack {
                 StatusPill(text: "MCP Server", status: appContext.mcpStatus)
-                //                StatusPill(text: "Reload Context ⌘+R", status: nil)
-                //                    .onTapGesture {
-                //                        appContext.updateClipboardIfRecent()
-                //                        aiContext = appContext.clipboardText
-                //                    }
             }
 
             ZStack {
@@ -63,6 +60,25 @@ struct FloatingTextBoxView: View {
                                 }
                             }
                         )
+                        .onChange(of: query) {
+                            debounceWorkItem?.cancel()
+
+                            let task = DispatchWorkItem {
+                                if appContext.getSelectedText() == nil {
+                                    showResponseArea = true
+                                    aiResponseError =
+                                        "Usage of selected text not allowed. Copy text to use as AI context."
+                                    onSizeChange(true)
+                                } else {
+                                    aiResponseError = ""
+                                    showResponseArea = false
+                                    onSizeChange(false)
+                                }
+                            }
+
+                            debounceWorkItem = task
+                            DispatchQueue.main.asyncAfter(deadline: .now() + 0.1, execute: task)
+                        }
 
                         Button(action: handleClose) {
                             Image(systemName: "xmark.circle.fill")
@@ -97,12 +113,16 @@ struct FloatingTextBoxView: View {
                                             }
                                         }
                                 } else {
-                                    Text(.init(aiResponse))
-                                        .foregroundColor(.white)
-                                        .font(.system(size: 14))
-                                        .frame(maxWidth: .infinity, alignment: .leading)
-                                        .padding(.horizontal, 24)
-                                        .padding(.vertical, 16)
+                                    Text(
+                                        .init(
+                                            aiResponseError.isEmpty ? aiResponse : aiResponseError
+                                        )
+                                    )
+                                    .foregroundColor(aiResponseError.isEmpty ? .white : .red)
+                                    .font(.system(size: 14))
+                                    .frame(maxWidth: .infinity, alignment: .leading)
+                                    .padding(.horizontal, 24)
+                                    .padding(.vertical, 16)
 
                                     Color.clear
                                         .frame(height: 1)
@@ -112,7 +132,11 @@ struct FloatingTextBoxView: View {
                             .frame(height: 200)
                             .background(Color.black.opacity(0.3))
                             .onChange(of: aiResponse) {
-                                proxy.scrollTo("BOTTOM", anchor: .bottom)
+                                DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
+                                    withAnimation {
+                                        proxy.scrollTo("BOTTOM", anchor: .bottom)
+                                    }
+                                }
                             }
                         }
                     }
@@ -155,8 +179,6 @@ struct FloatingTextBoxView: View {
                 if selectedOption.isEmpty || selectedOption != "Global" {
                     selectedOption = appContext.appName
                 }
-                print(appContext.appName)
-                print(appContext.visibleText)
             }
         }
     }
@@ -165,9 +187,10 @@ struct FloatingTextBoxView: View {
         let trimmed = query.trimmingCharacters(in: .whitespacesAndNewlines)
         guard !trimmed.isEmpty else { return }
 
+        aiResponse = ""
+        aiResponseError = ""
         isLoading = true
         showResponseArea = true
-        aiResponse = ""
         onSizeChange(true)
 
         await callAI(query: trimmed)
@@ -176,6 +199,7 @@ struct FloatingTextBoxView: View {
     func handleClose() {
         query = ""
         aiResponse = ""
+        aiResponseError = ""
         isLoading = false
         showResponseArea = false
         onSizeChange(false)
@@ -183,12 +207,14 @@ struct FloatingTextBoxView: View {
     }
 
     func callAI(query: String) async {
-        aiContext = NSPasteboard.general.string(forType: .string) ?? ""
-
+        aiContext =
+            appContext.getSelectedText() ?? NSPasteboard.general.string(forType: .string) ?? ""
+        
         let model = "claude-sonnet-4-20250514"
 
         guard let apiKey = Env.get("ANTHROPIC_API_KEY") else {
-            aiResponse = "[Missing LLM API Key]"
+            isLoading = false
+            aiResponseError = "Missing LLM API Key"
             return
         }
 
@@ -201,17 +227,22 @@ struct FloatingTextBoxView: View {
         request.setValue("\(apiKey)", forHTTPHeaderField: "x-api-key")
 
         var messages: [[String: Any]] = []
+
         if selectedOption != "Global" {
             messages.append([
                 "role": "user",
-                "content": "I am using \(selectedOption) application on mac and require help",
+                "content": "I am using \(selectedOption) application on mac and require help.",
             ])
 
             if !aiContext.isEmpty {
                 messages.append([
                     "role": "user",
                     "content":
-                        "I am providing the context that I will refer to as this in my query.\n\n\(aiContext)",
+                        "I am providing the context in next message that I might refer in my query.",
+                ])
+                messages.append([
+                    "role": "user",
+                    "content": aiContext,
                 ])
             }
         }
@@ -234,7 +265,8 @@ struct FloatingTextBoxView: View {
 
             guard let httpResponse = response as? HTTPURLResponse, httpResponse.statusCode == 200
             else {
-                aiResponse = "[Error: Invalid response]"
+                isLoading = false
+                aiResponseError = "Invalid response"
                 return
             }
 
@@ -249,7 +281,6 @@ struct FloatingTextBoxView: View {
                         let content = (json["delta"] as? [String: Any])?["text"] as? String
                     {
                         isLoading = false
-
                         for char in content {
                             partial += String(char)
                             await MainActor.run {
@@ -267,7 +298,8 @@ struct FloatingTextBoxView: View {
 
         } catch {
             await MainActor.run {
-                aiResponse = "[Error streaming Claude response: \(error.localizedDescription)]"
+                isLoading = false
+                aiResponseError = "Error streaming Claude response: \(error.localizedDescription)"
             }
         }
     }
