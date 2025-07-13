@@ -15,8 +15,8 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate {
     var floatingWindow: NonActivatingPanel!
     var hotKey: HotKey?
 
-    let width = 640
-    let height = 100
+    let width: CGFloat = 640
+    let height: CGFloat = 100
 
     let appContext = AppContext()
 
@@ -53,8 +53,8 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate {
 
         let contentView = ContentView(
             onClose: { self.toggleWindow() },
-            onSizeChange: { expanded in
-                self.resizePanel(expanded: expanded)
+            onSizeChange: { extraHeight in
+                self.resizePanel(extraHeight: extraHeight)
             }
         ).environmentObject(appContext)
 
@@ -109,13 +109,13 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate {
         }
     }
 
-    func resizePanel(expanded: Bool) {
-        let targetSize = NSSize(width: width, height: expanded ? height + 200 : height)
+    func resizePanel(extraHeight: CGFloat) {
+        let targetSize = NSSize(width: width, height: height + extraHeight)
 
         var frame = floatingWindow.frame
-        frame.origin.y += frame.size.height - targetSize.height  // keep top aligned
+        frame.origin.y += (frame.size.height - targetSize.height)  // keep top aligned
         frame.size = targetSize
-
+        
         floatingWindow.setFrame(frame, display: true, animate: false)
     }
 

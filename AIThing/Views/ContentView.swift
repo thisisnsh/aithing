@@ -12,6 +12,9 @@ import SwiftUI
 struct ContentView: View {
     @EnvironmentObject var appContext: AppContext
 
+    @State private var contentMinHeight: CGFloat = 100
+    @State private var contentHeight: CGFloat = 100
+    @State private var contentMaxHeight: CGFloat = 1000
     @State private var debounceWorkItem: DispatchWorkItem?
     @State private var isLoading: Bool = false
     @State private var isThinkingBlinking = true
@@ -21,11 +24,12 @@ struct ContentView: View {
     @State private var modelOutput: String = ""
     @State private var modelOutputError: String = ""
     @State private var query = ""
+    @State private var resizeWorkItem: DispatchWorkItem?
     @State private var selectedContext = ""
     @State private var showResponseArea = false
 
     var onClose: () -> Void
-    var onSizeChange: (Bool) -> Void
+    var onSizeChange: (CGFloat) -> Void
 
     var body: some View {
         VStack {
@@ -34,18 +38,22 @@ struct ContentView: View {
                 BlurredBackground().contentShape(Rectangle())  // clickable for dragging
                 VStack(spacing: 0) {
                     inputView()
-                    if self.showResponseArea {
+                    if showResponseArea {
                         responseView()
                     }
                 }
             }
-            .frame(width: 640, height: self.showResponseArea ? 248 : 48)
+            .frame(
+                width: 640,
+                height: showResponseArea
+                    ? 48 + min(max(contentMinHeight, contentHeight), contentMaxHeight) : 48
+            )
             .background(Color.clear)  // make the full panel draggable
             .overlay(
                 Group {
-                    if self.isLoading {
+                    if isLoading {
                         AnimatedGradientBorder(
-                            cornerRadius: self.showResponseArea ? 24 : 32,
+                            cornerRadius: showResponseArea ? 24 : 32,
                             lineWidth: 2
                         )
                     }
@@ -57,14 +65,14 @@ struct ContentView: View {
                 NSEvent.addLocalMonitorForEvents(matching: .keyDown) { event in
                     if event.modifierFlags.contains(.command) {
                         if event.charactersIgnoringModifiers == "l" {
-                            self.selectedContext = self.appContext.appName
+                            selectedContext = appContext.appName
                             return nil
                         } else if event.charactersIgnoringModifiers == "g" {
-                            self.selectedContext = "Global"
+                            selectedContext = "Global"
                             return nil
                         } else if event.charactersIgnoringModifiers == "r" {
-                            self.appContext.updateClipboardIfRecent()
-                            self.modelContext = self.appContext.clipboardText
+                            appContext.updateClipboardIfRecent()
+                            modelContext = appContext.clipboardText
                             return nil
                         }
 
@@ -72,9 +80,9 @@ struct ContentView: View {
                     return event
                 }
             }
-            .onChange(of: self.appContext.appName) {
-                if self.selectedContext.isEmpty || self.selectedContext != "Global" {
-                    self.selectedContext = self.appContext.appName
+            .onChange(of: appContext.appName) {
+                if selectedContext.isEmpty || selectedContext != "Global" {
+                    selectedContext = appContext.appName
                 }
             }
         }
@@ -87,9 +95,9 @@ struct ContentView: View {
             StatusPill(
                 text: "MCP Server",
                 help: "Status of MCP Server",
-                status: self.appContext.mcpStatus
+                status: appContext.mcpStatus
             )
-            if self.isClipboardContext {
+            if isClipboardContext {
                 StatusPill(
                     text: "Clipboard Context",
                     help: "Copied text on clipboard will be used as context for the model.",
@@ -108,10 +116,10 @@ struct ContentView: View {
     private func inputView() -> some View {
         HStack(spacing: 8) {
             Menu {
-                Button(appContext.appName) { self.selectedContext = self.appContext.appName }
+                Button(appContext.appName) { selectedContext = appContext.appName }
                     .keyboardShortcut("l", modifiers: [.command])  // ⌘L
 
-                Button("Global") { self.selectedContext = "Global" }
+                Button("Global") { selectedContext = "Global" }
                     .keyboardShortcut("g", modifiers: [.command])  // ⌘G
 
             } label: {
@@ -132,18 +140,18 @@ struct ContentView: View {
                     }
                 }
             )
-            .onChange(of: self.query) {
-                self.debounceWorkItem?.cancel()
+            .onChange(of: query) {
+                debounceWorkItem?.cancel()
 
                 let task = DispatchWorkItem {
-                    if self.appContext.getSelectedText() == nil {
-                        self.isClipboardContext = true
+                    if appContext.getSelectedText() == nil {
+                        isClipboardContext = true
                     } else {
-                        self.isClipboardContext = false
+                        isClipboardContext = false
                     }
                 }
 
-                self.debounceWorkItem = task
+                debounceWorkItem = task
                 DispatchQueue.main.asyncAfter(deadline: .now() + 0.1, execute: task)
             }
 
@@ -163,45 +171,62 @@ struct ContentView: View {
     private func responseView() -> some View {
         ScrollViewReader { proxy in
             ScrollView {
-                if self.isLoading {
-                    Text("Thinking...")
-                        .foregroundColor(.white)
+                VStack(alignment: .leading, spacing: 0) {
+                    if isLoading {
+                        Text("Thinking...")
+                            .foregroundColor(.white)
+                            .font(.system(size: 14))
+                            .frame(maxWidth: .infinity, alignment: .leading)
+                            .padding(.horizontal, 24)
+                            .padding(.vertical, 16)
+                            .opacity(isThinkingBlinking ? 1 : 0.4)
+                            .onAppear {
+                                withAnimation(
+                                    .easeInOut(duration: 0.6).repeatForever(autoreverses: true)
+                                ) {
+                                    isThinkingBlinking.toggle()
+                                }
+                            }
+                    } else {
+                        MarkdownText(
+                            text: modelOutputError.isEmpty ? modelOutput : modelOutputError
+                        )
+                        .foregroundColor(modelOutputError.isEmpty ? .white : .red)
                         .font(.system(size: 14))
                         .frame(maxWidth: .infinity, alignment: .leading)
                         .padding(.horizontal, 24)
                         .padding(.vertical, 16)
-                        .opacity(isThinkingBlinking ? 1 : 0.4)
-                        .onAppear {
-                            withAnimation(
-                                .easeInOut(duration: 0.6).repeatForever(
-                                    autoreverses: true
-                                )
-                            ) {
-                                self.isThinkingBlinking.toggle()
-                            }
-                        }
-                } else {
-                    MarkdownText(
-                        text: self.modelOutputError.isEmpty
-                            ? self.modelOutput : self.modelOutputError
-                    )
-                    .foregroundColor(modelOutputError.isEmpty ? .white : .red)
-                    .font(.system(size: 14))
-                    .frame(maxWidth: .infinity, alignment: .leading)
-                    .padding(.horizontal, 24)
-                    .padding(.vertical, 16)
+                    }
 
                     Color.clear
                         .frame(height: 1)
                         .id("BOTTOM")
                 }
+                .background(
+                    GeometryReader { geo in
+                        Color.clear
+                            .preference(key: ViewHeightKey.self, value: geo.size.height)
+                    }
+                )
             }
-            .frame(height: 200)
+            .frame(
+                height: min(max(contentMinHeight, contentHeight), contentMaxHeight)
+            )  // clamp between 200–1000
             .background(Color.black.opacity(0.3))
-            .onChange(of: self.modelOutput) {
-                DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
-                    withAnimation {
-                        proxy.scrollTo("BOTTOM", anchor: .bottom)
+            .onPreferenceChange(ViewHeightKey.self) { height in
+                let checkedHeight = min(max(contentMinHeight, height), contentMaxHeight)
+
+                if contentHeight < checkedHeight {
+                    contentHeight = checkedHeight
+                    onSizeChange(checkedHeight)
+                }
+            }
+            .onChange(of: modelOutput) {
+                if contentHeight == contentMaxHeight {
+                    DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
+                        withAnimation {
+                            proxy.scrollTo("BOTTOM", anchor: .bottom)
+                        }
                     }
                 }
             }
@@ -211,26 +236,26 @@ struct ContentView: View {
     // MARK: - Private Functions
 
     private func handleQuery() async {
-        let trimmed = self.query.trimmingCharacters(in: .whitespacesAndNewlines)
+        let trimmed = query.trimmingCharacters(in: .whitespacesAndNewlines)
         guard !trimmed.isEmpty else { return }
 
-        self.modelOutput = ""
-        self.modelOutputError = ""
-        self.isLoading = true
-        self.showResponseArea = true
-        onSizeChange(true)
+        modelOutput = ""
+        modelOutputError = ""
+        isLoading = true
+        showResponseArea = true
 
         await callModel(query: trimmed)
     }
 
     private func handleClose() {
-        self.query = ""
-        self.modelOutput = ""
-        self.modelOutputError = ""
-        self.modelInput = []
-        self.isLoading = false
-        self.showResponseArea = false
-        onSizeChange(false)
+        query = ""
+        modelOutput = ""
+        modelOutputError = ""
+        modelInput = []
+        isLoading = false
+        showResponseArea = false
+        onSizeChange(0.0)
+        contentHeight = contentMinHeight
         onClose()
     }
 
@@ -238,8 +263,8 @@ struct ContentView: View {
         let model = "claude-sonnet-4-20250514"
 
         guard let apiKey = Env.get("ANTHROPIC_API_KEY") else {
-            self.isLoading = false
-            self.modelOutputError = "Missing LLM API Key"
+            isLoading = false
+            modelOutputError = "Missing LLM API Key"
             return
         }
 
@@ -251,38 +276,37 @@ struct ContentView: View {
         request.setValue("2023-06-01", forHTTPHeaderField: "anthropic-version")
         request.setValue("\(apiKey)", forHTTPHeaderField: "x-api-key")
 
-        self.modelContext =
-            self.appContext.getSelectedText() ?? NSPasteboard.general.string(forType: .string) ?? ""
+        modelContext =
+            appContext.getSelectedText() ?? NSPasteboard.general.string(forType: .string) ?? ""
 
-        if self.modelInput.isEmpty && self.selectedContext != "Global" {
-            self.modelInput.append([
+        if modelInput.isEmpty && selectedContext != "Global" {
+            modelInput.append([
                 "role": "user",
                 "content": "I am using \(selectedContext) application on mac and require help.",
             ])
         }
 
-        if !modelContext.isEmpty && self.selectedContext != "Global" {
-            self.modelInput.append([
+        if !modelContext.isEmpty && selectedContext != "Global" {
+            modelInput.append([
                 "role": "user",
                 "content":
-                    "I am providing the context in next message that I might refer in my self.query.",
+                    "I am providing the context in next message that I might refer in my query.",
             ])
-            self.modelInput.append([
+            modelInput.append([
                 "role": "user",
-                "content": self.modelContext,
+                "content": modelContext,
             ])
         }
 
-        self.modelInput.append(["role": "user", "content": self.query])
-        print(modelInput)
-        return
+        modelInput.append(["role": "user", "content": query])
+        return await fakeData()
 
         let body: [String: Any] = [
             "model": model,
             "stream": true,
             "max_tokens": 1024,
             "temperature": 0.7,
-            "messages": self.modelInput,
+            "messages": modelInput,
         ]
 
         request.httpBody = try? JSONSerialization.data(withJSONObject: body)
@@ -292,8 +316,8 @@ struct ContentView: View {
 
             guard let httpResponse = response as? HTTPURLResponse, httpResponse.statusCode == 200
             else {
-                self.isLoading = false
-                self.modelOutputError = "Invalid response"
+                isLoading = false
+                modelOutputError = "Invalid response"
                 return
             }
 
@@ -307,11 +331,11 @@ struct ContentView: View {
                         let json = try? JSONSerialization.jsonObject(with: data) as? [String: Any],
                         let content = (json["delta"] as? [String: Any])?["text"] as? String
                     {
-                        self.isLoading = false
+                        isLoading = false
                         for char in content {
                             partial += String(char)
                             await MainActor.run {
-                                self.modelOutput = partial + " " + shimmerPlaceholder()
+                                modelOutput = partial + " " + shimmerPlaceholder()
                             }
                         }
                     }
@@ -319,13 +343,13 @@ struct ContentView: View {
             }
 
             await MainActor.run {
-                self.modelOutput = partial
+                modelOutput = partial
             }
 
         } catch {
             await MainActor.run {
-                self.isLoading = false
-                self.modelOutputError =
+                isLoading = false
+                modelOutputError =
                     "Error streaming Claude response: \(error.localizedDescription)"
             }
         }
@@ -333,5 +357,32 @@ struct ContentView: View {
 
     private func shimmerPlaceholder() -> String {
         return "▌"  // or use "…" or a flashing cursor symbol
+    }
+
+    private func fakeData() async {
+        print(modelInput)
+        isLoading = false
+
+        let fakeContent = """
+            "Vishal" can refer to several things:
+
+            1. **As a name**: Vishal is a popular Indian name, particularly common in Hindi-speaking regions. It means "large," "vast," or "magnificent" in Sanskrit.
+
+            2. **As a person**: There are many notable people named Vishal, including:
+               - Vishal Krishna (Tamil actor and producer)
+               - Various other actors, directors, and public figures
+
+            3. **As a business**: Vishal Mega Mart is a popular retail chain in India that sells clothing, accessories, and household items.
+
+            Could you provide more context about which "Vishal" you're asking about? That would help me give you a more specific answer.
+            """
+
+        var fakePartial = ""
+        for char in fakeContent {
+            fakePartial += String(char)
+            await MainActor.run {
+                modelOutput = fakePartial + " " + shimmerPlaceholder()
+            }
+        }
     }
 }

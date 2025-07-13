@@ -7,8 +7,6 @@
 
 import AppKit
 import Foundation
-import MarkdownUI
-import SwiftUI
 
 extension NSPasteboard {
     private static var lastKnownChangeCount: Int = 0
