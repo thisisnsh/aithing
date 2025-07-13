@@ -7,6 +7,7 @@
 
 import AppKit
 import Foundation
+import MarkdownUI
 
 extension NSPasteboard {
     private static var lastKnownChangeCount: Int = 0
@@ -19,4 +20,17 @@ extension NSPasteboard {
         }
         return Self.lastChangeTime
     }
+}
+
+extension Theme {
+  static let fancy = Theme()
+    .code {
+      FontFamilyVariant(.monospaced)
+      FontSize(.em(0.85))
+    }
+    .link {
+      ForegroundColor(.purple)
+    }
+    
+    // More block styles...
 }

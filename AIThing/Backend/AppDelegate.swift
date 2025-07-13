@@ -52,7 +52,7 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate {
         )
 
         let contentView = FloatingTextBoxView(
-            onClose: { self.floatingWindow.orderOut(nil) },
+            onClose: { self.toggleWindow() },
             onSizeChange: { expanded in
                 self.resizePanel(expanded: expanded)
             }
@@ -64,7 +64,7 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate {
             contentRect: NSRect(x: 0, y: 0, width: width, height: height)
         )
         floatingWindow.contentView = hostingView
-        floatingWindow.alphaValue = 0
+        floatingWindow.alphaValue = 1
         floatingWindow.center()
         floatingWindow.orderFrontRegardless()  // no app activation
     }
@@ -78,6 +78,10 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate {
 
     func toggleWindow() {
         if floatingWindow.isVisible {
+            let origin = floatingWindow.frame.origin
+            UserDefaults.standard.set(origin.x, forKey: "FloatingPanelOriginX")
+            UserDefaults.standard.set(origin.y, forKey: "FloatingPanelOriginY")
+
             NSAnimationContext.runAnimationGroup { context in
                 context.duration = 0.2
                 floatingWindow.animator().alphaValue = 0
@@ -85,8 +89,14 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate {
                 self.floatingWindow.orderOut(nil)
             }
         } else {
+            if let x = UserDefaults.standard.value(forKey: "FloatingPanelOriginX") as? CGFloat,
+                let y = UserDefaults.standard.value(forKey: "FloatingPanelOriginY") as? CGFloat
+            {
+                floatingWindow.setFrameOrigin(NSPoint(x: x, y: y))
+            } else {
+                floatingWindow.center()
+            }
             floatingWindow.alphaValue = 0
-            floatingWindow.center()
             floatingWindow.makeKeyAndOrderFront(nil)
 
             appContext.markAppVisible()

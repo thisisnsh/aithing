@@ -1,10 +1,10 @@
 # AI Thing
 
 Missing Features
-- No previous context
 - No history 
-- No MCP server setup
-- No resizeable scroll view
+
 - No markdown 
-- On Run view is opacity=0 but clickable
-- Default Global without click
+- No Clipboard/Selection pill 
+- No dynamic size of scroll view
+
+- No MCP server setup

@@ -6,6 +6,7 @@
 //
 
 import AppKit
+import MarkdownUI
 import SwiftUI
 
 struct FloatingTextBoxView: View {
@@ -15,6 +16,7 @@ struct FloatingTextBoxView: View {
     @EnvironmentObject var appContext: AppContext
 
     @State private var aiContext: String = ""
+    @State private var aiMessages: [[String: String]] = []
     @State private var aiResponse: String = ""
     @State private var aiResponseError: String = ""
     @State private var debounceWorkItem: DispatchWorkItem?
@@ -113,16 +115,13 @@ struct FloatingTextBoxView: View {
                                             }
                                         }
                                 } else {
-                                    Text(
-                                        .init(
-                                            aiResponseError.isEmpty ? aiResponse : aiResponseError
-                                        )
-                                    )
-                                    .foregroundColor(aiResponseError.isEmpty ? .white : .red)
-                                    .font(.system(size: 14))
-                                    .frame(maxWidth: .infinity, alignment: .leading)
-                                    .padding(.horizontal, 24)
-                                    .padding(.vertical, 16)
+                                    MarkdownText(aiResponseError.isEmpty ? aiResponse : aiResponseError)
+                                        .foregroundColor(aiResponseError.isEmpty ? .white : .red)
+                                        .font(.system(size: 14))
+                                        .frame(maxWidth: .infinity, alignment: .leading)
+                                        .padding(.horizontal, 24)
+                                        .padding(.vertical, 16)
+                                        
 
                                     Color.clear
                                         .frame(height: 1)
@@ -200,6 +199,7 @@ struct FloatingTextBoxView: View {
         query = ""
         aiResponse = ""
         aiResponseError = ""
+        aiMessages = []
         isLoading = false
         showResponseArea = false
         onSizeChange(false)
@@ -207,9 +207,6 @@ struct FloatingTextBoxView: View {
     }
 
     func callAI(query: String) async {
-        aiContext =
-            appContext.getSelectedText() ?? NSPasteboard.general.string(forType: .string) ?? ""
-        
         let model = "claude-sonnet-4-20250514"
 
         guard let apiKey = Env.get("ANTHROPIC_API_KEY") else {
@@ -226,36 +223,111 @@ struct FloatingTextBoxView: View {
         request.setValue("2023-06-01", forHTTPHeaderField: "anthropic-version")
         request.setValue("\(apiKey)", forHTTPHeaderField: "x-api-key")
 
-        var messages: [[String: Any]] = []
+        aiContext =
+            appContext.getSelectedText() ?? NSPasteboard.general.string(forType: .string) ?? ""
 
-        if selectedOption != "Global" {
-            messages.append([
+        if aiMessages.isEmpty && selectedOption != "Global" {
+            aiMessages.append([
                 "role": "user",
                 "content": "I am using \(selectedOption) application on mac and require help.",
             ])
-
-            if !aiContext.isEmpty {
-                messages.append([
-                    "role": "user",
-                    "content":
-                        "I am providing the context in next message that I might refer in my query.",
-                ])
-                messages.append([
-                    "role": "user",
-                    "content": aiContext,
-                ])
-            }
         }
 
-        messages.append(["role": "user", "content": query])
-        print(messages)
+        if !aiContext.isEmpty && selectedOption != "Global" {
+            aiMessages.append([
+                "role": "user",
+                "content":
+                    "I am providing the context in next message that I might refer in my query.",
+            ])
+            aiMessages.append([
+                "role": "user",
+                "content": aiContext,
+            ])
+        }
+
+        aiMessages.append(["role": "user", "content": query])
+        print(aiMessages)
+        isLoading = false
+        aiResponse = """
+            Here’s a **dummy Markdown string** that demonstrates **all the styles** you listed — including headings (1–6), paragraphs, emphasis, strong text, strikethrough, inline code, code blocks, links, quotes, lists (bulleted, numbered, tasks), tables, and a thematic break.
+
+            ---
+
+            ### ✅ Full Dummy Markdown Sample:
+
+            # Heading Level 1
+
+            ## Heading Level 2
+
+            ### Heading Level 3
+
+            #### Heading Level 4
+
+            ##### Heading Level 5
+
+            ###### Heading Level 6
+
+            This is a **paragraph** with _emphasis_, **strong text**, ~~strikethrough~~, and `inline code`.  
+            Here is a [link](https://example.com) as well.
+
+            ---
+
+            > This is a blockquote. It can be used for citations or quotes.
+
+            - Bullet item 1
+            - Bullet item 2
+              - Nested bullet
+              - Another nested bullet
+
+            1. Numbered item one
+            2. Numbered item two
+               1. Nested numbered
+
+            - [x] Completed task
+            - [ ] Incomplete task
+
+            ---
+
+            ```swift
+            // This is a code block
+            let greeting = "Hello, Markdown!"
+            print(greeting)
+            ````
+
+            ---
+
+            ![Image](https://via.placeholder.com/100x50)
+
+            ---
+
+            | Header 1 | Header 2 | Header 3 |
+            | -------- | -------- | -------- |
+            | Cell 1   | Cell 2   | Cell 3   |
+            | Cell 4   | Cell 5   | Cell 6   |
+
+            ---
+
+            ```
+            Some Random No Code Text
+            ```
+
+            You can use this string directly in SwiftUI like:
+
+            ```swift
+            Text(.init(markdownString))
+            ````
+
+            Let me know if you want to randomize or customize the content per test case!
+
+            """
+        return
 
         let body: [String: Any] = [
             "model": model,
             "stream": true,
             "max_tokens": 1024,
             "temperature": 0.7,
-            "messages": messages,
+            "messages": aiMessages,
         ]
 
         request.httpBody = try? JSONSerialization.data(withJSONObject: body)
