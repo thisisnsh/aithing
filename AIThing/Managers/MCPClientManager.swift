@@ -11,12 +11,15 @@ import MCP
 import System
 
 class MCPClientManager: ObservableObject {
-    var client: Client?
+    var clients: [String: Client] = [:]
+    var executableURL: [String: String] = [:]
+    var arguments: [String: [String]] = [:]
+
     var logger: Logger?
 
-    let serverInputPipe = Pipe()
-    let serverOutputPipe = Pipe()
-    let process = Process()
+    var serverInputPipe: [String: Pipe] = [:]
+    var serverOutputPipe: [String: Pipe] = [:]
+    var process: [String: Process] = [:]
 
     init() {
         print("[MCPClientManager init]")
@@ -26,13 +29,32 @@ class MCPClientManager: ObservableObject {
             return handler
         }
 
-        client = Client(name: "AIThing", version: "0.1.0")
+        clients["Global"] = Client(name: "AIThing for Global", version: "0.1.0")
+        executableURL["Global"] = "/opt/homebrew/bin/bunx"
+        arguments["Global"] = ["@dhravya/apple-mcp@latest"]
+        serverInputPipe["Global"] = Pipe()
+        serverOutputPipe["Global"] = Pipe()
+        process["Global"] = Process()
+
+//        clients["Xcode"] = Client(name: "AIThing for Xcode", version: "0.1.0")
+//        executableURL["Xcode"] = "/usr/local/bin/xcode-npx-wrapper"
+//        arguments["Xcode"] = ["-y", "xcodebuildmcp@latest"]
+//        serverInputPipe["Xcode"] = Pipe()
+//        serverOutputPipe["Xcode"] = Pipe()
+//        process["Xcode"] = Process()
+
         logger = Logger(label: "com.thisisnsh.mac.AIThing")
     }
 
-    func connect() async {
+    func connect(appName: String) async {
         do {
-            guard let client = client else { return }
+            guard let client = clients[appName] else { return }
+            guard let executableURL = executableURL[appName] else { return }
+            guard let arguments = arguments[appName] else { return }
+            guard let serverInputPipe = serverInputPipe[appName] else { return }
+            guard let serverOutputPipe = serverOutputPipe[appName] else { return }
+            guard let process = process[appName] else { return }
+
             guard let logger = logger else { return }
 
             let serverInput: FileDescriptor = FileDescriptor(
@@ -42,8 +64,8 @@ class MCPClientManager: ObservableObject {
                 rawValue: serverOutputPipe.fileHandleForReading.fileDescriptor
             )
 
-            process.executableURL = URL(fileURLWithPath: "/opt/homebrew/bin/bunx")
-            process.arguments = ["@dhravya/apple-mcp@latest"]
+            process.executableURL = URL(fileURLWithPath: executableURL)
+            process.arguments = arguments
             process.standardInput = serverInputPipe
             process.standardOutput = serverOutputPipe
 
@@ -54,23 +76,18 @@ class MCPClientManager: ObservableObject {
             )
 
             try process.run()
-            logger.debug("Process launched")
+            print("Process launched")
 
             try await client.connect(transport: transport)
-            logger.debug("Connected to MCP server")
+            print("Connected to MCP server for \(appName)")
         } catch {
             print("Error in connecting: \(error.localizedDescription)")
         }
     }
 
-    func getTools() async -> [[String: Any]] {
+    func getTools(appName: String) async -> [[String: Any]] {
         do {
-            guard let logger = logger else {
-                print("Logger is nil")
-                return []
-            }
-            guard let client = client else {
-                logger.error("Client is nil")
+            guard let client = clients[appName] else {
                 return []
             }
 
@@ -82,14 +99,9 @@ class MCPClientManager: ObservableObject {
         }
     }
 
-    func callTools(name: String, input: String) async -> [[String: Any]] {
+    func callTools(appName: String, name: String, input: String) async -> [[String: Any]] {
         do {
-            guard let logger = logger else {
-                print("Logger is nil")
-                return []
-            }
-            guard let client = client else {
-                logger.error("Client is nil")
+            guard let client = clients[appName] else {
                 return []
             }
 

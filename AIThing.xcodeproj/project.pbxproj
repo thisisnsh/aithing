@@ -13,7 +13,6 @@
 		AAF11D1D2E23085600E2743E /* .env in Resources */ = {isa = PBXBuildFile; fileRef = AAF11D1C2E23085300E2743E /* .env */; };
 		AAF11D1F2E23089400E2743E /* .gitignore in Resources */ = {isa = PBXBuildFile; fileRef = AAF11D1E2E23089100E2743E /* .gitignore */; };
 		AAF11D652E241EDA00E2743E /* MCP in Frameworks */ = {isa = PBXBuildFile; productRef = AAF11D642E241EDA00E2743E /* MCP */; };
-		AAF11D6D2E24A10500E2743E /* TestClient.py in Resources */ = {isa = PBXBuildFile; fileRef = AAF11D6C2E24A0FE00E2743E /* TestClient.py */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -40,7 +39,6 @@
 		AAF11D0B2E22F5AB00E2743E /* README.md */ = {isa = PBXFileReference; lastKnownFileType = net.daringfireball.markdown; path = README.md; sourceTree = "<group>"; };
 		AAF11D1C2E23085300E2743E /* .env */ = {isa = PBXFileReference; lastKnownFileType = text; path = .env; sourceTree = "<group>"; };
 		AAF11D1E2E23089100E2743E /* .gitignore */ = {isa = PBXFileReference; lastKnownFileType = text; path = .gitignore; sourceTree = "<group>"; };
-		AAF11D6C2E24A0FE00E2743E /* TestClient.py */ = {isa = PBXFileReference; lastKnownFileType = text.script.python; path = TestClient.py; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFileSystemSynchronizedRootGroup section */
@@ -95,7 +93,6 @@
 				AAF11D1C2E23085300E2743E /* .env */,
 				AAF11D1E2E23089100E2743E /* .gitignore */,
 				AAF11D0B2E22F5AB00E2743E /* README.md */,
-				AAF11D6C2E24A0FE00E2743E /* TestClient.py */,
 				AAF11CCD2E22DE1500E2743E /* AIThing */,
 				AAF11CDC2E22DE1700E2743E /* AIThingTests */,
 				AAF11CE62E22DE1700E2743E /* AIThingUITests */,
@@ -243,7 +240,6 @@
 			files = (
 				AAF11D1F2E23089400E2743E /* .gitignore in Resources */,
 				AAF11D0C2E22F5AB00E2743E /* README.md in Resources */,
-				AAF11D6D2E24A10500E2743E /* TestClient.py in Resources */,
 				AAF11D1D2E23085600E2743E /* .env in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;

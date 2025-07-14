@@ -86,38 +86,29 @@ struct ContentView: View {
                 if selectedContext.isEmpty || selectedContext != "Global" {
                     selectedContext = appContext.appName
                 }
+
                 Task {
-                    if selectedContext == "Global" {
-                        guard let mcpClientManager = appContext.mcpClientManager else {
-                            return
-                        }
-                        selectedContextTools = await mcpClientManager.getTools()
-                    } else {
-                        selectedContextTools = []
+                    guard let mcpClientManager = appContext.mcpClientManager else {
+                        return
                     }
+                    selectedContextTools = await mcpClientManager.getTools(appName: selectedContext)
                 }
             }
             .onChange(of: selectedContext) {
                 Task {
-                    if selectedContext == "Global" {
-                        guard let mcpClientManager = appContext.mcpClientManager else {
-                            return
-                        }
-                        selectedContextTools = await mcpClientManager.getTools()
-                    } else {
-                        selectedContextTools = []
-                    }
-                }
-            }
-            .task {
-                if selectedContext.isEmpty || selectedContext == "Global" {
                     guard let mcpClientManager = appContext.mcpClientManager else {
                         return
                     }
-                    selectedContextTools = await mcpClientManager.getTools()
-                } else {
-                    selectedContextTools = []
+                    selectedContextTools = await mcpClientManager.getTools(appName: selectedContext)
                 }
+            }
+            .task {
+                guard let mcpClientManager = appContext.mcpClientManager else {
+                    return
+                }
+                selectedContextTools =
+                    await mcpClientManager
+                    .getTools(appName: selectedContext.isEmpty ? "Global" : selectedContext)
             }
         }
     }
@@ -362,12 +353,12 @@ struct ContentView: View {
                 ],
                 [
                     "type": "text",
-                    "text": "Today is July 14th, 2025"
+                    "text": "Today is July 14th, 2025",
                 ],
             ],
 
         ]
-        print("/*body*/ \(body)")
+        print("body \(body)")
         request.httpBody = try? JSONSerialization.data(withJSONObject: body)
 
         do {
@@ -487,6 +478,7 @@ struct ContentView: View {
                                 modelOutput = finalResponse
                             }
                             let result = await mcpClientManager.callTools(
+                                appName: selectedContext,
                                 name: finalToolUseName,
                                 input: finalToolUseInputParam
                             )
