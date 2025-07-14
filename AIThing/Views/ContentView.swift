@@ -15,7 +15,7 @@ struct ContentView: View {
 
     @State private var contentMinHeight: CGFloat = 100
     @State private var contentHeight: CGFloat = 100
-    @State private var contentMaxHeight: CGFloat = 1000
+    @State private var contentMaxHeight: CGFloat = 700
     @State private var debounceWorkItem: DispatchWorkItem?
     @State private var isLoading: Bool = false
     @State private var isThinkingBlinking = true
@@ -86,12 +86,26 @@ struct ContentView: View {
                 if selectedContext.isEmpty || selectedContext != "Global" {
                     selectedContext = appContext.appName
                 }
+                Task {
+                    if selectedContext == "Global" {
+                        guard let mcpClientManager = appContext.mcpClientManager else {
+                            return
+                        }
+                        selectedContextTools = await mcpClientManager.getTools()
+                    } else {
+                        selectedContextTools = []
+                    }
+                }
             }
             .task {
-                guard let mcpClientManager = appContext.mcpClientManager else {
-                    return
+                if selectedContext.isEmpty || selectedContext == "Global" {
+                    guard let mcpClientManager = appContext.mcpClientManager else {
+                        return
+                    }
+                    selectedContextTools = await mcpClientManager.getTools()
+                } else {
+                    selectedContextTools = []
                 }
-                selectedContextTools = await mcpClientManager.getTools()
             }
         }
     }
@@ -207,7 +221,6 @@ struct ContentView: View {
                         .frame(maxWidth: .infinity, alignment: .leading)
                         .padding(.horizontal, 24)
                         .padding(.vertical, 16)
-                        .background(NonDraggableArea())
                     }
 
                     Color.clear
