@@ -30,7 +30,22 @@ func parseJSONStringToValueObject(_ json: String) throws -> Value {
 }
 
 func parseJSONStringToDictObject(_ json: String) -> [String: Any] {
-    guard let value = try? parseJSONStringToValueObject(json) else { return [:] }
-    guard case let .object(dict) = value else { return [:] }
-    return dict
+    do {
+        let data = Data(json.utf8)
+        let jsonObject = try JSONSerialization.jsonObject(with: data, options: [])
+
+        let value = Value(fromDecoded: jsonObject)
+
+        guard case let .object(dict) = value else {
+            print("JSON root is not an object.")
+            return [:]
+        }
+
+        let jsonSafeDict = dict.mapValues { $0.toJSONSafeObject() }
+
+        return jsonSafeDict.compactMapValues { $0 }  // removes nils safely
+    } catch {
+        print("Failed to parse JSON: \(error)")
+        return [:]
+    }
 }

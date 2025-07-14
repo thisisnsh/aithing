@@ -260,8 +260,8 @@ struct ContentView: View {
 
         await callModel(query: trimmed, previousContext: "")
 
-        print("modelInput \(modelInput)")
-        print("modelOutput \(modelOutput)")
+        //        print("modelInput \(modelInput)")
+        //        print("modelOutput \(modelOutput)")
     }
 
     private func handleClose() {
@@ -332,10 +332,16 @@ struct ContentView: View {
         do {
             let (stream, response) = try await URLSession.shared.bytes(for: request)
 
-            guard let httpResponse = response as? HTTPURLResponse, httpResponse.statusCode == 200
+            guard let httpResponse = response as? HTTPURLResponse
             else {
                 isLoading = false
                 modelOutputError = "Invalid response"
+                return
+            }
+
+            if httpResponse.statusCode != 200 {
+                isLoading = false
+                modelOutputError = "Error response \(httpResponse)"
                 return
             }
 
@@ -343,7 +349,6 @@ struct ContentView: View {
             var finalToolUseInputParam = ""
             var finalToolUseId = ""
             var finalToolUseName = ""
-            var finalToolResultContent = ""
 
             for try await line in stream.lines {
                 if line.starts(with: "data: ") {
@@ -432,7 +437,7 @@ struct ContentView: View {
                                 ],
                             ])
 
-                            finalResponse += "\n```Calling tool: \(finalToolUseName)...```\n"
+                            finalResponse += "\n\n```Calling tool: \(finalToolUseName)...```\n\n"
                             await MainActor.run {
                                 modelOutput = finalResponse
                             }

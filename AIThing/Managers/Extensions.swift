@@ -26,7 +26,7 @@ extension Value {
     func stringified() -> Any {
         switch self {
         case .null:
-            return "null"
+            return ""
         case .bool(let b):
             return String(b)
         case .int(let i):
@@ -63,4 +63,7 @@ extension Value {
         }
     }
 
+    func toJSONSafeObject() -> Any {
+        self.stringified()
+    }
 }
