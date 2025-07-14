@@ -97,6 +97,18 @@ struct ContentView: View {
                     }
                 }
             }
+            .onChange(of: selectedContext) {
+                Task {
+                    if selectedContext == "Global" {
+                        guard let mcpClientManager = appContext.mcpClientManager else {
+                            return
+                        }
+                        selectedContextTools = await mcpClientManager.getTools()
+                    } else {
+                        selectedContextTools = []
+                    }
+                }
+            }
             .task {
                 if selectedContext.isEmpty || selectedContext == "Global" {
                     guard let mcpClientManager = appContext.mcpClientManager else {
