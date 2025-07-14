@@ -348,6 +348,10 @@ struct ContentView: View {
                     "text":
                         "When asked 'what is this?' without any context, tell about yourself in 1 line and specify you are special and can understand 'this'. Dont talk about the tools or anything else.",
                 ],
+                [
+                    "type": "text",
+                    "text": "Today is July 14th, 2025"
+                ],
             ],
 
         ]
