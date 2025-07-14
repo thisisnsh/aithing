@@ -115,8 +115,8 @@ struct ContentView: View {
     private func statusHeaderView() -> some View {
         HStack {
             StatusPill(
-                text: "MCP Server",
-                help: "Status of MCP Server",
+                text: "AI Agent",
+                help: "Status of AI Agent",
                 status: (selectedContext == "Global" || selectedContext.isEmpty)
                     ? .available : .unavailable,
             )
@@ -272,9 +272,6 @@ struct ContentView: View {
         onSizeChange(contentHeight)
 
         await callModel(query: trimmed, previousContext: "")
-
-        //        print("modelInput \(modelInput)")
-        //        print("modelOutput \(modelOutput)")
     }
 
     private func handleClose() {
@@ -309,14 +306,16 @@ struct ContentView: View {
         modelContext =
             appContext.getSelectedText() ?? NSPasteboard.general.string(forType: .string) ?? ""
 
-        if modelInput.isEmpty && selectedContext != "Global" {
+        if modelInput.isEmpty && !selectedContext.isEmpty && selectedContext != "Global" {
             modelInput.append([
                 "role": "user",
                 "content": "I am using \(selectedContext) application on mac and require help.",
             ])
         }
 
-        if previousContext != modelContext && !modelContext.isEmpty && selectedContext != "Global" {
+        if previousContext != modelContext && !modelContext.isEmpty && !selectedContext.isEmpty
+            && selectedContext != "Global"
+        {
             modelInput.append([
                 "role": "user",
                 "content": "I am providing the context below.",
@@ -327,7 +326,7 @@ struct ContentView: View {
             ])
         }
 
-        if query != nil && modelContext != query ?? "" {
+        if query != nil {
             modelInput.append(["role": "user", "content": query!])
         }
 
@@ -338,8 +337,21 @@ struct ContentView: View {
             "temperature": 0.7,
             "messages": modelInput,
             "tools": selectedContextTools,
+            "system": [
+                [
+                    "type": "text",
+                    "text":
+                        "Your name is 'AI Thing', and you are an AI assistant with a unique ability: you can understand 'this'. Similar to local context in programming languages, 'this' refers to the context of the tool or environment in which you are being used.",
+                ],
+                [
+                    "type": "text",
+                    "text":
+                        "When asked 'what is this?' without any context, tell about yourself in 1 line and specify you are special and can understand 'this'. Dont talk about the tools or anything else.",
+                ],
+            ],
+
         ]
-        print("body \(body)")
+        print("/*body*/ \(body)")
         request.httpBody = try? JSONSerialization.data(withJSONObject: body)
 
         do {
