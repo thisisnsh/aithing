@@ -430,10 +430,14 @@ struct ContentView: View {
                             modelInput.append([
                                 "role": "assistant",
                                 "content": [
-                                    "type": "tool_use",
-                                    "id": finalToolUseId,
-                                    "name": finalToolUseName,
-                                    "input": parseJSONStringToDictObject(finalToolUseInputParam),
+                                    [
+                                        "type": "tool_use",
+                                        "id": finalToolUseId,
+                                        "name": finalToolUseName,
+                                        "input": parseJSONStringToDictObject(
+                                            finalToolUseInputParam
+                                        ),
+                                    ]
                                 ],
                             ])
 
@@ -449,9 +453,11 @@ struct ContentView: View {
                             modelInput.append([
                                 "role": "user",
                                 "content": [
-                                    "type": "tool_result",
-                                    "id": finalToolUseId,
-                                    "content": result,
+                                    [
+                                        "type": "tool_result",
+                                        "tool_use_id": finalToolUseId,
+                                        "content": result,
+                                    ]
                                 ],
                             ])
 
