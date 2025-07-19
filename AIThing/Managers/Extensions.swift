@@ -26,17 +26,19 @@ extension Value {
     func stringified() -> Any {
         switch self {
         case .null:
-            return ""
+            return NSNull()
         case .bool(let b):
-            return String(b)
+            return b
         case .int(let i):
-            return String(i)
+            return i
         case .double(let d):
-            return String(d)
+            return d
         case .string(let s):
             return s
-        case .data(let mimeType, _):
-            return "data:\(mimeType ?? "application/octet-stream")"
+        case .data(let mimeType, let data):
+            let base64 = data.base64EncodedString()
+            let mime = mimeType ?? "application/octet-stream"
+            return "data:\(mime);base64,\(base64)"
         case .array(let arr):
             return arr.map { $0.stringified() }
         case .object(let dict):

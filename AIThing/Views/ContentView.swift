@@ -292,7 +292,10 @@ struct ContentView: View {
     private func callModel(query: String?, previousContext: String) async {
         let model = "claude-sonnet-4-20250514"
 
-        guard let apiKey = Env.get("ANTHROPIC_API_KEY") else {
+        guard
+            let apiKey = Env.get("ANTHROPIC_API_KEY_" + appContext.appName.uppercased())
+                ?? Env.get("ANTHROPIC_API_KEY")
+        else {
             isLoading = false
             modelOutputError = "Missing LLM API Key"
             return
@@ -305,6 +308,7 @@ struct ContentView: View {
         request.setValue("application/json", forHTTPHeaderField: "Content-Type")
         request.setValue("2023-06-01", forHTTPHeaderField: "anthropic-version")
         request.setValue("\(apiKey)", forHTTPHeaderField: "x-api-key")
+        request.setValue("extended-cache-ttl-2025-04-11", forHTTPHeaderField: "anthropic-beta")
 
         modelContext =
             appContext.getSelectedText() ?? NSPasteboard.general.string(forType: .string) ?? ""
@@ -312,25 +316,39 @@ struct ContentView: View {
         if modelInput.isEmpty && !selectedContext.isEmpty && selectedContext != "Global" {
             modelInput.append([
                 "role": "user",
-                "content": "I am using \(selectedContext) application on mac and require help.",
+                "content": [
+                    [
+                        "text":
+                            "I am using \(selectedContext) application on Mac.",
+                        "type": "text",
+                    ]
+                ],
             ])
         }
 
-        if previousContext != modelContext && !modelContext.isEmpty && !selectedContext.isEmpty
-            && selectedContext != "Global"
-        {
-            modelInput.append([
-                "role": "user",
-                "content": "I am providing the context below.",
-            ])
-            modelInput.append([
-                "role": "user",
-                "content": modelContext,
-            ])
-        }
+        if let query, !query.isEmpty {
+            if query.contains("this"),
+                previousContext != modelContext,
+                !modelContext.isEmpty,
+                !selectedContext.isEmpty,
+                selectedContext != "Global"
+            {
 
-        if query != nil {
-            modelInput.append(["role": "user", "content": query!])
+                modelInput.append([
+                    "role": "user",
+                    "content": [
+                        ["type": "text", "text": "When I say \"this\", I mean the following."],
+                        ["type": "text", "text": modelContext],
+                    ],
+                ])
+            }
+
+            modelInput.append([
+                "role": "user",
+                "content": [
+                    ["type": "text", "text": query]
+                ],
+            ])
         }
 
         let body: [String: Any] = [
@@ -338,24 +356,9 @@ struct ContentView: View {
             "stream": true,
             "max_tokens": 1024,
             "temperature": 0.7,
-            "messages": modelInput,
-            "tools": selectedContextTools,
-            "system": [
-                [
-                    "type": "text",
-                    "text":
-                        "Your name is 'AI Thing', and you are an AI assistant with a unique ability: you can understand 'this'. Similar to local context in programming languages, 'this' refers to the context of the tool or environment in which you are being used.",
-                ],
-                [
-                    "type": "text",
-                    "text":
-                        "When asked 'what is this?' without any context, tell about yourself in 1 line and specify you are special and can understand 'this'. Dont talk about the tools or anything else.",
-                ],
-                [
-                    "type": "text",
-                    "text": "Today is July 14th, 2025",
-                ],
-            ],
+            "messages": addCacheBlock(input: modelInput, isMessage: true),
+            "tools": addCacheBlock(input: selectedContextTools),
+            "system": addCacheBlock(input: buildSystemMessages()),
 
         ]
         print("body \(body)")
@@ -453,7 +456,12 @@ struct ContentView: View {
                             continue
                         }
 
-                        modelInput.append(["role": "assistant", "content": modelOutput])
+                        if !modelOutput.isEmpty {
+                            modelInput.append([
+                                "role": "assistant",
+                                "content": [["text": modelOutput, "type": "text"]],
+                            ])
+                        }
 
                         switch delta_stop_reason {
                         case "max_tokens":
@@ -517,6 +525,81 @@ struct ContentView: View {
                     "Error streaming Claude response: \(error.localizedDescription)"
             }
         }
+    }
+
+    private func buildSystemMessages() -> [[String: Any]] {
+        let formatter = DateFormatter()
+        formatter.dateStyle = .long
+        formatter.timeStyle = .none
+        formatter.locale = Locale(identifier: "en_US")
+        let today = formatter.string(from: Date())
+
+        let messages: [[String: Any]] = [
+            [
+                "type": "text",
+                "text": """
+                Your name is 'AI Thing', and you are an AI assistant with a unique ability: you can understand 'this'. \
+                Similar to local context in programming languages, 'this' refers to the context of the tool or environment \
+                in which you are being used. You are helpful, grounded, and capable of executing structured actions via tools.
+                """,
+            ],
+            [
+                "type": "text",
+                "text": """
+                When asked 'what is this?' without any context, reply with a one-line description of yourself, \
+                highlighting your special ability to understand 'this'. Do not describe the tools unless explicitly asked.
+                """,
+            ],
+            [
+                "type": "text",
+                "text": "Today is \(today).",
+            ],
+            [
+                "type": "text",
+                "text": """
+                You are expected to behave as an agent: you can perceive user instructions, reason about available tools, \
+                and invoke them if appropriate. You must be precise, context-aware, and avoid guessing when information is \
+                ambiguous or incomplete.
+                """,
+            ],
+        ]
+
+        return messages
+    }
+
+    private func addCacheBlock(input: [[String: Any]], isMessage: Bool = false) -> [[String: Any]] {
+        var updated = input
+
+        if isMessage {
+            guard var last = input.last,
+                var contentArray = last["content"] as? [[String: Any]],
+                var lastContent = contentArray.last
+            else {
+                return input
+            }
+
+            lastContent["cache_control"] = [
+                "type": "ephemeral",
+                "ttl": "1h",
+            ]
+            contentArray[contentArray.count - 1] = lastContent
+            last["content"] = contentArray
+
+            updated[updated.count - 1] = last
+        } else {
+
+            guard var last = input.last else {
+                return input
+            }
+
+            last["cache_control"] = [
+                "type": "ephemeral",
+                "ttl": "1h",
+            ]
+
+            updated[updated.count - 1] = last
+        }
+        return updated
     }
 
     private func shimmerPlaceholder() -> String {
