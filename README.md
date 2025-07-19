@@ -18,11 +18,11 @@ Missing Features
     - config dropdown to set context for the agent
     - open ai thing from the app and the context is fixed
     - do not change app context in between the conversation
+    - keyboard based switch of multiple instances
     
 - make @this special show as white background - when @this it picks screenshot and shows 
 
-- allow text selected in response 
-- keyboard based switch of multiple instances 
+ 
 
 
 

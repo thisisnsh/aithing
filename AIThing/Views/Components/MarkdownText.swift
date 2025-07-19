@@ -5,6 +5,7 @@
 //  Created by Nishant Singh Hada on 7/13/25.
 //
 
+import AppKit
 import MarkdownUI
 import SwiftUI
 
@@ -13,6 +14,7 @@ struct MarkdownText: View {
 
     var body: some View {
         Markdown(text)
+            .textSelection(.enabled)
             .markdownBlockStyle(\.blockquote) { configuration in
                 HStack(spacing: 0) {
                     RoundedRectangle(cornerRadius: 8)
