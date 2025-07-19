@@ -29,12 +29,12 @@ class MCPClientManager: ObservableObject {
             return handler
         }
 
-        clients["global"] = Client(name: "AIThing for Global", version: "0.1.0")
-        executableURL["global"] = "/opt/homebrew/bin/bunx"
-        arguments["global"] = ["@dhravya/apple-mcp@latest"]
-        serverInputPipe["global"] = Pipe()
-        serverOutputPipe["global"] = Pipe()
-        process["global"] = Process()
+        clients["macos"] = Client(name: "AIThing for MacOS", version: "0.1.0")
+        executableURL["macos"] = "/opt/homebrew/bin/bunx"
+        arguments["macos"] = ["@dhravya/apple-mcp@latest"]
+        serverInputPipe["macos"] = Pipe()
+        serverOutputPipe["macos"] = Pipe()
+        process["macos"] = Process()
 
         clients["xcode"] = Client(name: "AIThing for Xcode", version: "0.1.0")
         executableURL["xcode"] = "/usr/local/bin/xcode-npx-wrapper"

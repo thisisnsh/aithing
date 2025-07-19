@@ -30,8 +30,7 @@ class AppContext: ObservableObject {
 
     func mcpStatus() -> McpStatus {
         switch self.appName.lowercased() {
-        case "global":
-        case "xcode":
+        case "macos", "xcode":
             return .available
         default:
             return .unavailable
@@ -91,10 +90,10 @@ class AppContext: ObservableObject {
     }
 
     func refresh() {
-        self.appName = ""
-        self.visibleText = ""
-        self.clipboardText = ""
-        self.windowName = ""
+        let context = getAppContext()
+        self.appName = context.appName
+        self.visibleText = context.visibleText
+        self.windowName = context.windowTitle
     }
 
     private func getAppContext() -> (appName: String, windowTitle: String, visibleText: String) {

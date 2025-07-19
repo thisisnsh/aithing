@@ -65,19 +65,14 @@ struct ContentView: View {
                 }
             )
             .cornerRadius(showResponseArea ? 24 : 32)
-            .onExitCommand(perform: handleClose)
             .onAppear {
                 NSEvent.addLocalMonitorForEvents(matching: .keyDown) { event in
                     if event.modifierFlags.contains(.command) {
-                        if event.charactersIgnoringModifiers == "l" {
+                        if event.charactersIgnoringModifiers == "n" {
                             selectedContext = appContext.appName
                             return nil
-                        } else if event.charactersIgnoringModifiers == "g" {
-                            selectedContext = "Global"
-                            return nil
-                        } else if event.charactersIgnoringModifiers == "r" {
-                            appContext.updateClipboardIfRecent()
-                            modelContext = appContext.clipboardText
+                        } else if event.charactersIgnoringModifiers == "m" {
+                            selectedContext = "MacOS"
                             return nil
                         }
 
@@ -86,7 +81,7 @@ struct ContentView: View {
                 }
             }
             .onChange(of: appContext.appName) {
-                if selectedContext.isEmpty || selectedContext != "Global" {
+                if selectedContext.isEmpty || selectedContext != "MacOS" {
                     selectedContext = appContext.appName
                 }
 
@@ -111,7 +106,7 @@ struct ContentView: View {
                 }
                 selectedContextTools =
                     await mcpClientManager
-                    .getTools(appName: selectedContext.isEmpty ? "Global" : selectedContext)
+                    .getTools(appName: selectedContext.isEmpty ? "MacOS" : selectedContext)
             }
         }
     }
@@ -147,10 +142,10 @@ struct ContentView: View {
         HStack(spacing: 8) {
             Menu {
                 Button(appContext.appName) { selectedContext = appContext.appName }
-                    .keyboardShortcut("l", modifiers: [.command])  // ⌘L
+                    .keyboardShortcut("n", modifiers: [.command])  // ⌘+N
 
-                Button("Global") { selectedContext = "Global" }
-                    .keyboardShortcut("g", modifiers: [.command])  // ⌘G
+                Button("MacOS") { selectedContext = "MacOS" }
+                    .keyboardShortcut("m", modifiers: [.command])  // ⌘+M
 
             } label: {
                 Text(selectedContext)
@@ -315,7 +310,7 @@ struct ContentView: View {
         modelContext =
             appContext.getSelectedText() ?? NSPasteboard.general.string(forType: .string) ?? ""
 
-        if modelInput.isEmpty && !selectedContext.isEmpty && selectedContext != "Global" {
+        if modelInput.isEmpty && !selectedContext.isEmpty && selectedContext != "MacOS" {
             modelInput.append([
                 "role": "user",
                 "content": [
@@ -331,7 +326,7 @@ struct ContentView: View {
         if previousContext != modelContext,
             !modelContext.isEmpty,
             !selectedContext.isEmpty,
-            selectedContext != "Global"
+            selectedContext != "MacOS"
         {
 
             modelInput.append([
@@ -339,7 +334,7 @@ struct ContentView: View {
                 "content": [
                     [
                         "type": "text",
-                        "text": "Additional conext from the current app.\n\(modelContext)",
+                        "text": "Additional context from the current app. \n\(modelContext)",
                     ]
                 ],
             ])
@@ -364,10 +359,9 @@ struct ContentView: View {
             "system": addCacheBlock(input: buildSystemMessages()),
 
         ]
-        print("########")
-        print("messages: \(body["messages"])")
-        print("tools_count: \((body["tools"] as! [Any]).count)")
-        print("########")
+        print("-------- messages: \((body["messages"] as! [Any]).last ?? "")")
+//        print("system: \(body["system"] as! [Any])")
+        print("-------- tools_count: \((body["tools"] as! [Any]).count)")
         request.httpBody = try? JSONSerialization.data(withJSONObject: body)
 
         do {
@@ -396,6 +390,7 @@ struct ContentView: View {
             var finalToolUseName = ""
 
             for try await line in stream.lines {
+//                print("-------- line: \(line)")
                 if line.starts(with: "data: ") {
                     let jsonString = line.replacingOccurrences(of: "data: ", with: "")
 

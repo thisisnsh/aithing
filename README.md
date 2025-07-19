@@ -28,3 +28,4 @@ https://www.google.com/search?client=safari&rls=en&q=xcrun%3A+error%3A+unable+to
 - no selected text after hit enter
 - allow text selected in response 
 - keyboard based switch of multiple instances 
+- do not change app context in between the conversation

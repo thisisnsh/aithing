@@ -68,7 +68,7 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate {
 
         self.appContext.mcpClientManager = self.mcpClientManager
         Task {
-            await mcpClientManager.connect(appName: "Global")
+            await mcpClientManager.connect(appName: "MacOS")
             await mcpClientManager.connect(appName: "Xcode")
         }
     }
