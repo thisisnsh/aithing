@@ -20,11 +20,14 @@ struct ContentView: View {
     @State private var isLoading: Bool = false
     @State private var isThinkingBlinking = true
     @State private var isClipboardContext = false
+
     @State private var modelContext: String = ""
     @State private var modelInput: [[String: Any]] = []
     @State private var modelOutput: String = ""
     @State private var modelOutputError: String = ""
+
     @State private var query = ""
+
     @State private var resizeWorkItem: DispatchWorkItem?
     @State private var selectedContext = ""
     @State private var selectedContextTools: [[String: Any]] = []
@@ -120,8 +123,7 @@ struct ContentView: View {
             StatusPill(
                 text: "AI Agent",
                 help: "Status of AI Agent",
-                status: (selectedContext == "Global" || selectedContext.isEmpty)
-                    ? .available : .unavailable,
+                status: appContext.mcpStatus(),
             )
             if isClipboardContext {
                 StatusPill(
@@ -319,30 +321,31 @@ struct ContentView: View {
                 "content": [
                     [
                         "text":
-                            "I am using \(selectedContext) application on Mac.",
+                            "I am using `\"\(selectedContext)`\" app on Mac and on \"\(appContext.windowName)\" window.",
                         "type": "text",
                     ]
                 ],
             ])
         }
 
+        if previousContext != modelContext,
+            !modelContext.isEmpty,
+            !selectedContext.isEmpty,
+            selectedContext != "Global"
+        {
+
+            modelInput.append([
+                "role": "user",
+                "content": [
+                    [
+                        "type": "text",
+                        "text": "Additional conext from the current app.\n\(modelContext)",
+                    ]
+                ],
+            ])
+        }
+
         if let query, !query.isEmpty {
-            if query.contains("this"),
-                previousContext != modelContext,
-                !modelContext.isEmpty,
-                !selectedContext.isEmpty,
-                selectedContext != "Global"
-            {
-
-                modelInput.append([
-                    "role": "user",
-                    "content": [
-                        ["type": "text", "text": "When I say \"this\", I mean the following."],
-                        ["type": "text", "text": modelContext],
-                    ],
-                ])
-            }
-
             modelInput.append([
                 "role": "user",
                 "content": [
@@ -361,7 +364,10 @@ struct ContentView: View {
             "system": addCacheBlock(input: buildSystemMessages()),
 
         ]
-        print("body \(body)")
+        print("########")
+        print("messages: \(body["messages"])")
+        print("tools_count: \((body["tools"] as! [Any]).count)")
+        print("########")
         request.httpBody = try? JSONSerialization.data(withJSONObject: body)
 
         do {

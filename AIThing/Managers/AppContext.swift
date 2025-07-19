@@ -16,15 +16,26 @@ enum McpStatus {
 
 class AppContext: ObservableObject {
     @Published var appName: String = ""
+    @Published var windowName: String = ""
     @Published var visibleText: String = ""
     @Published var clipboardText: String = ""
-    @Published var mcpStatus: McpStatus = .available
+
     @Published var mcpClientManager: MCPClientManager?
 
     private var lastVisibleTime: Date?
 
     func markAppVisible() {
         lastVisibleTime = Date()
+    }
+
+    func mcpStatus() -> McpStatus {
+        switch self.appName.lowercased() {
+        case "global":
+        case "xcode":
+            return .available
+        default:
+            return .unavailable
+        }
     }
 
     func updateClipboardIfRecent() {
@@ -56,12 +67,22 @@ class AppContext: ObservableObject {
         let axApp = AXUIElementCreateApplication(pid)
 
         var focusedElement: CFTypeRef?
-        if AXUIElementCopyAttributeValue(axApp, kAXFocusedUIElementAttribute as CFString, &focusedElement) == .success,
-           let element = focusedElement {
-            
+        if AXUIElementCopyAttributeValue(
+            axApp,
+            kAXFocusedUIElementAttribute as CFString,
+            &focusedElement
+        ) == .success,
+            let element = focusedElement
+        {
+
             var selectedTextValue: CFTypeRef?
-            if AXUIElementCopyAttributeValue(element as! AXUIElement, kAXSelectedTextAttribute as CFString, &selectedTextValue) == .success,
-               let selectedText = selectedTextValue as? String {
+            if AXUIElementCopyAttributeValue(
+                element as! AXUIElement,
+                kAXSelectedTextAttribute as CFString,
+                &selectedTextValue
+            ) == .success,
+                let selectedText = selectedTextValue as? String
+            {
                 return selectedText
             }
         }
@@ -69,4 +90,86 @@ class AppContext: ObservableObject {
         return nil
     }
 
+    func refresh() {
+        self.appName = ""
+        self.visibleText = ""
+        self.clipboardText = ""
+        self.windowName = ""
+    }
+
+    private func getAppContext() -> (appName: String, windowTitle: String, visibleText: String) {
+        guard let frontApp = NSWorkspace.shared.frontmostApplication else {
+            return ("", "", "")
+        }
+
+        let appName = frontApp.localizedName ?? ""
+        let pid = frontApp.processIdentifier
+        let axApp = AXUIElementCreateApplication(pid)
+
+        var focusedWindow: AnyObject?
+        let windowResult = AXUIElementCopyAttributeValue(
+            axApp,
+            kAXFocusedWindowAttribute as CFString,
+            &focusedWindow
+        )
+
+        guard windowResult == .success, let window = focusedWindow else {
+            return (appName, "", "")
+        }
+
+        // Try to get the window title
+        var titleValue: AnyObject?
+        var windowTitle = ""
+        if AXUIElementCopyAttributeValue(
+            window as! AXUIElement,
+            kAXTitleAttribute as CFString,
+            &titleValue
+        ) == .success,
+            let title = titleValue as? String
+        {
+            windowTitle = title
+        }
+
+        // Recursively extract visible text from focused window
+        let visibleText = extractText(from: window as! AXUIElement)
+            .joined(separator: "\n")
+            .trimmingCharacters(in: .whitespacesAndNewlines)
+
+        return (appName, windowTitle, visibleText)
+    }
+
+    private func extractText(from element: AXUIElement) -> [String] {
+        var result: [String] = []
+
+        var children: AnyObject?
+        if AXUIElementCopyAttributeValue(element, kAXChildrenAttribute as CFString, &children)
+            == .success,
+            let childArray = children as? [AXUIElement]
+        {
+            for child in childArray {
+                var value: AnyObject?
+
+                // Try reading the value directly (AXValue)
+                if AXUIElementCopyAttributeValue(child, kAXValueAttribute as CFString, &value)
+                    == .success,
+                    let string = value as? String
+                {
+                    result.append(string)
+                }
+
+                // Also try the title if present
+                if AXUIElementCopyAttributeValue(child, kAXTitleAttribute as CFString, &value)
+                    == .success,
+                    let string = value as? String
+                {
+                    result.append(string)
+                }
+
+                // Recurse
+                result.append(contentsOf: extractText(from: child))
+            }
+        }
+
+        return result
+    }
 }

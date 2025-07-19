@@ -36,11 +36,8 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate {
     }
 
     @objc func appDidActivate(_ note: Notification) {
-        let context = getAppContext()
         DispatchQueue.main.async {
-            self.appContext.appName = context.appName
-            self.appContext.visibleText = context.visibleText
-            self.appContext.clearClipboardText()
+            self.appContext.refresh()
         }
     }
 
@@ -77,7 +74,7 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate {
     }
 
     func setupHotKey() {
-        hotKey = HotKey(key: .space, modifiers: [.control])
+        hotKey = HotKey(key: .return, modifiers: [.command])
         hotKey?.keyDownHandler = { [weak self] in
             self?.toggleWindow()
         }
@@ -124,68 +121,5 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate {
         frame.size = targetSize
 
         floatingWindow.setFrame(frame, display: true, animate: false)
-    }
-
-    func getAppContext() -> (appName: String, visibleText: String) {
-        guard let frontApp = NSWorkspace.shared.frontmostApplication else {
-            return ("Unknown App", "")
-        }
-
-        let appName = frontApp.localizedName ?? "Unknown App"
-        let pid = frontApp.processIdentifier
-        let axApp = AXUIElementCreateApplication(pid)
-
-        var focusedWindow: AnyObject?
-        let windowResult = AXUIElementCopyAttributeValue(
-            axApp,
-            kAXFocusedWindowAttribute as CFString,
-            &focusedWindow
-        )
-
-        guard windowResult == .success, let window = focusedWindow else {
-            return (appName, "")
-        }
-
-        // Recursively extract visible text from focused window
-        let visibleText = extractText(from: window as! AXUIElement)
-            .joined(separator: "\n")
-            .trimmingCharacters(in: .whitespacesAndNewlines)
-
-        return (appName, visibleText)
-    }
-
-    private func extractText(from element: AXUIElement) -> [String] {
-        var result: [String] = []
-
-        var children: AnyObject?
-        if AXUIElementCopyAttributeValue(element, kAXChildrenAttribute as CFString, &children)
-            == .success,
-            let childArray = children as? [AXUIElement]
-        {
-            for child in childArray {
-                var value: AnyObject?
-
-                // Try reading the value directly (AXValue)
-                if AXUIElementCopyAttributeValue(child, kAXValueAttribute as CFString, &value)
-                    == .success,
-                    let string = value as? String
-                {
-                    result.append(string)
-                }
-
-                // Also try the title if present
-                if AXUIElementCopyAttributeValue(child, kAXTitleAttribute as CFString, &value)
-                    == .success,
-                    let string = value as? String
-                {
-                    result.append(string)
-                }
-
-                // Recurse
-                result.append(contentsOf: extractText(from: child))
-            }
-        }
-
-        return result
     }
 }
