@@ -36,12 +36,12 @@ class MCPClientManager: ObservableObject {
         serverOutputPipe["Global"] = Pipe()
         process["Global"] = Process()
 
-//        clients["Xcode"] = Client(name: "AIThing for Xcode", version: "0.1.0")
-//        executableURL["Xcode"] = "/usr/local/bin/xcode-npx-wrapper"
-//        arguments["Xcode"] = ["-y", "xcodebuildmcp@latest"]
-//        serverInputPipe["Xcode"] = Pipe()
-//        serverOutputPipe["Xcode"] = Pipe()
-//        process["Xcode"] = Process()
+        clients["Xcode"] = Client(name: "AIThing for Xcode", version: "0.1.0")
+        executableURL["Xcode"] = "/usr/local/bin/xcode-npx-wrapper"
+        arguments["Xcode"] = ["-y", "xcodebuildmcp@latest"]
+        serverInputPipe["Xcode"] = Pipe()
+        serverOutputPipe["Xcode"] = Pipe()
+        process["Xcode"] = Process()
 
         logger = Logger(label: "com.thisisnsh.mac.AIThing")
     }

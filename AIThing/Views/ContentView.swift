@@ -373,7 +373,11 @@ struct ContentView: View {
 
             if httpResponse.statusCode != 200 {
                 isLoading = false
-                modelOutputError = "Error response \(httpResponse)"
+                var error = ""
+                for try await line in stream.lines {
+                    error += line
+                }
+                modelOutputError = "Error \(httpResponse.statusCode)\n\(error)"
                 return
             }
 
