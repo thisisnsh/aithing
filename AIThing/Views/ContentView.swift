@@ -287,6 +287,8 @@ struct ContentView: View {
     }
 
     private func callModel(query: String?, previousContext: String) async {
+        return await fakeData()
+        
         let model = "claude-sonnet-4-20250514"
 
         guard
@@ -560,7 +562,7 @@ struct ContentView: View {
                 "text": """
                 You are expected to behave as an agent: you can perceive user instructions, reason about available tools, \
                 and invoke them if appropriate. You must be precise, context-aware, and avoid guessing when information is \
-                ambiguous or incomplete.
+                ambiguous or incomplete. You must always output in Markdown.
                 """,
             ],
         ]

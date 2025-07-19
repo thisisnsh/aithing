@@ -12,6 +12,12 @@ struct FocusableTextField: NSViewRepresentable {
     @Binding var text: String
     var onCommit: () -> Void
 
+    class NonSelectingTextField: NSTextField {
+        override func selectText(_ sender: Any?) {
+            // Do nothing to prevent auto-selection
+        }
+    }
+
     class Coordinator: NSObject, NSTextFieldDelegate {
         var parent: FocusableTextField
 
@@ -31,6 +37,7 @@ struct FocusableTextField: NSViewRepresentable {
                 parent.onCommit()
             }
         }
+
     }
 
     func makeCoordinator() -> Coordinator {
@@ -38,7 +45,7 @@ struct FocusableTextField: NSViewRepresentable {
     }
 
     func makeNSView(context: Context) -> NSTextField {
-        let textField = NSTextField(string: text)
+        let textField = NonSelectingTextField(string: text)
         textField.delegate = context.coordinator
 
         textField.isBordered = false
@@ -49,6 +56,7 @@ struct FocusableTextField: NSViewRepresentable {
         textField.focusRingType = .none
         textField.isEditable = true
         textField.isSelectable = true
+        textField.isHighlighted = false
         textField.placeholderString = "Ask anything on this AI thing..."
 
         DispatchQueue.main.async {
