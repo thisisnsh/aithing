@@ -15,14 +15,14 @@ struct PillView: View {
         if text.isEmpty {
             EmptyView()
         } else {
-            HStack(spacing: 4) {
-                Text(text)
+            HStack(spacing: 8) {
+                MarkdownText(text: text)
                     .font(.system(size: 10, weight: .regular, design: .monospaced))
                     .foregroundColor(.white)
                     .help(help)
             }
-            .padding(.horizontal, 6)
-            .padding(.vertical, 2)
+            .padding(.horizontal, 8)
+            .padding(.vertical, 4)
             .background(.ultraThinMaterial)
             .overlay(
                 Capsule().stroke(Color.white, lineWidth: 1.5)

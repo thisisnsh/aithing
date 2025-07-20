@@ -45,7 +45,11 @@ struct TabView: View {
                 }
             }
             .background(.ultraThinMaterial)
-            .frame(width: isFocused ? 640 : 64, height: isFocused ? 48 + getResponseHeight() : 48, alignment: .topLeading)
+            .frame(
+                width: isFocused ? 640 : 64,
+                height: isFocused ? 48 + getResponseHeight() : 48,
+                alignment: .topLeading
+            )
             .background(Color.clear)
             .overlay(
                 Group {
@@ -62,7 +66,7 @@ struct TabView: View {
             )
             .cornerRadius(getCornerRadius())
             .animation(.easeInOut(duration: 0.25), value: isFocused)
-            .onAppear() {
+            .onAppear {
                 onSizeChange(getResponseHeight())
             }
             .onChange(of: isFocused) {
@@ -200,7 +204,15 @@ struct TabView: View {
         responseHeight = responseHeightMin
         onSizeChange(getResponseHeight())
 
-        await callModel(query: trimmed)
+        await withTaskGroup(of: Void.self) { group in
+            group.addTask {
+                await getTabTitle(query: query)
+            }
+            group.addTask {
+                await callModel(query: trimmed)
+            }
+            await group.waitForAll()
+        }
     }
 
     // MARK: - AI Functions
@@ -507,6 +519,85 @@ struct TabView: View {
         ]
 
         return messages
+    }
+
+    private func getTabTitle(query: String) async {
+        if query.isEmpty {
+            title = "Tab"
+            return
+        }
+
+        let model = "claude-sonnet-4-20250514"
+
+        guard let apiKey = Env.get("ANTHROPIC_API_KEY")
+        else {
+            isThinking = false
+            modelOutputError = "Missing LLM API Key"
+            return
+        }
+
+        guard let url = URL(string: "https://api.anthropic.com/v1/messages") else { return }
+
+        var request = URLRequest(url: url)
+        request.httpMethod = "POST"
+        request.setValue("application/json", forHTTPHeaderField: "Content-Type")
+        request.setValue("2023-06-01", forHTTPHeaderField: "anthropic-version")
+        request.setValue("\(apiKey)", forHTTPHeaderField: "x-api-key")
+        request.setValue("extended-cache-ttl-2025-04-11", forHTTPHeaderField: "anthropic-beta")
+
+        if !query.isEmpty {
+            modelInput.append([
+                "role": "user",
+                "content": [
+                    ["type": "text", "text": "Create title for following query."],
+                    ["type": "text", "text": buildQuery(query: query)],
+                ],
+            ])
+        }
+
+        let body: [String: Any] = [
+            "model": model,
+            "max_tokens": 10,
+            "temperature": 0.7,
+            "messages": modelInput,
+        ]
+
+        request.httpBody = try? JSONSerialization.data(withJSONObject: body)
+
+        do {
+            let (data, response) = try await URLSession.shared.data(for: request)
+
+            guard let httpResponse = response as? HTTPURLResponse else {
+                title = "Tab"
+                return
+            }
+
+            guard httpResponse.statusCode == 200 else {
+                title = "Tab"
+                return
+            }
+
+            // Parse the response JSON
+            guard let json = try? JSONSerialization.jsonObject(with: data) as? [String: Any],
+                let contentArray = json["content"] as? [[String: Any]],
+                let firstContent = contentArray.first,
+                let text = firstContent["text"] as? String
+            else {
+                title = "Tab"
+                return
+            }
+
+            await MainActor.run {
+                title = "Tab: \(text)"
+                print(title)
+            }
+
+        } catch {
+            await MainActor.run {
+                title = "Tab"
+            }
+        }
+
     }
 
     private func fakeData(query: String) async {
