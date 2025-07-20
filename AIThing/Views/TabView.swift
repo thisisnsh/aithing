@@ -13,17 +13,14 @@ import SwiftUI
 struct TabView: View {
     @EnvironmentObject var mcp: MCPManager
 
-    var index: Int
     @Binding var isFocused: Bool
     var allClientTools: [String: [[String: Any]]]
-    var onClose: () -> Void
+    var onHelp: () -> Void
     var onSizeChange: (CGFloat) -> Void
 
     @State private var imageName: String = "Logo"
     @State private var title: String = ""
 
-    @State private var width: CGFloat = 640
-    @State private var height: CGFloat = 48
     @State private var responseHeightMin: CGFloat = 100
     @State private var responseHeightMax: CGFloat = 700
     @State private var responseHeight: CGFloat = 100
@@ -39,21 +36,16 @@ struct TabView: View {
     @State private var showResponseArea: Bool = false
 
     var body: some View {
-        VStack {
+        VStack(alignment: .leading, spacing: 8) {
             PillView(text: title, help: title)
-            ZStack {
-                VStack(spacing: 0) {
-                    inputView()
-                    if isFocused, showResponseArea {
-                        responseView()
-                    }
+            VStack(spacing: 0) {
+                inputView()
+                if isFocused, showResponseArea {
+                    responseView()
                 }
-                .background(.ultraThinMaterial)
             }
-            .frame(
-                width: width,
-                height: height,
-            )
+            .background(.ultraThinMaterial)
+            .frame(width: isFocused ? 640 : 64, height: isFocused ? 48 + getResponseHeight() : 48, alignment: .topLeading)
             .background(Color.clear)
             .overlay(
                 Group {
@@ -69,45 +61,15 @@ struct TabView: View {
                 }
             )
             .cornerRadius(getCornerRadius())
+            .animation(.easeInOut(duration: 0.25), value: isFocused)
+            .onAppear() {
+                onSizeChange(getResponseHeight())
+            }
             .onChange(of: isFocused) {
-                /*
-                 * when focus is received
-                 *  expand width
-                 *  then expand height
-                 * when focus is lost
-                 *  collapse height
-                 *  then collapse width
-                 * when focus was already lost
-                 *
-                 */
-                
-                print("on change called \(index)")
-                
-                
-                if isFocused {
-                    withAnimation {
-                        width = isFocused ? 640 : 64
-                    }
-
-                    DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) {
-                        withAnimation {
-                            height = isFocused ? 48 + getResponseHeight() : 48
-                        }
-                    }
-                } else {
-                    withAnimation {
-                        height = isFocused ? 48 + getResponseHeight() : 48
-                        
-                    }
-
-                    DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) {
-                        withAnimation {
-                            width = isFocused ? 640 : 64
-                        }
-                    }
-                }
+                onSizeChange(getResponseHeight())
             }
         }
+        .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
     }
 
     // MARK: - Private SubViews
@@ -130,7 +92,7 @@ struct TabView: View {
                 )
                 .padding(.horizontal, 8)
 
-                Button(action: handleHelp) {
+                Button(action: onHelp) {
                     Image(systemName: "questionmark.circle.fill")
                         .resizable()
                         .scaledToFit()
@@ -196,7 +158,9 @@ struct TabView: View {
 
                 if responseHeight < checkedHeight {
                     responseHeight = checkedHeight
-                    onSizeChange(responseHeight)
+                    if isFocused {
+                        onSizeChange(getResponseHeight())
+                    }
                 }
             }
             .onChange(of: modelOutput) {
@@ -234,32 +198,15 @@ struct TabView: View {
         isThinking = true
         showResponseArea = true
         responseHeight = responseHeightMin
-        onSizeChange(responseHeight)
+        onSizeChange(getResponseHeight())
 
         await callModel(query: trimmed)
-    }
-
-    private func handleClose() {
-        // TODO: What to do
-        query = ""
-        modelOutput = ""
-        modelOutputError = ""
-        modelInput = []
-        isThinking = false
-        showResponseArea = false
-        responseHeight = responseHeightMin
-        onSizeChange(responseHeight)
-        onClose()
-    }
-
-    private func handleHelp() {
-        // TODO: Do something
     }
 
     // MARK: - AI Functions
 
     private func callModel(query: String) async {
-        return await fakeData()
+        return await fakeData(query: query)
 
         let model = "claude-sonnet-4-20250514"
 
@@ -562,8 +509,12 @@ struct TabView: View {
         return messages
     }
 
-    private func fakeData() async {
-        let fakeContent = """
+    private func fakeData(query: String) async {
+        if query == "a" {
+            isThinking = false
+        }
+
+        var fakeContent = """
             "Vishal" can refer to several things:
 
             1. **As a name**: Vishal is a popular Indian name, particularly common in Hindi-speaking regions. It means "large," "vast," or "magnificent" in Sanskrit.
@@ -577,6 +528,11 @@ struct TabView: View {
             Could you provide more context about which "Vishal" you're asking about? That would help me give you a more specific answer.
             """
 
+        if query == "c" {
+            isThinking = false
+            fakeContent += fakeContent + fakeContent
+        }
+
         var fakePartial = ""
         for char in fakeContent {
             fakePartial += String(char)
@@ -584,7 +540,7 @@ struct TabView: View {
                 modelOutput = fakePartial + " " + shimmerPlaceholder()
             }
             do {
-                try await Task.sleep(for: .milliseconds(100))
+                try await Task.sleep(for: .milliseconds(10))
             } catch {
 
             }

@@ -21,37 +21,34 @@ struct ContentView: View {
 
     @State private var focusedIndex: Int = 0
     @State private var showToast = false
+    @State private var showHelp = false
     @State private var tabs: [TabItem] = []
 
     @State private var maxTabs: Int = 5
-    
+
     var body: some View {
         ZStack {
             HStack(alignment: .top, spacing: 8) {
                 ForEach(tabs.indices, id: \.self) { index in
-                    let isFocusedBinding = Binding(
-                        get: { focusedIndex == index },
-                        set: { if $0 { focusedIndex = index } }
-                    )
-
-                    TabView(
-                        index: index,
-                        isFocused: isFocusedBinding,
-                        allClientTools: allClientTools,
-                        onClose: onClose,
-                        onSizeChange: onSizeChange
-                    )
-                    .environmentObject(mcp)
-                    .animation(.easeInOut, value: focusedIndex)
+                    tabView(at: index)
                 }
             }
         }
-        .frame(width: 1000)
+        .frame(width: CGFloat(640) + CGFloat((tabs.count - 1)) * CGFloat(72))
         .background(Color.clear)
         .overlay(
             Group {
                 if showToast {
                     Text("Maximum of \(maxTabs) tabs reached")
+                        .padding()
+                        .background(Color.black.opacity(0.8))
+                        .foregroundColor(.white)
+                        .cornerRadius(24)
+                        .transition(.opacity)
+                        .zIndex(1)
+                }
+                if showHelp {
+                    Text("Help")
                         .padding()
                         .background(Color.black.opacity(0.8))
                         .foregroundColor(.white)
@@ -103,6 +100,14 @@ struct ContentView: View {
             }
         }
     }
+
+    private func onHelp() {
+        showHelp = true
+        DispatchQueue.main.asyncAfter(deadline: .now() + 2) {
+            showHelp = false
+        }
+    }
+
     private func addTab() {
         if tabs.count >= maxTabs {
             showToast = true
@@ -136,10 +141,30 @@ struct ContentView: View {
             let newIndex = focusedIndex + direction
             if (0..<tabs.count).contains(newIndex) {
                 focusedIndex = -1
-                DispatchQueue.main.asyncAfter(deadline: .now() + 1) {
+                DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
                     focusedIndex = newIndex
                 }
             }
         }
     }
+    
+    @ViewBuilder
+    private func tabView(at index: Int) -> some View {
+        let isFocusedBinding = Binding(
+            get: { focusedIndex == index },
+            set: { if $0 { focusedIndex = index } }
+        )
+
+        TabView(
+            isFocused: isFocusedBinding,
+            allClientTools: allClientTools,
+            onHelp: { self.onHelp() },
+            onSizeChange: { extraHeight in
+                onSizeChange(extraHeight)
+            }
+        )
+        .environmentObject(mcp)
+        .animation(.easeInOut, value: focusedIndex)
+    }
+
 }

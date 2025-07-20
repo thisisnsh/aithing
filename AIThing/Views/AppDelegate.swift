@@ -16,7 +16,7 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate {
     var hotKey: HotKey?
 
     let width: CGFloat = 1000
-    let height: CGFloat = 100
+    let height: CGFloat = 64
 
     let mcp = MCPManager()
 

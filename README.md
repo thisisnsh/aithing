@@ -7,20 +7,10 @@ Missing Features
 - No black list apps 
 - No screen recording / audio
 - No separate API key for tabs
-
-- make multi context multi mcp work
-    - convert contexxt input/ouput list to object list
-    - Retain current tasks history
-    - on switch app bring old context and show old context is loaded
-    - config dropdown to set context for the agent
-    - open ai thing from the app and the context is fixed
-    - do not change app context in between the conversation
-    - keyboard based switch of multiple instances
-- help sheet    
 - No CMD+- to change font size
 
 - get tab title 
-
+- help sheet    
  
 
 
