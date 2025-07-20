@@ -15,7 +15,7 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate {
     var floatingWindow: NonActivatingPanel!
     var hotKey: HotKey?
 
-    let width: CGFloat = 640
+    let width: CGFloat = 1000
     let height: CGFloat = 100
 
     let appContext = AppContext()
@@ -74,7 +74,7 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate {
     }
 
     func setupHotKey() {
-        hotKey = HotKey(key: .return, modifiers: [.command])
+        hotKey = HotKey(key: .space, modifiers: [.control])
         hotKey?.keyDownHandler = { [weak self] in
             self?.toggleWindow()
         }

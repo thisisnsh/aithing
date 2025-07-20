@@ -46,15 +46,15 @@ class MCPClientManager: ObservableObject {
         logger = Logger(label: "com.thisisnsh.mac.AIThing")
     }
 
-    func connect(appName: String) async {
+    func connect(clientName: String) async {
         do {
-            let appName = appName.lowercased()
-            guard let client = clients[appName] else { return }
-            guard let executableURL = executableURL[appName] else { return }
-            guard let arguments = arguments[appName] else { return }
-            guard let serverInputPipe = serverInputPipe[appName] else { return }
-            guard let serverOutputPipe = serverOutputPipe[appName] else { return }
-            guard let process = process[appName] else { return }
+            let clientName = clientName.lowercased()
+            guard let client = clients[clientName] else { return }
+            guard let executableURL = executableURL[clientName] else { return }
+            guard let arguments = arguments[clientName] else { return }
+            guard let serverInputPipe = serverInputPipe[clientName] else { return }
+            guard let serverOutputPipe = serverOutputPipe[clientName] else { return }
+            guard let process = process[clientName] else { return }
 
             guard let logger = logger else { return }
 
@@ -80,16 +80,16 @@ class MCPClientManager: ObservableObject {
             print("Process launched")
 
             try await client.connect(transport: transport)
-            print("Connected to MCP server for \(appName)")
+            print("Connected to MCP server for \(clientName)")
         } catch {
             print("Error in connecting: \(error.localizedDescription)")
         }
     }
 
-    func getTools(appName: String) async -> [[String: Any]] {
-        let appName = appName.lowercased()
+    func getTools(clientName: String) async -> [[String: Any]] {
+        let clientName = clientName.lowercased()
         do {
-            guard let client = clients[appName] else {
+            guard let client = clients[clientName] else {
                 return []
             }
 
@@ -101,10 +101,10 @@ class MCPClientManager: ObservableObject {
         }
     }
 
-    func callTools(appName: String, name: String, input: String) async -> [[String: Any]] {
-        let appName = appName.lowercased()
+    func callTools(clientName: String, name: String, input: String) async -> [[String: Any]] {
+        let clientName = clientName.lowercased()
         do {
-            guard let client = clients[appName] else {
+            guard let client = clients[clientName] else {
                 return []
             }
 

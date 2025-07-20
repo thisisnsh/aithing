@@ -13,175 +13,126 @@ import SwiftUI
 struct ContentView: View {
     @EnvironmentObject var appContext: AppContext
 
-    @State private var contentMinHeight: CGFloat = 100
-    @State private var contentHeight: CGFloat = 100
-    @State private var contentMaxHeight: CGFloat = 700
-    @State private var debounceWorkItem: DispatchWorkItem?
-    @State private var isLoading: Bool = false
-    @State private var isThinkingBlinking = true
-    @State private var isClipboardContext = false
-
-    @State private var modelContext: String = ""
-    @State private var modelInput: [[String: Any]] = []
-    @State private var modelOutput: String = ""
-    @State private var modelOutputError: String = ""
-
-    @State private var query = ""
-
-    @State private var resizeWorkItem: DispatchWorkItem?
-    @State private var selectedContext = ""
-    @State private var selectedContextTools: [[String: Any]] = []
-    @State private var showResponseArea = false
-
     var onClose: () -> Void
     var onSizeChange: (CGFloat) -> Void
 
+    @State private var width: CGFloat = 100
+    @State private var inputHeight: CGFloat = 48
+    @State private var responseHeightMin: CGFloat = 100
+    @State private var responseHeightMax: CGFloat = 700
+    @State private var responseHeight: [String: CGFloat] = [:]  // default 100
+
+    @State private var isThinking: [String: Bool] = [:]  // default false
+    @State private var isThinkingBlinking: [String: Bool] = [:]  // default true
+
+    @State private var modelInput: [String: [[String: Any]]] = [:]  // key = tab id // default []
+    @State private var modelOutput: [String: String] = [:]  // key = tab id // default ""
+    @State private var modelOutputError: [String: String] = [:]  // key = tab id // default ""
+    @State private var modelTools: [String: [[String: Any]]] = [:]  // key = client // default []
+    @State private var modelClients: [String] = []
+
+    @State private var query: [String: String] = [:]  // key = tab id // default ""
+    @State private var showResponseArea: [String: Bool] = [:]  // key = tab id // default false
+
+    @State private var currentTab: String = ""
+
     var body: some View {
         VStack {
-            statusHeaderView()
             ZStack {
-                BlurredBackground().contentShape(Rectangle())  // clickable for dragging
+                BlurredBackground().contentShape(Rectangle())
                 VStack(spacing: 0) {
                     inputView()
-                    if showResponseArea {
+                    if showResponseArea[currentTab] ?? false {
                         responseView()
                     }
                 }
             }
             .frame(
-                width: 640,
-                height: showResponseArea
-                    ? 48 + min(max(contentMinHeight, contentHeight), contentMaxHeight) : 48
+                width: width,
+                height: inputHeight + getResponseHeight()
             )
-            .background(Color.clear)  // make the full panel draggable
+            .background(Color.clear)
             .overlay(
+                // todo: Blink the tab
                 Group {
-                    if isLoading {
+                    if isThinking[currentTab] ?? false {
                         AnimatedGradientBorder(
-                            cornerRadius: showResponseArea ? 24 : 32,
+                            cornerRadius: getCornerRadius(),
                             lineWidth: 2
                         )
+                    } else {
+                        RoundedRectangle(cornerRadius: getCornerRadius())
+                            .stroke(Color.white, lineWidth: 1.5)
                     }
                 }
             )
-            .cornerRadius(showResponseArea ? 24 : 32)
+            .cornerRadius(getCornerRadius())
             .onAppear {
                 NSEvent.addLocalMonitorForEvents(matching: .keyDown) { event in
-                    if event.modifierFlags.contains(.command) {
-                        if event.charactersIgnoringModifiers == "n" {
-                            selectedContext = appContext.appName
-                            return nil
-                        } else if event.charactersIgnoringModifiers == "m" {
-                            selectedContext = "MacOS"
-                            return nil
+                    if event.modifierFlags.contains(.control) {
+                        switch event.keyCode {
+                        case 17:  // T key
+                            print("T pressed")
+                            addTab()
+                        case 13:  // W key
+                            print("W pressed")
+                            closeTab()
+                        case 43:  // Left angular arrow
+                            print("< pressed")
+                            moveFocus(-1)
+                        case 47:  // Right angular bracket
+                            print("> pressed")
+                            moveFocus(1)
+                        default:
+                            break
                         }
-
                     }
                     return event
                 }
             }
-            .onChange(of: appContext.appName) {
-                if selectedContext.isEmpty || selectedContext != "MacOS" {
-                    selectedContext = appContext.appName
-                }
-
-                Task {
-                    guard let mcpClientManager = appContext.mcpClientManager else {
-                        return
-                    }
-                    selectedContextTools = await mcpClientManager.getTools(appName: selectedContext)
-                }
-            }
-            .onChange(of: selectedContext) {
-                Task {
-                    guard let mcpClientManager = appContext.mcpClientManager else {
-                        return
-                    }
-                    selectedContextTools = await mcpClientManager.getTools(appName: selectedContext)
-                }
-            }
             .task {
-                guard let mcpClientManager = appContext.mcpClientManager else {
-                    return
+                guard let mcp = appContext.mcpClientManager else { return }
+
+                // Parallel fetching using async let
+                var results: [(String, [[String: Any]])] = []
+                await withTaskGroup(of: (String, [[String: Any]]).self) { group in
+                    for (clientName, _) in mcp.clients {
+                        group.addTask {
+                            let tools = await mcp.getTools(clientName: clientName)
+                            return (clientName, tools)
+                        }
+                    }
+
+                    for await (clientName, tools) in group {
+                        modelTools[clientName] = tools
+                    }
                 }
-                selectedContextTools =
-                    await mcpClientManager
-                    .getTools(appName: selectedContext.isEmpty ? "MacOS" : selectedContext)
             }
         }
     }
 
     // MARK: - Private SubViews
 
-    private func statusHeaderView() -> some View {
-        HStack {
-            StatusPill(
-                text: "AI Agent",
-                help: "Status of AI Agent",
-                status: appContext.mcpStatus(),
-            )
-            if isClipboardContext {
-                StatusPill(
-                    text: "Clipboard Context",
-                    help: "Copied text on clipboard will be used as context for the model.",
-                    status: nil,
-                    showAnimation: true
-                )
-            } else {
-                StatusPill(
-                    text: "Selection Context",
-                    help: "Selected text on the screen will be used as context for the model.",
-                    status: nil,
-                    showAnimation: true
-                )
-            }
-        }
-    }
-
     private func inputView() -> some View {
         HStack(spacing: 8) {
-            Menu {
-                Button(appContext.appName) { selectedContext = appContext.appName }
-                    .keyboardShortcut("n", modifiers: [.command])  // ⌘+N
-
-                Button("MacOS") { selectedContext = "MacOS" }
-                    .keyboardShortcut("m", modifiers: [.command])  // ⌘+M
-
-            } label: {
-                Text(selectedContext)
-                    .foregroundColor(.white.opacity(0.5))
-                    .font(.system(size: 14, weight: .regular, design: .monospaced))
-                    .padding(.horizontal, 2)
-                    .help("Scope of the context provided to the model.")
-            }
-            .menuStyle(BorderlessButtonMenuStyle())
-            .fixedSize()
+            Image("logo")
+                .resizable()
+                .frame(width: 24, height: 24)
 
             FocusableTextField(
-                text: $query,
+                text: Binding(
+                    get: { query[currentTab] ?? "" },
+                    set: { query[currentTab] = $0 }
+                ),
                 onCommit: {
                     Task {
                         await handleQuery()
                     }
                 }
             )
-            .onChange(of: query) {
-                debounceWorkItem?.cancel()
 
-                let task = DispatchWorkItem {
-                    if appContext.getSelectedText() == nil {
-                        isClipboardContext = true
-                    } else {
-                        isClipboardContext = false
-                    }
-                }
-
-                debounceWorkItem = task
-                DispatchQueue.main.asyncAfter(deadline: .now() + 0.1, execute: task)
-            }
-
-            Button(action: handleClose) {
-                Image(systemName: "xmark.circle.fill")
+            Button(action: handleHelp) {
+                Image(systemName: "questionmark.circle.fill")
                     .resizable()
                     .frame(width: 18, height: 18)
                     .foregroundColor(.white.opacity(0.5))
@@ -197,26 +148,27 @@ struct ContentView: View {
         ScrollViewReader { proxy in
             ScrollView {
                 VStack(alignment: .leading, spacing: 0) {
-                    if isLoading {
+                    if getIsThinking() {
                         Text("Thinking...")
                             .foregroundColor(.white)
                             .font(.system(size: 14))
                             .frame(maxWidth: .infinity, alignment: .leading)
                             .padding(.horizontal, 24)
                             .padding(.vertical, 16)
-                            .opacity(isThinkingBlinking ? 1 : 0.4)
+                            .opacity(getIsThinkingBlinking() ? 1 : 0.4)
                             .onAppear {
                                 withAnimation(
                                     .easeInOut(duration: 0.6).repeatForever(autoreverses: true)
                                 ) {
-                                    isThinkingBlinking.toggle()
+                                    toggleIsThinkingBlinking()
                                 }
                             }
                     } else {
                         MarkdownText(
-                            text: modelOutputError.isEmpty ? modelOutput : modelOutputError
+                            text: getModelOutputError().isEmpty
+                                ? getModelOutput() : getModelOutputError()
                         )
-                        .foregroundColor(modelOutputError.isEmpty ? .white : .red)
+                        .foregroundColor(getModelOutputError().isEmpty ? .white : .red)
                         .font(.system(size: 14))
                         .frame(maxWidth: .infinity, alignment: .leading)
                         .padding(.horizontal, 24)
@@ -235,19 +187,19 @@ struct ContentView: View {
                 )
             }
             .frame(
-                height: min(max(contentMinHeight, contentHeight), contentMaxHeight)
-            )  // clamp between 200–1000
+                height: getResponseHeight()
+            )
             .background(Color.black.opacity(0.3))
             .onPreferenceChange(ViewHeightKey.self) { height in
-                let checkedHeight = min(max(contentMinHeight, height), contentMaxHeight)
+                let checkedHeight = min(max(responseHeightMin, height), responseHeightMax)
 
-                if contentHeight < checkedHeight {
-                    contentHeight = checkedHeight
-                    onSizeChange(checkedHeight)
+                if responseHeight[currentTab] ?? 100 < checkedHeight {
+                    responseHeight[currentTab] = checkedHeight
+                    onSizeChange(responseHeight[currentTab] ?? 100)
                 }
             }
             .onChange(of: modelOutput) {
-                if contentHeight == contentMaxHeight {
+                if responseHeight[currentTab] == responseHeightMax {
                     DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
                         withAnimation {
                             proxy.scrollTo("BOTTOM", anchor: .bottom)
@@ -260,43 +212,84 @@ struct ContentView: View {
 
     // MARK: - Private Functions
 
+    private func getResponseHeight() -> CGFloat {
+        var height: CGFloat = 0
+        if showResponseArea[currentTab] ?? false {
+            height = min(
+                max(responseHeightMin, responseHeight[currentTab] ?? 100),
+                responseHeightMax
+            )
+        }
+        return height
+    }
+
+    private func getCornerRadius() -> CGFloat {
+        return showResponseArea[currentTab] ?? false ? 24 : 32
+    }
+
+    private func getIsThinking() -> Bool {
+        return isThinking[currentTab] ?? false
+    }
+
+    private func getIsThinkingBlinking() -> Bool {
+        return isThinkingBlinking[currentTab] ?? false
+    }
+
+    private func toggleIsThinkingBlinking() {
+        if isThinkingBlinking.keys.contains(currentTab) {
+            isThinkingBlinking[currentTab] = !isThinkingBlinking[currentTab]!
+        }
+    }
+
+    private func getModelOutput() -> String {
+        return modelOutput[currentTab] ?? ""
+    }
+
+    private func getModelOutputError() -> String {
+        return modelOutputError[currentTab] ?? ""
+    }
+
     private func handleQuery() async {
-        let trimmed = query.trimmingCharacters(in: .whitespacesAndNewlines)
+        let trimmed = (query[currentTab] ?? "").trimmingCharacters(in: .whitespacesAndNewlines)
         guard !trimmed.isEmpty else { return }
 
-        modelOutput = ""
-        modelOutputError = ""
-        isLoading = true
-        showResponseArea = true
-        contentHeight = contentMinHeight
-        onSizeChange(contentHeight)
+        modelOutput[currentTab] = ""
+        modelOutputError[currentTab] = ""
+        isThinking[currentTab] = true
+        showResponseArea[currentTab] = true
+        responseHeight[currentTab] = responseHeightMin
+        onSizeChange(responseHeight[currentTab] ?? 100)
 
         await callModel(query: trimmed, previousContext: "")
     }
 
     private func handleClose() {
-        query = ""
-        modelOutput = ""
-        modelOutputError = ""
-        modelInput = []
-        isLoading = false
-        showResponseArea = false
-        contentHeight = contentMinHeight
-        onSizeChange(0.0)
+        query[currentTab] = ""
+        modelOutput[currentTab] = ""
+        modelOutputError[currentTab] = ""
+        modelInput[currentTab] = []
+        isThinking[currentTab] = false
+        showResponseArea[currentTab] = false
+        responseHeight[currentTab] = responseHeightMin
+        onSizeChange(responseHeight[currentTab] ?? 100)
         onClose()
+    }
+
+    private func handleHelp() {
+        // todo
     }
 
     private func callModel(query: String?, previousContext: String) async {
         return await fakeData()
-        
+
         let model = "claude-sonnet-4-20250514"
 
         guard
             let apiKey = Env.get("ANTHROPIC_API_KEY_" + appContext.appName.uppercased())
                 ?? Env.get("ANTHROPIC_API_KEY")
         else {
-            isLoading = false
-            modelOutputError = "Missing LLM API Key"
+            isThinking[currentTab] = false
+            modelOutputError[currentTab] = "Missing LLM API Key"
             return
         }
 
@@ -362,7 +355,7 @@ struct ContentView: View {
 
         ]
         print("-------- messages: \((body["messages"] as! [Any]).last ?? "")")
-//        print("system: \(body["system"] as! [Any])")
+        //        print("system: \(body["system"] as! [Any])")
         print("-------- tools_count: \((body["tools"] as! [Any]).count)")
         request.httpBody = try? JSONSerialization.data(withJSONObject: body)
 
@@ -371,13 +364,13 @@ struct ContentView: View {
 
             guard let httpResponse = response as? HTTPURLResponse
             else {
-                isLoading = false
+                isThinking = false
                 modelOutputError = "Invalid response"
                 return
             }
 
             if httpResponse.statusCode != 200 {
-                isLoading = false
+                isThinking = false
                 var error = ""
                 for try await line in stream.lines {
                     error += line
@@ -392,7 +385,7 @@ struct ContentView: View {
             var finalToolUseName = ""
 
             for try await line in stream.lines {
-//                print("-------- line: \(line)")
+                //                print("-------- line: \(line)")
                 if line.starts(with: "data: ") {
                     let jsonString = line.replacingOccurrences(of: "data: ", with: "")
 
@@ -430,7 +423,7 @@ struct ContentView: View {
                         switch delta_type {
                         case "text_delta":
                             guard let text = delta["text"] as? String else { continue }
-                            isLoading = false
+                            isThinking = false
                             for char in text {
                                 finalResponse += String(char)
                                 await MainActor.run {
@@ -523,7 +516,7 @@ struct ContentView: View {
             }
         } catch {
             await MainActor.run {
-                isLoading = false
+                isThinking = false
                 modelOutputError =
                     "Error streaming Claude response: \(error.localizedDescription)"
             }
@@ -583,7 +576,7 @@ struct ContentView: View {
 
             lastContent["cache_control"] = [
                 "type": "ephemeral",
-                "ttl": "1h",
+                "ttl": "5m",
             ]
             contentArray[contentArray.count - 1] = lastContent
             last["content"] = contentArray
@@ -597,7 +590,7 @@ struct ContentView: View {
 
             last["cache_control"] = [
                 "type": "ephemeral",
-                "ttl": "1h",
+                "ttl": "5m",
             ]
 
             updated[updated.count - 1] = last
@@ -610,7 +603,7 @@ struct ContentView: View {
     }
 
     private func fakeData() async {
-        isLoading = false
+        isThinking[currentTab] = false
 
         let fakeContent = """
             "Vishal" can refer to several things:
