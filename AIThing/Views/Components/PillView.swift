@@ -20,6 +20,7 @@ struct PillView: View {
                     .font(.system(size: 10, weight: .regular, design: .monospaced))
                     .foregroundColor(.white)
                     .help(help)
+                    .lineLimit(1)
             }
             .padding(.horizontal, 8)
             .padding(.vertical, 4)

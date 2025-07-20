@@ -19,7 +19,7 @@ struct TabView: View {
     var onSizeChange: (CGFloat) -> Void
 
     @State private var imageName: String = "Logo"
-    @State private var title: String = ""
+    @State private var title: String = "AI Thing"
 
     @State private var responseHeightMin: CGFloat = 100
     @State private var responseHeightMax: CGFloat = 700
@@ -37,7 +37,11 @@ struct TabView: View {
 
     var body: some View {
         VStack(alignment: .leading, spacing: 8) {
-            PillView(text: title, help: title)
+//            PillView(text: title, help: title)
+//                .opacity(isFocused ? 1 : 0)
+//                .animation(.easeInOut(duration: 0.25), value: isFocused)
+//                .padding(.horizontal, 16)
+
             VStack(spacing: 0) {
                 inputView()
                 if isFocused, showResponseArea {
@@ -205,9 +209,9 @@ struct TabView: View {
         onSizeChange(getResponseHeight())
 
         await withTaskGroup(of: Void.self) { group in
-            group.addTask {
-                await getTabTitle(query: query)
-            }
+//            group.addTask {
+//                await getTabTitle(query: query)
+//            }
             group.addTask {
                 await callModel(query: trimmed)
             }
@@ -522,8 +526,11 @@ struct TabView: View {
     }
 
     private func getTabTitle(query: String) async {
+        title = "What is Life?"
+        return;
+
         if query.isEmpty {
-            title = "Tab"
+            title = "New Tab"
             return
         }
 
@@ -549,7 +556,7 @@ struct TabView: View {
             modelInput.append([
                 "role": "user",
                 "content": [
-                    ["type": "text", "text": "Create title for following query."],
+                    ["type": "text", "text": "Create title for following query in 10 tokens."],
                     ["type": "text", "text": buildQuery(query: query)],
                 ],
             ])
@@ -557,9 +564,10 @@ struct TabView: View {
 
         let body: [String: Any] = [
             "model": model,
-            "max_tokens": 10,
+            "max_tokens": 15,
             "temperature": 0.7,
             "messages": modelInput,
+            "system": "Return only 1 response in max 10 tokens.",
         ]
 
         request.httpBody = try? JSONSerialization.data(withJSONObject: body)
@@ -568,12 +576,12 @@ struct TabView: View {
             let (data, response) = try await URLSession.shared.data(for: request)
 
             guard let httpResponse = response as? HTTPURLResponse else {
-                title = "Tab"
+                title = "New Tab"
                 return
             }
 
             guard httpResponse.statusCode == 200 else {
-                title = "Tab"
+                title = "New Tab"
                 return
             }
 
@@ -583,18 +591,18 @@ struct TabView: View {
                 let firstContent = contentArray.first,
                 let text = firstContent["text"] as? String
             else {
-                title = "Tab"
+                title = "New Tab"
                 return
             }
 
             await MainActor.run {
-                title = "Tab: \(text)"
+                title = "\(text)"
                 print(title)
             }
 
         } catch {
             await MainActor.run {
-                title = "Tab"
+                title = "New Tab"
             }
         }
 
