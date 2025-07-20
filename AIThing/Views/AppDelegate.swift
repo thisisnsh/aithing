@@ -49,7 +49,8 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate {
             onClose: { self.toggleWindow() },
             onSizeChange: { extraHeight in
                 self.resizePanel(extraHeight: extraHeight)
-            }
+            },
+            getExtraSize: { return self.getExtraHeightPanel() }
         ).environmentObject(mcp)
 
         let hostingView = NSHostingView(rootView: contentView)
@@ -114,5 +115,10 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate {
         frame.size = targetSize
 
         floatingWindow.setFrame(frame, display: true, animate: false)
+    }
+    
+    func getExtraHeightPanel() -> CGFloat {
+        var frame = floatingWindow.frame
+        return frame.size.height - height
     }
 }

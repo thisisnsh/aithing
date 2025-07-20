@@ -16,7 +16,8 @@ struct ContentView: View {
 
     var onClose: () -> Void
     var onSizeChange: (CGFloat) -> Void
-
+    var getExtraSize: () -> CGFloat
+    
     @State private var allClientTools: [String: [[String: Any]]] = [:]
 
     @State private var focusedIndex: Int = 0
@@ -25,6 +26,18 @@ struct ContentView: View {
     @State private var tabs: [TabItem] = []
 
     @State private var maxTabs: Int = 5
+
+    private var helpText: String {
+        return """
+            ## Help Sheet
+
+            | Command | Description |   | Command | Description | 
+            | ------- | ----------- | - | ------- | ----------- | 
+            | ` Control (⌃) + H ` | Show Help | | ` Control (⌃) + < ` | Move to Left Tab  |
+            | ` Control (⌃) + N ` | New Tab   | | ` Control (⌃) + > ` | Move to Right Tab |
+            | ` Control (⌃) + W ` | Close Tab |
+            """
+    }
 
     var body: some View {
         ZStack {
@@ -41,20 +54,24 @@ struct ContentView: View {
                 if showToast {
                     Text("Maximum of \(maxTabs) tabs reached")
                         .padding()
-                        .background(Color.black.opacity(0.8))
+                        .background(.ultraThinMaterial)
                         .foregroundColor(.white)
                         .cornerRadius(24)
                         .transition(.opacity)
                         .zIndex(1)
+                        .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top)
+                        .padding(16)
                 }
                 if showHelp {
-                    Text("Help")
+                    MarkdownText(text: helpText)
                         .padding()
-                        .background(Color.black.opacity(0.8))
+                        .background(.ultraThinMaterial)
                         .foregroundColor(.white)
                         .cornerRadius(24)
                         .transition(.opacity)
                         .zIndex(1)
+                        .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top)
+                        .padding(16)
                 }
             },
             alignment: .center
@@ -66,6 +83,8 @@ struct ContentView: View {
             NSEvent.addLocalMonitorForEvents(matching: .keyDown) { event in
                 if event.modifierFlags.contains(.control) {
                     switch event.keyCode {
+                    case 4:  // H key
+                        onHelp()
                     case 45:  // N key
                         addTab()
                     case 13:  // W key
@@ -103,8 +122,11 @@ struct ContentView: View {
 
     private func onHelp() {
         showHelp = true
+        let extraHeight = getExtraSize()
+        onSizeChange(200)
         DispatchQueue.main.asyncAfter(deadline: .now() + 2) {
             showHelp = false
+            onSizeChange(extraHeight)
         }
     }
 
@@ -147,7 +169,7 @@ struct ContentView: View {
             }
         }
     }
-    
+
     @ViewBuilder
     private func tabView(at index: Int) -> some View {
         let isFocusedBinding = Binding(

@@ -10,9 +10,8 @@ Missing Features
 - No CMD+- to change font size
 
 - get tab title 
-- help sheet    
- 
 
+ 
 
 
 
