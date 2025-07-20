@@ -17,7 +17,7 @@ struct ContentView: View {
     var onClose: () -> Void
     var onSizeChange: (CGFloat) -> Void
     var getExtraSize: () -> CGFloat
-    
+
     @State private var allClientTools: [String: [[String: Any]]] = [:]
 
     @State private var focusedIndex: Int = 0
@@ -33,9 +33,9 @@ struct ContentView: View {
 
             | Command | Description |   | Command | Description | 
             | ------- | ----------- | - | ------- | ----------- | 
-            | ` Control (⌃) + H ` | Show Help | | ` Control (⌃) + < ` | Move to Left Tab  |
-            | ` Control (⌃) + N ` | New Tab   | | ` Control (⌃) + > ` | Move to Right Tab |
-            | ` Control (⌃) + W ` | Close Tab |
+            | ` Control (⌃) + Space ` | Show/Hide AI Thing | | ` Control (⌃) + H ` | Show Help | 
+            | ` Control (⌃) + N `     | New Tab            | | ` Control (⌃) + W ` | Close Tab | 
+            | ` Control (⌃) + > `     | Move to Right Tab  | | ` Control (⌃) + < ` | Move to Left Tab  |
             """
     }
 
@@ -51,21 +51,14 @@ struct ContentView: View {
         .background(Color.clear)
         .overlay(
             Group {
-                if showToast {
-                    Text("Maximum of \(maxTabs) tabs reached")
+                if showToast || showHelp {
+                    MarkdownText(text: showHelp ? helpText : "Maximum of \(maxTabs) tabs reached")
                         .padding()
                         .background(.ultraThinMaterial)
-                        .foregroundColor(.white)
-                        .cornerRadius(24)
-                        .transition(.opacity)
-                        .zIndex(1)
-                        .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top)
-                        .padding(16)
-                }
-                if showHelp {
-                    MarkdownText(text: helpText)
-                        .padding()
-                        .background(.ultraThinMaterial)
+                        .overlay {
+                            RoundedRectangle(cornerRadius: 24)
+                                .stroke(Color.white, lineWidth: 1.5)
+                        }
                         .foregroundColor(.white)
                         .cornerRadius(24)
                         .transition(.opacity)

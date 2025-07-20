@@ -1,15 +1,17 @@
 # AI Thing
 
 Missing Features
-- No history 
+- No History 
+- No Black list apps 
+- No Screen recording / audio
 - No BYOK
-- No easy MCP integration 
-- No black list apps 
-- No screen recording / audio
-- No separate API key for tabs
 - No CMD+- to change font size
 
-- get tab title 
+Next 
+- No Website
+- No Separate API key for Tabs
+- No Google MCP 
+- No Release
 
  
 
