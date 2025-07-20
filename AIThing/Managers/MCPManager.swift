@@ -1,5 +1,5 @@
 //
-//  MCPClientManager.swift
+//  MCPManager.swift
 //  AIThing
 //
 //  Created by Nishant Singh Hada on 7/13/25.
@@ -10,7 +10,7 @@ import Logging
 import MCP
 import System
 
-class MCPClientManager: ObservableObject {
+class MCPManager: ObservableObject {
     var clients: [String: Client] = [:]
     var executableURL: [String: String] = [:]
     var arguments: [String: [String]] = [:]

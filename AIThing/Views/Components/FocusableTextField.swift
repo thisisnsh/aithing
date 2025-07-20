@@ -57,7 +57,17 @@ struct FocusableTextField: NSViewRepresentable {
         textField.isEditable = true
         textField.isSelectable = true
         textField.isHighlighted = false
-        textField.placeholderString = "Ask anything on this AI thing..."
+
+        let placeholder = "Ask anything on this AI thing..."
+        let attributes: [NSAttributedString.Key: Any] = [
+            .foregroundColor: NSColor.white.withAlphaComponent(0.7),
+            .font: NSFont.systemFont(ofSize: 18, weight: .medium)
+        ]
+
+        textField.placeholderAttributedString = NSAttributedString(
+            string: placeholder,
+            attributes: attributes
+        )
 
         DispatchQueue.main.async {
             textField.becomeFirstResponder()

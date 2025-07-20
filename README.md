@@ -6,7 +6,7 @@ Missing Features
 - No easy MCP integration 
 - No black list apps 
 - No screen recording / audio
-
+- No separate API key for tabs
 
 - make multi context multi mcp work
     - convert contexxt input/ouput list to object list
@@ -19,7 +19,7 @@ Missing Features
 - help sheet    
 - No CMD+- to change font size
 
-
+- get tab title 
 
  
 

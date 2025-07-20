@@ -18,8 +18,7 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate {
     let width: CGFloat = 1000
     let height: CGFloat = 100
 
-    let appContext = AppContext()
-    let mcpClientManager = MCPClientManager()
+    let mcp = MCPManager()
 
     func applicationDidFinishLaunching(_ notification: Notification) {
         NSApp.setActivationPolicy(.accessory)  // background-style app
@@ -36,9 +35,6 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate {
     }
 
     @objc func appDidActivate(_ note: Notification) {
-        DispatchQueue.main.async {
-            self.appContext.refresh()
-        }
     }
 
     func setupWindow() {
@@ -54,7 +50,7 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate {
             onSizeChange: { extraHeight in
                 self.resizePanel(extraHeight: extraHeight)
             }
-        ).environmentObject(appContext)
+        ).environmentObject(mcp)
 
         let hostingView = NSHostingView(rootView: contentView)
 
@@ -66,10 +62,10 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate {
         floatingWindow.center()
         floatingWindow.orderFrontRegardless()  // no app activation
 
-        self.appContext.mcpClientManager = self.mcpClientManager
         Task {
-            await mcpClientManager.connect(appName: "MacOS")
-            await mcpClientManager.connect(appName: "Xcode")
+            for client in mcp.clients.keys {
+                await mcp.connect(clientName: client)
+            }
         }
     }
 
@@ -102,9 +98,6 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate {
             }
             floatingWindow.alphaValue = 0
             floatingWindow.makeKeyAndOrderFront(nil)
-
-            appContext.markAppVisible()
-            appContext.updateClipboardIfRecent()
 
             NSAnimationContext.runAnimationGroup { context in
                 context.duration = 0.2
