@@ -142,12 +142,12 @@ struct ContentView: View {
         guard tabs.count > 1 else { return }  // Don't remove the last tab
 
         withAnimation {
-            tabs.remove(at: focusedIndex)
-
             // Adjust focus index safely
             if focusedIndex >= tabs.count {
                 focusedIndex = tabs.count - 1
             }
+            
+            tabs.remove(at: focusedIndex)
         }
     }
 

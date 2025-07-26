@@ -79,10 +79,10 @@ struct TabView: View {
 
     private func inputView() -> some View {
         HStack(spacing: 8) {
-            Image(systemName: "globe")
-                .resizable()
+            LogoShape()
+                .fill(.white.opacity(0.5))
                 .scaledToFit()
-                .frame(width: 18, height: 18)
+                .frame(width: isFocused ? 32 : 24)
 
             if isFocused {
                 FocusableTextField(
@@ -106,7 +106,7 @@ struct TabView: View {
             }
         }
         .frame(height: 32)
-        .padding(.horizontal, 24)
+        .padding(.horizontal, isFocused ? 24 : 20)
         .padding(.vertical, 8)
     }
 

@@ -1,19 +1,34 @@
 # AI Thing
 
+
 Missing Features
 - No History 
 - No Black list apps 
 - No Screen recording / audio
-- No BYOK
 - No CMD+- to change font size
-
-Next 
-- No Website
-- No Separate API key for Tabs
 - No Google MCP 
-- No Release
-
+- No Theme Change
  
+Saturday 
+- AT Logo
+- Fix Background
+- Screen capture and send 
+- Multiple API Keys 
+- Bring Your Own Claude Key
+- Claude MCP Style 
+- OAuth Claude MCP Style  
+
+
+Sunday
+- Elicitation 
+- Video
+- Release
+
+
+Monday
+- Website aithing.dev
+
+
 
 
 
