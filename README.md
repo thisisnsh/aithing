@@ -11,7 +11,6 @@ Missing Features
  
 Saturday 
 - Screen capture and send 
-- Multiple API Keys 
 - Bring Your Own Claude Key
 - Claude MCP Style 
 - OAuth Claude MCP Style  
