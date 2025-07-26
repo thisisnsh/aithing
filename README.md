@@ -21,7 +21,6 @@ Saturday
 - Get API from Firebase
 
 - Fix already image search bug
-- Hide from screenshot
 
 Sunday
 - Fix tab open animation. Not opening from top but from center. When going from low to high height. 
