@@ -12,6 +12,7 @@ Missing Features
  
 Saturday 
 - Screen send 
+- Control to Command
 - Highlight /this
 - Create Settings
     - Bring Your Own Claude Key
@@ -19,13 +20,13 @@ Saturday
     - OAuth Claude MCP Style  
 - Login Firebase
 - Get API from Firebase
-- Remove accessiblity permission
 
-- Fix tab open animation. Not opening from top but from center
-- Fix tab closure
 - Fix already image search bug
+- Hide from screenshot
+- Do not stop blinking animation until model ends 
 
 Sunday
+- Fix tab open animation. Not opening from top but from center. When going from low to high height. 
 - Elicitation 
 - Video
 - Release

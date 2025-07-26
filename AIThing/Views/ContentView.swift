@@ -26,6 +26,7 @@ struct ContentView: View {
     @State private var tabs: [TabItem] = []
 
     @State private var maxTabs: Int = 5
+    @State private var width: CGFloat = 640 + 48
 
     private var helpText: String {
         return """
@@ -42,12 +43,14 @@ struct ContentView: View {
     var body: some View {
         ZStack {
             HStack(alignment: .top, spacing: 8) {
-                ForEach(tabs.indices, id: \.self) { index in
+                Color.clear.frame(width: 40)
+                ForEach(Array(tabs.enumerated()), id: \.element.id) { index, tab in
                     tabView(at: index)
                 }
+                Color.clear.frame(width: 72)
             }
         }
-        .frame(width: CGFloat(640) + CGFloat((tabs.count - 1)) * CGFloat(72))
+        .frame(width: CGFloat(640 + 48) + CGFloat((tabs.count)) * CGFloat(72))
         .background(Color.clear)
         .overlay(
             Group {
@@ -144,10 +147,12 @@ struct ContentView: View {
     }
 
     private func closeTab() {
-        guard tabs.count > 1 else { return }  // Don't remove the last tab
+        let indexToRemove = focusedIndex
+        
+        if tabs.count == 1 { addTab() }  // Don't remove the last tab
 
         withAnimation {
-            tabs.remove(at: focusedIndex)
+            tabs.remove(at: indexToRemove)
 
             // Adjust focus index safely
             if focusedIndex >= tabs.count {

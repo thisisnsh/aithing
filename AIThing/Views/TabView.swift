@@ -87,7 +87,7 @@ struct TabView: View {
     private func inputView() -> some View {
         HStack(spacing: 8) {
             LogoShape()
-                .fill(.white)
+                .fill(isFocused ? .white : .white.opacity(0.5))
                 .scaledToFit()
                 .frame(width: isFocused ? 32 : 24)
 
@@ -126,8 +126,8 @@ struct TabView: View {
                             .resizable()
                             .scaledToFit()
                             .frame(
-                                maxWidth: isZoomedModelInputImage ? .infinity : 300,
-                                maxHeight: .infinity,
+                                maxWidth: isZoomedModelInputImage ? .infinity : 100,
+                                alignment: .leading
                             )
                             .clipShape(RoundedRectangle(cornerRadius: 8))
                             .overlay {
