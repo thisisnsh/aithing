@@ -27,13 +27,20 @@ struct TabView: View {
 
     @State private var isThinking: Bool = false
     @State private var isThinkingBlinking: Bool = true
+
     @State private var modelInput: [[String: Any]] = []
     @State private var modelOutput: String = ""
     @State private var modelOutputError: String = ""
     @State private var modelTools: [[String: Any]] = []
 
+    @State private var modelInputImage: NSImage? = nil
+    @State private var modelInputImageBase64: String? = nil
+    @State private var isZoomedModelInputImage = false
+
     @State private var query: String = ""
     @State private var showResponseArea: Bool = false
+
+    let manager = ScreenshotManager()
 
     var body: some View {
         VStack(alignment: .leading, spacing: 8) {
@@ -80,7 +87,7 @@ struct TabView: View {
     private func inputView() -> some View {
         HStack(spacing: 8) {
             LogoShape()
-                .fill(.white.opacity(0.5))
+                .fill(.white)
                 .scaledToFit()
                 .frame(width: isFocused ? 32 : 24)
 
@@ -114,6 +121,32 @@ struct TabView: View {
         ScrollViewReader { proxy in
             ScrollView {
                 VStack(alignment: .leading, spacing: 0) {
+                    if let image = modelInputImage {
+                        Image(nsImage: image)
+                            .resizable()
+                            .scaledToFit()
+                            .frame(
+                                maxWidth: isZoomedModelInputImage ? .infinity : 300,
+                                maxHeight: .infinity,
+                            )
+                            .clipShape(RoundedRectangle(cornerRadius: 8))
+                            .overlay {
+                                RoundedRectangle(cornerRadius: 8).stroke(
+                                    Color.white,
+                                    lineWidth: 1.5
+                                )
+                            }
+                            .onTapGesture {
+                                withAnimation(
+                                    .spring(response: 0.3, dampingFraction: 0.7, blendDuration: 0.2)
+                                ) {
+                                    isZoomedModelInputImage.toggle()
+                                }
+                            }
+                            .padding(.horizontal, 24)
+                            .padding(.top, 16)
+                    }
+
                     if isThinking {
                         Text("Thinking...")
                             .foregroundColor(.white)
@@ -202,6 +235,13 @@ struct TabView: View {
         showResponseArea = true
         responseHeight = responseHeightMin
         onSizeChange(getResponseHeight())
+
+        if modelInputImage == nil {
+            if let (image, base64) = await manager.captureScreenUnderMouse() {
+                modelInputImage = image
+                modelInputImageBase64 = base64
+            }
+        }
 
         await callModel(query: trimmed)
     }

@@ -3,18 +3,27 @@
 
 Missing Features
 - No History 
-- No Black list apps 
+- No Black Box (Area that will not be captured by the AI)
 - No Screen recording / audio
 - No CMD+- to change font size
 - No Google MCP 
 - No Theme Change
+
  
 Saturday 
-- Screen capture and send 
-- Bring Your Own Claude Key
-- Claude MCP Style 
-- OAuth Claude MCP Style  
+- Screen send 
+- Highlight /this
+- Create Settings
+    - Bring Your Own Claude Key
+    - Claude MCP Style 
+    - OAuth Claude MCP Style  
+- Login Firebase
+- Get API from Firebase
+- Remove accessiblity permission
 
+- Fix tab open animation. Not opening from top but from center
+- Fix tab closure
+- Fix already image search bug
 
 Sunday
 - Elicitation 

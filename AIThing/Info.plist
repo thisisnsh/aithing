@@ -17,9 +17,12 @@
             </dict>
         </dict>
     </dict>
+    <key>NSCameraUsageDescription</key>
+    <string>This app captures the screen.</string>
+    <key>NSMicrophoneUsageDescription</key>
+    <string>This app may access audio if needed.</string>
     <key>NSAppleEventsUsageDescription</key>
-    <string>We need this to access the frontmost window context.</string>
-    <key>NSAccessibilityUsageDescription</key>
-    <string>We use Accessibility API to access app screen data.</string>
+    <string>This app uses Apple Events to capture the screen.</string>
+
 </dict>
 </plist>
