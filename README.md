@@ -3,7 +3,7 @@
 
 Missing Features
 - No History 
-- No Black Box (Area that will not be captured by the AI)
+- No Black Box (Area that will not be captured by the AI) ^M
 - No Screen recording / audio
 - No CMD+- to change font size
 - No Google MCP 
@@ -12,7 +12,6 @@ Missing Features
  
 Saturday 
 - Screen send 
-- Control to Command
 - Highlight /this
 - Create Settings
     - Bring Your Own Claude Key
@@ -23,7 +22,6 @@ Saturday
 
 - Fix already image search bug
 - Hide from screenshot
-- Do not stop blinking animation until model ends 
 
 Sunday
 - Fix tab open animation. Not opening from top but from center. When going from low to high height. 

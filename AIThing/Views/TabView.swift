@@ -27,6 +27,7 @@ struct TabView: View {
 
     @State private var isThinking: Bool = false
     @State private var isThinkingBlinking: Bool = true
+    @State private var isViewBlinking: Bool = false
 
     @State private var modelInput: [[String: Any]] = []
     @State private var modelOutput: String = ""
@@ -59,7 +60,7 @@ struct TabView: View {
             .background(Color.clear)
             .overlay(
                 Group {
-                    if isThinking {
+                    if isThinking || isViewBlinking {
                         AnimatedGradientBorder(
                             cornerRadius: getCornerRadius(),
                             lineWidth: 2.5
@@ -232,6 +233,7 @@ struct TabView: View {
         modelOutput = ""
         modelOutputError = ""
         isThinking = true
+        isViewBlinking = true
         showResponseArea = true
         responseHeight = responseHeightMin
         onSizeChange(getResponseHeight())
@@ -242,15 +244,17 @@ struct TabView: View {
                 modelInputImageBase64 = base64
             }
         }
-
+        
         await callModel(query: trimmed)
+        
+        isViewBlinking = false
     }
 
     // MARK: - AI Functions
 
     private func callModel(query: String) async {
         return await fakeData(query: query)
-
+        
         let model = "claude-sonnet-4-20250514"
 
         guard let apiKey = Env.get("ANTHROPIC_API_KEY")
