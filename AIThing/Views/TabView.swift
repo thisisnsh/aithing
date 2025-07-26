@@ -55,7 +55,7 @@ struct TabView: View {
                     if isThinking {
                         AnimatedGradientBorder(
                             cornerRadius: getCornerRadius(),
-                            lineWidth: 2
+                            lineWidth: 2.5
                         )
                     } else {
                         RoundedRectangle(cornerRadius: getCornerRadius())

@@ -10,8 +10,6 @@ Missing Features
 - No Theme Change
  
 Saturday 
-- AT Logo
-- Fix Background
 - Screen capture and send 
 - Multiple API Keys 
 - Bring Your Own Claude Key

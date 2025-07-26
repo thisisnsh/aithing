@@ -78,14 +78,19 @@ struct ContentView: View {
                     switch event.keyCode {
                     case 4:  // H key
                         onHelp()
+                        return nil
                     case 45:  // N key
                         addTab()
+                        return nil
                     case 13:  // W key
                         closeTab()
+                        return nil
                     case 43:  // Left angular arrow
                         moveFocus(-1)
+                        return nil
                     case 47:  // Right angular bracket
                         moveFocus(1)
+                        return nil
                     default:
                         break
                     }
@@ -142,12 +147,12 @@ struct ContentView: View {
         guard tabs.count > 1 else { return }  // Don't remove the last tab
 
         withAnimation {
+            tabs.remove(at: focusedIndex)
+
             // Adjust focus index safely
             if focusedIndex >= tabs.count {
                 focusedIndex = tabs.count - 1
-            }
-            
-            tabs.remove(at: focusedIndex)
+            }            
         }
     }
 
