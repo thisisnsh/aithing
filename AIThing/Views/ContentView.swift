@@ -55,7 +55,7 @@ struct ContentView: View {
                 Color.clear.frame(width: 72)
             }
             if showSettings {
-                SettingsView()
+                SettingsView(isPresented: $showSettings)
                     .background(.ultraThinMaterial)
                     .overlay {
                         RoundedRectangle(cornerRadius: 24)

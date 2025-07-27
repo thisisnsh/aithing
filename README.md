@@ -7,9 +7,6 @@ Missing Features
 - No Google MCP 
 - No Theme Change
 
-Sunday
-- Create Settings
-- Claude MCP Style 
 
 Monday
 - Bring Your Own Claude Key

@@ -18,11 +18,13 @@ struct AgentEntry: Codable, Identifiable, Equatable {
 }
 
 struct SettingsView: View {
+    @Binding var isPresented: Bool
     @State private var selectedTab: SettingsTab = .account
     @State private var apiKey: String =
         UserDefaults.standard.string(forKey: "AnthropicAPIKey") ?? ""
     @State private var agentJsonInput: String = ""
     @State private var agents: [AgentEntry] = getAgentEntries()
+    @FocusState private var apiKeyFieldFocused: Bool
 
     var body: some View {
         HStack(spacing: 0) {
@@ -61,23 +63,33 @@ struct SettingsView: View {
             // Main Settings Content
             VStack(alignment: .leading, spacing: 16) {
                 if selectedTab == .account {
-                    VStack(alignment: .leading, spacing: 12) {
-                        HStack {
-                            Button("Log in with Google") {}
-                                .disabled(true)
-                                .frame(height: 32)
-                            Text("Coming soon").font(.caption).foregroundColor(.gray)
+                    ZStack(alignment: .top) {
+                        Color.clear
+                            .contentShape(Rectangle())
+                            .onTapGesture {
+                                apiKeyFieldFocused = false
+                            }
+
+                        VStack(alignment: .leading, spacing: 12) {
+                            HStack {
+                                Button("Log in with Google") {}
+                                    .disabled(true)
+                                    .frame(height: 32)
+                                Text("Coming soon").font(.caption).foregroundColor(.gray)
+                            }
+
+                            Divider()
+
+                            Text("Anthropic API Key")
+                                .font(.headline)
+                            TextField("sk-ant-...", text: $apiKey, onCommit: saveAPIKey)
+                                .textFieldStyle(RoundedBorderTextFieldStyle())
+                                .frame(maxWidth: .infinity)
+                                .fontDesign(.monospaced)
+                                .focused($apiKeyFieldFocused)
                         }
-
-                        Divider()
-
-                        Text("Anthropic API Key")
-                            .font(.headline)
-                        TextField("sk-ant-...", text: $apiKey, onCommit: saveAPIKey)
-                            .textFieldStyle(RoundedBorderTextFieldStyle())
-                            .frame(width: 300)
-                            .fontDesign(.monospaced)
                     }
+
                 } else if selectedTab == .agents {
                     VStack(alignment: .leading, spacing: 12) {
                         Text("Add Agent JSON")
@@ -139,6 +151,16 @@ struct SettingsView: View {
         .onDisappear {
             saveAPIKey()
             saveAgents()
+        }
+        .overlay(alignment: .topTrailing) {
+            Button(action: {
+                isPresented = false
+            }) {
+                Image(systemName: "xmark.circle.fill")
+                    .frame(width: 12, height: 12)
+                    .padding(20)
+            }
+            .buttonStyle(PlainButtonStyle())
         }
     }
 
