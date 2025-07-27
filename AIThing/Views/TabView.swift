@@ -120,6 +120,11 @@ struct TabView: View {
                         Task {
                             await handleCommand(type: "remove", command: command)
                         }
+                    },
+                    onDebouncedTextChange: { _ in
+                        Task {
+                            await handleCommand(type: "update", command: "")
+                        }
                     }
                 )
                 .padding(.horizontal, 8)
@@ -251,18 +256,29 @@ struct TabView: View {
     }
 
     private func handleCommand(type: String, command: String) async {
-        if command == "this" {
-            if type == "add" {
+        switch type {
+        case "add":
+            if command == "this" || command == "selected" {
                 if let (image, base64) = await manager.captureScreenUnderMouse() {
                     modelInputImage = image
                     modelInputImageBase64 = base64
                 }
-            } else {
-                if let (_, _) = await manager.captureScreenUnderMouse() {
-                    modelInputImage = nil
-                    modelInputImageBase64 = nil
+            }
+        case "remove":
+            if command == "this" || command == "selected" {
+                modelInputImage = nil
+                modelInputImageBase64 = nil
+            }
+        case "update":
+            // Update screenshot while typing
+            if modelInputImage != nil {
+                if let (image, base64) = await manager.captureScreenUnderMouse() {
+                    modelInputImage = image
+                    modelInputImageBase64 = base64
                 }
             }
+        default:
+            break
         }
     }
 

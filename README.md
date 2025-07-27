@@ -9,30 +9,29 @@ Missing Features
 - No Google MCP 
 - No Theme Change
 - No Selection-Only Screenshot
-
+- No Elicitation 
+ 
  
 Saturday 
-- Update screenshot on typing
+- Fix tab open animation. Not opening from top but from center. When going from low to high height. 
 
+
+Sunday
 - Create Settings
     - Bring Your Own Claude Key
     - Claude MCP Style 
     - OAuth Claude MCP Style  
-
-- Login Firebase
-- Get API from Firebase
-
-
-
-Sunday
-- Fix tab open animation. Not opening from top but from center. When going from low to high height. 
-- Elicitation 
 - Video
-- Release
 
 
 Monday
 - Website aithing.dev
+
+
+Tuesday
+- Login Firebase
+- Get API from Firebase
+- Release
 
 
 

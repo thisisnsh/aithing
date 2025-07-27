@@ -15,6 +15,7 @@ struct FocusableTextField: NSViewRepresentable {
     var onCommit: () -> Void
     var onCommandTyped: (String) -> Void = { _ in }
     var onCommandRemoved: (String) -> Void = { _ in }  // ← new
+    var onDebouncedTextChange: (String) -> Void = { _ in }
 
     class NonSelectingTextField: NSTextField {
         override func selectText(_ sender: Any?) {
@@ -26,7 +27,7 @@ struct FocusableTextField: NSViewRepresentable {
         var parent: FocusableTextField
         private var seenCommands = Set<String>()
         private var debounceWorkItem: DispatchWorkItem?
-        private let debounceDelay: TimeInterval = 0.1
+        private let debounceDelay: TimeInterval = 0.3
 
         init(_ parent: FocusableTextField) {
             self.parent = parent
@@ -36,18 +37,8 @@ struct FocusableTextField: NSViewRepresentable {
             guard let textField = obj.object as? NSTextField else { return }
             parent.text = textField.stringValue
 
-            debounceWorkItem?.cancel()
-
-            let workItem = DispatchWorkItem { [weak self] in
-                self?.processCommandChanges()
-            }
-
-            debounceWorkItem = workItem
-            DispatchQueue.main.asyncAfter(deadline: .now() + debounceDelay, execute: workItem)
-        }
-
-        private func processCommandChanges() {
-            let pattern = #"@([a-zA-Z]+)"#
+            // Handle \command tracking
+            let pattern = ##"[@\\#]([a-zA-Z]+)"##
             let regex = try? NSRegularExpression(pattern: pattern)
             let nsrange = NSRange(parent.text.startIndex..<parent.text.endIndex, in: parent.text)
 
@@ -70,6 +61,14 @@ struct FocusableTextField: NSViewRepresentable {
             }
 
             seenCommands = currentCommands
+
+            // Debounced text change handler
+            debounceWorkItem?.cancel()
+            let workItem = DispatchWorkItem {
+                self.parent.onDebouncedTextChange(self.parent.text)
+            }
+            debounceWorkItem = workItem
+            DispatchQueue.main.asyncAfter(deadline: .now() + debounceDelay, execute: workItem)
         }
 
         func controlTextDidEndEditing(_ obj: Notification) {
@@ -79,6 +78,7 @@ struct FocusableTextField: NSViewRepresentable {
             }
         }
     }
+
 
     func makeCoordinator() -> Coordinator {
         Coordinator(self)
