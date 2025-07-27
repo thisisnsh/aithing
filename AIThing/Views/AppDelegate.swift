@@ -112,7 +112,6 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate {
     }
 
     func resizePanel(extraHeight: CGFloat) {
-        print("resizePanel", extraHeight)
         let targetSize = NSSize(width: width, height: height + extraHeight)
 
         var frame = floatingWindow.frame
@@ -123,7 +122,6 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate {
     }
 
     func incrementSizePanel(extraHeight: CGFloat) {
-        print("incrementSizePanel", extraHeight)
         var frame = floatingWindow.frame
         let targetSize = NSSize(width: frame.width, height: frame.height + extraHeight)
 

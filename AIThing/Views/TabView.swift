@@ -109,6 +109,16 @@ struct TabView: View {
                         Task {
                             await handleQuery()
                         }
+                    },
+                    onCommandTyped: { command in
+                        Task {
+                            await handleCommand(type: "add", command: command)
+                        }
+                    },
+                    onCommandRemoved: { command in
+                        Task {
+                            await handleCommand(type: "remove", command: command)
+                        }
                     }
                 )
                 .padding(.horizontal, 8)
@@ -239,27 +249,41 @@ struct TabView: View {
         return showResponseArea ? 24 : 32
     }
 
+    private func handleCommand(type: String, command: String) async {
+        if command == "this" {
+            if type == "add" {
+                if let (image, base64) = await manager.captureScreenUnderMouse() {
+                    modelInputImage = image
+                    modelInputImageBase64 = base64
+                }
+            } else {
+                if let (_, _) = await manager.captureScreenUnderMouse() {
+                    modelInputImage = nil
+                    modelInputImageBase64 = nil
+                }
+            }
+        }
+    }
+
     private func handleQuery() async {
         let trimmed = query.trimmingCharacters(in: .whitespacesAndNewlines)
         guard !trimmed.isEmpty else { return }
 
         modelOutput = ""
         modelOutputError = ""
+
         isThinking = true
-        isViewBlinking = true
         showResponseArea = true
+
         responseHeight = responseHeightMin
         onSizeChange(getResponseHeight())
 
         if modelInputImage == nil {
-            if let (image, base64) = await manager.captureScreenUnderMouse() {
-                modelInputImage = image
-                modelInputImageBase64 = base64
-            }
+
         }
 
+        isViewBlinking = true
         await callModel(query: trimmed)
-
         isViewBlinking = false
     }
 

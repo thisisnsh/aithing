@@ -11,7 +11,6 @@ Missing Features
 
  
 Saturday 
-- Screen shot only on \this
 - Screen send 
 - Create Settings
     - Bring Your Own Claude Key

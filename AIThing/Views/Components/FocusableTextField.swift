@@ -11,6 +11,8 @@ import SwiftUI
 struct FocusableTextField: NSViewRepresentable {
     @Binding var text: String
     var onCommit: () -> Void
+    var onCommandTyped: (String) -> Void = { _ in }
+    var onCommandRemoved: (String) -> Void = { _ in }  // ← new
 
     class NonSelectingTextField: NSTextField {
         override func selectText(_ sender: Any?) {
@@ -20,15 +22,41 @@ struct FocusableTextField: NSViewRepresentable {
 
     class Coordinator: NSObject, NSTextFieldDelegate {
         var parent: FocusableTextField
+        private var seenCommands = Set<String>()
 
         init(_ parent: FocusableTextField) {
             self.parent = parent
         }
 
         func controlTextDidChange(_ obj: Notification) {
-            if let textField = obj.object as? NSTextField {
-                parent.text = textField.stringValue
+            guard let textField = obj.object as? NSTextField else { return }
+            parent.text = textField.stringValue
+
+            let pattern = #"\\([a-zA-Z]+)"#
+            let regex = try? NSRegularExpression(pattern: pattern)
+            let nsrange = NSRange(parent.text.startIndex..<parent.text.endIndex, in: parent.text)
+
+            var currentCommands = Set<String>()
+
+            regex?.matches(in: parent.text, options: [], range: nsrange).forEach { match in
+                if let wordRange = Range(match.range(at: 1), in: parent.text) {
+                    let command = String(parent.text[wordRange])
+                    currentCommands.insert(command)
+
+                    if !seenCommands.contains(command) {
+                        parent.onCommandTyped(command)
+                    }
+                }
             }
+
+            // Detect removed commands
+            let removedCommands = seenCommands.subtracting(currentCommands)
+            for command in removedCommands {
+                parent.onCommandRemoved(command)
+            }
+
+            // Update state
+            seenCommands = currentCommands
         }
 
         func controlTextDidEndEditing(_ obj: Notification) {
@@ -61,7 +89,7 @@ struct FocusableTextField: NSViewRepresentable {
         let placeholder = "Ask anything on this AI thing..."
         let attributes: [NSAttributedString.Key: Any] = [
             .foregroundColor: NSColor.white.withAlphaComponent(0.7),
-            .font: NSFont.systemFont(ofSize: 18, weight: .medium)
+            .font: NSFont.systemFont(ofSize: 18, weight: .medium),
         ]
 
         textField.placeholderAttributedString = NSAttributedString(
