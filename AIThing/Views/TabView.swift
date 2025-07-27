@@ -89,6 +89,7 @@ struct TabView: View {
                     onSizeChange(getResponseHeight())
                 }
             }
+
             if let image = modelInputImage, isFocused {
                 withAnimation {
                     contextView(image: image)

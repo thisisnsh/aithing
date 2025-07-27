@@ -11,10 +11,9 @@ Sunday
 - Create Settings
     - Bring Your Own Claude Key
     - Claude MCP Style 
-    - OAuth Claude MCP Style  
-- Video
 
 Monday
+- Video
 - Website aithing.dev
 
 Tuesday
@@ -23,6 +22,8 @@ Tuesday
 - Release
 
 Future
+- RAG MCP
+- OAuth Claude MCP Style
 - Selection-Only Screenshot
 - Black Box (Area that will not be captured by the AI) ^M
 - Elicitation 

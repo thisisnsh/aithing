@@ -50,30 +50,26 @@ struct ContentView: View {
                 }
                 Color.clear.frame(width: 72)
             }
+            if showToast || showHelp {
+                MarkdownText(text: showHelp ? helpText : "Maximum of \(maxTabs) tabs reached")
+                    .padding()
+                    .background(.ultraThinMaterial)
+                    .overlay {
+                        RoundedRectangle(cornerRadius: 24)
+                            .stroke(Color.white, lineWidth: 1.5)
+                    }
+                    .cornerRadius(24)
+                    .transition(.opacity)
+                    .zIndex(1)
+                    .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top)
+                    .padding(.leading, 48)
+                    .padding(.trailing, 80)
+                    .padding(.top, 16)
+
+            }
         }
         .frame(width: CGFloat(640 + 48) + CGFloat((tabs.count)) * CGFloat(72))
         .background(Color.clear)
-        .overlay(
-            Group {
-                if showToast || showHelp {
-                    MarkdownText(text: showHelp ? helpText : "Maximum of \(maxTabs) tabs reached")
-                        .padding()
-                        .background(.ultraThinMaterial)
-                        .overlay {
-                            RoundedRectangle(cornerRadius: 24)
-                                .stroke(Color.white, lineWidth: 1.5)
-                        }
-                        .foregroundColor(.white)
-                        .cornerRadius(24)
-                        .transition(.opacity)
-                        .zIndex(1)
-                        .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top)
-                        .padding(16)
-                }
-            },
-            alignment: .center
-        )
-        .animation(.easeInOut, value: showToast)
         .onAppear {
             addTab()
 
