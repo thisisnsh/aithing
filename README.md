@@ -12,7 +12,6 @@ Missing Features
  
 Saturday 
 - Screen send 
-- Fix already image search bug
 
 - Create Settings
     - Bring Your Own Claude Key

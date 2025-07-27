@@ -10,6 +10,8 @@ import SwiftUI
 
 struct FocusableTextField: NSViewRepresentable {
     @Binding var text: String
+    @Binding var isEditable: Bool
+
     var onCommit: () -> Void
     var onCommandTyped: (String) -> Void = { _ in }
     var onCommandRemoved: (String) -> Void = { _ in }  // ← new
@@ -92,7 +94,7 @@ struct FocusableTextField: NSViewRepresentable {
         textField.textColor = .white  // white font
         textField.font = NSFont.systemFont(ofSize: 18, weight: .medium)
         textField.focusRingType = .none
-        textField.isEditable = true
+        textField.isEditable = !isEditable
         textField.isSelectable = true
         textField.isHighlighted = false
 
@@ -118,5 +120,6 @@ struct FocusableTextField: NSViewRepresentable {
         if nsView.stringValue != text {
             nsView.stringValue = text
         }
+        nsView.isEditable = !isEditable
     }
 }
