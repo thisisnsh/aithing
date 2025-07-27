@@ -1,4 +1,4 @@
-# AI Thing
+# AI Thing (Previously This)
 
 
 Missing Features
@@ -8,10 +8,11 @@ Missing Features
 - No CMD+- to change font size
 - No Google MCP 
 - No Theme Change
+- No Selection-Only Screenshot
 
  
 Saturday 
-- Screen send 
+- Update screenshot on typing
 
 - Create Settings
     - Bring Your Own Claude Key

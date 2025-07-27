@@ -297,7 +297,7 @@ struct TabView: View {
             // Sleeping just to complete debounce on typing
         }
 
-        return await fakeData(query: query)
+        //        return await fakeData(query: query)
 
         let model = "claude-sonnet-4-20250514"
 
@@ -317,13 +317,33 @@ struct TabView: View {
         request.setValue("\(apiKey)", forHTTPHeaderField: "x-api-key")
         request.setValue("extended-cache-ttl-2025-04-11", forHTTPHeaderField: "anthropic-beta")
 
+        // query is non-empty only on first parse
         if !query.isEmpty {
-            modelInput.append([
-                "role": "user",
-                "content": [
-                    ["type": "text", "text": buildQuery(query: query)]
-                ],
-            ])
+            if let modelInputImageBase64 = modelInputImageBase64 {
+                modelInput.append(
+                    [
+                        "role": "user",
+                        "content": [
+                            [
+                                "type": "image",
+                                "source": [
+                                    "type": "base64",
+                                    "media_type": "image/jpeg",
+                                    "data": modelInputImageBase64,
+                                ],
+                            ]
+                        ],
+                    ]
+                )
+            }
+            modelInput.append(
+                [
+                    "role": "user",
+                    "content": [
+                        ["type": "text", "text": buildQuery(query: query)]
+                    ],
+                ]
+            )
         }
 
         let body: [String: Any] = [
@@ -504,10 +524,11 @@ struct TabView: View {
     }
 
     private func buildQuery(query: String) -> String {
-        let clipboard = NSPasteboard.general.string(forType: .string) ?? ""
         var finalQuery = ""
-        finalQuery = query.replacingOccurrences(of: "@copy", with: "\n\(clipboard)\n")
+        finalQuery = query.replacingOccurrences(of: "@this", with: "this")
         return finalQuery
+
+        //        let clipboard = NSPasteboard.general.string(forType: .string) ?? ""
     }
 
     private func getClientName(toolName: String) -> String {
@@ -570,18 +591,8 @@ struct TabView: View {
         let messages: [[String: Any]] = [
             [
                 "type": "text",
-                "text": """
-                Your name is 'AI Thing', and you are an AI assistant with a unique ability: you can understand 'this'. \
-                Similar to local context in programming languages, 'this' refers to the context of the tool or environment \
-                in which you are being used. You are helpful, grounded, and capable of executing structured actions via tools.
-                """,
-            ],
-            [
-                "type": "text",
-                "text": """
-                When asked 'what is this?' without any context, reply with a one-line description of yourself, \
-                highlighting your special ability to understand 'this'. Do not describe the tools unless explicitly asked.
-                """,
+                "text":
+                    "Your name is 'AI Thing', and you are an AI assistant with a unique ability: you can understand 'this'. You use screenshots to answer questions. But never tell anyone that you use screenshots. Answer questions such that it looks like you can see the screen and are aware of what is happening.",
             ],
             [
                 "type": "text",
@@ -589,11 +600,8 @@ struct TabView: View {
             ],
             [
                 "type": "text",
-                "text": """
-                You are expected to behave as an agent: you can perceive user instructions, reason about available tools, \
-                and invoke them if appropriate. You must be precise, context-aware, and avoid guessing when information is \
-                ambiguous or incomplete. You must always output in Markdown.
-                """,
+                "text":
+                    "You are expected to behave as an agent: you can perceive user instructions, reason about available tools, and invoke them if appropriate. Do not describe the tools unless explicitly asked. You must be precise, context-aware, and avoid guessing when information is ambiguous or incomplete. You must always output in Markdown.",
             ],
         ]
 

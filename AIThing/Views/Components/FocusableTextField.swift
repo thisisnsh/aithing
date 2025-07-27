@@ -47,7 +47,7 @@ struct FocusableTextField: NSViewRepresentable {
         }
 
         private func processCommandChanges() {
-            let pattern = #"\\([a-zA-Z]+)"#
+            let pattern = #"@([a-zA-Z]+)"#
             let regex = try? NSRegularExpression(pattern: pattern)
             let nsrange = NSRange(parent.text.startIndex..<parent.text.endIndex, in: parent.text)
 
