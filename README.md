@@ -9,20 +9,22 @@ Missing Features
 
 Sunday
 - Create Settings
-    - Bring Your Own Claude Key
-    - Claude MCP Style 
+- Claude MCP Style 
 
 Monday
+- Bring Your Own Claude Key
 - Video
 - Website aithing.dev
 
+
 Tuesday
-- Login Firebase
-- Get API from Firebase
 - Release
 
 Future
+- Settings Height
 - RAG MCP
+- Login Firebase
+- Get API from Firebase
 - OAuth Claude MCP Style
 - Selection-Only Screenshot
 - Black Box (Area that will not be captured by the AI) ^M

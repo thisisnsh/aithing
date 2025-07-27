@@ -24,6 +24,7 @@ struct ContentView: View {
     @State private var focusedIndex: Int = 0
     @State private var showToast = false
     @State private var showHelp = false
+    @State private var showSettings = false
     @State private var tabs: [TabItem] = []
 
     @State private var maxTabs: Int = 5
@@ -35,20 +36,36 @@ struct ContentView: View {
 
             | Command | Description |   | Command | Description | 
             | ------- | ----------- | - | ------- | ----------- | 
-            | ` Control (⌃) + Space ` | Show/Hide AI Thing | | ` Control (⌃) + H ` | Show Help | 
-            | ` Control (⌃) + N `     | New Tab            | | ` Control (⌃) + W ` | Close Tab | 
+            | ` Control (⌃) + Space ` | Show/Hide AI Thing | | | | 
+            | ` Control (⌃) + N `     | New Tab            | | ` Control (⌃) + W ` | Close Tab |
+            | ` Control (⌃) + S `     | Show/Hide Settings | | ` Control (⌃) + H ` | Show Help |
             | ` Control (⌃) + > `     | Move to Right Tab  | | ` Control (⌃) + < ` | Move to Left Tab  |
             """
     }
 
     var body: some View {
-        ZStack {
+        ZStack(alignment: .top) {
             HStack(alignment: .top, spacing: 8) {
                 Color.clear.frame(width: 40)
                 ForEach(Array(tabs.enumerated()), id: \.element.id) { index, tab in
                     tabView(at: index)
                 }
                 Color.clear.frame(width: 72)
+            }
+            if showSettings {
+                SettingsView()
+                    .background(.ultraThinMaterial)
+                    .overlay {
+                        RoundedRectangle(cornerRadius: 24)
+                            .stroke(Color.white, lineWidth: 1.5)
+                    }
+                    .cornerRadius(24)
+                    .transition(.opacity)
+                    .zIndex(1)
+                    .frame(width: 600, height: 500)
+                    .padding(.leading, 48)
+                    .padding(.trailing, 80)
+                    .padding(.top, 16)
             }
             if showToast || showHelp {
                 MarkdownText(text: showHelp ? helpText : "Maximum of \(maxTabs) tabs reached")
@@ -60,12 +77,11 @@ struct ContentView: View {
                     }
                     .cornerRadius(24)
                     .transition(.opacity)
-                    .zIndex(1)
+                    .zIndex(2)
                     .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top)
                     .padding(.leading, 48)
                     .padding(.trailing, 80)
                     .padding(.top, 16)
-
             }
         }
         .frame(width: CGFloat(640 + 48) + CGFloat((tabs.count)) * CGFloat(72))
@@ -76,6 +92,9 @@ struct ContentView: View {
             NSEvent.addLocalMonitorForEvents(matching: .keyDown) { event in
                 if event.modifierFlags.contains(.control) {
                     switch event.keyCode {
+                    case 1:  // S key
+                        showSettings.toggle()
+                        return nil
                     case 4:  // H key
                         onHelp()
                         return nil
@@ -98,6 +117,11 @@ struct ContentView: View {
                 return event
             }
         }
+//        .onChange(of: showSettings) {
+//            Task {
+//                await loadAllClientTools()
+//            }
+//        }
         .task {
             await loadAllClientTools()
         }
@@ -117,7 +141,7 @@ struct ContentView: View {
             }
         }
     }
-
+    
     private func onHelp() {
         showHelp = true
         let extraHeight = getExtraSize()
