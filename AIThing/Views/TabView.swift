@@ -22,8 +22,6 @@ struct TabView: View {
     @State private var imageName: String = "Logo"
     @State private var title: String = "AI Thing"
 
-    @State private var contextAreaHeight: CGFloat = 0
-
     @State private var responseHeightMin: CGFloat = 100
     @State private var responseHeightMax: CGFloat = 700
     @State private var responseHeight: CGFloat = 100
@@ -81,9 +79,16 @@ struct TabView: View {
                 onSizeChange(getResponseHeight())
             }
             .onChange(of: isFocused) {
-                onSizeChange(getResponseHeight())
+                // Delay size change when in focus so that other
+                // views not in focus adjust height first
+                if isFocused {
+                    DispatchQueue.main.asyncAfter(deadline: .now() + 0.2) {
+                        onSizeChange(getResponseHeight())
+                    }
+                } else {
+                    onSizeChange(getResponseHeight())
+                }
             }
-
             if let image = modelInputImage, isFocused {
                 withAnimation {
                     contextView(image: image)
@@ -313,7 +318,7 @@ struct TabView: View {
             // Sleeping just to complete debounce on typing
         }
 
-        //        return await fakeData(query: query)
+        return await fakeData(query: query)
 
         let model = "claude-sonnet-4-20250514"
 

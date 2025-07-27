@@ -1,20 +1,11 @@
 # AI Thing (Previously This)
 
-
 Missing Features
 - No History 
-- No Black Box (Area that will not be captured by the AI) ^M
 - No Screen recording / audio
 - No CMD+- to change font size
 - No Google MCP 
 - No Theme Change
-- No Selection-Only Screenshot
-- No Elicitation 
- 
- 
-Saturday 
-- Fix tab open animation. Not opening from top but from center. When going from low to high height. 
-
 
 Sunday
 - Create Settings
@@ -23,18 +14,19 @@ Sunday
     - OAuth Claude MCP Style  
 - Video
 
-
 Monday
 - Website aithing.dev
-
 
 Tuesday
 - Login Firebase
 - Get API from Firebase
 - Release
 
-
-
+Future
+- Selection-Only Screenshot
+- Black Box (Area that will not be captured by the AI) ^M
+- Elicitation 
+- Release
 
 
 

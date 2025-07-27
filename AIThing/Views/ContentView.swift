@@ -168,10 +168,12 @@ struct ContentView: View {
             guard count > 0 else { return }
 
             let newIndex = (focusedIndex + direction + count) % count
-
-            // Temporarily unset focus to trigger animation
-            focusedIndex = -1
             DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
+                // Increase height to max while switching
+                // It will be resized when tab in focus
+                onSizeChange(1000)
+            }
+            DispatchQueue.main.asyncAfter(deadline: .now() + 0.2) {
                 focusedIndex = newIndex
             }
         }

@@ -67,11 +67,12 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate {
         floatingWindow.orderFrontRegardless()  // no app activation
         floatingWindow.sharingType = .none
 
-        Task {
-            for client in mcp.clients.keys {
-                await mcp.connect(clientName: client)
-            }
-        }
+        // No Local MCP
+        //        Task {
+        //            for client in mcp.clients.keys {
+        //                await mcp.connect(clientName: client)
+        //            }
+        //        }
     }
 
     func setupHotKey() {
