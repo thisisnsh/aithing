@@ -11,8 +11,8 @@ Missing Features
 
  
 Saturday 
+- Screen shot only on \this
 - Screen send 
-- Highlight /this
 - Create Settings
     - Bring Your Own Claude Key
     - Claude MCP Style 
@@ -21,6 +21,7 @@ Saturday
 - Get API from Firebase
 
 - Fix already image search bug
+- Round robin tab moves
 
 Sunday
 - Fix tab open animation. Not opening from top but from center. When going from low to high height. 

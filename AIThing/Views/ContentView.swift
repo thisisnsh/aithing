@@ -16,6 +16,7 @@ struct ContentView: View {
 
     var onClose: () -> Void
     var onSizeChange: (CGFloat) -> Void
+    var incrementSizePanel: (CGFloat) -> Void
     var getExtraSize: () -> CGFloat
 
     @State private var allClientTools: [String: [[String: Any]]] = [:]
@@ -148,7 +149,7 @@ struct ContentView: View {
 
     private func closeTab() {
         let indexToRemove = focusedIndex
-        
+
         if tabs.count == 1 { addTab() }  // Don't remove the last tab
 
         withAnimation {
@@ -157,7 +158,7 @@ struct ContentView: View {
             // Adjust focus index safely
             if focusedIndex >= tabs.count {
                 focusedIndex = tabs.count - 1
-            }            
+            }
         }
     }
 
@@ -186,6 +187,9 @@ struct ContentView: View {
             onHelp: { self.onHelp() },
             onSizeChange: { extraHeight in
                 onSizeChange(extraHeight)
+            },
+            incrementSizePanel: { height in
+                incrementSizePanel(height)
             }
         )
         .environmentObject(mcp)

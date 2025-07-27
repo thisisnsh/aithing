@@ -17,9 +17,12 @@ struct TabView: View {
     var allClientTools: [String: [[String: Any]]]
     var onHelp: () -> Void
     var onSizeChange: (CGFloat) -> Void
+    var incrementSizePanel: (CGFloat) -> Void
 
     @State private var imageName: String = "Logo"
     @State private var title: String = "AI Thing"
+
+    @State private var contextAreaHeight: CGFloat = 0
 
     @State private var responseHeightMin: CGFloat = 100
     @State private var responseHeightMax: CGFloat = 700
@@ -45,6 +48,7 @@ struct TabView: View {
 
     var body: some View {
         VStack(alignment: .leading, spacing: 8) {
+            Color.clear.frame(height: 32)
             VStack(spacing: 0) {
                 inputView()
                 if isFocused, showResponseArea {
@@ -78,6 +82,12 @@ struct TabView: View {
             }
             .onChange(of: isFocused) {
                 onSizeChange(getResponseHeight())
+            }
+
+            if let image = modelInputImage, isFocused {
+                withAnimation {
+                    contextView(image: image)
+                }
             }
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
@@ -122,32 +132,6 @@ struct TabView: View {
         ScrollViewReader { proxy in
             ScrollView {
                 VStack(alignment: .leading, spacing: 0) {
-                    if let image = modelInputImage {
-                        Image(nsImage: image)
-                            .resizable()
-                            .scaledToFit()
-                            .frame(
-                                maxWidth: isZoomedModelInputImage ? .infinity : 100,
-                                alignment: .leading
-                            )
-                            .clipShape(RoundedRectangle(cornerRadius: 8))
-                            .overlay {
-                                RoundedRectangle(cornerRadius: 8).stroke(
-                                    Color.white,
-                                    lineWidth: 1.5
-                                )
-                            }
-                            .onTapGesture {
-                                withAnimation(
-                                    .spring(response: 0.3, dampingFraction: 0.7, blendDuration: 0.2)
-                                ) {
-                                    isZoomedModelInputImage.toggle()
-                                }
-                            }
-                            .padding(.horizontal, 24)
-                            .padding(.top, 16)
-                    }
-
                     if isThinking {
                         Text("Thinking...")
                             .foregroundColor(.white)
@@ -212,6 +196,35 @@ struct TabView: View {
         }
     }
 
+    private func contextView(image: NSImage) -> some View {
+        Image(nsImage: image)
+            .resizable()
+            .aspectRatio(contentMode: .fit)
+            .frame(
+                height: isZoomedModelInputImage ? 200 : 50,
+                alignment: .leading
+            )
+            .clipShape(
+                RoundedRectangle(cornerRadius: isZoomedModelInputImage ? getCornerRadius() : 16)
+            )
+            .overlay {
+                RoundedRectangle(cornerRadius: isZoomedModelInputImage ? getCornerRadius() : 16)
+                    .stroke(Color.white, lineWidth: 1)
+            }
+            .onTapGesture {
+                withAnimation(
+                    .spring(response: 0.3, dampingFraction: 0.7, blendDuration: 0.2)
+                ) {
+                    isZoomedModelInputImage.toggle()
+                    incrementSizePanel(isZoomedModelInputImage ? 150 : -150)
+                }
+            }
+            .padding(.vertical, 8)
+            .onAppear {
+                incrementSizePanel(64)
+            }
+    }
+
     // MARK: - Private Functions
 
     private func getResponseHeight() -> CGFloat {
@@ -244,9 +257,9 @@ struct TabView: View {
                 modelInputImageBase64 = base64
             }
         }
-        
+
         await callModel(query: trimmed)
-        
+
         isViewBlinking = false
     }
 
@@ -254,7 +267,7 @@ struct TabView: View {
 
     private func callModel(query: String) async {
         return await fakeData(query: query)
-        
+
         let model = "claude-sonnet-4-20250514"
 
         guard let apiKey = Env.get("ANTHROPIC_API_KEY")
@@ -557,10 +570,6 @@ struct TabView: View {
     }
 
     private func fakeData(query: String) async {
-        if query == "a" {
-            isThinking = false
-        }
-
         var fakeContent = """
             "Vishal" can refer to several things:
 
@@ -575,8 +584,7 @@ struct TabView: View {
             Could you provide more context about which "Vishal" you're asking about? That would help me give you a more specific answer.
             """
 
-        if query == "c" {
-            isThinking = false
+        if query == "a" {
             fakeContent += fakeContent + fakeContent
         }
 
@@ -584,6 +592,7 @@ struct TabView: View {
         for char in fakeContent {
             fakePartial += String(char)
             await MainActor.run {
+                isThinking = false
                 modelOutput = fakePartial + " " + shimmerPlaceholder()
             }
             do {
@@ -591,9 +600,6 @@ struct TabView: View {
             } catch {
 
             }
-
         }
-
-        isThinking = false
     }
 }

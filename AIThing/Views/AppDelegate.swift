@@ -16,7 +16,7 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate {
     var hotKey: HotKey?
 
     let width: CGFloat = 1000
-    let height: CGFloat = 64
+    let height: CGFloat = 96
 
     let mcp = MCPManager()
 
@@ -50,6 +50,9 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate {
             onSizeChange: { extraHeight in
                 self.resizePanel(extraHeight: extraHeight)
             },
+            incrementSizePanel: { extraHeight in
+                return self.incrementSizePanel(extraHeight: extraHeight)
+            },
             getExtraSize: { return self.getExtraHeightPanel() }
         ).environmentObject(mcp)
 
@@ -63,7 +66,7 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate {
         floatingWindow.center()
         floatingWindow.orderFrontRegardless()  // no app activation
         floatingWindow.sharingType = .none
-        
+
         Task {
             for client in mcp.clients.keys {
                 await mcp.connect(clientName: client)
@@ -109,6 +112,7 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate {
     }
 
     func resizePanel(extraHeight: CGFloat) {
+        print("resizePanel", extraHeight)
         let targetSize = NSSize(width: width, height: height + extraHeight)
 
         var frame = floatingWindow.frame
@@ -117,9 +121,20 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate {
 
         floatingWindow.setFrame(frame, display: true, animate: false)
     }
-    
-    func getExtraHeightPanel() -> CGFloat {
+
+    func incrementSizePanel(extraHeight: CGFloat) {
+        print("incrementSizePanel", extraHeight)
         var frame = floatingWindow.frame
+        let targetSize = NSSize(width: frame.width, height: frame.height + extraHeight)
+
+        frame.origin.y += (frame.size.height - targetSize.height)  // keep top aligned
+        frame.size = targetSize
+
+        floatingWindow.setFrame(frame, display: true, animate: false)
+    }
+
+    func getExtraHeightPanel() -> CGFloat {
+        let frame = floatingWindow.frame
         return frame.size.height - height
     }
 }
