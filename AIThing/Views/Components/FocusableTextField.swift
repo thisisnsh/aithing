@@ -23,6 +23,8 @@ struct FocusableTextField: NSViewRepresentable {
     class Coordinator: NSObject, NSTextFieldDelegate {
         var parent: FocusableTextField
         private var seenCommands = Set<String>()
+        private var debounceWorkItem: DispatchWorkItem?
+        private let debounceDelay: TimeInterval = 0.1
 
         init(_ parent: FocusableTextField) {
             self.parent = parent
@@ -32,6 +34,17 @@ struct FocusableTextField: NSViewRepresentable {
             guard let textField = obj.object as? NSTextField else { return }
             parent.text = textField.stringValue
 
+            debounceWorkItem?.cancel()
+
+            let workItem = DispatchWorkItem { [weak self] in
+                self?.processCommandChanges()
+            }
+
+            debounceWorkItem = workItem
+            DispatchQueue.main.asyncAfter(deadline: .now() + debounceDelay, execute: workItem)
+        }
+
+        private func processCommandChanges() {
             let pattern = #"\\([a-zA-Z]+)"#
             let regex = try? NSRegularExpression(pattern: pattern)
             let nsrange = NSRange(parent.text.startIndex..<parent.text.endIndex, in: parent.text)
@@ -49,13 +62,11 @@ struct FocusableTextField: NSViewRepresentable {
                 }
             }
 
-            // Detect removed commands
             let removedCommands = seenCommands.subtracting(currentCommands)
             for command in removedCommands {
                 parent.onCommandRemoved(command)
             }
 
-            // Update state
             seenCommands = currentCommands
         }
 
@@ -65,7 +76,6 @@ struct FocusableTextField: NSViewRepresentable {
                 parent.onCommit()
             }
         }
-
     }
 
     func makeCoordinator() -> Coordinator {

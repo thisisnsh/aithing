@@ -12,15 +12,17 @@ Missing Features
  
 Saturday 
 - Screen send 
+- Fix already image search bug
+
 - Create Settings
     - Bring Your Own Claude Key
     - Claude MCP Style 
     - OAuth Claude MCP Style  
+
 - Login Firebase
 - Get API from Firebase
 
-- Fix already image search bug
-- Round robin tab moves
+
 
 Sunday
 - Fix tab open animation. Not opening from top but from center. When going from low to high height. 

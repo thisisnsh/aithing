@@ -290,6 +290,12 @@ struct TabView: View {
     // MARK: - AI Functions
 
     private func callModel(query: String) async {
+        do {
+            try await Task.sleep(nanoseconds: 200_000_000)
+        } catch {
+            // Sleeping just to complete debounce on typing
+        }
+
         return await fakeData(query: query)
 
         let model = "claude-sonnet-4-20250514"

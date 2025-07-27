@@ -164,12 +164,15 @@ struct ContentView: View {
 
     private func moveFocus(_ direction: Int) {
         withAnimation {
-            let newIndex = focusedIndex + direction
-            if (0..<tabs.count).contains(newIndex) {
-                focusedIndex = -1
-                DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
-                    focusedIndex = newIndex
-                }
+            let count = tabs.count
+            guard count > 0 else { return }
+
+            let newIndex = (focusedIndex + direction + count) % count
+
+            // Temporarily unset focus to trigger animation
+            focusedIndex = -1
+            DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
+                focusedIndex = newIndex
             }
         }
     }
