@@ -32,10 +32,13 @@ enum Entry: Codable, Identifiable, Equatable {
                 self = .url(name: name, url: url)
             }
         } else if let command = try? container.decode(String.self, forKey: .command),
-                  let arguments = try? container.decode([String].self, forKey: .arguments) {
+            let arguments = try? container.decode([String].self, forKey: .arguments)
+        {
             self = .command(name: name, command: command, arguments: arguments)
         } else {
-            throw DecodingError.dataCorrupted(.init(codingPath: [], debugDescription: "Unrecognized JSON structure"))
+            throw DecodingError.dataCorrupted(
+                .init(codingPath: [], debugDescription: "Unrecognized JSON structure")
+            )
         }
     }
 
@@ -68,3 +71,19 @@ enum Entry: Codable, Identifiable, Equatable {
     }
 }
 
+// MARK: - Account Handling
+
+func getAnthropicAPIKey() -> String? {
+    UserDefaults.standard.string(forKey: "AnthropicAPIKey")
+}
+
+// MARK: - Agents Handling
+
+func getAgentEntries() -> [AgentEntry] {
+    if let data = UserDefaults.standard.data(forKey: "AgentEntries"),
+        let decoded = try? JSONDecoder().decode([AgentEntry].self, from: data)
+    {
+        return decoded
+    }
+    return []
+}

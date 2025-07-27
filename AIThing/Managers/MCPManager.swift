@@ -22,33 +22,25 @@ class MCPManager: ObservableObject {
     var process: [String: Process] = [:]
 
     init() {
-        print("[MCPClientManager init]")
         LoggingSystem.bootstrap { label in
             var handler = StreamLogHandler.standardOutput(label: label)
             handler.logLevel = .info
             return handler
         }
 
-        clients["macos"] = Client(name: "AIThing for MacOS", version: "0.1.0")
-        executableURL["macos"] = "/opt/homebrew/bin/bunx"
-        arguments["macos"] = ["@dhravya/apple-mcp@latest"]
-        serverInputPipe["macos"] = Pipe()
-        serverOutputPipe["macos"] = Pipe()
-        process["macos"] = Process()
-
-        clients["xcode"] = Client(name: "AIThing for Xcode", version: "0.1.0")
-        executableURL["xcode"] = "/usr/local/bin/xcode-npx-wrapper"
-        arguments["xcode"] = ["-y", "xcodebuildmcp@latest"]
-        serverInputPipe["xcode"] = Pipe()
-        serverOutputPipe["xcode"] = Pipe()
-        process["xcode"] = Process()
-
         logger = Logger(label: "com.thisisnsh.mac.AIThing")
     }
 
-    func connect(clientName: String) async {
+    func connect(clientName: String, command: String, args: [String]) async {
         do {
             let clientName = clientName.lowercased()
+            clients[clientName] = Client(name: "AIThing for \(clientName)", version: "0.1.0")
+            executableURL[clientName] = command
+            arguments[clientName] = args
+            serverInputPipe[clientName] = Pipe()
+            serverOutputPipe[clientName] = Pipe()
+            process[clientName] = Process()
+
             guard let client = clients[clientName] else { return }
             guard let executableURL = executableURL[clientName] else { return }
             guard let arguments = arguments[clientName] else { return }
@@ -77,12 +69,34 @@ class MCPManager: ObservableObject {
             )
 
             try process.run()
-            print("Process launched")
 
             try await client.connect(transport: transport)
             print("Connected to MCP server for \(clientName)")
         } catch {
             print("Error in connecting: \(error.localizedDescription)")
+        }
+    }
+
+    func disconnect() async {
+        do {
+            for client in clients.values {
+                await client.disconnect()
+            }
+            for (_, process) in process {
+                process.terminate()
+            }
+            executableURL.removeAll()
+            arguments.removeAll()
+            for pipe in serverInputPipe.values {
+                try pipe.fileHandleForReading.close()
+                try pipe.fileHandleForWriting.close()
+            }
+            for pipe in serverOutputPipe.values {
+                try pipe.fileHandleForReading.close()
+                try pipe.fileHandleForWriting.close()
+            }
+        } catch {
+
         }
     }
 

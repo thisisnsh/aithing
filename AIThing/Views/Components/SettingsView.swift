@@ -22,7 +22,7 @@ struct SettingsView: View {
     @State private var apiKey: String =
         UserDefaults.standard.string(forKey: "AnthropicAPIKey") ?? ""
     @State private var agentJsonInput: String = ""
-    @State private var agents: [AgentEntry] = loadAgentEntries()
+    @State private var agents: [AgentEntry] = getAgentEntries()
 
     var body: some View {
         HStack(spacing: 0) {
@@ -142,19 +142,13 @@ struct SettingsView: View {
         }
     }
 
-    // MARK: - Account Handling
+    // MARK: - Agents Handling
 
-    private func saveAPIKey() {
+    func saveAPIKey() {
         UserDefaults.standard.set(apiKey, forKey: "AnthropicAPIKey")
     }
 
-    static func getAnthropicAPIKey() -> String? {
-        UserDefaults.standard.string(forKey: "AnthropicAPIKey")
-    }
-
-    // MARK: - Agents Handling
-
-    private func addAgentEntry() {
+    func addAgentEntry() {
         let sanitized =
             agentJsonInput
             .replacingOccurrences(of: "“", with: "\"")
@@ -175,29 +169,16 @@ struct SettingsView: View {
         saveAgents()
     }
 
-    private func deleteAgent(_ agent: AgentEntry) {
-        if let index = agents.firstIndex(of: agent) {
-            agents.remove(at: index)
-            saveAgents()
-        }
-    }
-
-    private func saveAgents() {
+    func saveAgents() {
         if let data = try? JSONEncoder().encode(agents) {
             UserDefaults.standard.set(data, forKey: "AgentEntries")
         }
     }
 
-    static func getAgentEntries() -> [AgentEntry] {
-        loadAgentEntries()
-    }
-
-    static private func loadAgentEntries() -> [AgentEntry] {
-        if let data = UserDefaults.standard.data(forKey: "AgentEntries"),
-            let decoded = try? JSONDecoder().decode([AgentEntry].self, from: data)
-        {
-            return decoded
+    func deleteAgent(_ agent: AgentEntry) {
+        if let index = agents.firstIndex(of: agent) {
+            agents.remove(at: index)
+            saveAgents()
         }
-        return []
     }
 }

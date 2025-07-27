@@ -26,10 +26,12 @@ struct ContentView: View {
     @State private var showHelp = false
     @State private var showSettings = false
     @State private var tabs: [TabItem] = []
+    @State private var agents: [AgentEntry] = []
 
     @State private var maxTabs: Int = 5
     @State private var width: CGFloat = 640 + 48
 
+    @State private var toastText: String = ""
     private var helpText: String {
         return """
             ## Help Sheet
@@ -68,7 +70,7 @@ struct ContentView: View {
                     .padding(.top, 16)
             }
             if showToast || showHelp {
-                MarkdownText(text: showHelp ? helpText : "Maximum of \(maxTabs) tabs reached")
+                MarkdownText(text: showHelp ? helpText : toastText)
                     .padding()
                     .background(.ultraThinMaterial)
                     .overlay {
@@ -93,7 +95,7 @@ struct ContentView: View {
                 if event.modifierFlags.contains(.control) {
                     switch event.keyCode {
                     case 1:  // S key
-                        showSettings.toggle()
+                        onSetting()
                         return nil
                     case 4:  // H key
                         onHelp()
@@ -117,43 +119,80 @@ struct ContentView: View {
                 return event
             }
         }
-//        .onChange(of: showSettings) {
-//            Task {
-//                await loadAllClientTools()
-//            }
-//        }
+        .onChange(of: showSettings) {
+            incrementSizePanel(showSettings ? 500 : -500)
+            Task {
+                await loadAllClientTools()
+            }
+        }
         .task {
             await loadAllClientTools()
         }
     }
 
     private func loadAllClientTools() async {
-        await withTaskGroup(of: (String, [[String: Any]]).self) { group in
-            for (clientName, _) in mcp.clients {
-                group.addTask {
-                    let tools = await mcp.getTools(clientName: clientName)
-                    return (clientName, tools)
+        let newAgents = getAgentEntries()
+        var allMatch = true
+
+        if agents.count == newAgents.count {
+            for (i, agent) in newAgents.enumerated() {
+                let existing = agents[i]
+                if existing.id != agent.id || existing.isEnabled != agent.isEnabled {
+                    allMatch = false
+                    break
                 }
             }
+        } else {
+            allMatch = false
+        }
 
-            for await (clientName, tools) in group {
-                allClientTools[clientName] = tools
+        if allMatch {
+            return
+        }
+
+        agents = newAgents
+        toastText = "Loading Agents..."
+        showToast = true
+
+        await mcp.disconnect()
+        allClientTools.removeAll()
+
+        for agent in agents {
+            if !agent.isEnabled {
+                continue
+            }
+
+            switch agent.entry {
+            case .url(let name, let url):
+                continue
+            case .urlWithToken(let name, let url, let token):
+                continue
+            case .command(let name, let command, let arguments):
+                await mcp.connect(clientName: name, command: command, args: arguments)
+                let tools = await mcp.getTools(clientName: name)
+                allClientTools[name] = tools
             }
         }
+
+        showToast = false
     }
-    
+
+    private func onSetting() {
+        showSettings.toggle()
+    }
+
     private func onHelp() {
         showHelp = true
-        let extraHeight = getExtraSize()
-        onSizeChange(200)
+        incrementSizePanel(200)
         DispatchQueue.main.asyncAfter(deadline: .now() + 2) {
             showHelp = false
-            onSizeChange(extraHeight)
+            incrementSizePanel(-200)
         }
     }
 
     private func addTab() {
         if tabs.count >= maxTabs {
+            toastText = "Maximum of \(maxTabs) tabs reached"
             showToast = true
             DispatchQueue.main.asyncAfter(deadline: .now() + 2) {
                 showToast = false
@@ -208,7 +247,7 @@ struct ContentView: View {
 
         TabView(
             isFocused: isFocusedBinding,
-            allClientTools: allClientTools,
+            allClientTools: $allClientTools,
             onHelp: { self.onHelp() },
             onSizeChange: { extraHeight in
                 onSizeChange(extraHeight)

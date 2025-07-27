@@ -14,7 +14,7 @@ struct TabView: View {
     @EnvironmentObject var mcp: MCPManager
 
     @Binding var isFocused: Bool
-    var allClientTools: [String: [[String: Any]]]
+    @Binding var allClientTools: [String: [[String: Any]]]
     var onHelp: () -> Void
     var onSizeChange: (CGFloat) -> Void
     var incrementSizePanel: (CGFloat) -> Void
@@ -318,15 +318,19 @@ struct TabView: View {
         } catch {
             // Sleeping just to complete debounce on typing
         }
-
+        
+        modelTools = allClientTools.values.flatMap { $0 }
+        print(modelTools)
+        
+        // Fake data
         return await fakeData(query: query)
 
         let model = "claude-sonnet-4-20250514"
 
-        guard let apiKey = Env.get("ANTHROPIC_API_KEY")
+        guard let apiKey = getAnthropicAPIKey()
         else {
             isThinking = false
-            modelOutputError = "Missing LLM API Key"
+            modelOutputError = "Missing Anthropic API Key"
             return
         }
 
