@@ -11,11 +11,12 @@ Missing Features
 
 Monday
 - Video
+- Pro Plan
 - Website aithing.dev
 
 
 Tuesday
-- Release
+- Shift+Enter Text Field
 
 
 Future

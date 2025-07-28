@@ -17,12 +17,6 @@ struct FocusableTextField: NSViewRepresentable {
     var onCommandRemoved: (String) -> Void = { _ in }  // ← new
     var onDebouncedTextChange: (String) -> Void = { _ in }
 
-//    class NonSelectingTextField: NSTextField {
-//        override func selectText(_ sender: Any?) {
-//            // Do nothing to prevent auto-selection
-//        }
-//    }
-
     class Coordinator: NSObject, NSTextFieldDelegate {
         var parent: FocusableTextField
         private var seenCommands = Set<String>()
@@ -79,7 +73,6 @@ struct FocusableTextField: NSViewRepresentable {
         }
     }
 
-
     func makeCoordinator() -> Coordinator {
         Coordinator(self)
     }
@@ -122,4 +115,5 @@ struct FocusableTextField: NSViewRepresentable {
         }
         nsView.isEditable = !isEditable
     }
+
 }
