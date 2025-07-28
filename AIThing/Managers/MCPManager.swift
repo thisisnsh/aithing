@@ -12,8 +12,12 @@ import System
 
 class MCPManager: ObservableObject {
     var clients: [String: Client] = [:]
+
     var executableURL: [String: String] = [:]
     var arguments: [String: [String]] = [:]
+
+    var httpURL: [String: String] = [:]
+    var headers: [String: [String: String]] = [:]
 
     var logger: Logger?
 
@@ -31,7 +35,7 @@ class MCPManager: ObservableObject {
         logger = Logger(label: "com.thisisnsh.mac.AIThing")
     }
 
-    func connect(clientName: String, command: String, args: [String]) async {
+    func connect(clientName: String, command: String, args: [String]) async -> Bool {
         do {
             let clientName = clientName.lowercased()
             clients[clientName] = Client(name: "AIThing for \(clientName)", version: "0.1.0")
@@ -41,14 +45,14 @@ class MCPManager: ObservableObject {
             serverOutputPipe[clientName] = Pipe()
             process[clientName] = Process()
 
-            guard let client = clients[clientName] else { return }
-            guard let executableURL = executableURL[clientName] else { return }
-            guard let arguments = arguments[clientName] else { return }
-            guard let serverInputPipe = serverInputPipe[clientName] else { return }
-            guard let serverOutputPipe = serverOutputPipe[clientName] else { return }
-            guard let process = process[clientName] else { return }
+            guard let client = clients[clientName] else { return false }
+            guard let executableURL = executableURL[clientName] else { return false }
+            guard let arguments = arguments[clientName] else { return false }
+            guard let serverInputPipe = serverInputPipe[clientName] else { return false }
+            guard let serverOutputPipe = serverOutputPipe[clientName] else { return false }
+            guard let process = process[clientName] else { return false }
 
-            guard let logger = logger else { return }
+            guard let logger = logger else { return false }
 
             let serverInput: FileDescriptor = FileDescriptor(
                 rawValue: serverInputPipe.fileHandleForWriting.fileDescriptor
@@ -72,12 +76,55 @@ class MCPManager: ObservableObject {
 
             try await client.connect(transport: transport)
             print("Connected to MCP server for \(clientName)")
+            return true
         } catch {
             print("Error in connecting: \(error.localizedDescription)")
+            return false
         }
     }
 
-    func disconnect() async {
+    func connect(clientName: String, url: String, authToken: String?) async -> Bool {
+        do {
+            let clientName = clientName.lowercased()
+            clients[clientName] = Client(name: "AIThing for \(clientName)", version: "0.1.0")
+            httpURL[clientName] = url
+            if let authToken = authToken {
+                headers[clientName] = ["Authorization": "Bearer \(authToken)"]
+            } else {
+                headers[clientName] = [:]
+            }
+
+            guard let client = clients[clientName] else { return false }
+            guard let httpURL = httpURL[clientName] else { return false }
+            guard let headers = headers[clientName] else { return false }
+
+            guard let logger = logger else { return false }
+
+            let configuration = URLSessionConfiguration.default
+            configuration.httpAdditionalHeaders = headers
+
+            let transport = HTTPClientTransport(
+                endpoint: URL(string: httpURL)!,
+                configuration: configuration,
+                streaming: httpURL.hasSuffix("/sse/") || httpURL.hasSuffix("/sse"),
+                sseInitializationTimeout: 10,
+                logger: logger
+            )
+
+            print(configuration)
+            print(URL(string: httpURL)!)
+            print(transport)
+
+            try await client.connect(transport: transport)
+            print("Connected to MCP server for \(clientName)")
+            return true
+        } catch {
+            print("Error in connecting: \(error.localizedDescription)")
+            return false
+        }
+    }
+
+    func disconnect() async -> Bool {
         do {
             for client in clients.values {
                 await client.disconnect()
@@ -95,8 +142,10 @@ class MCPManager: ObservableObject {
                 try pipe.fileHandleForReading.close()
                 try pipe.fileHandleForWriting.close()
             }
+            return true
         } catch {
-
+            print("Error in disconnecting: \(error.localizedDescription)")
+            return false
         }
     }
 
@@ -127,7 +176,7 @@ class MCPManager: ObservableObject {
 
             let (content, isError) = try await client.callTool(name: name, arguments: dict)
             if isError ?? false {
-                print("Error in getting tools")
+                print("Error in calling tools")
                 return []
             }
 
@@ -144,7 +193,7 @@ class MCPManager: ObservableObject {
 
             return response
         } catch {
-            print("Error in getting tools: \(error.localizedDescription)")
+            print("Error in calling tools: \(error.localizedDescription)")
             return []
         }
     }

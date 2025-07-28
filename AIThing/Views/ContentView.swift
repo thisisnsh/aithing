@@ -62,7 +62,6 @@ struct ContentView: View {
                             .stroke(Color.white, lineWidth: 1.5)
                     }
                     .cornerRadius(24)
-                    .transition(.opacity)
                     .zIndex(1)
                     .frame(width: 600, height: 500)
                     .padding(.leading, 48)
@@ -78,7 +77,6 @@ struct ContentView: View {
                             .stroke(Color.white, lineWidth: 1.5)
                     }
                     .cornerRadius(24)
-                    .transition(.opacity)
                     .zIndex(2)
                     .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top)
                     .padding(.leading, 48)
@@ -151,10 +149,20 @@ struct ContentView: View {
         }
 
         agents = newAgents
-        toastText = "Loading Agents..."
+        toastText = "💤 Waking up Agents..."
         showToast = true
 
-        await mcp.disconnect()
+        var failure = ""
+
+        let disconnectRc = await mcp.disconnect()
+        if !disconnectRc {
+            toastText = "❌ Failed to wake up agents"
+            DispatchQueue.main.asyncAfter(deadline: .now() + 2) {
+                showToast = false
+            }
+            return
+        }
+
         allClientTools.removeAll()
 
         for agent in agents {
@@ -162,19 +170,38 @@ struct ContentView: View {
                 continue
             }
 
+            let name: String
+            let connectRc: Bool
+
             switch agent.entry {
-            case .url(let name, let url):
-                continue
-            case .urlWithToken(let name, let url, let token):
-                continue
-            case .command(let name, let command, let arguments):
-                await mcp.connect(clientName: name, command: command, args: arguments)
+            case let .url(n, url):
+                name = n
+                connectRc = await mcp.connect(clientName: name, url: url, authToken: nil)
+
+            case let .urlWithToken(n, url, token):
+                name = n
+                connectRc = await mcp.connect(clientName: name, url: url, authToken: token)
+
+            case let .command(n, command, arguments):
+                name = n
+                connectRc = await mcp.connect(clientName: name, command: command, args: arguments)
+            }
+
+            if connectRc {
                 let tools = await mcp.getTools(clientName: name)
                 allClientTools[name] = tools
+            } else {
+                failure += "\n\n- \(name)"
             }
         }
 
-        showToast = false
+        if !failure.isEmpty {
+            toastText = "❌ Failed to wake up agents\n" + failure
+        }
+
+        DispatchQueue.main.asyncAfter(deadline: .now() + (failure.isEmpty ? 2 : 5)) {
+            showToast = false
+        }
     }
 
     private func onSetting() {

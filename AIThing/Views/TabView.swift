@@ -319,11 +319,11 @@ struct TabView: View {
             // Sleeping just to complete debounce on typing
         }
         
+        // Load latest tools
         modelTools = allClientTools.values.flatMap { $0 }
-        print(modelTools)
-        
+
         // Fake data
-        return await fakeData(query: query)
+        //        return await fakeData(query: query)
 
         let model = "claude-sonnet-4-20250514"
 
@@ -384,9 +384,9 @@ struct TabView: View {
         ]
 
         print("--------")
-        print("messages: \((body["messages"] as! [Any]).last ?? "")")
-        print("system: \(body["system"] as! [Any])")
-        print("tools_count: \((body["tools"] as! [Any]).count)")
+//        print("messages: \((body["messages"] as! [Any]).last ?? "")")
+//        print("system: \(body["system"] as! [Any])")
+//        print("tools_count: \((body["tools"] as! [Any]).count)")
 
         request.httpBody = try? JSONSerialization.data(withJSONObject: body)
 

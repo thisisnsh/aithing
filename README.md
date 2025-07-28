@@ -9,7 +9,6 @@ Missing Features
 
 
 Monday
-- Bring Your Own Claude Key
 - Video
 - Website aithing.dev
 
@@ -18,7 +17,7 @@ Tuesday
 - Release
 
 Future
-- Settings Height
+- Show Error MCP Loading
 - RAG MCP
 - Login Firebase
 - Get API from Firebase
