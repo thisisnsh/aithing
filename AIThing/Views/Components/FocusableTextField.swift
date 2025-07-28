@@ -17,11 +17,11 @@ struct FocusableTextField: NSViewRepresentable {
     var onCommandRemoved: (String) -> Void = { _ in }  // ← new
     var onDebouncedTextChange: (String) -> Void = { _ in }
 
-    class NonSelectingTextField: NSTextField {
-        override func selectText(_ sender: Any?) {
-            // Do nothing to prevent auto-selection
-        }
-    }
+//    class NonSelectingTextField: NSTextField {
+//        override func selectText(_ sender: Any?) {
+//            // Do nothing to prevent auto-selection
+//        }
+//    }
 
     class Coordinator: NSObject, NSTextFieldDelegate {
         var parent: FocusableTextField
@@ -85,7 +85,7 @@ struct FocusableTextField: NSViewRepresentable {
     }
 
     func makeNSView(context: Context) -> NSTextField {
-        let textField = NonSelectingTextField(string: text)
+        let textField = NSTextField(string: text)
         textField.delegate = context.coordinator
 
         textField.isBordered = false

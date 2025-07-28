@@ -236,7 +236,7 @@ struct ContentView: View {
     private func closeTab() {
         let indexToRemove = focusedIndex
 
-        if tabs.count == 1 { addTab() }  // Don't remove the last tab
+        if tabs.count == 1 { addTab() }  // Don't remove the last =tab
 
         withAnimation {
             tabs.remove(at: indexToRemove)

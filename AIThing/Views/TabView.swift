@@ -323,7 +323,7 @@ struct TabView: View {
         modelTools = allClientTools.values.flatMap { $0 }
 
         // Fake data
-        //        return await fakeData(query: query)
+                return await fakeData(query: query)
 
         let model = "claude-sonnet-4-20250514"
 
