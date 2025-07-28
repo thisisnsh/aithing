@@ -318,7 +318,7 @@ struct TabView: View {
         } catch {
             // Sleeping just to complete debounce on typing
         }
-        
+
         // Load latest tools
         modelTools = allClientTools.values.flatMap { $0 }
 
@@ -384,9 +384,9 @@ struct TabView: View {
         ]
 
         print("--------")
-//        print("messages: \((body["messages"] as! [Any]).last ?? "")")
-//        print("system: \(body["system"] as! [Any])")
-//        print("tools_count: \((body["tools"] as! [Any]).count)")
+        print("messages: \(body["messages"])")
+        //        print("system: \(body["system"] as! [Any])")
+        //        print("tools_count: \((body["tools"] as! [Any]).count)")
 
         request.httpBody = try? JSONSerialization.data(withJSONObject: body)
 
@@ -516,6 +516,9 @@ struct TabView: View {
                                 name: finalToolUseName,
                                 input: finalToolUseInputParam
                             )
+                            print("--------")
+                            print("call tool: \(finalToolUseName)")
+                            print("tool input: \(finalToolUseInputParam)")
 
                             modelInput.append([
                                 "role": "user",

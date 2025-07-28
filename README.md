@@ -1,5 +1,6 @@
 # AI Thing (Previously This)
 
+
 Missing Features
 - No History 
 - No Screen recording / audio
@@ -16,8 +17,8 @@ Monday
 Tuesday
 - Release
 
+
 Future
-- Show Error MCP Loading
 - RAG MCP
 - Login Firebase
 - Get API from Firebase
@@ -32,7 +33,11 @@ Future
 
 
 
-
+{
+    “name” :“github”, 
+    “url”: “https://api.githubcopilot.com/mcp/”, 
+    “authorization_token”: “<your-github-token>” 
+}
 
 
 Xcode MCP:  https://www.google.com/search?client=safari&rls=en&q=xcrun%3A+error%3A+unable+to+find+utility+%22simctl%22%2C+not+a+developer+tool+or+in+PATH&ie=UTF-8&oe=UTF-8

@@ -155,8 +155,8 @@ struct ContentView: View {
         var failure = ""
 
         let disconnectRc = await mcp.disconnect()
-        if !disconnectRc {
-            toastText = "❌ Failed to wake up agents"
+        if !disconnectRc.isEmpty {
+            toastText = "❌ Failed to wake up agents: \(disconnectRc)"
             DispatchQueue.main.asyncAfter(deadline: .now() + 2) {
                 showToast = false
             }
@@ -171,7 +171,7 @@ struct ContentView: View {
             }
 
             let name: String
-            let connectRc: Bool
+            let connectRc: String
 
             switch agent.entry {
             case let .url(n, url):
@@ -187,11 +187,11 @@ struct ContentView: View {
                 connectRc = await mcp.connect(clientName: name, command: command, args: arguments)
             }
 
-            if connectRc {
+            if connectRc.isEmpty {
                 let tools = await mcp.getTools(clientName: name)
                 allClientTools[name] = tools
             } else {
-                failure += "\n\n- \(name)"
+                failure += "\n\n- \(name): \(connectRc)"
             }
         }
 
