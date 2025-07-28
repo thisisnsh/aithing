@@ -47,7 +47,7 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate {
 
         let contentView = ContentView(
             onClose: { self.toggleWindow() },
-            onSizeChange: { extraHeight in
+            resizePanel: { extraHeight in
                 self.resizePanel(extraHeight: extraHeight)
             },
             incrementSizePanel: { extraHeight in

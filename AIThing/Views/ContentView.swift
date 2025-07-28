@@ -15,7 +15,7 @@ struct ContentView: View {
     @EnvironmentObject var mcp: MCPManager
 
     var onClose: () -> Void
-    var onSizeChange: (CGFloat) -> Void
+    var resizePanel: (CGFloat) -> Void
     var incrementSizePanel: (CGFloat) -> Void
     var getExtraSize: () -> CGFloat
 
@@ -257,7 +257,7 @@ struct ContentView: View {
             DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
                 // Increase height to max while switching
                 // It will be resized when tab in focus
-                onSizeChange(1000)
+                resizePanel(1000)
             }
             DispatchQueue.main.asyncAfter(deadline: .now() + 0.2) {
                 focusedIndex = newIndex
@@ -276,8 +276,8 @@ struct ContentView: View {
             isFocused: isFocusedBinding,
             allClientTools: $allClientTools,
             onHelp: { self.onHelp() },
-            onSizeChange: { extraHeight in
-                onSizeChange(extraHeight)
+            resizePanel: { extraHeight in
+                resizePanel(extraHeight)
             },
             incrementSizePanel: { height in
                 incrementSizePanel(height)

@@ -16,7 +16,7 @@ struct TabView: View {
     @Binding var isFocused: Bool
     @Binding var allClientTools: [String: [[String: Any]]]
     var onHelp: () -> Void
-    var onSizeChange: (CGFloat) -> Void
+    var resizePanel: (CGFloat) -> Void
     var incrementSizePanel: (CGFloat) -> Void
 
     @State private var imageName: String = "Logo"
@@ -76,17 +76,21 @@ struct TabView: View {
             .cornerRadius(getCornerRadius())
             .animation(.easeInOut(duration: 0.25), value: isFocused)
             .onAppear {
-                onSizeChange(getResponseHeight())
+                DispatchQueue.main.async {
+                    resizePanel(getResponseHeight())
+                }
             }
             .onChange(of: isFocused) {
                 // Delay size change when in focus so that other
                 // views not in focus adjust height first
                 if isFocused {
                     DispatchQueue.main.asyncAfter(deadline: .now() + 0.2) {
-                        onSizeChange(getResponseHeight())
+                        resizePanel(getResponseHeight())
                     }
                 } else {
-                    onSizeChange(getResponseHeight())
+                    DispatchQueue.main.async {
+                        resizePanel(getResponseHeight())
+                    }
                 }
             }
 
@@ -202,7 +206,9 @@ struct TabView: View {
                 if responseHeight < checkedHeight {
                     responseHeight = checkedHeight
                     if isFocused {
-                        onSizeChange(getResponseHeight())
+                        DispatchQueue.main.async {
+                            resizePanel(getResponseHeight())
+                        }
                     }
                 }
             }
@@ -299,8 +305,9 @@ struct TabView: View {
         showResponseArea = true
 
         responseHeight = responseHeightMin
-        onSizeChange(getResponseHeight())
-
+        DispatchQueue.main.async {
+            resizePanel(getResponseHeight())
+        }
         if modelInputImage == nil {
 
         }
@@ -323,7 +330,7 @@ struct TabView: View {
         modelTools = allClientTools.values.flatMap { $0 }
 
         // Fake data
-                return await fakeData(query: query)
+        return await fakeData(query: query)
 
         let model = "claude-sonnet-4-20250514"
 
