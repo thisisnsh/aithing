@@ -25,6 +25,7 @@ struct SettingsView: View {
     @State private var agentJsonInput: String = ""
     @State private var agents: [AgentEntry] = getAgentEntries()
     @FocusState private var apiKeyFieldFocused: Bool
+    @State private var showToast = false
 
     var body: some View {
         HStack(spacing: 0) {
@@ -101,9 +102,21 @@ struct SettingsView: View {
                             .frame(height: 80)
                             .clipShape(RoundedRectangle(cornerRadius: 8))
 
-                        Button("Add Agent") {
-                            if agents.count < 5 {
-                                addAgentEntry()
+                        HStack {
+                            Button("Add Agent (Max 3)") {
+                                showToast = false
+                                if agents.count < 3 { // DEBUG
+                                    let rc = addAgentEntry()
+                                    if !rc {
+                                        showToast = true
+                                        DispatchQueue.main.asyncAfter(deadline: .now() + 5) {
+                                            showToast = false
+                                        }
+                                    }
+                                }
+                            }
+                            if showToast {
+                                Text("Invalid JSON: http://aithing.dev/help")
                             }
                         }
 
@@ -111,7 +124,7 @@ struct SettingsView: View {
                             .padding(.top, 8)
 
                         if agents.count > 0 {
-                            Text("Agents (Max 5)")
+                            Text("Agents")
                                 .font(.headline)
                                 .padding(.vertical, 8)
                         }
@@ -170,25 +183,26 @@ struct SettingsView: View {
         UserDefaults.standard.set(apiKey, forKey: "AnthropicAPIKey")
     }
 
-    func addAgentEntry() {
-        let sanitized =
+    func addAgentEntry() -> Bool {
+        agentJsonInput =
             agentJsonInput
             .replacingOccurrences(of: "“", with: "\"")
             .replacingOccurrences(of: "”", with: "\"")
             .replacingOccurrences(of: "‘", with: "'")
             .replacingOccurrences(of: "’", with: "'")
 
-        guard let data = sanitized.data(using: .utf8),
+        guard let data = agentJsonInput.data(using: .utf8),
             let parsed = try? JSONDecoder().decode(Entry.self, from: data)
         else {
             print("Invalid JSON")
-            return
+            return false
         }
 
         let newAgent = AgentEntry(id: UUID(), entry: parsed, isEnabled: true)
         agents.append(newAgent)
         agentJsonInput = ""
         saveAgents()
+        return true
     }
 
     func saveAgents() {

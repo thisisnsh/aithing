@@ -47,7 +47,7 @@ struct TabView: View {
     var body: some View {
         VStack(alignment: .leading, spacing: 8) {
             Color.clear.frame(height: 32)
-            VStack(spacing: 0) {
+            VStack(alignment: .leading, spacing: 0) {
                 inputView()
                 if isFocused, showResponseArea {
                     responseView()
@@ -330,7 +330,7 @@ struct TabView: View {
         modelTools = allClientTools.values.flatMap { $0 }
 
         // Fake data
-        return await fakeData(query: query)
+        //        return await fakeData(query: query) // DEBUG
 
         let model = "claude-sonnet-4-20250514"
 
@@ -638,6 +638,11 @@ struct TabView: View {
                 "type": "text",
                 "text":
                     "You are expected to behave as an agent: you can perceive user instructions, reason about available tools, and invoke them if appropriate. Do not describe the tools unless explicitly asked. You must be precise, context-aware, and avoid guessing when information is ambiguous or incomplete. You must always output in Markdown.",
+            ],
+            [
+                "type": "text",
+                "text":
+                    "Give brief answers until asked to elaborate. Ask before giving a detailed response.",
             ],
         ]
 

@@ -64,9 +64,9 @@ enum Entry: Codable, Identifiable, Equatable {
         case let .url(name, url):
             return "name: \(name)\nurl: \(url)"
         case let .urlWithToken(name, url, token):
-            return "name: \(name)\nurl: \(url)\ntoken: \(token)"
+            return "name: \(name)\nurl: \(url)\nauthorization_token: \(token)"
         case let .command(name, command, arguments):
-            return "name: \(name)\ncommand: \(command)\nargs: \(arguments.joined(separator: " "))"
+            return "name: \(name)\ncommand: \(command)\narguments: \(arguments.joined(separator: " "))"
         }
     }
 }

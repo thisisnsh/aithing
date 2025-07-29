@@ -28,7 +28,7 @@ struct ContentView: View {
     @State private var tabs: [TabItem] = []
     @State private var agents: [AgentEntry] = []
 
-    @State private var maxTabs: Int = 5
+    @State private var maxTabs: Int = 3  // DEBUG
     @State private var width: CGFloat = 640 + 48
 
     @State private var toastText: String = ""

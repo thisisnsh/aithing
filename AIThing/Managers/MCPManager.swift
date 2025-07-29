@@ -132,7 +132,9 @@ class MCPManager: ObservableObject {
                 await client.disconnect()
             }
             for (_, process) in process {
-                process.terminate()
+                if process.isRunning {
+                    process.terminate()
+                }
             }
             executableURL.removeAll()
             arguments.removeAll()

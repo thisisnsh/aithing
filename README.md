@@ -9,10 +9,6 @@ Missing Features
       
 
 Tuesday
-- Undo Free Plan Modifications
-- Video
-- Do Free Plan Modifications
-- Release
 - Free Version
     - 7 Day Expiry Build
     - 3 Tabs
@@ -50,17 +46,19 @@ Future
 
 
 
+
 {
     “name” :“github”, 
     “url”: “https://api.githubcopilot.com/mcp/”, 
     “authorization_token”: “<your-github-token>” 
 }
 
-{
-    “name” :“xcode”, 
-    “command”: “/usr/local/bin/xcode-npx-wrapper”, 
-    “arguments”: ["-y", "xcodebuildmcp@latest"] 
-}
+
+{ 
+    “name”: “xcode”, 
+    “command”: “/usr/local/bin/xcode-npx-wrapper”, 
+    “arguments”: ["-y", "xcodebuildmcp@latest"] 
+} 
 
 
 Xcode MCP:  https://www.google.com/search?client=safari&rls=en&q=xcrun%3A+error%3A+unable+to+find+utility+%22simctl%22%2C+not+a+developer+tool+or+in+PATH&ie=UTF-8&oe=UTF-8
