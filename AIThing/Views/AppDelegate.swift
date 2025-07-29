@@ -45,16 +45,35 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate {
             object: nil
         )
 
-        let contentView = ContentView(
-            onClose: { self.toggleWindow() },
-            resizePanel: { extraHeight in
-                self.resizePanel(extraHeight: extraHeight)
-            },
-            incrementSizePanel: { extraHeight in
-                return self.incrementSizePanel(extraHeight: extraHeight)
-            },
-            getExtraSize: { return self.getExtraHeightPanel() }
-        ).environmentObject(mcp)
+        let dateFormatter = DateFormatter()
+        dateFormatter.dateFormat = "yyyy-MM-dd"
+        let expiryDate = dateFormatter.date(from: "2025-08-03")!
+        let today = Date()
+
+        let contentView: AnyView
+        if Calendar.current.isDate(today, inSameDayAs: expiryDate) {
+            contentView = AnyView(
+                Text("AI Thing app has expired, please download again")
+                    .frame(width: 640, height: 64)
+                    .background(.black)
+                    .clipShape(RoundedRectangle(cornerRadius: 32))
+                    .multilineTextAlignment(.center)
+                    .padding()
+            )
+        } else {
+            contentView = AnyView(
+                ContentView(
+                    onClose: { self.toggleWindow() },
+                    resizePanel: { extraHeight in
+                        self.resizePanel(extraHeight: extraHeight)
+                    },
+                    incrementSizePanel: { extraHeight in
+                        return self.incrementSizePanel(extraHeight: extraHeight)
+                    },
+                    getExtraSize: { return self.getExtraHeightPanel() }
+                ).environmentObject(mcp)
+            )
+        }
 
         let hostingView = NSHostingView(rootView: contentView)
 
