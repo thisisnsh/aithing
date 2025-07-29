@@ -5,21 +5,37 @@ Missing Features
 - No History 
 - No Screen recording / audio
 - No CMD+- to change font size
-- No Google MCP 
 - No Theme Change
-
-
-Monday
-- Video
-- Pro Plan
-- Website aithing.dev
-
+      
 
 Tuesday
-- Shift+Enter Text Field
+- Undo Free Plan Modifications
+- Video
+- Do Free Plan Modifications
+- Release
+- Free Version
+    - 7 Day Expiry Build
+    - 3 Tabs
+    - 3 MCP Servers
+    - BYOK
+    - Privacy & Security
+    - Coming Soon: Elicitation 
+    - Coming Soon: RAG MCP 
+- Paid
+    - Login
+    - History
+    - Easy Integrations
+    - Managed Keys
+    - Black Box Security
+    - Shift+Enter Text Field    
+    - Customize Theme
+    - Targeted Context Image
+
 
 
 Future
+- Auto launch on startup
+- Shift+Enter Text Field
 - RAG MCP
 - Login Firebase
 - Get API from Firebase
@@ -38,6 +54,12 @@ Future
     “name” :“github”, 
     “url”: “https://api.githubcopilot.com/mcp/”, 
     “authorization_token”: “<your-github-token>” 
+}
+
+{
+    “name” :“xcode”, 
+    “command”: “/usr/local/bin/xcode-npx-wrapper”, 
+    “arguments”: ["-y", "xcodebuildmcp@latest"] 
 }
 
 
