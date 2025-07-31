@@ -1,5 +1,5 @@
 //
-//  FocusableTextField.swift
+//  InputTextView.swift
 //  AIThing
 //
 //  Created by Nishant Singh Hada on 7/12/25.
@@ -8,7 +8,7 @@
 import AppKit
 import SwiftUI
 
-struct FocusableTextField: NSViewRepresentable {
+struct InputTextView: NSViewRepresentable {
     @Binding var text: String
     @Binding var isEditable: Bool
 
@@ -19,12 +19,12 @@ struct FocusableTextField: NSViewRepresentable {
     var onSpillover: (Int) -> Void = { _ in }
 
     class Coordinator: NSObject, NSTextViewDelegate {
-        var parent: FocusableTextField
+        var parent: InputTextView
         private var seenCommands = Set<String>()
         private var debounceWorkItem: DispatchWorkItem?
         private let debounceDelay: TimeInterval = 0.3
 
-        init(_ parent: FocusableTextField) {
+        init(_ parent: InputTextView) {
             self.parent = parent
         }
 

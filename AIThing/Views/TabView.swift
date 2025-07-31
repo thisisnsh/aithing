@@ -115,7 +115,7 @@ struct TabView: View {
 
             if isFocused {
                 ZStack(alignment: .leading) {
-                    FocusableTextField(
+                    InputTextView(
                         text: $query,
                         isEditable: $isViewBlinking,  // Do not allow edit when model is thinking
                         onCommit: {
