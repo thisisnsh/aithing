@@ -8,13 +8,11 @@ Missing Features
 - No Theme Change
       
 
-Wednesday
-- Improve Settings UI
-
-
 Thursday
-- Auto launch on startup
-- Show Usage
+- Test: Auto launch on startup
+- Improve Settings UI
+- Show help URL in help popup
+
 
 Friday
 - Website
@@ -37,6 +35,7 @@ Monday
 
 
 Future
+- Show Usage
 - Understand you and suggest things based on time and this
 - Make programmatic typing possible
 - Make JSON addition easier (format and type hint) or button to put the schema

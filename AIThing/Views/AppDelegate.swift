@@ -148,4 +148,9 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate {
         let frame = floatingWindow.frame
         return frame.size.height - height
     }
+
+    func applicationShouldTerminate(_ sender: NSApplication) -> NSApplication.TerminateReply {
+        // Ignore ⌘Q, do not allow app to terminate
+        return .terminateCancel
+    }
 }
