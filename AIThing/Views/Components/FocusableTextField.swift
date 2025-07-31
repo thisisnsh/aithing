@@ -16,8 +16,9 @@ struct FocusableTextField: NSViewRepresentable {
     var onCommandTyped: (String) -> Void = { _ in }
     var onCommandRemoved: (String) -> Void = { _ in }  // ← new
     var onDebouncedTextChange: (String) -> Void = { _ in }
+    var onSpillover: (Int) -> Void = { _ in }
 
-    class Coordinator: NSObject, NSTextFieldDelegate {
+    class Coordinator: NSObject, NSTextViewDelegate {
         var parent: FocusableTextField
         private var seenCommands = Set<String>()
         private var debounceWorkItem: DispatchWorkItem?
@@ -27,11 +28,49 @@ struct FocusableTextField: NSViewRepresentable {
             self.parent = parent
         }
 
-        func controlTextDidChange(_ obj: Notification) {
-            guard let textField = obj.object as? NSTextField else { return }
-            parent.text = textField.stringValue
+        func calculateLineCount(from textView: NSTextView) -> Int {
+            guard let layoutManager = textView.layoutManager,
+                let container = textView.textContainer
+            else { return 0 }
 
-            // Handle \command tracking
+            layoutManager.ensureLayout(for: container)
+            let glyphRange = layoutManager.glyphRange(for: container)
+
+            var lineCount = 0
+            layoutManager.enumerateLineFragments(forGlyphRange: glyphRange) { _, _, _, _, _ in
+                lineCount += 1
+            }
+            return lineCount
+        }
+
+        func textDidChange(_ notification: Notification) {
+            guard let textView = notification.object as? NSTextView else { return }
+            parent.text = textView.string
+
+            // Handle Return key (Commit)
+            if let event = NSApp.currentEvent, event.type == .keyDown {
+                if event.keyCode == 36, !event.modifierFlags.contains(.shift) {
+                    // 36 = Return key
+                    // Commit on plain Enter
+                    let rawText = textView.string
+                    let trimmed = rawText.trimmingCharacters(in: .newlines)
+                    textView.string = trimmed
+                    parent.text = trimmed
+
+                    // Always update spillover on any text change
+                    let lineCount = calculateLineCount(from: textView)
+                    parent.onSpillover(lineCount)
+
+                    parent.onCommit()
+                    return
+                }
+            }
+
+            // Always update spillover on any text change
+            let lineCount = calculateLineCount(from: textView)
+            parent.onSpillover(lineCount)
+
+            // Handle @ or \command tracking
             let pattern = ##"[@\\#]([a-zA-Z]+)"##
             let regex = try? NSRegularExpression(pattern: pattern)
             let nsrange = NSRange(parent.text.startIndex..<parent.text.endIndex, in: parent.text)
@@ -56,7 +95,7 @@ struct FocusableTextField: NSViewRepresentable {
 
             seenCommands = currentCommands
 
-            // Debounced text change handler
+            // Debounced handler
             debounceWorkItem?.cancel()
             let workItem = DispatchWorkItem {
                 self.parent.onDebouncedTextChange(self.parent.text)
@@ -65,55 +104,57 @@ struct FocusableTextField: NSViewRepresentable {
             DispatchQueue.main.asyncAfter(deadline: .now() + debounceDelay, execute: workItem)
         }
 
-        func controlTextDidEndEditing(_ obj: Notification) {
-            let reason = (obj.userInfo?["NSTextMovement"] as? Int) ?? -1
-            if reason == NSReturnTextMovement {
-                parent.onCommit()
-            }
-        }
+        func textDidEndEditing(_ notification: Notification) {}
     }
 
     func makeCoordinator() -> Coordinator {
         Coordinator(self)
     }
 
-    func makeNSView(context: Context) -> NSTextField {
-        let textField = NSTextField(string: text)
-        textField.delegate = context.coordinator
+    func makeNSView(context: Context) -> NSScrollView {
+        // Create text view scroll view
+        let theTextView = NSTextView.scrollableTextView()
+        theTextView.drawsBackground = false
+        theTextView.hasVerticalScroller = false
+        theTextView.hasHorizontalScroller = false
+        theTextView.borderType = .noBorder
 
-        textField.isBordered = false
-        textField.drawsBackground = false  // transparent background
-        textField.backgroundColor = .clear
-        textField.textColor = .white  // white font
-        textField.font = NSFont.systemFont(ofSize: 18, weight: .medium)
-        textField.focusRingType = .none
-        textField.isEditable = !isEditable
-        textField.isSelectable = true
-        textField.isHighlighted = false
+        let textView = (theTextView.documentView as! NSTextView)
+        textView.delegate = context.coordinator
 
-        let placeholder = "Ask anything on this AI thing..."
-        let attributes: [NSAttributedString.Key: Any] = [
-            .foregroundColor: NSColor.white.withAlphaComponent(0.7),
-            .font: NSFont.systemFont(ofSize: 18, weight: .medium),
-        ]
+        textView.isEditable = !isEditable
+        textView.isSelectable = true
+        textView.isRichText = false
+        textView.allowsUndo = true
+        textView.isHorizontallyResizable = false
+        textView.isVerticallyResizable = true
+        textView.drawsBackground = false
+        textView.backgroundColor = .clear
+        textView.textColor = .white
+        textView.font = NSFont.systemFont(ofSize: 18, weight: .medium)
+        textView.textContainerInset = NSSize(width: 0, height: 5)
 
-        textField.placeholderAttributedString = NSAttributedString(
-            string: placeholder,
-            attributes: attributes
-        )
+        if let container = textView.textContainer {
+            container.widthTracksTextView = true
+            container.lineBreakMode = .byWordWrapping
+        }
+
+        // Set initial text
+        textView.string = text
 
         DispatchQueue.main.async {
-            textField.becomeFirstResponder()
+            textView.window?.makeFirstResponder(textView)
         }
 
-        return textField
+        return theTextView
     }
 
-    func updateNSView(_ nsView: NSTextField, context: Context) {
-        if nsView.stringValue != text {
-            nsView.stringValue = text
+    func updateNSView(_ nsView: NSScrollView, context: Context) {
+        if let textView = nsView.documentView as? NSTextView {
+            if textView.string != text {
+                textView.string = text
+            }
+            textView.isEditable = true  //!isEditable
         }
-        nsView.isEditable = !isEditable
     }
-
 }

@@ -19,6 +19,7 @@ struct TabView: View {
     var resizePanel: (CGFloat) -> Void
     var incrementSizePanel: (CGFloat) -> Void
 
+    @State private var inputHeight: CGFloat = 48
     @State private var imageName: String = "Logo"
     @State private var title: String = "AI Thing"
 
@@ -56,7 +57,7 @@ struct TabView: View {
             .background(.ultraThinMaterial)
             .frame(
                 width: isFocused ? 640 : 64,
-                height: isFocused ? 48 + getResponseHeight() : 48,
+                height: isFocused ? inputHeight + getResponseHeight() : 48,
                 alignment: .topLeading
             )
             .background(Color.clear)
@@ -113,32 +114,51 @@ struct TabView: View {
                 .frame(width: isFocused ? 32 : 24)
 
             if isFocused {
-                FocusableTextField(
-                    text: $query,
-                    isEditable: $isViewBlinking,  // Do not allow edit when model is thinking
-                    onCommit: {
-                        Task {
-                            await handleQuery()
+                ZStack(alignment: .leading) {
+                    FocusableTextField(
+                        text: $query,
+                        isEditable: $isViewBlinking,  // Do not allow edit when model is thinking
+                        onCommit: {
+                            Task {
+                                await handleQuery()
+                            }
+                        },
+                        onCommandTyped: { command in
+                            Task {
+                                await handleCommand(type: "add", command: command)
+                            }
+                        },
+                        onCommandRemoved: { command in
+                            Task {
+                                await handleCommand(type: "remove", command: command)
+                            }
+                        },
+                        onDebouncedTextChange: { _ in
+                            Task {
+                                await handleCommand(type: "update", command: "")
+                            }
+                        },
+                        onSpillover: { count in
+                            var newHeight: CGFloat = 48
+                            if count == 2 {
+                                newHeight = 48 + 24
+                            } else if count >= 3 {
+                                newHeight = 48 + 24 + 24
+                            } else {
+                                newHeight = 48
+                            }
+                            incrementSizePanel(newHeight - inputHeight)
+                            inputHeight = newHeight
                         }
-                    },
-                    onCommandTyped: { command in
-                        Task {
-                            await handleCommand(type: "add", command: command)
-                        }
-                    },
-                    onCommandRemoved: { command in
-                        Task {
-                            await handleCommand(type: "remove", command: command)
-                        }
-                    },
-                    onDebouncedTextChange: { _ in
-                        Task {
-                            await handleCommand(type: "update", command: "")
-                        }
-                    }
-                )
-                .padding(.horizontal, 8)
+                    )
 
+                    if query.isEmpty {
+                        Text("Ask anything on this AI Thing...")
+                            .foregroundColor(.white.opacity(0.6))
+                            .font(.system(size: 18, weight: .medium))
+                            .padding(.leading, 8)
+                    }
+                }
                 Button(action: onHelp) {
                     Image(systemName: "questionmark.circle.fill")
                         .resizable()
@@ -149,9 +169,9 @@ struct TabView: View {
                 .buttonStyle(PlainButtonStyle())
             }
         }
-        .frame(height: 32)
+        .frame(height: isFocused ? inputHeight - 16 : 48)
         .padding(.horizontal, isFocused ? 24 : 20)
-        .padding(.vertical, 8)
+        .padding(.vertical, isFocused ? 8 : 0)
     }
 
     private func responseView() -> some View {
@@ -330,7 +350,7 @@ struct TabView: View {
         modelTools = allClientTools.values.flatMap { $0 }
 
         // Fake data
-        //        return await fakeData(query: query) // DEBUG
+        return await fakeData(query: query)  // DEBUG
 
         let model = "claude-sonnet-4-20250514"
 
@@ -664,22 +684,22 @@ struct TabView: View {
             Could you provide more context about which "Vishal" you're asking about? That would help me give you a more specific answer.
             """
 
-        if query == "a" {
-            fakeContent += fakeContent + fakeContent
-        }
+        //        if query == "a" {
+        fakeContent += fakeContent + fakeContent
+        //        }
 
         var fakePartial = ""
-        for char in fakeContent {
-            fakePartial += String(char)
-            await MainActor.run {
-                isThinking = false
-                modelOutput = fakePartial + " " + shimmerPlaceholder()
-            }
-            do {
-                try await Task.sleep(for: .milliseconds(10))
-            } catch {
-
-            }
+        //        for char in fakeContent {
+        //            fakePartial += String(char)
+        await MainActor.run {
+            isThinking = false
+            modelOutput = fakeContent  //fakePartial + " " + shimmerPlaceholder()
         }
+        //            do {
+        //                try await Task.sleep(for: .milliseconds(10))
+        //            } catch {
+
+        //            }
+        //        }
     }
 }

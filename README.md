@@ -8,13 +8,39 @@ Missing Features
 - No Theme Change
       
 
+Wednesday
+- Improve Settings UI
+
+
+Thursday
+- Auto launch on startup
+- Show Usage
+
+Friday
+- Website
+- Better Email 
+
+
+Saturday
+- Release Reddit 
+
+
+Sunday
+- YC Video 
+
+
+Monday 
+- YC Submit 
+
+
 
 
 
 Future
-- Auto launch on startup
+- Understand you and suggest things based on time and this
+- Make programmatic typing possible
+- Make JSON addition easier (format and type hint) or button to put the schema
 - Email in promotion
-- Shift+Enter Text Field
 - RAG MCP
 - Login Firebase
 - Get API from Firebase
