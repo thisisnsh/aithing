@@ -10,6 +10,7 @@ import ApplicationServices
 import Cocoa
 import HotKey
 import SwiftUI
+import ServiceManagement
 
 class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate {
     var floatingWindow: NonActivatingPanel!
@@ -32,6 +33,8 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate {
 
         setupWindow()
         setupHotKey()
+        
+        try? SMAppService.mainApp.register()
     }
 
     @objc func appDidActivate(_ note: Notification) {

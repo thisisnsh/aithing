@@ -9,13 +9,13 @@ Missing Features
       
 
 Thursday
-- Test: Auto launch on startup
 - Improve Settings UI
 - Show help URL in help popup
 
 
 Friday
 - Website
+- Cornered Logo
 - Better Email 
 
 
