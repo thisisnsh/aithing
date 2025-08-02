@@ -8,30 +8,34 @@ Missing Features
 - No Theme Change
       
 
+------------------------
+
+
 Thursday
 - Improve Settings UI
 - Show help URL in help popup
+- Ability to choose tools -> add MCP choose tools 
+- Pill: Waking up agent + Max tab create
 
 
-Friday
+Saturday
+- Animated Video 20 Seconds
 - Website
 - Cornered Logo
 - Better Email 
 
 
-Saturday
-- Release Reddit 
-
-
 Sunday
-- YC Video 
+- YC Video Playlist
+- YC Application
 
 
 Monday 
 - YC Submit 
+- Release Reddit 
 
 
-
+------------------------
 
 
 Future

@@ -24,7 +24,7 @@ struct ContentView: View {
     @State private var focusedIndex: Int = 0
     @State private var showToast = false
     @State private var showHelp = false
-    @State private var showSettings = false
+    @State private var showSettings = true
     @State private var tabs: [TabItem] = []
     @State private var agents: [AgentEntry] = []
 
