@@ -61,12 +61,23 @@ enum Entry: Codable, Identifiable, Equatable {
 
     var displayString: String {
         switch self {
-        case let .url(name, url):
-            return "name: \(name)\nurl: \(url)"
-        case let .urlWithToken(name, url, token):
-            return "name: \(name)\nurl: \(url)\nauthorization_token: \(token)"
-        case let .command(name, command, arguments):
-            return "name: \(name)\ncommand: \(command)\narguments: \(arguments.joined(separator: " "))"
+        case let .url(name, _):
+            return "\(name)"
+        case let .urlWithToken(name, _, _):
+            return "\(name)"
+        case let .command(name, _, _):
+            return "\(name)"
+        }
+    }
+
+    var displayStringSeconday: String {
+        switch self {
+        case let .url(_, url):
+            return "URL: \(url)"
+        case let .urlWithToken(_, url, token):
+            return "URL: \(url)\nToken: \(token.prefix(4))...\(token.suffix(4))"
+        case let .command(_, command, arguments):
+            return "Command: \(command)\nArguments: [\(arguments.joined(separator: " "))]"
         }
     }
 }
@@ -80,7 +91,6 @@ func getAnthropicAPIKey() -> String? {
 // MARK: - Agents Handling
 
 func getAgentEntries() -> [AgentEntry] {
-//    return []
     if let data = UserDefaults.standard.data(forKey: "AgentEntries"),
         let decoded = try? JSONDecoder().decode([AgentEntry].self, from: data)
     {

@@ -20,16 +20,22 @@ struct AgentEntry: Codable, Identifiable, Equatable {
 struct SettingsView: View {
     @Binding var isPresented: Bool
     @State private var selectedTab: SettingsTab = .account
+
     @State private var apiKey: String =
         UserDefaults.standard.string(forKey: "AnthropicAPIKey") ?? ""
-    @State private var agentJsonInput: String = ""
-    @State private var agents: [AgentEntry] = getAgentEntries()
     @FocusState private var apiKeyFieldFocused: Bool
-    @State private var showToast = false
-    @State private var showAddAgent = false
 
+    @State private var showToast = false
+    @State private var toastText: String = ""
+
+    @State private var agents: [AgentEntry] = getAgentEntries()
+
+    @State private var showAddAgent = false
     @State private var agentTypes: [String] = ["Global", "Local"]
-    @State private var selectedAgentType = ""
+    @State private var agentType = "Global"
+    @State private var agentName = ""
+    @State private var agentPrimary = ""
+    @State private var agentSecondary = ""
 
     var body: some View {
         HStack(spacing: 0) {
@@ -97,19 +103,6 @@ struct SettingsView: View {
             .buttonStyle(.plain)
 
             Spacer()
-
-            Button(action: {
-                //TODO: Help
-            }) {
-                Text("Help")
-                    .font(.system(size: 14, weight: .medium))
-                    .frame(maxWidth: .infinity, alignment: .leading)
-                    .padding(.vertical, 8)
-                    .padding(.horizontal, 16)
-                    .clipShape(RoundedRectangle(cornerRadius: 8))
-                    .padding(.horizontal, 8)
-            }
-            .buttonStyle(.plain)
 
             Button(action: {
                 //TODO: Quit
@@ -206,7 +199,7 @@ struct SettingsView: View {
                 ) {
                     VStack(alignment: .leading) {
                         GroupBox(
-                            label: Text("Self Managed")
+                            label: Text("Self Managed API Key")
                                 .font(.system(size: 10, weight: .medium))
                                 .padding(.vertical, 4)
                         ) {
@@ -324,7 +317,7 @@ struct SettingsView: View {
                 }
                 .padding(4)
             }
-            
+
             if showAddAgent {
                 GroupBox(
                     label: Text("Add Agent")
@@ -332,42 +325,106 @@ struct SettingsView: View {
                         .padding(.vertical, 4)
                 ) {
                     VStack(alignment: .leading) {
-                        TextEditor(text: $agentJsonInput)
-                            .padding(8)
-                            .frame(height: 80)
+                        HStack {
+                            Text("Agent Name")
+                                .font(.system(size: 10, weight: .medium))
+                            TextField("GitHub", text: $agentName)
+                                .padding(.horizontal, 8)
+                                .frame(height: 24)
+                                .background(Color.black.opacity(0.2))
+                                .clipShape(RoundedRectangle(cornerRadius: 4))
+                                .padding(.bottom, 4)
+                                .font(.system(size: 14, weight: .medium))
+                                .textFieldStyle(PlainTextFieldStyle())
+                        }
+                        Picker("Agent Type", selection: $agentType) {
+                            ForEach(agentTypes, id: \.self) { at in
+                                Text(at).tag(at)
+                            }
+                        }
+                        .pickerStyle(.radioGroup)
+
+                        HStack {
+                            Text(agentType == "Global" ? "Agent URL" : "Agent Command")
+                                .font(.system(size: 10, weight: .medium))
+                            TextField(
+                                agentType == "Global"
+                                    ? "https://api.githubcopilot.com/mcp/"
+                                    : "/opt/homebrew/bin/docker",
+                                text: $agentPrimary
+                            )
+                            .padding(.horizontal, 8)
+                            .frame(height: 24)
                             .background(Color.black.opacity(0.2))
                             .clipShape(RoundedRectangle(cornerRadius: 4))
                             .padding(.bottom, 4)
                             .font(.system(size: 14, weight: .medium))
-                            .textEditorStyle(PlainTextEditorStyle())
+                            .textFieldStyle(PlainTextFieldStyle())
+                        }
 
                         HStack {
-                            Button(action: {
-                                showToast = false
-                                if agents.count < 3 {  // DEBUG
-                                    let rc = addAgentEntry()
-                                    if !rc {
+                            Text(
+                                agentType == "Global"
+                                    ? "Agent Auth Token (Optional)"
+                                    : "Agent Command Arguments (Optional)"
+                            )
+                            .font(.system(size: 10, weight: .medium))
+                            TextField(
+                                agentType == "Global"
+                                    ? "ghp_xYz...."
+                                    : "run -i --rm -e ghp_xYz.... ghcr.io/github/github-mcp-server",
+                                text: $agentSecondary
+                            )
+                            .padding(.horizontal, 8)
+                            .frame(height: 24)
+                            .background(Color.black.opacity(0.2))
+                            .clipShape(RoundedRectangle(cornerRadius: 4))
+                            .padding(.bottom, 4)
+                            .font(.system(size: 14, weight: .medium))
+                            .textFieldStyle(PlainTextFieldStyle())
+                        }
+
+                        HStack {
+                            Button(
+                                action: {
+                                    showToast = false
+                                    if agents.count < 3 {  // DEBUG
+                                        let error = addAgentEntry()
+                                        if !error.isEmpty {
+                                            toastText = error
+                                            showToast = true
+                                            DispatchQueue.main.asyncAfter(deadline: .now() + 5) {
+                                                showToast = false
+                                                toastText = ""
+                                            }
+                                        } else {
+                                            showAddAgent = false
+                                        }
+                                    } else {
+                                        toastText = "Maximum of 3 agents allowed."
                                         showToast = true
                                         DispatchQueue.main.asyncAfter(deadline: .now() + 5) {
                                             showToast = false
+                                            toastText = ""
                                         }
                                     }
+                                }) {
+                                    Text("+ Add Agent")
+                                        .font(.system(size: 12, weight: .medium))
+                                        .padding(.vertical, 4)
+                                        .padding(.horizontal, 8)
+                                        .background(Color.black.opacity(0.2))
+                                        .clipShape(RoundedRectangle(cornerRadius: 4))
                                 }
-                            }) {
-                                Text("+ Add Agent")
-                                    .font(.system(size: 12, weight: .medium))
-                                    .padding(.vertical, 4)
-                                    .padding(.horizontal, 8)
-                                    .background(Color.black.opacity(0.2))
-                                    .clipShape(RoundedRectangle(cornerRadius: 4))
-                            }
-                            .buttonStyle(.plain)
+                                .buttonStyle(.plain)
 
                             if showToast {
-                                Text("Invalid JSON: http://aithing.dev/help")
+                                Text(toastText)
                                     .font(.system(size: 10, weight: .medium))
                                     .padding(.vertical, 4)
                             }
+
+                            Spacer()
                         }
                     }
                     .padding(4)
@@ -375,7 +432,7 @@ struct SettingsView: View {
             }
 
             GroupBox(
-                label: Text("Self Managed (Max 3)")
+                label: Text("Self Managed (Max 3 with Free Plan)")
                     .font(.system(size: 10, weight: .medium))
                     .padding(.vertical, 4)
             ) {
@@ -394,8 +451,14 @@ struct SettingsView: View {
                     } else {
                         ForEach(agents) { agent in
                             HStack {
-                                Text(agent.entry.displayString)
-                                    .font(.system(size: 14, weight: .medium))
+                                VStack(spacing: 0) {
+                                    Text(agent.entry.displayString)
+                                        .font(.system(size: 14, weight: .medium))
+                                    Text(agent.entry.displayStringSecondary)
+                                        .font(.system(size: 10, weight: .medium))
+                                        .opacity(0.5)
+                                }
+
                                 Spacer()
 
                                 Toggle(
@@ -523,26 +586,30 @@ struct SettingsView: View {
         UserDefaults.standard.set(apiKey, forKey: "AnthropicAPIKey")
     }
 
-    func addAgentEntry() -> Bool {
-        agentJsonInput =
-            agentJsonInput
-            .replacingOccurrences(of: "“", with: "\"")
-            .replacingOccurrences(of: "”", with: "\"")
-            .replacingOccurrences(of: "‘", with: "'")
-            .replacingOccurrences(of: "’", with: "'")
-
-        guard let data = agentJsonInput.data(using: .utf8),
-            let parsed = try? JSONDecoder().decode(Entry.self, from: data)
-        else {
-            print("Invalid JSON")
-            return false
+    func addAgentEntry() -> String {
+        var entry: Entry
+        if agentType == "Global" {
+            if agentSecondary.isEmpty {
+                entry = .url(name: agentName, url: agentPrimary)
+            } else {
+                entry = .urlWithToken(name: agentName, url: agentPrimary, token: agentSecondary)
+            }
+        } else {
+            entry = .command(
+                name: agentName,
+                command: agentPrimary,
+                arguments: agentSecondary.components(separatedBy: " ")
+            )
         }
 
-        let newAgent = AgentEntry(id: UUID(), entry: parsed, isEnabled: true)
+        let newAgent = AgentEntry(id: UUID(), entry: entry, isEnabled: true)
         agents.append(newAgent)
-        agentJsonInput = ""
+        agentType = "Global"
+        agentName = ""
+        agentPrimary = ""
+        agentSecondary = ""
         saveAgents()
-        return true
+        return ""
     }
 
     func saveAgents() {

@@ -191,7 +191,7 @@ struct ContentView: View {
                 let tools = await mcp.getTools(clientName: name)
                 allClientTools[name] = tools
             } else {
-                failure += "\n\n- \(name): \(connectRc)"
+                failure += "\n\n\(name): \(connectRc)"
             }
         }
 
