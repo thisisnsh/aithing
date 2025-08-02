@@ -80,6 +80,7 @@ func getAnthropicAPIKey() -> String? {
 // MARK: - Agents Handling
 
 func getAgentEntries() -> [AgentEntry] {
+//    return []
     if let data = UserDefaults.standard.data(forKey: "AgentEntries"),
         let decoded = try? JSONDecoder().decode([AgentEntry].self, from: data)
     {

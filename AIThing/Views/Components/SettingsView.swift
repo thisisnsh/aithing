@@ -26,6 +26,10 @@ struct SettingsView: View {
     @State private var agents: [AgentEntry] = getAgentEntries()
     @FocusState private var apiKeyFieldFocused: Bool
     @State private var showToast = false
+    @State private var showAddAgent = false
+
+    @State private var agentTypes: [String] = ["Global", "Local"]
+    @State private var selectedAgentType = ""
 
     var body: some View {
         HStack(spacing: 0) {
@@ -93,6 +97,19 @@ struct SettingsView: View {
             .buttonStyle(.plain)
 
             Spacer()
+
+            Button(action: {
+                //TODO: Help
+            }) {
+                Text("Help")
+                    .font(.system(size: 14, weight: .medium))
+                    .frame(maxWidth: .infinity, alignment: .leading)
+                    .padding(.vertical, 8)
+                    .padding(.horizontal, 16)
+                    .clipShape(RoundedRectangle(cornerRadius: 8))
+                    .padding(.horizontal, 8)
+            }
+            .buttonStyle(.plain)
 
             Button(action: {
                 //TODO: Quit
@@ -193,36 +210,8 @@ struct SettingsView: View {
                                 .font(.system(size: 10, weight: .medium))
                                 .padding(.vertical, 4)
                         ) {
-                            HStack {
-                                Image("anthropic")
-                                    .resizable()
-                                    .frame(width: 16, height: 16)
-                                Text("Anthropic: Claude Sonnet 4")
-                                    .font(.system(size: 14, weight: .medium))
-                                Spacer()
-                                Toggle("", isOn: .constant(true))
-                                    .toggleStyle(.switch)
-                                    .tint(.black)
-                            }
-                            .padding(4)
+                            VStack(alignment: .leading) {
 
-                            TextField("sk-ant-...", text: $apiKey, onCommit: saveAPIKey)
-                                .padding(.horizontal, 8)
-                                .frame(height: 32)
-                                .background(Color.black.opacity(0.2))
-                                .clipShape(RoundedRectangle(cornerRadius: 4))
-                                .padding(.bottom, 4)
-                                .font(.system(size: 14, weight: .medium))
-                                .focused($apiKeyFieldFocused)
-                                .textFieldStyle(PlainTextFieldStyle())
-                        }
-
-                        GroupBox(
-                            label: Text("Managed by AI Thing (Individual Plan Required)")
-                                .font(.system(size: 10, weight: .medium))
-                                .padding(.vertical, 4)
-                        ) {
-                            Button(action: {}) {
                                 HStack {
                                     Image("anthropic")
                                         .resizable()
@@ -230,29 +219,69 @@ struct SettingsView: View {
                                     Text("Anthropic: Claude Sonnet 4")
                                         .font(.system(size: 14, weight: .medium))
                                     Spacer()
-                                    Image(systemName: "chevron.right")
-                                        .frame(width: 10, height: 10)
+                                    Toggle("", isOn: .constant(true))
+                                        .toggleStyle(.switch)
+                                        .tint(.black)
+                                        .scaleEffect(0.7)
                                 }
+                                .padding(4)
+
+                                TextField("sk-ant-...", text: $apiKey, onCommit: saveAPIKey)
+                                    .padding(.horizontal, 8)
+                                    .frame(height: 32)
+                                    .background(Color.black.opacity(0.2))
+                                    .clipShape(RoundedRectangle(cornerRadius: 4))
+                                    .padding(.bottom, 4)
+                                    .font(.system(size: 14, weight: .medium))
+                                    .focused($apiKeyFieldFocused)
+                                    .textFieldStyle(PlainTextFieldStyle())
                             }
-                            .buttonStyle(.plain)
                             .padding(4)
-                            .opacity(0.5)
+                        }
 
-                            Divider()
+                        GroupBox(
+                            label: Text("Managed by AI Thing (Individual Plan Required)")
+                                .font(.system(size: 10, weight: .medium))
+                                .padding(.vertical, 4)
+                        ) {
+                            VStack(alignment: .leading) {
 
-                            Button(action: {}) {
-                                HStack {
-                                    Image("openai")
-                                        .resizable()
-                                        .frame(width: 16, height: 16)
-                                    Text("OpenAI: GPT-4.1")
-                                        .font(.system(size: 14, weight: .medium))
-                                    Spacer()
-                                    Image(systemName: "chevron.right")
-                                        .frame(width: 10, height: 10)
+                                Button(action: {}) {
+                                    HStack {
+                                        Image("anthropic")
+                                            .resizable()
+                                            .frame(width: 16, height: 16)
+                                        Text("Anthropic: Claude Sonnet 4")
+                                            .font(.system(size: 14, weight: .medium))
+                                        Spacer()
+                                        Toggle("", isOn: .constant(false))
+                                            .toggleStyle(.switch)
+                                            .tint(.black)
+                                            .scaleEffect(0.7)
+                                    }
                                 }
+                                .buttonStyle(.plain)
+                                .padding(4)
+
+                                Divider()
+
+                                Button(action: {}) {
+                                    HStack {
+                                        Image("openai")
+                                            .resizable()
+                                            .frame(width: 16, height: 16)
+                                        Text("OpenAI: GPT-4.1")
+                                            .font(.system(size: 14, weight: .medium))
+                                        Spacer()
+                                        Toggle("", isOn: .constant(false))
+                                            .toggleStyle(.switch)
+                                            .tint(.black)
+                                            .scaleEffect(0.7)
+                                    }
+                                }
+                                .buttonStyle(.plain)
+                                .padding(4)
                             }
-                            .buttonStyle(.plain)
                             .padding(4)
                             .opacity(0.5)
                         }
@@ -262,25 +291,22 @@ struct SettingsView: View {
                                 .font(.system(size: 10, weight: .medium))
                                 .padding(.vertical, 4)
                         ) {
-                            Button(action: {}) {
-                                HStack {
-                                    Image("openai")
-                                        .resizable()
-                                        .frame(width: 16, height: 16)
-                                    Text("OpenAI: Fine Tuned")
-                                        .font(.system(size: 14, weight: .medium))
-                                    Spacer()
-                                    Image(systemName: "chevron.right")
-                                        .frame(width: 10, height: 10)
+                            VStack(alignment: .leading) {
+                                Button(action: {}) {
+                                    HStack {
+                                        Text("No Brains Available")
+                                            .font(.system(size: 14, weight: .medium))
+                                        Spacer()
+                                    }
                                 }
+                                .buttonStyle(.plain)
+                                .padding(4)
                             }
-                            .buttonStyle(.plain)
                             .padding(4)
                             .opacity(0.5)
                         }
                     }
                     .padding(4)
-
                 }
             }
         }
@@ -288,70 +314,207 @@ struct SettingsView: View {
     }
 
     func AgentTab() -> some View {
-        VStack(alignment: .leading, spacing: 12) {
-            Text("Add Agent JSON")
-                .padding(.top, 8)
-                .font(.headline)
+        VStack(alignment: .leading, spacing: 16) {
+            GroupBox {
+                HStack {
+                    Text("Need Help? http://aithing.dev/help")
+                        .font(.system(size: 10, weight: .medium))
+                        .padding(4)
+                    Spacer()
+                }
+                .padding(4)
+            }
+            
+            if showAddAgent {
+                GroupBox(
+                    label: Text("Add Agent")
+                        .font(.system(size: 10, weight: .medium))
+                        .padding(.vertical, 4)
+                ) {
+                    VStack(alignment: .leading) {
+                        TextEditor(text: $agentJsonInput)
+                            .padding(8)
+                            .frame(height: 80)
+                            .background(Color.black.opacity(0.2))
+                            .clipShape(RoundedRectangle(cornerRadius: 4))
+                            .padding(.bottom, 4)
+                            .font(.system(size: 14, weight: .medium))
+                            .textEditorStyle(PlainTextEditorStyle())
 
-            TextEditor(text: $agentJsonInput)
-                .font(.system(size: 13, design: .monospaced))
-                .frame(height: 80)
-                .clipShape(RoundedRectangle(cornerRadius: 8))
-
-            HStack {
-                Button("Add Agent (Max 3)") {
-                    showToast = false
-                    if agents.count < 3 {  // DEBUG
-                        let rc = addAgentEntry()
-                        if !rc {
-                            showToast = true
-                            DispatchQueue.main.asyncAfter(deadline: .now() + 5) {
+                        HStack {
+                            Button(action: {
                                 showToast = false
+                                if agents.count < 3 {  // DEBUG
+                                    let rc = addAgentEntry()
+                                    if !rc {
+                                        showToast = true
+                                        DispatchQueue.main.asyncAfter(deadline: .now() + 5) {
+                                            showToast = false
+                                        }
+                                    }
+                                }
+                            }) {
+                                Text("+ Add Agent")
+                                    .font(.system(size: 12, weight: .medium))
+                                    .padding(.vertical, 4)
+                                    .padding(.horizontal, 8)
+                                    .background(Color.black.opacity(0.2))
+                                    .clipShape(RoundedRectangle(cornerRadius: 4))
+                            }
+                            .buttonStyle(.plain)
+
+                            if showToast {
+                                Text("Invalid JSON: http://aithing.dev/help")
+                                    .font(.system(size: 10, weight: .medium))
+                                    .padding(.vertical, 4)
                             }
                         }
                     }
-                }
-                if showToast {
-                    Text("Invalid JSON: http://aithing.dev/help")
+                    .padding(4)
                 }
             }
 
-            Divider()
-                .padding(.top, 8)
-
-            if agents.count > 0 {
-                Text("Agents")
-                    .font(.headline)
-                    .padding(.vertical, 8)
-            }
-
-            ForEach(agents) { agent in
-                HStack {
-                    Toggle(
-                        isOn: Binding(
-                            get: { agent.isEnabled },
-                            set: { newValue in
-                                if let index = agents.firstIndex(of: agent) {
-                                    agents[index].isEnabled = newValue
-                                    saveAgents()
-                                }
+            GroupBox(
+                label: Text("Self Managed (Max 3)")
+                    .font(.system(size: 10, weight: .medium))
+                    .padding(.vertical, 4)
+            ) {
+                VStack(alignment: .leading) {
+                    if agents.isEmpty {
+                        Button(action: {}) {
+                            HStack {
+                                Text("No Agents Available")
+                                    .font(.system(size: 14, weight: .medium))
+                                Spacer()
                             }
-                        )
-                    ) {
-                        Text(agent.entry.displayString)
-                            .fixedSize(horizontal: false, vertical: true)
+                        }
+                        .buttonStyle(.plain)
+                        .padding(4)
+                        .opacity(0.5)
+                    } else {
+                        ForEach(agents) { agent in
+                            HStack {
+                                Text(agent.entry.displayString)
+                                    .font(.system(size: 14, weight: .medium))
+                                Spacer()
+
+                                Toggle(
+                                    "",
+                                    isOn: Binding(
+                                        get: { agent.isEnabled },
+                                        set: { newValue in
+                                            if let index = agents.firstIndex(of: agent) {
+                                                agents[index].isEnabled = newValue
+                                                saveAgents()
+                                            }
+                                        }
+                                    )
+                                )
+                                .toggleStyle(.switch)
+                                .tint(.black)
+                                .scaleEffect(0.7)
+
+                                Button(action: {
+                                    deleteAgent(agent)
+                                }) {
+                                    Image(systemName: "trash")
+                                }
+                                .buttonStyle(BorderlessButtonStyle())
+                            }
+                            .padding(4)
+
+                            Divider()
+                        }
                     }
 
-                    Spacer()
                     Button(action: {
-                        deleteAgent(agent)
+                        showAddAgent.toggle()
                     }) {
-                        Image(systemName: "trash")
+                        Text("+ Add Agents")
+                            .font(.system(size: 12, weight: .medium))
+                            .padding(.vertical, 4)
+                            .padding(.horizontal, 8)
+                            .background(Color.black.opacity(0.2))
+                            .clipShape(RoundedRectangle(cornerRadius: 4))
                     }
-                    .buttonStyle(BorderlessButtonStyle())
+                    .buttonStyle(.plain)
                 }
+                .padding(4)
+            }
+
+            GroupBox(
+                label: Text("Managed by AI Thing (Individual Plan Required)")
+                    .font(.system(size: 10, weight: .medium))
+                    .padding(.vertical, 4)
+            ) {
+                VStack(alignment: .leading) {
+                    Button(action: {}) {
+                        HStack {
+                            Image("github")
+                                .resizable()
+                                .frame(width: 16, height: 16)
+                            Text("GitHub")
+                                .font(.system(size: 14, weight: .medium))
+                            Spacer()
+                            Toggle("", isOn: .constant(false))
+                                .toggleStyle(.switch)
+                                .tint(.black)
+                                .scaleEffect(0.7)
+                        }
+                    }
+                    .buttonStyle(.plain)
+                    .padding(4)
+
+                    Divider()
+
+                    Button(action: {}) {
+                        HStack {
+                            Image("google")
+                                .resizable()
+                                .frame(width: 16, height: 16)
+                            Text("Google Workspace")
+                                .font(.system(size: 14, weight: .medium))
+                            Spacer()
+                            Toggle("", isOn: .constant(false))
+                                .toggleStyle(.switch)
+                                .tint(.black)
+                                .scaleEffect(0.7)
+                        }
+                    }
+                    .buttonStyle(.plain)
+                    .padding(4)
+
+                    Divider()
+
+                    Text("More Agents Coming Soon...")
+                        .font(.system(size: 10, weight: .medium))
+                        .padding(.vertical, 4)
+                }
+                .padding(4)
+                .opacity(0.5)
+            }
+
+            GroupBox(
+                label: Text("Managed by Organization (Enterprise Plan Required)")
+                    .font(.system(size: 10, weight: .medium))
+                    .padding(.vertical, 4)
+            ) {
+                VStack(alignment: .leading) {
+                    Button(action: {}) {
+                        HStack {
+                            Text("No Agents Available")
+                                .font(.system(size: 14, weight: .medium))
+                            Spacer()
+                        }
+                    }
+                    .buttonStyle(.plain)
+                    .padding(4)
+                }
+                .padding(4)
+                .opacity(0.5)
             }
         }
+        .frame(maxWidth: .infinity, alignment: .leading)
     }
 
     // MARK: - Agents Handling
