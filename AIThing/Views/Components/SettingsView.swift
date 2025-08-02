@@ -105,7 +105,8 @@ struct SettingsView: View {
             Spacer()
 
             Button(action: {
-                //TODO: Quit
+                AppDelegate.allowQuit = true
+                NSApplication.shared.terminate(nil)
             }) {
                 Text("Quit")
                     .font(.system(size: 14, weight: .medium))

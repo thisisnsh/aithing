@@ -28,7 +28,7 @@ struct ContentView: View {
     @State private var maxTabs: Int = 3  // DEBUG
     @State private var width: CGFloat = 640 + 48
 
-    @State private var showSettings = true
+    @State private var showSettings = false
 
     @State private var showToast = false
     @State private var toastText: String = ""
@@ -46,7 +46,7 @@ struct ContentView: View {
             | ` Control (⌃) + S `     | Show/Hide Settings | | ` Control (⌃) + H ` | Show Help |
             | ` Control (⌃) + > `     | Move to Right Tab  | | ` Control (⌃) + < ` | Move to Left Tab  |
 
-            StillStuck? http://aithing.dev/help 
+            Still Stuck? http://aithing.dev/help 
             """
     }
 
@@ -60,51 +60,13 @@ struct ContentView: View {
                 Color.clear.frame(width: 72)
             }
             if showSettings {
-                SettingsView(isPresented: $showSettings)
-                    .background(.ultraThinMaterial)
-                    .overlay {
-                        RoundedRectangle(cornerRadius: 24)
-                            .stroke(Color.white, lineWidth: 1.5)
-                    }
-                    .cornerRadius(24)
-                    .zIndex(1)
-                    .frame(width: 600, height: 500)
-                    .padding(.leading, 48)
-                    .padding(.trailing, 80)
-                    .padding(.top, 16)
+                Settings()
             }
             if showHelp {
-                MarkdownText(text: helpText)
-                    .padding()
-                    .background(.ultraThinMaterial)
-                    .overlay {
-                        RoundedRectangle(cornerRadius: 24)
-                            .stroke(Color.white, lineWidth: 1.5)
-                    }
-                    .cornerRadius(24)
-                    .zIndex(2)
-                    .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top)
-                    .padding(.leading, 48)
-                    .padding(.trailing, 80)
-                    .padding(.top, 16)
+                Help()
             }
             if showToast {
-                MarkdownText(text: toastText)
-                    .padding()
-                    .background(.ultraThinMaterial)
-                    .overlay {
-                        AnimatedGradientBorder(
-                            cornerRadius: 24,
-                            lineWidth: 1.5,
-                            color: toastColor
-                        )
-                    }
-                    .cornerRadius(24)
-                    .zIndex(3)
-                    .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top)
-                    .padding(.leading, 48)
-                    .padding(.trailing, 80)
-                    .padding(.top, 16)
+                Toast()
             }
         }
         .frame(width: CGFloat(640 + 48) + CGFloat((tabs.count)) * CGFloat(72))
@@ -231,6 +193,56 @@ struct ContentView: View {
         }
     }
 
+    func Settings() -> some View {
+        SettingsView(isPresented: $showSettings)
+            .background(.ultraThinMaterial)
+            .overlay {
+                RoundedRectangle(cornerRadius: 24)
+                    .stroke(Color.white, lineWidth: 1.5)
+            }
+            .cornerRadius(24)
+            .zIndex(1)
+            .frame(width: 600, height: 500)
+            .padding(.leading, CGFloat(48 + focusedIndex * 72))
+            .padding(.trailing, CGFloat(80 + (tabs.count - 1 - focusedIndex) * 72))
+            .padding(.top, 96)
+    }
+
+    private func Help() -> some View {
+        MarkdownText(text: helpText)
+            .padding()
+            .background(.ultraThinMaterial)
+            .overlay {
+                RoundedRectangle(cornerRadius: 24)
+                    .stroke(Color.white, lineWidth: 1.5)
+            }
+            .cornerRadius(24)
+            .zIndex(2)
+            .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top)
+            .padding(.leading, CGFloat(48 + focusedIndex * 72))
+            .padding(.trailing, CGFloat(80 + (tabs.count - 1 - focusedIndex) * 72))
+            .padding(.top, 96)
+    }
+
+    private func Toast() -> some View {
+        MarkdownText(text: toastText)
+            .padding()
+            .background(.ultraThinMaterial)
+            .overlay {
+                AnimatedGradientBorder(
+                    cornerRadius: 24,
+                    lineWidth: 1.5,
+                    color: toastColor
+                )
+            }
+            .cornerRadius(24)
+            .zIndex(3)
+            .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top)
+            .padding(.leading, CGFloat(48 + focusedIndex * 72))
+            .padding(.trailing, CGFloat(80 + (tabs.count - 1 - focusedIndex) * 72))
+            .padding(.top, 96)
+    }
+
     private func onSetting() {
         showSettings.toggle()
     }
@@ -246,10 +258,12 @@ struct ContentView: View {
 
     private func addTab() {
         if tabs.count >= maxTabs {
+            toastColor = .red
             toastText = "Maximum of \(maxTabs) tabs reached"
             showToast = true
             DispatchQueue.main.asyncAfter(deadline: .now() + 2) {
                 showToast = false
+                toastColor = .white
             }
             return
         }

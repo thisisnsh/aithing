@@ -19,6 +19,8 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate {
     let width: CGFloat = 1000
     let height: CGFloat = 96
 
+    static var allowQuit = false
+
     let mcp = MCPManager()
 
     func applicationDidFinishLaunching(_ notification: Notification) {
@@ -153,7 +155,6 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate {
     }
 
     func applicationShouldTerminate(_ sender: NSApplication) -> NSApplication.TerminateReply {
-        // Ignore ⌘Q, do not allow app to terminate
-        return .terminateCancel
+        return AppDelegate.allowQuit ? .terminateNow : .terminateCancel
     }
 }
