@@ -52,6 +52,7 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate {
 
         let dateFormatter = DateFormatter()
         dateFormatter.dateFormat = "yyyy-MM-dd"
+        // Change in settings as well
         let expiryDate = dateFormatter.date(from: "2025-08-11")!
         let today = Date()
 

@@ -15,6 +15,7 @@ struct TabView: View {
 
     @Binding var isFocused: Bool
     @Binding var allClientTools: [String: [[String: Any]]]
+    var onSetting: () -> Void
     var onHelp: () -> Void
     var resizePanel: (CGFloat) -> Void
     var incrementSizePanel: (CGFloat) -> Void
@@ -112,6 +113,11 @@ struct TabView: View {
                 .fill(isFocused ? .white : .white.opacity(0.5))
                 .scaledToFit()
                 .frame(width: isFocused ? 32 : 24)
+                .onTapGesture {
+                    if isFocused {
+                        onSetting()
+                    }
+                }
 
             if isFocused {
                 ZStack(alignment: .leading) {
@@ -350,7 +356,7 @@ struct TabView: View {
         modelTools = allClientTools.values.flatMap { $0 }
 
         // Fake data
-        return await fakeData(query: query)  // DEBUG
+        //        return await fakeData(query: query)  // DEBUG
 
         let model = "claude-sonnet-4-20250514"
 

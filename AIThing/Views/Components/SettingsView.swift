@@ -118,7 +118,12 @@ struct SettingsView: View {
                     .padding(.horizontal, 8)
             }
             .buttonStyle(.plain)
-
+            
+            Text("Version 1.1\nExpires: 2025-08-11")
+                .font(.system(size: 10, weight: .medium))
+                .padding(.vertical, 8)
+                .padding(.horizontal, 16)
+            
             Color.clear.frame(height: 32)
         }
         .frame(width: 150)

@@ -316,6 +316,7 @@ struct ContentView: View {
         TabView(
             isFocused: isFocusedBinding,
             allClientTools: $allClientTools,
+            onSetting: { self.onSetting() },
             onHelp: { self.onHelp() },
             resizePanel: { extraHeight in
                 resizePanel(extraHeight)
