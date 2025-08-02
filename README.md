@@ -21,7 +21,6 @@ Thursday
 Saturday
 - Animated Video 20 Seconds
 - Website
-- Cornered Logo
 - Better Email 
 
 

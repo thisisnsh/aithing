@@ -58,28 +58,6 @@ enum Entry: Codable, Identifiable, Equatable {
             try container.encode(arguments, forKey: .arguments)
         }
     }
-
-    var displayString: String {
-        switch self {
-        case let .url(name, _):
-            return "\(name)"
-        case let .urlWithToken(name, _, _):
-            return "\(name)"
-        case let .command(name, _, _):
-            return "\(name)"
-        }
-    }
-
-    var displayStringSeconday: String {
-        switch self {
-        case let .url(_, url):
-            return "URL: \(url)"
-        case let .urlWithToken(_, url, token):
-            return "URL: \(url)\nToken: \(token.prefix(4))...\(token.suffix(4))"
-        case let .command(_, command, arguments):
-            return "Command: \(command)\nArguments: [\(arguments.joined(separator: " "))]"
-        }
-    }
 }
 
 // MARK: - Account Handling

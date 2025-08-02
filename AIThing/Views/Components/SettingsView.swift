@@ -318,119 +318,6 @@ struct SettingsView: View {
                 .padding(4)
             }
 
-            if showAddAgent {
-                GroupBox(
-                    label: Text("Add Agent")
-                        .font(.system(size: 10, weight: .medium))
-                        .padding(.vertical, 4)
-                ) {
-                    VStack(alignment: .leading) {
-                        HStack {
-                            Text("Agent Name")
-                                .font(.system(size: 10, weight: .medium))
-                            TextField("GitHub", text: $agentName)
-                                .padding(.horizontal, 8)
-                                .frame(height: 24)
-                                .background(Color.black.opacity(0.2))
-                                .clipShape(RoundedRectangle(cornerRadius: 4))
-                                .padding(.bottom, 4)
-                                .font(.system(size: 14, weight: .medium))
-                                .textFieldStyle(PlainTextFieldStyle())
-                        }
-                        Picker("Agent Type", selection: $agentType) {
-                            ForEach(agentTypes, id: \.self) { at in
-                                Text(at).tag(at)
-                            }
-                        }
-                        .pickerStyle(.radioGroup)
-
-                        HStack {
-                            Text(agentType == "Global" ? "Agent URL" : "Agent Command")
-                                .font(.system(size: 10, weight: .medium))
-                            TextField(
-                                agentType == "Global"
-                                    ? "https://api.githubcopilot.com/mcp/"
-                                    : "/opt/homebrew/bin/docker",
-                                text: $agentPrimary
-                            )
-                            .padding(.horizontal, 8)
-                            .frame(height: 24)
-                            .background(Color.black.opacity(0.2))
-                            .clipShape(RoundedRectangle(cornerRadius: 4))
-                            .padding(.bottom, 4)
-                            .font(.system(size: 14, weight: .medium))
-                            .textFieldStyle(PlainTextFieldStyle())
-                        }
-
-                        HStack {
-                            Text(
-                                agentType == "Global"
-                                    ? "Agent Auth Token (Optional)"
-                                    : "Agent Command Arguments (Optional)"
-                            )
-                            .font(.system(size: 10, weight: .medium))
-                            TextField(
-                                agentType == "Global"
-                                    ? "ghp_xYz...."
-                                    : "run -i --rm -e ghp_xYz.... ghcr.io/github/github-mcp-server",
-                                text: $agentSecondary
-                            )
-                            .padding(.horizontal, 8)
-                            .frame(height: 24)
-                            .background(Color.black.opacity(0.2))
-                            .clipShape(RoundedRectangle(cornerRadius: 4))
-                            .padding(.bottom, 4)
-                            .font(.system(size: 14, weight: .medium))
-                            .textFieldStyle(PlainTextFieldStyle())
-                        }
-
-                        HStack {
-                            Button(
-                                action: {
-                                    showToast = false
-                                    if agents.count < 3 {  // DEBUG
-                                        let error = addAgentEntry()
-                                        if !error.isEmpty {
-                                            toastText = error
-                                            showToast = true
-                                            DispatchQueue.main.asyncAfter(deadline: .now() + 5) {
-                                                showToast = false
-                                                toastText = ""
-                                            }
-                                        } else {
-                                            showAddAgent = false
-                                        }
-                                    } else {
-                                        toastText = "Maximum of 3 agents allowed."
-                                        showToast = true
-                                        DispatchQueue.main.asyncAfter(deadline: .now() + 5) {
-                                            showToast = false
-                                            toastText = ""
-                                        }
-                                    }
-                                }) {
-                                    Text("+ Add Agent")
-                                        .font(.system(size: 12, weight: .medium))
-                                        .padding(.vertical, 4)
-                                        .padding(.horizontal, 8)
-                                        .background(Color.black.opacity(0.2))
-                                        .clipShape(RoundedRectangle(cornerRadius: 4))
-                                }
-                                .buttonStyle(.plain)
-
-                            if showToast {
-                                Text(toastText)
-                                    .font(.system(size: 10, weight: .medium))
-                                    .padding(.vertical, 4)
-                            }
-
-                            Spacer()
-                        }
-                    }
-                    .padding(4)
-                }
-            }
-
             GroupBox(
                 label: Text("Self Managed (Max 3 with Free Plan)")
                     .font(.system(size: 10, weight: .medium))
@@ -450,13 +337,34 @@ struct SettingsView: View {
                         .opacity(0.5)
                     } else {
                         ForEach(agents) { agent in
+                            let entry = agent.entry
                             HStack {
-                                VStack(spacing: 0) {
-                                    Text(agent.entry.displayString)
-                                        .font(.system(size: 14, weight: .medium))
-                                    Text(agent.entry.displayStringSecondary)
+                                VStack(alignment: .leading, spacing: 0) {
+                                    switch entry {
+                                    case let .url(name, url):
+                                        Text(name)
+                                            .font(.system(size: 14, weight: .medium))
+                                        Text("URL: \(url)")
+                                            .font(.system(size: 10, weight: .medium))
+                                            .opacity(0.5)
+                                    case let .urlWithToken(name, url, token):
+                                        Text(name)
+                                            .font(.system(size: 14, weight: .medium))
+                                        Text(
+                                            "URL: \(url)\nToken: \(token.prefix(4))...\(token.suffix(4))"
+                                        )
                                         .font(.system(size: 10, weight: .medium))
                                         .opacity(0.5)
+                                    case let .command(name, command, arguments):
+                                        Text(name)
+                                            .font(.system(size: 14, weight: .medium))
+                                        Text(
+                                            "Command: \(command)\nArguments: [\(arguments.joined(separator: " "))]"
+                                        )
+                                        .font(.system(size: 10, weight: .medium))
+                                        .opacity(0.5)
+                                    }
+
                                 }
 
                                 Spacer()
@@ -490,17 +398,122 @@ struct SettingsView: View {
                         }
                     }
 
-                    Button(action: {
-                        showAddAgent.toggle()
-                    }) {
-                        Text("+ Add Agents")
-                            .font(.system(size: 12, weight: .medium))
-                            .padding(.vertical, 4)
-                            .padding(.horizontal, 8)
-                            .background(Color.black.opacity(0.2))
-                            .clipShape(RoundedRectangle(cornerRadius: 4))
+                    if showAddAgent {
+                        GroupBox {
+                            VStack(alignment: .leading) {
+                                HStack {
+                                    Text("Name")
+                                        .font(.system(size: 10, weight: .medium))
+                                        .frame(width: 50, alignment: .leading)
+                                    TextField("GitHub", text: $agentName)
+                                        .padding(.horizontal, 8)
+                                        .frame(height: 24)
+                                        .background(Color.black.opacity(0.2))
+                                        .clipShape(RoundedRectangle(cornerRadius: 4))
+                                        .font(.system(size: 14, weight: .medium))
+                                        .textFieldStyle(PlainTextFieldStyle())
+                                    Picker("", selection: $agentType) {
+                                        ForEach(agentTypes, id: \.self) { at in
+                                            Text(at).tag(at)
+                                        }
+                                    }
+                                    .pickerStyle(.radioGroup)
+                                    .horizontalRadioGroupLayout()
+                                    .font(.system(size: 10, weight: .medium))
+                                    .buttonStyle(.borderless)
+                                }
+                                .padding(.bottom, 4)
+
+                                HStack {
+                                    Text(agentType == "Global" ? "URL" : "Command")
+                                        .font(.system(size: 10, weight: .medium))
+                                        .frame(width: 50, alignment: .leading)
+                                    TextField(
+                                        agentType == "Global"
+                                            ? "https://api.githubcopilot.com/mcp/"
+                                            : "/opt/homebrew/bin/docker",
+                                        text: $agentPrimary
+                                    )
+                                    .padding(.horizontal, 8)
+                                    .frame(height: 24)
+                                    .background(Color.black.opacity(0.2))
+                                    .clipShape(RoundedRectangle(cornerRadius: 4))
+                                    .font(.system(size: 14, weight: .medium))
+                                    .textFieldStyle(PlainTextFieldStyle())
+                                }
+                                .padding(.bottom, 4)
+
+                                Text(
+                                    agentType == "Global"
+                                        ? "Auth Token (Optional)"
+                                        : "Arguments (Optional)"
+                                )
+                                .font(.system(size: 10, weight: .medium))
+                                TextField(
+                                    agentType == "Global"
+                                        ? "ghp_xYz...."
+                                        : "run -i --rm -e ghp_xYz.... ghcr.io/github/github-mcp-server",
+                                    text: $agentSecondary
+                                )
+                                .padding(.horizontal, 8)
+                                .frame(height: 24)
+                                .background(Color.black.opacity(0.2))
+                                .clipShape(RoundedRectangle(cornerRadius: 4))
+                                .font(.system(size: 14, weight: .medium))
+                                .textFieldStyle(PlainTextFieldStyle())
+                                .padding(.bottom, 4)
+                            }
+                            .padding(4)
+                        }
                     }
-                    .buttonStyle(.plain)
+
+                    HStack {
+                        Button(action: {
+                            if showAddAgent {
+                                showToast = false
+                                if agents.count < 3 {  // DEBUG
+                                    let error = addAgentEntry()
+                                    if !error.isEmpty {
+                                        toastText = error
+                                        showToast = true
+                                        DispatchQueue.main.asyncAfter(
+                                            deadline: .now() + 5
+                                        ) {
+                                            showToast = false
+                                            toastText = ""
+                                        }
+                                    } else {
+                                        showAddAgent = false
+                                    }
+                                } else {
+                                    toastText = "Maximum of 3 agents allowed."
+                                    showToast = true
+                                    DispatchQueue.main.asyncAfter(deadline: .now() + 5) {
+                                        showToast = false
+                                        toastText = ""
+                                    }
+                                }
+                            } else {
+                                showAddAgent = true
+                            }
+                        }) {
+                            Text("+ Add Agent")
+                                .font(.system(size: 12, weight: .medium))
+                                .padding(.vertical, 4)
+                                .padding(.horizontal, 8)
+                                .background(Color.black.opacity(0.2))
+                                .clipShape(RoundedRectangle(cornerRadius: 4))
+                        }
+                        .buttonStyle(.plain)
+
+                        if showToast {
+                            Text(toastText)
+                                .font(.system(size: 10, weight: .medium))
+                                .padding(.vertical, 4)
+                        }
+
+                        Spacer()
+                    }
                 }
                 .padding(4)
             }
