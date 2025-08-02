@@ -52,13 +52,13 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate {
 
         let dateFormatter = DateFormatter()
         dateFormatter.dateFormat = "yyyy-MM-dd"
-        let expiryDate = dateFormatter.date(from: "2025-08-03")!
+        let expiryDate = dateFormatter.date(from: "2025-08-11")!
         let today = Date()
 
         let contentView: AnyView
         if Calendar.current.isDate(today, inSameDayAs: expiryDate) {
             contentView = AnyView(
-                Text("AI Thing app has expired, please download again")
+                Text("AI Thing app has expired, please download again for latest updates")
                     .frame(width: 640, height: 64)
                     .background(.black)
                     .clipShape(RoundedRectangle(cornerRadius: 32))
