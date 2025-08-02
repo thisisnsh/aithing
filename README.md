@@ -11,13 +11,6 @@ Missing Features
 ------------------------
 
 
-Thursday
-- Improve Settings UI
-- Show help URL in help popup
-- Ability to choose tools -> add MCP choose tools 
-- Pill: Waking up agent + Max tab create
-
-
 Saturday
 - Animated Video 20 Seconds
 - Website
@@ -39,6 +32,7 @@ Monday
 
 Future
 - Show Usage
+- Ability to choose tools -> add MCP choose tools 
 - Understand you and suggest things based on time and this
 - Make programmatic typing possible
 - Make JSON addition easier (format and type hint) or button to put the schema

@@ -10,6 +10,7 @@ import SwiftUI
 struct AnimatedGradientBorder: View {
     let cornerRadius: CGFloat
     let lineWidth: CGFloat
+    var color: Color = .white
 
     @State private var animate = false
 
@@ -21,11 +22,11 @@ struct AnimatedGradientBorder: View {
                 .strokeBorder(
                     AngularGradient(
                         gradient: Gradient(colors: [
-                            .white,
-                            .white.opacity(0.4),
-                            .white.opacity(0.05),
-                            .white.opacity(0.4),
-                            .white,
+                            color,
+                            color.opacity(0.4),
+                            color.opacity(0.05),
+                            color.opacity(0.4),
+                            color,
                         ]),
                         center: .center,
                         angle: .degrees(animate ? 360 : 0)

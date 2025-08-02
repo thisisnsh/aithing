@@ -19,22 +19,25 @@ struct ContentView: View {
     var incrementSizePanel: (CGFloat) -> Void
     var getExtraSize: () -> CGFloat
 
+    @State private var agents: [AgentEntry] = []
     @State private var allClientTools: [String: [[String: Any]]] = [:]
 
     @State private var focusedIndex: Int = 0
-    @State private var showToast = false
-    @State private var showHelp = false
-    @State private var showSettings = true
-    @State private var tabs: [TabItem] = []
-    @State private var agents: [AgentEntry] = []
 
+    @State private var tabs: [TabItem] = []
     @State private var maxTabs: Int = 3  // DEBUG
     @State private var width: CGFloat = 640 + 48
 
+    @State private var showSettings = true
+
+    @State private var showToast = false
     @State private var toastText: String = ""
+    @State private var toastColor: Color = .white
+
+    @State private var showHelp = false
     private var helpText: String {
         return """
-            ## Help Sheet
+            ## Help Sheet: 
 
             | Command | Description |   | Command | Description | 
             | ------- | ----------- | - | ------- | ----------- | 
@@ -42,6 +45,8 @@ struct ContentView: View {
             | ` Control (⌃) + N `     | New Tab            | | ` Control (⌃) + W ` | Close Tab |
             | ` Control (⌃) + S `     | Show/Hide Settings | | ` Control (⌃) + H ` | Show Help |
             | ` Control (⌃) + > `     | Move to Right Tab  | | ` Control (⌃) + < ` | Move to Left Tab  |
+
+            StillStuck? http://aithing.dev/help 
             """
     }
 
@@ -68,8 +73,8 @@ struct ContentView: View {
                     .padding(.trailing, 80)
                     .padding(.top, 16)
             }
-            if showToast || showHelp {
-                MarkdownText(text: showHelp ? helpText : toastText)
+            if showHelp {
+                MarkdownText(text: helpText)
                     .padding()
                     .background(.ultraThinMaterial)
                     .overlay {
@@ -78,6 +83,24 @@ struct ContentView: View {
                     }
                     .cornerRadius(24)
                     .zIndex(2)
+                    .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top)
+                    .padding(.leading, 48)
+                    .padding(.trailing, 80)
+                    .padding(.top, 16)
+            }
+            if showToast {
+                MarkdownText(text: toastText)
+                    .padding()
+                    .background(.ultraThinMaterial)
+                    .overlay {
+                        AnimatedGradientBorder(
+                            cornerRadius: 24,
+                            lineWidth: 1.5,
+                            color: toastColor
+                        )
+                    }
+                    .cornerRadius(24)
+                    .zIndex(3)
                     .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top)
                     .padding(.leading, 48)
                     .padding(.trailing, 80)
@@ -149,16 +172,18 @@ struct ContentView: View {
         }
 
         agents = newAgents
-        toastText = "💤 Waking up Agents..."
+        toastText = "Waking up Agents..."
         showToast = true
 
         var failure = ""
 
         let disconnectRc = await mcp.disconnect()
         if !disconnectRc.isEmpty {
-            toastText = "❌ Failed to wake up agents: \(disconnectRc)"
+            toastColor = .red
+            toastText = "Failed to wake up agents: \(disconnectRc)"
             DispatchQueue.main.asyncAfter(deadline: .now() + 2) {
                 showToast = false
+                toastColor = .white
             }
             return
         }
@@ -196,11 +221,13 @@ struct ContentView: View {
         }
 
         if !failure.isEmpty {
-            toastText = "❌ Failed to wake up agents\n" + failure
+            toastColor = .red
+            toastText = "Failed to wake up agents\n" + failure
         }
 
         DispatchQueue.main.asyncAfter(deadline: .now() + (failure.isEmpty ? 2 : 5)) {
             showToast = false
+            toastColor = .white
         }
     }
 
