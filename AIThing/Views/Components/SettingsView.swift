@@ -37,6 +37,8 @@ struct SettingsView: View {
     @State private var agentPrimary = ""
     @State private var agentSecondary = ""
 
+    @State private var agentMaxCount = 3
+    
     var body: some View {
         HStack(spacing: 0) {
             Sidebar()
@@ -316,7 +318,7 @@ struct SettingsView: View {
         VStack(alignment: .leading, spacing: 16) {
             GroupBox {
                 HStack {
-                    Text("Need Help? http://aithing.dev/help")
+                    Text("Need Help? Check http://aithing.dev")
                         .font(.system(size: 10, weight: .medium))
                         .padding(4)
                     Spacer()
@@ -325,7 +327,7 @@ struct SettingsView: View {
             }
 
             GroupBox(
-                label: Text("Self Managed (Max 3 with Free Plan)")
+                label: Text("Self Managed (Max \(agentMaxCount) with current plan)")
                     .font(.system(size: 10, weight: .medium))
                     .padding(.vertical, 4)
             ) {
@@ -477,7 +479,7 @@ struct SettingsView: View {
                         Button(action: {
                             if showAddAgent {
                                 showToast = false
-                                if agents.count < 3 {  // DEBUG
+                                if agents.count < agentMaxCount {
                                     let error = addAgentEntry()
                                     if !error.isEmpty {
                                         toastText = error
@@ -492,7 +494,7 @@ struct SettingsView: View {
                                         showAddAgent = false
                                     }
                                 } else {
-                                    toastText = "Maximum of 3 agents allowed."
+                                    toastText = "Maximum of \(agentMaxCount) agents allowed."
                                     showToast = true
                                     DispatchQueue.main.asyncAfter(deadline: .now() + 5) {
                                         showToast = false

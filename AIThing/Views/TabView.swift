@@ -14,6 +14,9 @@ struct TabView: View {
     @EnvironmentObject var mcp: MCPManager
 
     @Binding var isFocused: Bool
+    var tabId: UUID
+    @Binding var allTabs: [TabItem]
+
     @Binding var allClientTools: [String: [[String: Any]]]
     var onSetting: () -> Void
     var onHelp: () -> Void
@@ -346,6 +349,12 @@ struct TabView: View {
     // MARK: - AI Functions
 
     private func callModel(query: String) async {
+        // Check if tab is alive, else return without processing
+        if !allTabs.contains(where: { $0.id == tabId }) {
+            print("Exiting callModel for \(tabId)")
+            return
+        }
+
         do {
             try await Task.sleep(nanoseconds: 200_000_000)
         } catch {
@@ -356,7 +365,8 @@ struct TabView: View {
         modelTools = allClientTools.values.flatMap { $0 }
 
         // Fake data
-        //        return await fakeData(query: query)  // DEBUG
+        // await callModel(query: query + "X")
+        // return await fakeData(query: query)
 
         let model = "claude-sonnet-4-20250514"
 
@@ -417,7 +427,7 @@ struct TabView: View {
         ]
 
         print("--------")
-        print("messages: \(body["messages"])")
+        print("messages: \(String(describing: body["messages"]))")
         //        print("system: \(body["system"] as! [Any])")
         //        print("tools_count: \((body["tools"] as! [Any]).count)")
 
@@ -694,7 +704,7 @@ struct TabView: View {
         fakeContent += fakeContent + fakeContent
         //        }
 
-        var fakePartial = ""
+        _ = ""
         //        for char in fakeContent {
         //            fakePartial += String(char)
         await MainActor.run {

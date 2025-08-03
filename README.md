@@ -6,32 +6,8 @@ Missing Features
 - No Screen recording / audio
 - No CMD+- to change font size
 - No Theme Change
-      
-
-------------------------
-
-
-Saturday
-- Animated Video 20 Seconds
-- Create Document Website
-- Better Website
-- Better Email 
-
-
-Sunday
-- YC Video Playlist
-- YC Application
-
-
-Monday 
-- YC Submit 
-- Release Reddit 
-
-
-------------------------
-
-
-Future
+- Add Privacy Policy
+- Add Terms of Use
 - Show Usage
 - Ability to choose tools -> add MCP choose tools 
 - Understand you and suggest things based on time and this
@@ -47,26 +23,37 @@ Future
 - Elicitation 
 - Release
 
+------------------------
 
 
+Saturday
+- Infinite Loop Check 
+- Demo video like yesterday but slow paces
+
+Sunday
+- YC Video Playlist
+- YC Application
+- Delete API Keys
+
+Monday 
+- YC Submit 
+- Release Reddit 
 
 
+------------------------
 
 
-{
-    “name” :“github”, 
-    “url”: “https://api.githubcopilot.com/mcp/”, 
-    “authorization_token”: “<your-github-token>” 
-}
+anthropic
+<your-anthropic-api-key>
 
+github 
+https://api.githubcopilot.com/mcp/ 
+<your-github-token>    
 
-{ 
-    “name”: “xcode”, 
-    “command”: “/usr/local/bin/xcode-npx-wrapper”, 
-    “arguments”: ["-y", "xcodebuildmcp@latest"] 
-} 
+xcode 
+/usr/local/bin/xcode-npx-wrapper
+-y xcodebuildmcp@latest
 
-
-Xcode MCP:  https://www.google.com/search?client=safari&rls=en&q=xcrun%3A+error%3A+unable+to+find+utility+%22simctl%22%2C+not+a+developer+tool+or+in+PATH&ie=UTF-8&oe=UTF-8
-
-
+mac
+/Users/thisisnsh/.bun/bin/bunx
+@dhravya/apple-mcp@latest

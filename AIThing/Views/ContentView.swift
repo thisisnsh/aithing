@@ -25,7 +25,7 @@ struct ContentView: View {
     @State private var focusedIndex: Int = 0
 
     @State private var tabs: [TabItem] = []
-    @State private var maxTabs: Int = 3  // DEBUG
+    @State private var maxTabs: Int = 3
     @State private var width: CGFloat = 640 + 48
 
     @State private var showSettings = false
@@ -46,7 +46,7 @@ struct ContentView: View {
             | ` Control (⌃) + S `     | Show/Hide Settings | | ` Control (⌃) + H ` | Show Help |
             | ` Control (⌃) + > `     | Move to Right Tab  | | ` Control (⌃) + < ` | Move to Left Tab  |
 
-            Still Stuck? http://aithing.dev/help 
+            Still Stuck? Check http://aithing.dev 
             """
     }
 
@@ -55,7 +55,7 @@ struct ContentView: View {
             HStack(alignment: .top, spacing: 8) {
                 Color.clear.frame(width: 40)
                 ForEach(Array(tabs.enumerated()), id: \.element.id) { index, tab in
-                    tabView(at: index)
+                    tabView(at: index, tab: tab)
                 }
                 Color.clear.frame(width: 72)
             }
@@ -307,14 +307,15 @@ struct ContentView: View {
     }
 
     @ViewBuilder
-    private func tabView(at index: Int) -> some View {
+    private func tabView(at index: Int, tab: TabItem) -> some View {
         let isFocusedBinding = Binding(
             get: { focusedIndex == index },
             set: { if $0 { focusedIndex = index } }
         )
-
         TabView(
             isFocused: isFocusedBinding,
+            tabId: tab.id,
+            allTabs: $tabs,
             allClientTools: $allClientTools,
             onSetting: { self.onSetting() },
             onHelp: { self.onHelp() },
