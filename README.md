@@ -26,16 +26,15 @@ Missing Features
 ------------------------
 
 
-Saturday
-- Infinite Loop Check 
-- Demo video like yesterday but slow paces
-
 Sunday
+- Demo video like yesterday but slow paces
+- Update step 3 with https://github.com/WeAreAIThing/help.aithing.dev/issues
 - YC Video Playlist
 - YC Application
 - Delete API Keys
 
 Monday 
+- Route help.aithing.dev to aithing.dev
 - YC Submit 
 - Release Reddit 
 

@@ -123,6 +123,11 @@ struct SettingsView: View {
             
             Text("Version 1.1\nExpires: 2025-08-11")
                 .font(.system(size: 10, weight: .medium))
+                .padding(.top, 8)
+                .padding(.horizontal, 16)
+            
+            Link("Report Bug", destination: URL(string: "https://github.com/WeAreAIThing/help.aithing.dev/issues")!)
+                .font(.system(size: 10, weight: .medium))
                 .padding(.vertical, 8)
                 .padding(.horizontal, 16)
             
