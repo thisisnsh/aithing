@@ -16,8 +16,8 @@ struct TabView: View {
     @Binding var isFocused: Bool
     var tabId: UUID
     @Binding var allTabs: [TabItem]
-
     @Binding var allClientTools: [String: [[String: Any]]]
+    @Binding var showSettings: Bool
     var onSetting: () -> Void
     var onHelp: () -> Void
     var resizePanel: (CGFloat) -> Void
@@ -126,7 +126,7 @@ struct TabView: View {
                 ZStack(alignment: .leading) {
                     InputTextView(
                         text: $query,
-                        isEditable: $isViewBlinking,  // Do not allow edit when model is thinking
+                        isNotEditable: isViewBlinking || showSettings,
                         onCommit: {
                             Task {
                                 await handleQuery()
@@ -703,6 +703,12 @@ struct TabView: View {
         //        if query == "a" {
         fakeContent += fakeContent + fakeContent
         //        }
+        do {
+            try await Task.sleep(for: .seconds(10))
+
+        } catch {
+
+        }
 
         _ = ""
         //        for char in fakeContent {
@@ -711,11 +717,7 @@ struct TabView: View {
             isThinking = false
             modelOutput = fakeContent  //fakePartial + " " + shimmerPlaceholder()
         }
-        //            do {
-        //                try await Task.sleep(for: .milliseconds(10))
-        //            } catch {
 
-        //            }
         //        }
     }
 }

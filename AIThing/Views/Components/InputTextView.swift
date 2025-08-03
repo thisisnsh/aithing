@@ -10,7 +10,7 @@ import SwiftUI
 
 struct InputTextView: NSViewRepresentable {
     @Binding var text: String
-    @Binding var isEditable: Bool
+    var isNotEditable: Bool
 
     var onCommit: () -> Void
     var onCommandTyped: (String) -> Void = { _ in }
@@ -122,7 +122,7 @@ struct InputTextView: NSViewRepresentable {
         let textView = (theTextView.documentView as! NSTextView)
         textView.delegate = context.coordinator
 
-        textView.isEditable = !isEditable
+        textView.isEditable = !isNotEditable
         textView.isSelectable = true
         textView.isRichText = false
         textView.allowsUndo = true
@@ -154,7 +154,7 @@ struct InputTextView: NSViewRepresentable {
             if textView.string != text {
                 textView.string = text
             }
-            textView.isEditable = true  //!isEditable
+            textView.isEditable = !isNotEditable
         }
     }
 }

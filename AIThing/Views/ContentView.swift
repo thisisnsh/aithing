@@ -317,6 +317,7 @@ struct ContentView: View {
             tabId: tab.id,
             allTabs: $tabs,
             allClientTools: $allClientTools,
+            showSettings: $showSettings,
             onSetting: { self.onSetting() },
             onHelp: { self.onHelp() },
             resizePanel: { extraHeight in

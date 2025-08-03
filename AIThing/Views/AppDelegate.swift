@@ -90,7 +90,7 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate {
         floatingWindow.alphaValue = 1
         floatingWindow.center()
         floatingWindow.orderFrontRegardless()  // no app activation
-        floatingWindow.sharingType = .none  // DEBUG
+        floatingWindow.sharingType = .none  // Comment during DEBUG mode
     }
 
     func setupHotKey() {
