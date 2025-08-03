@@ -310,14 +310,6 @@ struct TabView: View {
                 modelInputImage = nil
                 modelInputImageBase64 = nil
             }
-        case "update":
-            // Update screenshot while typing
-            if modelInputImage != nil {
-                if let (image, base64) = await manager.captureScreenUnderMouse() {
-                    modelInputImage = image
-                    modelInputImageBase64 = base64
-                }
-            }
         default:
             break
         }
@@ -364,7 +356,7 @@ struct TabView: View {
         // Load latest tools
         modelTools = allClientTools.values.flatMap { $0 }
 
-        // Fake data
+        // Fake data // DEBUG_MODE
         // await callModel(query: query + "X")
         // return await fakeData(query: query)
 
@@ -427,9 +419,7 @@ struct TabView: View {
         ]
 
         print("--------")
-        print("messages: \(String(describing: body["messages"]))")
-        //        print("system: \(body["system"] as! [Any])")
-        //        print("tools_count: \((body["tools"] as! [Any]).count)")
+        print("messages: \(modelInput.index(after: 1))")
 
         request.httpBody = try? JSONSerialization.data(withJSONObject: body)
 
