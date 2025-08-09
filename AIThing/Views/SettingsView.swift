@@ -21,7 +21,7 @@ struct SettingsView: View {
     @EnvironmentObject var loginManager: LoginManager
 
     @Binding var isPresented: Bool
-    var setFloatingWindowVisibility: () -> Void
+    var setPanelVisibility: () -> Void
 
     @State private var selectedTab: SettingsTab = .account
 
@@ -680,7 +680,7 @@ struct SettingsView: View {
                                     setPreferencesShowInScreenshot(
                                         value: preferencesShowInScreenshot
                                     )
-                                    setFloatingWindowVisibility()
+                                    setPanelVisibility()
                                 }
                         }
                     }
