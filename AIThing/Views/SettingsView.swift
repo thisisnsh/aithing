@@ -652,7 +652,7 @@ struct SettingsView: View {
     func PreferencesTab() -> some View {
         VStack(alignment: .leading, spacing: 16) {
             GroupBox(
-                label: Text("Look")
+                label: Text("Look & Feel")
                     .font(.system(size: 10, weight: .medium))
                     .padding(.vertical, 4)
             ) {
@@ -666,7 +666,7 @@ struct SettingsView: View {
                             .resizable()
                             .scaledToFit()
                             .frame(width: 16, height: 16)
-                            Text("Show in Screenshots")
+                            Text("Show in Screenshot")
                                 .font(.system(size: 14, weight: .medium))
                             Spacer()
                             Toggle("", isOn: $preferencesShowInScreenshot)
@@ -685,6 +685,25 @@ struct SettingsView: View {
                     }
                     .buttonStyle(.plain)
                     .padding(4)
+
+                    Divider()
+
+                    Button(action: {}) {
+                        HStack {
+                            Image(systemName: "paintpalette.fill")
+                                .resizable()
+                                .scaledToFit()
+                                .frame(width: 16, height: 16)
+                            Text("Theme")
+                                .font(.system(size: 14, weight: .medium))
+                            Spacer()
+                            Text("Dark Translucent")
+                                .font(.system(size: 10, weight: .medium))
+                        }
+                    }
+                    .buttonStyle(.plain)
+                    .padding(4)
+                    .opacity(0.5)
                 }
                 .padding(4)
             }

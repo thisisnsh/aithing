@@ -25,7 +25,6 @@ Friday
 - Black Box
 - Drag Icon
 - Fix Height Width of Box
-- No Theme Change
 
 
 - Study Raycast
