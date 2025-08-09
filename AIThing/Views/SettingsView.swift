@@ -25,7 +25,7 @@ struct SettingsView: View {
 
     @State private var selectedTab: SettingsTab = .account
 
-    @State private var apiKey: String = getAnthropicAPIKey()
+    @State private var apiKey: String = getAnthropicAPIKey() ?? ""
     @FocusState private var apiKeyFieldFocused: Bool
 
     @State private var showToast = false
@@ -774,9 +774,7 @@ struct SettingsView: View {
     }
 
     func saveAgents() {
-        if let data = try? JSONEncoder().encode(agents) {
-            setAgentEntries(value: data)
-        }
+        setAgentEntries(value: agents)
     }
 
     func deleteAgent(_ agent: AgentEntry) {

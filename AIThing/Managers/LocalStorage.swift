@@ -8,7 +8,7 @@
 import Foundation
 
 func getAnthropicAPIKey() -> String? {
-    UserDefaults.standard.string(forKey: "AnthropicAPIKey") ?? ""
+    UserDefaults.standard.string(forKey: "AnthropicAPIKey")
 }
 
 func getAgentEntries() -> [AgentEntry] {
@@ -33,7 +33,9 @@ func setAnthropicAPIKey(value: String) {
 }
 
 func setAgentEntries(value: [AgentEntry]) {
-    UserDefaults.standard.set(value, forKey: "AgentEntries")
+    if let data = try? JSONEncoder().encode(value) {
+        UserDefaults.standard.set(data, forKey: "AgentEntries")
+    }
 }
 
 func setPreferencesShowInScreenshot(value: Bool) {

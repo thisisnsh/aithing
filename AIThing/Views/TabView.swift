@@ -317,15 +317,21 @@ struct TabView: View {
     private func handleCommand(type: String, command: String) async {
         switch type {
         case "add":
-            if command == "this" {
-                // captureScreenUnderMouse
-                if let (image, base64) = await manager.captureSelectedScreenUnderMouse() {
-                    modelInputImage = image
-                    modelInputImageBase64 = base64
+            if command == "@this" {
+                if getPreferencesCaptureFullScreen() {
+                    if let (image, base64) = await manager.captureScreenUnderMouse() {
+                        modelInputImage = image
+                        modelInputImageBase64 = base64
+                    }
+                } else {
+                    if let (image, base64) = await manager.captureSelectedScreenUnderMouse() {
+                        modelInputImage = image
+                        modelInputImageBase64 = base64
+                    }
                 }
             }
         case "remove":
-            if command == "this" {
+            if command == "@this" {
                 modelInputImage = nil
                 modelInputImageBase64 = nil
             }
@@ -398,7 +404,7 @@ struct TabView: View {
 
         let model = "claude-sonnet-4-20250514"
 
-        guard let apiKey = getAnthropicAPIKey()
+        guard let apiKey = getAnthropicAPIKey(), !apiKey.isEmpty
         else {
             isThinking = false
             modelOutputError = "Missing Anthropic API Key"
