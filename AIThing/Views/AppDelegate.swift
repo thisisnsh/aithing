@@ -84,7 +84,7 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate {
                         return self.incrementSizePanel(extraHeight: extraHeight)
                     },
                     getExtraSize: { return self.getExtraHeightPanel() },
-                    toggleVisibility: { return self.toggleVisibility() }
+                    setFloatingWindowVisibility: { return self.setFloatingWindowVisibility() }
                 ).environmentObject(mcp)
             )
         }
@@ -98,7 +98,7 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate {
         floatingWindow.alphaValue = 1
         floatingWindow.center()
         floatingWindow.orderFrontRegardless()  // no app activation
-        toggleVisibility()
+        setFloatingWindowVisibility()
     }
 
     func setupHotKey() {
@@ -163,11 +163,7 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate {
         return frame.size.height - height
     }
 
-    func toggleVisibility() {
-        if UserDefaults.standard.bool(forKey: "PreferencesShowInScreenshot") {
-            floatingWindow.sharingType = .readOnly
-        } else {
-            floatingWindow.sharingType = .none
-        }
+    func setFloatingWindowVisibility() {
+        floatingWindow.sharingType = getPreferencesShowInScreenshot() ? .readOnly : .none
     }
 }

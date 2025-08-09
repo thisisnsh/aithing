@@ -21,12 +21,11 @@ struct SettingsView: View {
     @EnvironmentObject var loginManager: LoginManager
 
     @Binding var isPresented: Bool
-    var toggleVisibility: () -> Void
+    var setFloatingWindowVisibility: () -> Void
 
     @State private var selectedTab: SettingsTab = .account
 
-    @State private var apiKey: String =
-        UserDefaults.standard.string(forKey: "AnthropicAPIKey") ?? ""
+    @State private var apiKey: String = getAnthropicAPIKey()
     @FocusState private var apiKeyFieldFocused: Bool
 
     @State private var showToast = false
@@ -42,8 +41,8 @@ struct SettingsView: View {
     @State private var agentSecondary = ""
     @State private var agentMaxCount = 3
 
-    @State private var preferencesShowInScreenshot =
-        UserDefaults.standard.bool(forKey: "PreferencesShowInScreenshot")
+    @State private var preferencesShowInScreenshot = getPreferencesShowInScreenshot()
+    @State private var preferencesCaptureFullScreen = getPreferencesCaptureFullScreen()
 
     var body: some View {
         HStack(spacing: 0) {
@@ -678,11 +677,39 @@ struct SettingsView: View {
                                 .scaleEffect(0.7)
                                 .onChange(of: preferencesShowInScreenshot) {
                                     preferencesShowInScreenshot.toggle()
-                                    UserDefaults.standard.set(
-                                        preferencesShowInScreenshot,
-                                        forKey: "PreferencesShowInScreenshot"
+                                    setPreferencesShowInScreenshot(
+                                        value: preferencesShowInScreenshot
                                     )
-                                    toggleVisibility()
+                                    setFloatingWindowVisibility()
+                                }
+                        }
+                    }
+                    .buttonStyle(.plain)
+                    .padding(4)
+
+                    Divider()
+
+                    Button(action: {}) {
+                        HStack {
+                            Image(
+                                systemName: preferencesCaptureFullScreen
+                                    ? "camera.metering.matrix" : "camera.metering.spot"
+                            )
+                            .resizable()
+                            .scaledToFit()
+                            .frame(width: 16, height: 16)
+                            Text("Capture Entire Screen on @this")
+                                .font(.system(size: 14, weight: .medium))
+                            Spacer()
+                            Toggle("", isOn: $preferencesCaptureFullScreen)
+                                .toggleStyle(.switch)
+                                .tint(.black)
+                                .scaleEffect(0.7)
+                                .onChange(of: preferencesCaptureFullScreen) {
+                                    preferencesCaptureFullScreen.toggle()
+                                    setPreferencesCaptureFullScreen(
+                                        value: preferencesCaptureFullScreen
+                                    )
                                 }
                         }
                     }
@@ -717,7 +744,7 @@ struct SettingsView: View {
     // MARK: - Agents Handling
 
     func saveAPIKey() {
-        UserDefaults.standard.set(apiKey, forKey: "AnthropicAPIKey")
+        setAnthropicAPIKey(value: apiKey)
     }
 
     func addAgentEntry() -> String {
@@ -748,7 +775,7 @@ struct SettingsView: View {
 
     func saveAgents() {
         if let data = try? JSONEncoder().encode(agents) {
-            UserDefaults.standard.set(data, forKey: "AgentEntries")
+            setAgentEntries(value: data)
         }
     }
 

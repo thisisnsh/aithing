@@ -59,20 +59,3 @@ enum Entry: Codable, Identifiable, Equatable {
         }
     }
 }
-
-// MARK: - Account Handling
-
-func getAnthropicAPIKey() -> String? {
-    UserDefaults.standard.string(forKey: "AnthropicAPIKey")
-}
-
-// MARK: - Agents Handling
-
-func getAgentEntries() -> [AgentEntry] {
-    if let data = UserDefaults.standard.data(forKey: "AgentEntries"),
-        let decoded = try? JSONDecoder().decode([AgentEntry].self, from: data)
-    {
-        return decoded
-    }
-    return []
-}

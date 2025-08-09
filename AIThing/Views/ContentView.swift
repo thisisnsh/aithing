@@ -19,7 +19,7 @@ struct ContentView: View {
     var resizePanel: (CGFloat) -> Void
     var incrementSizePanel: (CGFloat) -> Void
     var getExtraSize: () -> CGFloat
-    var toggleVisibility: () -> Void
+    var setFloatingWindowVisibility: () -> Void
 
     @State private var agents: [AgentEntry] = []
     @State private var allClientTools: [String: [[String: Any]]] = [:]
@@ -197,7 +197,7 @@ struct ContentView: View {
     }
 
     func Settings() -> some View {
-        SettingsView(isPresented: $showSettings, toggleVisibility: { self.toggleVisibility() })
+        SettingsView(isPresented: $showSettings, setFloatingWindowVisibility: { self.setFloatingWindowVisibility() })
             .background(.ultraThinMaterial)
             .overlay {
                 RoundedRectangle(cornerRadius: 24)

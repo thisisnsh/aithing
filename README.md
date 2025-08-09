@@ -23,28 +23,27 @@ Satursday
 - Improve Context
     - Setting to capture entire screen on @this
     - Or allow to capture the portion
-
+    - and tap to capture just the app 
 
 - Add Privacy Policy
 - Add Terms of Use
 - Update documentation for Sarah & David 
 - Update the Form and Waitlist
-
-- Promotion Graphics 
-- Promotion Websites - hackernews / reddit / mcp client docs / update server documents 
-- Release
+ 
 - Meetup
     - How to make it work better for non-developers
     - How to market it? 
     - What one click integrations do you want?
 
-- Study Raycast
-
-- Fix "AttributeGraph: cycle detected through attribute"
-- Fix Flickering Animation
 
 Sunday 
+- Release
+- Promotion Graphics 
+- Promotion Websites - hackernews / reddit / mcp client docs / update server documents
 - Email people using AI Thing and show it 
+- Study Raycast
+- Fix "AttributeGraph: cycle detected through attribute"
+- Fix Flickering Animation
 
 
 ------------------------
