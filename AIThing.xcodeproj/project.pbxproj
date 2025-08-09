@@ -9,7 +9,6 @@
 /* Begin PBXBuildFile section */
 		AAEFEA6E2E46B42400C47995 /* FirebaseAnalytics in Frameworks */ = {isa = PBXBuildFile; productRef = AAEFEA6D2E46B42400C47995 /* FirebaseAnalytics */; };
 		AAEFEA702E46B42400C47995 /* FirebaseAuth in Frameworks */ = {isa = PBXBuildFile; productRef = AAEFEA6F2E46B42400C47995 /* FirebaseAuth */; };
-		AAEFEA722E46B42400C47995 /* FirebaseFirestore in Frameworks */ = {isa = PBXBuildFile; productRef = AAEFEA712E46B42400C47995 /* FirebaseFirestore */; };
 		AAEFEA792E46C3E600C47995 /* GoogleSignIn in Frameworks */ = {isa = PBXBuildFile; productRef = AAEFEA782E46C3E600C47995 /* GoogleSignIn */; };
 		AAF11D042E22DE9100E2743E /* HotKey in Frameworks */ = {isa = PBXBuildFile; productRef = AAF11D032E22DE9100E2743E /* HotKey */; };
 		AAF11D0C2E22F5AB00E2743E /* README.md in Resources */ = {isa = PBXBuildFile; fileRef = AAF11D0B2E22F5AB00E2743E /* README.md */; };
@@ -69,7 +68,6 @@
 				AAF11D042E22DE9100E2743E /* HotKey in Frameworks */,
 				AAEFEA6E2E46B42400C47995 /* FirebaseAnalytics in Frameworks */,
 				AAF11D172E2306C800E2743E /* MarkdownUI in Frameworks */,
-				AAEFEA722E46B42400C47995 /* FirebaseFirestore in Frameworks */,
 				AAEFEA792E46C3E600C47995 /* GoogleSignIn in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
@@ -137,7 +135,6 @@
 				AAF11D642E241EDA00E2743E /* MCP */,
 				AAEFEA6D2E46B42400C47995 /* FirebaseAnalytics */,
 				AAEFEA6F2E46B42400C47995 /* FirebaseAuth */,
-				AAEFEA712E46B42400C47995 /* FirebaseFirestore */,
 				AAEFEA782E46C3E600C47995 /* GoogleSignIn */,
 			);
 			productName = AIThing;
@@ -660,11 +657,6 @@
 			isa = XCSwiftPackageProductDependency;
 			package = AAEFEA6C2E46B42400C47995 /* XCRemoteSwiftPackageReference "firebase-ios-sdk" */;
 			productName = FirebaseAuth;
-		};
-		AAEFEA712E46B42400C47995 /* FirebaseFirestore */ = {
-			isa = XCSwiftPackageProductDependency;
-			package = AAEFEA6C2E46B42400C47995 /* XCRemoteSwiftPackageReference "firebase-ios-sdk" */;
-			productName = FirebaseFirestore;
 		};
 		AAEFEA782E46C3E600C47995 /* GoogleSignIn */ = {
 			isa = XCSwiftPackageProductDependency;
