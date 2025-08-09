@@ -87,21 +87,23 @@ struct InputTextView: NSViewRepresentable {
         func textDidChange(_ notification: Notification) {
             guard let textView = notification.object as? NSTextView else { return }
             parent.text = textView.string
+            applyCommandHighlighting(to: textView)
 
             // Always update spillover on any text change
             let lineCount = calculateLineCount(from: textView)
             parent.onSpillover(lineCount)
 
             // Handle @ or \command tracking
-            let pattern = ##"[@\\#]([a-zA-Z]+)"##
+            // let pattern = ##"[@\\#]([a-zA-Z]+)"##
+            let pattern = #"(?i)@this"#
             let regex = try? NSRegularExpression(pattern: pattern)
             let nsrange = NSRange(parent.text.startIndex..<parent.text.endIndex, in: parent.text)
 
             var currentCommands = Set<String>()
 
             regex?.matches(in: parent.text, options: [], range: nsrange).forEach { match in
-                if let wordRange = Range(match.range(at: 1), in: parent.text) {
-                    let command = String(parent.text[wordRange])
+                if let wordRange = Range(match.range, in: parent.text) {
+                    let command = String(parent.text[wordRange]).lowercased()  // normalize if you want
                     currentCommands.insert(command)
 
                     if !seenCommands.contains(command) {
@@ -127,6 +129,37 @@ struct InputTextView: NSViewRepresentable {
         }
 
         func textDidEndEditing(_ notification: Notification) {}
+
+        private func applyCommandHighlighting(to textView: NSTextView) {
+            let fullText = textView.string
+            let attributedText = NSMutableAttributedString(
+                string: fullText,
+                attributes: [
+                    .font: NSFont.systemFont(ofSize: 18, weight: .medium),
+                    .foregroundColor: NSColor.white,
+                ]
+            )
+
+            let pattern = #"(?i)@this"#
+            if let regex = try? NSRegularExpression(pattern: pattern) {
+                let nsrange = NSRange(fullText.startIndex..<fullText.endIndex, in: fullText)
+                for match in regex.matches(in: fullText, range: nsrange) {
+                    attributedText.addAttributes(
+                        [
+                            .font: NSFont.monospacedSystemFont(ofSize: 16, weight: .medium),
+                            .foregroundColor: NSColor.white,
+                        ],
+                        range: match.range
+                    )
+                }
+            }
+
+            // Preserve cursor position
+            let selectedRange = textView.selectedRange()
+            textView.textStorage?.setAttributedString(attributedText)
+            textView.setSelectedRange(selectedRange)
+        }
+
     }
 
     func makeCoordinator() -> Coordinator {
@@ -146,7 +179,8 @@ struct InputTextView: NSViewRepresentable {
 
         textView.isEditable = !isNotEditable
         textView.isSelectable = true
-        textView.isRichText = false
+        textView.isRichText = true
+        textView.importsGraphics = false
         textView.allowsUndo = true
         textView.isHorizontallyResizable = false
         textView.isVerticallyResizable = true
