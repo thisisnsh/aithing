@@ -20,7 +20,6 @@ Missing Features
 
 
 Satursday    
-- Add cross on context image to remove
 - Fix dimensions of the view
 - @this does not stay formatted forever
 

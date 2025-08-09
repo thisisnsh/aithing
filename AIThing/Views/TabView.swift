@@ -271,32 +271,50 @@ struct TabView: View {
     }
 
     private func contextView(image: NSImage) -> some View {
-        Image(nsImage: image)
-            .resizable()
-            .aspectRatio(contentMode: .fit)
-            .frame(
-                height: isZoomedModelInputImage ? 200 : 50,
-                alignment: .leading
-            )
-            .clipShape(
-                RoundedRectangle(cornerRadius: isZoomedModelInputImage ? getCornerRadius() : 16)
-            )
-            .overlay {
-                RoundedRectangle(cornerRadius: isZoomedModelInputImage ? getCornerRadius() : 16)
-                    .stroke(Color.white, lineWidth: 1)
-            }
-            .onTapGesture {
-                withAnimation(
-                    .spring(response: 0.3, dampingFraction: 0.7, blendDuration: 0.2)
-                ) {
-                    isZoomedModelInputImage.toggle()
-                    incrementSizePanel(isZoomedModelInputImage ? 150 : -150)
+        ZStack {
+            Image(nsImage: image)
+                .resizable()
+                .aspectRatio(contentMode: .fit)
+                .frame(
+                    height: isZoomedModelInputImage ? 200 : 50,
+                    alignment: .leading
+                )
+                .background(.ultraThinMaterial)
+                .clipShape(
+                    RoundedRectangle(cornerRadius: isZoomedModelInputImage ? getCornerRadius() : 16)
+                )
+                .overlay {
+                    RoundedRectangle(cornerRadius: isZoomedModelInputImage ? getCornerRadius() : 16)
+                        .stroke(Color.white, lineWidth: 1)
                 }
+                .onTapGesture {
+                    withAnimation(
+                        .spring(response: 0.3, dampingFraction: 0.7, blendDuration: 0.2)
+                    ) {
+                        isZoomedModelInputImage.toggle()
+                        incrementSizePanel(isZoomedModelInputImage ? 150 : -150)
+                    }
+                }
+                .padding(.vertical, 8)
+                .onAppear {
+                    incrementSizePanel(64)
+                }
+
+            Button(action: {
+                incrementSizePanel(-64)
+                if isZoomedModelInputImage {
+                    incrementSizePanel(-150)
+                }
+                isZoomedModelInputImage = false
+                modelInputImage = nil
+                modelInputImageBase64 = nil
+            }) {
+                Image(systemName: "xmark.circle.fill")
+                    .frame(width: 12, height: 12)
+                    .padding(8)
             }
-            .padding(.vertical, 8)
-            .onAppear {
-                incrementSizePanel(64)
-            }
+            .buttonStyle(PlainButtonStyle())
+        }
     }
 
     // MARK: - Private Functions
@@ -324,7 +342,9 @@ struct TabView: View {
                         modelInputImageBase64 = base64
                     }
                 } else {
-                    if let (image, base64) = await screenshotManager.captureSelectedScreenUnderMouse() {
+                    if let (image, base64) =
+                        await screenshotManager.captureSelectedScreenUnderMouse()
+                    {
                         modelInputImage = image
                         modelInputImageBase64 = base64
                     }
@@ -344,9 +364,9 @@ struct TabView: View {
     private func handleQuery() async {
         let trimmed = query.trimmingCharacters(in: .whitespacesAndNewlines)
         guard !trimmed.isEmpty else { return }
-        
+
         screenshotManager.cancelScreenshot()
-        
+
         modelOutput = ""
         modelOutputError = ""
 
