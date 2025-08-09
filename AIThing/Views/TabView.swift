@@ -344,7 +344,9 @@ struct TabView: View {
     private func handleQuery() async {
         let trimmed = query.trimmingCharacters(in: .whitespacesAndNewlines)
         guard !trimmed.isEmpty else { return }
-
+        
+        screenshotManager.cancelScreenshot()
+        
         modelOutput = ""
         modelOutputError = ""
 
@@ -354,9 +356,6 @@ struct TabView: View {
         responseHeight = responseHeightMin
         DispatchQueue.main.async {
             resizePanel(getResponseHeight())
-        }
-        if modelInputImage == nil {
-
         }
 
         isViewBlinking = true

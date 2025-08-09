@@ -193,8 +193,19 @@ final class ScreenshotManager: ObservableObject {
             false,
             onScreenWindowsOnly: true
         )
-        let candidates = content.windows.filter {
-            $0.isOnScreen && $0.frame.contains(clickGlobalPx)
+
+        let ownPID = NSRunningApplication.current.processIdentifier
+
+        let candidates = content.windows.filter { w in
+            guard w.isOnScreen else { return false }
+            guard w.owningApplication?.processID != ownPID else { return false }
+
+            // Ignore cursor/compositor surfaces (tiny size or suspicious titles)
+            let minSize: CGFloat = 5
+            if w.frame.width < minSize || w.frame.height < minSize { return false }
+            if let title = w.title?.lowercased(), title.contains("cursor") { return false }
+
+            return w.frame.contains(clickGlobalPx)
         }
 
         return candidates.sorted {
@@ -293,6 +304,9 @@ private final class SelectionOverlay: NSWindow {
 
     private let selectionView = SelectionView()
 
+    override var canBecomeKey: Bool { true }
+    override var canBecomeMain: Bool { true }
+
     /// Presents a borderless overlay on a single screen and returns either a region (drag) or a click point.
     static func presentAndSelect(on screen: NSScreen) async -> SelectionOutcome? {
         let win = SelectionOverlay(
@@ -313,7 +327,12 @@ private final class SelectionOverlay: NSWindow {
 
         win.contentView = win.selectionView
         win.selectionView.configureForSingleScreen(screen: screen)
+
+        // Ensure the app/window can receive key events
+        NSApp.activate(ignoringOtherApps: true)
+        win.initialFirstResponder = win.selectionView
         win.makeKeyAndOrderFront(nil)
+
         NSCursor.crosshair.set()
 
         return await withCheckedContinuation {
@@ -369,9 +388,9 @@ private final class SelectionView: NSView {
         window?.makeFirstResponder(self)
     }
 
-    /// Handles ESC cancellation.
-    override func keyDown(with event: NSEvent) {
-        if event.keyCode == 53 { onComplete?(nil) } else { super.keyDown(with: event) }
+    // ESC triggers cancelOperation on the first responder
+    override func cancelOperation(_ sender: Any?) {
+        onComplete?(nil)
     }
 
     /// Begins a drag or click.
