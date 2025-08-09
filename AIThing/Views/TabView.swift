@@ -47,6 +47,7 @@ struct TabView: View {
     @State private var isZoomedModelInputImage = false
 
     @State private var query: String = ""
+    @State private var seenCommands: Set<String> = []
     @State private var showResponseArea: Bool = false
 
     var body: some View {
@@ -134,6 +135,7 @@ struct TabView: View {
                 ZStack(alignment: .leading) {
                     InputTextView(
                         text: $query,
+                        seenCommands: $seenCommands,
                         isNotEditable: isViewBlinking || showSettings,
                         onCommit: {
                             Task {
@@ -652,8 +654,6 @@ struct TabView: View {
         var finalQuery = ""
         finalQuery = query.replacingOccurrences(of: "@this", with: "this")
         return finalQuery
-
-        //        let clipboard = NSPasteboard.general.string(forType: .string) ?? ""
     }
 
     private func getClientName(toolName: String) -> String {

@@ -21,24 +21,23 @@ Missing Features
 
 Satursday    
 - Fix dimensions of the view
-- @this does not stay formatted forever
 
 - Add Privacy Policy
 - Add Terms of Use
 - Update documentation for Sarah & David 
 - Update the Form and Waitlist
  
-- Meetup
-    - How to make it work better for non-developers
-    - How to market it? 
-    - What one click integrations do you want?
-
 
 Sunday 
 - Release
 - Promotion Graphics 
 - Promotion Websites - hackernews / reddit / mcp client docs / update server documents
 - Email people using AI Thing and show it 
+
+
+
+
+Monday
 - Study Raycast
 - Fix "AttributeGraph: cycle detected through attribute"
 - Fix Flickering Animation

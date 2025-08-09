@@ -10,6 +10,7 @@ import SwiftUI
 
 struct InputTextView: NSViewRepresentable {
     @Binding var text: String
+    @Binding var seenCommands: Set<String>
     var isNotEditable: Bool
 
     var onCommit: () -> Void
@@ -20,7 +21,6 @@ struct InputTextView: NSViewRepresentable {
 
     class Coordinator: NSObject, NSTextViewDelegate {
         var parent: InputTextView
-        private var seenCommands = Set<String>()
         private var debounceWorkItem: DispatchWorkItem?
         private let debounceDelay: TimeInterval = 0.3
 
@@ -106,18 +106,18 @@ struct InputTextView: NSViewRepresentable {
                     let command = String(parent.text[wordRange]).lowercased()  // normalize if you want
                     currentCommands.insert(command)
 
-                    if !seenCommands.contains(command) {
+                    if !parent.seenCommands.contains(command) {
                         parent.onCommandTyped(command)
                     }
                 }
             }
 
-            let removedCommands = seenCommands.subtracting(currentCommands)
+            let removedCommands = parent.seenCommands.subtracting(currentCommands)
             for command in removedCommands {
                 parent.onCommandRemoved(command)
             }
 
-            seenCommands = currentCommands
+            parent.seenCommands = currentCommands
 
             // Debounced handler
             debounceWorkItem?.cancel()
@@ -130,7 +130,7 @@ struct InputTextView: NSViewRepresentable {
 
         func textDidEndEditing(_ notification: Notification) {}
 
-        private func applyCommandHighlighting(to textView: NSTextView) {
+        func applyCommandHighlighting(to textView: NSTextView) {
             let fullText = textView.string
             let attributedText = NSMutableAttributedString(
                 string: fullText,
@@ -197,6 +197,7 @@ struct InputTextView: NSViewRepresentable {
 
         // Set initial text
         textView.string = text
+        context.coordinator.applyCommandHighlighting(to: textView)
 
         DispatchQueue.main.async {
             textView.window?.makeFirstResponder(textView)
@@ -208,7 +209,6 @@ struct InputTextView: NSViewRepresentable {
     func updateNSView(_ nsView: NSScrollView, context: Context) {
         if let textView = nsView.documentView as? NSTextView {
             if textView.string != text {
-                print(text)
                 textView.string = text
             }
             textView.isEditable = !isNotEditable
