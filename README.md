@@ -19,11 +19,9 @@ Missing Features
 ------------------------
 
 
-Satursday
-- Improve Context
-    - Setting to capture entire screen on @this
-    - Or allow to capture the portion
-    - and tap to capture just the app 
+Satursday    
+- Add cross on context image to remove
+- Cancel function - No duplication
 
 - Add Privacy Policy
 - Add Terms of Use

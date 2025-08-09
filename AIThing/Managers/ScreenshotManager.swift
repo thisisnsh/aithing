@@ -12,7 +12,11 @@ import ScreenCaptureKit
 
 // MARK: - ScreenshotManager
 
-class ScreenshotManager {
+class ScreenshotManager: ObservableObject {
+
+    func cancelScreenshot() {
+        SelectionOverlay.cancelActive()
+    }
 
     /// Captures the screen under the mouse pointer and returns (NSImage, base64 string).
     @MainActor
@@ -53,7 +57,9 @@ class ScreenshotManager {
         }
     }
 
-    /// Darkens only the screen under the mouse, lets the user drag a rect, then captures that region using ScreenCaptureKit.
+    /// Darkens only the screen under the mouse, lets the user drag a rect *or click*, then captures using ScreenCaptureKit.
+    /// - Drag: returns cropped region
+    /// - Click: captures the app window at the click point; if none, captures whole screen
     /// Reuses `getDisplayUnderMouse()` to choose the display. Returns (NSImage, base64) or nil if cancelled.
     @MainActor
     func captureSelectedScreenUnderMouse() async -> (NSImage, String)? {
@@ -64,13 +70,12 @@ class ScreenshotManager {
             }
             guard let screen = nsscreen(for: display) else { return nil }
 
-            guard let selectionLocal = await SelectionOverlay.presentAndSelect(on: screen),
-                selectionLocal.width >= 2, selectionLocal.height >= 2
-            else {
-                // todo: capture the app on which the click was registered
+            // Overlay can return a region selection or a simple click
+            guard let outcome = await SelectionOverlay.presentAndSelect(on: screen) else {
                 return nil
             }
 
+            // Capture one frame from that display
             let filter = SCContentFilter(display: display, excludingWindows: [])
             let config = SCStreamConfiguration()
             config.width = display.width
@@ -87,17 +92,83 @@ class ScreenshotManager {
 
             guard let fullImage = output.capturedImage else { return nil }
 
-            guard
-                let cropped = crop(
-                    image: fullImage,
-                    selectionLocalPoints: selectionLocal,
-                    on: screen,
-                    capturedDisplayPixelSize: CGSize(width: display.width, height: display.height)
-                )
-            else { return nil }
+            switch outcome {
+            case .region(let selectionLocal):
+                guard selectionLocal.width >= 2, selectionLocal.height >= 2 else { return nil }
+                guard
+                    let cropped = crop(
+                        image: fullImage,
+                        selectionLocalPoints: selectionLocal,
+                        on: screen,
+                        capturedDisplayPixelSize: CGSize(
+                            width: display.width,
+                            height: display.height
+                        )
+                    )
+                else { return nil }
 
-            guard let data = cropped.jpegData() else { return nil }
-            return (cropped, data.base64EncodedString())
+                guard let data = cropped.jpegData() else { return nil }
+                return (cropped, data.base64EncodedString())
+
+            case .click(let clickLocal):
+                // Try to find the topmost window under the click on this display
+                if let win = try await topmostWindow(
+                    at: clickLocal,
+                    on: display,
+                    screen: screen
+                ), win.isOnScreen {
+                    // Convert window frame (global pixels) → this screen's local *points* for cropping
+                    let sx = CGFloat(display.width) / screen.frame.width
+                    let sy = CGFloat(display.height) / screen.frame.height
+
+                    // Display’s global pixel bounds (CoreGraphics)
+                    let displayBoundsPx = CGDisplayBounds(display.displayID)
+
+                    // Convert window frame (global pixels) -> display-local pixels
+                    let winPxLocal = CGRect(
+                        x: win.frame.minX - displayBoundsPx.origin.x,
+                        y: win.frame.minY - displayBoundsPx.origin.y,
+                        width: win.frame.width,
+                        height: win.frame.height
+                    )
+
+                    // Flip Y back to bottom-left origin *within the display*, then to screen-local points
+                    let winLocalPoints = CGRect(
+                        x: winPxLocal.minX / sx,
+                        y: (CGFloat(display.height) - winPxLocal.maxY) / sy,
+                        width: winPxLocal.width / sx,
+                        height: winPxLocal.height / sy
+                    ).integral
+
+                    let targetRect = winLocalPoints.intersection(
+                        CGRect(origin: .zero, size: screen.frame.size)
+                    )
+
+                    if let cropped = crop(
+                        image: fullImage,
+                        selectionLocalPoints: targetRect,
+                        on: screen,
+                        capturedDisplayPixelSize: CGSize(
+                            width: display.width,
+                            height: display.height
+                        )
+                    ),
+                        let data = cropped.jpegData()
+                    {
+                        return (cropped, data.base64EncodedString())
+                    } else if let data = fullImage.jpegData() {
+                        // Fallback: whole screen
+                        return (fullImage, data.base64EncodedString())
+                    }
+                    return nil
+                } else {
+                    // No window under click → full screen
+                    if let data = fullImage.jpegData() {
+                        return (fullImage, data.base64EncodedString())
+                    }
+                    return nil
+                }
+            }
         } catch {
             return nil
         }
@@ -133,6 +204,57 @@ class ScreenshotManager {
         }
     }
 
+    /// Find the topmost shareable window at a click on a specific display.
+    /// - Parameters:
+    ///   - clickLocalOnScreen: Click point in *that screen's local points* (SelectionOverlay coordinates)
+    ///   - display: SCDisplay you are capturing from
+    ///   - screen: NSScreen corresponding to `display`
+    @MainActor
+    private func topmostWindow(
+        at clickLocalOnScreen: CGPoint,
+        on display: SCDisplay,
+        screen: NSScreen
+    ) async throws -> SCWindow? {
+
+        // Per-display point→pixel scale
+        let sx = CGFloat(display.width) / screen.frame.width
+        let sy = CGFloat(display.height) / screen.frame.height
+
+        // Display’s global pixel bounds (CoreGraphics global space, origin = top-left of main display)
+        let displayBoundsPx = CGDisplayBounds(display.displayID)  // in pixels
+
+        // Convert click: screen-local points -> display-local pixels (flip Y within the display)
+        let clickPxLocal = CGPoint(
+            x: clickLocalOnScreen.x * sx,
+            y: (CGFloat(display.height) - (clickLocalOnScreen.y * sy))
+        )
+
+        // To global pixels (CoreGraphics space)
+        let clickGlobalPx = CGPoint(
+            x: displayBoundsPx.origin.x + clickPxLocal.x,
+            y: displayBoundsPx.origin.y + clickPxLocal.y
+        )
+
+        // Fetch shareable windows (on-screen only)
+        let content = try await SCShareableContent.excludingDesktopWindows(
+            false,
+            onScreenWindowsOnly: true
+        )
+
+        // Filter windows that contain the click (all in global pixel space)
+        let candidates = content.windows.filter { w in
+            w.isOnScreen && w.frame.contains(clickGlobalPx)
+        }
+
+        // Topmost by layer; tie-breaker: larger area
+        return candidates.sorted {
+            if $0.windowLayer != $1.windowLayer { return $0.windowLayer > $1.windowLayer }
+            let a0 = $0.frame.width * $0.frame.height
+            let a1 = $1.frame.width * $1.frame.height
+            return a0 > a1
+        }.first
+    }
+
     /// Crop an NSImage of a full display to a rect in that display’s *local points*.
     @MainActor
     private func crop(
@@ -162,12 +284,7 @@ class ScreenshotManager {
         let displayH = capturedDisplayPixelSize.height
         cropPx.origin.y = displayH - cropPx.maxY
 
-        guard
-            let tiff = image.tiffRepresentation,
-            let rep = NSBitmapImageRep(data: tiff),
-            let cg = rep.cgImage
-        else { return nil }
-
+        // Reconfirm bounds against the image's true pixel bounds
         let bounds = CGRect(x: 0, y: 0, width: cg.width, height: cg.height)
         cropPx = bounds.intersection(cropPx)
         guard cropPx.width >= 1, cropPx.height >= 1 else { return nil }
@@ -219,20 +336,32 @@ extension NSImage {
 
 // MARK: - Selection Overlay (single-screen)
 
+private enum SelectionOutcome {
+    case region(CGRect)
+    case click(CGPoint)
+}
+
 private final class SelectionOverlay: NSWindow {
+
+    // NEW: Track the active overlay (so we can cancel from elsewhere)
+    private static weak var current: SelectionOverlay?
+    // NEW: Keep the continuation so we can resume it on cancel
+    private var continuation: CheckedContinuation<SelectionOutcome?, Never>?
+    private var hasCompleted = false
 
     private let selectionView = SelectionView()
 
-    /// Present on a single screen; returns rect in that screen’s local *points*.
+    /// Present on a single screen; returns either a region (screen-local points) or a click point.
     @MainActor
-    static func presentAndSelect(on screen: NSScreen) async -> CGRect? {
-        // Create a borderless window sized/positioned exactly over this screen
+    static func presentAndSelect(on screen: NSScreen) async -> SelectionOutcome? {
         let win = SelectionOverlay(
             contentRect: screen.frame,
             styleMask: .borderless,
             backing: .buffered,
             defer: false
         )
+        current = win
+
         win.level = .screenSaver
         win.isOpaque = false
         win.backgroundColor = .clear
@@ -241,33 +370,46 @@ private final class SelectionOverlay: NSWindow {
         win.hasShadow = false
         win.sharingType = getPreferencesShowInScreenshot() ? .readOnly : .none
 
-        // Configure content view to be screen-local coordinates (origin at bottom-left)
         win.contentView = win.selectionView
         win.selectionView.configureForSingleScreen(screen: screen)
         win.makeKeyAndOrderFront(nil)
-
-        // Crosshair cursor for the session
         NSCursor.crosshair.set()
 
-        return await withCheckedContinuation { cont in
-            win.selectionView.onComplete = { rect in
-                win.orderOut(nil)
-                cont.resume(returning: rect)
+        return await withCheckedContinuation {
+            (cont: CheckedContinuation<SelectionOutcome?, Never>) in
+            win.continuation = cont
+            win.selectionView.onComplete = { outcome in
+                win.finish(outcome)
             }
         }
+    }
+
+    static func cancelActive() {
+        current?.cancel()
+    }
+
+    private func cancel() {
+        finish(nil)
+    }
+
+    private func finish(_ outcome: SelectionOutcome?) {
+        guard !hasCompleted else { return }
+        hasCompleted = true
+        orderOut(nil)
+        SelectionOverlay.current = nil
+        continuation?.resume(returning: outcome)
+        continuation = nil
     }
 }
 
 private final class SelectionView: NSView {
 
-    // Result in this screen’s local *points*
-    var onComplete: ((CGRect?) -> Void)?
+    // Returns either a region (drag) or a click point (no drag)
+    var onComplete: ((SelectionOutcome?) -> Void)?
 
     private var startPoint: CGPoint?
     private var currentPoint: CGPoint?
     private var isDragging = false
-
-    // For cursor screen info (not strictly needed, but handy if you add HUDs)
     private weak var hostScreen: NSScreen?
 
     func configureForSingleScreen(screen: NSScreen) {
@@ -309,16 +451,21 @@ private final class SelectionView: NSView {
     }
 
     override func mouseUp(with event: NSEvent) {
-        guard isDragging, let s = startPoint, let c = currentPoint else {
+        guard let s = startPoint else {
             onComplete?(nil)
             return
         }
+        let c = currentPoint ?? s
         isDragging = false
         let rect = rectFromPoints(s, c)
-        if rect.width < 2 || rect.height < 2 {
-            onComplete?(nil)
+
+        // Threshold to detect "click" vs "drag"
+        if rect.width < 2 && rect.height < 2 {
+            // Click: return the click point (screen-local)
+            onComplete?(.click(s))
         } else {
-            onComplete?(rect)  // already in this screen’s local points
+            // Region
+            onComplete?(.region(rect))
         }
     }
 

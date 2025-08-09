@@ -24,6 +24,7 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate {
     static var allowQuit = false
 
     let mcp = MCPManager()
+    let screenshotManager = ScreenshotManager()
 
     func applicationDidFinishLaunching(_ notification: Notification) {
         NSApp.setActivationPolicy(.accessory)  // background-style app
@@ -85,7 +86,9 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate {
                     },
                     getExtraSize: { return self.getExtraHeightPanel() },
                     setFloatingWindowVisibility: { return self.setFloatingWindowVisibility() }
-                ).environmentObject(mcp)
+                )
+                .environmentObject(mcp)
+                .environmentObject(screenshotManager)
             )
         }
 
@@ -109,6 +112,8 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate {
     }
 
     func toggleWindow() {
+        self.screenshotManager.cancelScreenshot()
+
         if floatingWindow.isVisible {
             let origin = floatingWindow.frame.origin
             UserDefaults.standard.set(origin.x, forKey: "FloatingPanelOriginX")

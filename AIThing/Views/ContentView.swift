@@ -14,7 +14,8 @@ struct TabItem: Identifiable {
 struct ContentView: View {
     @EnvironmentObject var mcp: MCPManager
     @StateObject private var loginManager = LoginManager()
-
+    @EnvironmentObject var screenshotManager: ScreenshotManager
+    
     var onClose: () -> Void
     var resizePanel: (CGFloat) -> Void
     var incrementSizePanel: (CGFloat) -> Void
@@ -261,6 +262,8 @@ struct ContentView: View {
     }
 
     private func addTab() {
+        screenshotManager.cancelScreenshot()
+        
         if tabs.count >= maxTabs {
             toastColor = .red
             toastText = "Maximum of \(maxTabs) tabs reached"
@@ -279,6 +282,8 @@ struct ContentView: View {
     }
 
     private func closeTab() {
+        screenshotManager.cancelScreenshot()
+        
         let indexToRemove = focusedIndex
 
         if tabs.count == 1 { addTab() }  // Don't remove the last =tab
@@ -294,6 +299,8 @@ struct ContentView: View {
     }
 
     private func moveFocus(_ direction: Int) {
+        screenshotManager.cancelScreenshot()
+        
         withAnimation {
             let count = tabs.count
             guard count > 0 else { return }
@@ -333,6 +340,7 @@ struct ContentView: View {
         )
         .environmentObject(mcp)
         .environmentObject(loginManager)
+        .environmentObject(screenshotManager)
         .animation(.easeInOut, value: focusedIndex)
     }
 

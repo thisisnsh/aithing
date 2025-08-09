@@ -13,6 +13,7 @@ import SwiftUI
 struct TabView: View {
     @EnvironmentObject var mcp: MCPManager
     @EnvironmentObject var loginManager: LoginManager
+    @EnvironmentObject var screenshotManager: ScreenshotManager
 
     @Binding var isFocused: Bool
     var tabId: UUID
@@ -47,8 +48,6 @@ struct TabView: View {
 
     @State private var query: String = ""
     @State private var showResponseArea: Bool = false
-
-    let manager = ScreenshotManager()
 
     var body: some View {
         VStack(alignment: .leading, spacing: 8) {
@@ -318,13 +317,14 @@ struct TabView: View {
         switch type {
         case "add":
             if command == "@this" {
+                screenshotManager.cancelScreenshot()
                 if getPreferencesCaptureFullScreen() {
-                    if let (image, base64) = await manager.captureScreenUnderMouse() {
+                    if let (image, base64) = await screenshotManager.captureScreenUnderMouse() {
                         modelInputImage = image
                         modelInputImageBase64 = base64
                     }
                 } else {
-                    if let (image, base64) = await manager.captureSelectedScreenUnderMouse() {
+                    if let (image, base64) = await screenshotManager.captureSelectedScreenUnderMouse() {
                         modelInputImage = image
                         modelInputImageBase64 = base64
                     }
@@ -332,6 +332,7 @@ struct TabView: View {
             }
         case "remove":
             if command == "@this" {
+                screenshotManager.cancelScreenshot()
                 modelInputImage = nil
                 modelInputImageBase64 = nil
             }
