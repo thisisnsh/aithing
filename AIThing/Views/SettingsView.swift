@@ -150,7 +150,7 @@ struct SettingsView: View {
             }
             .buttonStyle(.plain)
 
-            Text("Version 1.3\nExpires: 2025-08-20")
+            Text("Version 1.3\nExpires: 2025-08-25")
                 .font(.system(size: 10, weight: .medium))
                 .padding(.top, 8)
                 .padding(.horizontal, 16)

@@ -58,40 +58,20 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate {
             object: nil
         )
 
-        let dateFormatter = DateFormatter()
-        dateFormatter.dateFormat = "yyyy-MM-dd"
-        // Change in settings as well
-        let expiryDate = dateFormatter.date(from: "2025-08-20")!
-        let today = Date()
-
-        let contentView: AnyView
-        if Calendar.current.isDate(today, inSameDayAs: expiryDate) {
-            contentView = AnyView(
-                Text("AI Thing app has expired, please download again for latest updates")
-                    .frame(width: 640, height: 64)
-                    .background(.black)
-                    .clipShape(RoundedRectangle(cornerRadius: 32))
-                    .multilineTextAlignment(.center)
-                    .padding()
-            )
-        } else {
-            contentView = AnyView(
-                ContentView(
-                    onClose: { self.toggleWindow() },
-                    updatePanelSizeFromDefault: { extraHeight in
-                        self.updatePanelSizeFromDefault(extraHeight: extraHeight)
-                    },
-                    updatePanelSizeFromCurrent: { extraHeight in
-                        return self.updatePanelSizeFromCurrent(extraHeight: extraHeight)
-                    },
-                    getExtraSize: { return self.getExtraPanelSizeFromDefault() },
-                    setPanelVisibility: { return self.setPanelVisibility() },
-                    setPanelPassthrough: { self.setPanelPassthrough($0) }
-                )
-                .environmentObject(mcp)
-                .environmentObject(screenshotManager)
-            )
-        }
+        let contentView = ContentView(
+            onClose: { self.toggleWindow() },
+            updatePanelSizeFromDefault: { extraHeight in
+                self.updatePanelSizeFromDefault(extraHeight: extraHeight)
+            },
+            updatePanelSizeFromCurrent: { extraHeight in
+                return self.updatePanelSizeFromCurrent(extraHeight: extraHeight)
+            },
+            getExtraSize: { return self.getExtraPanelSizeFromDefault() },
+            setPanelVisibility: { return self.setPanelVisibility() },
+            setPanelPassthrough: { self.setPanelPassthrough($0) }
+        )
+        .environmentObject(mcp)
+        .environmentObject(screenshotManager)
 
         let hostingView = NSHostingView(rootView: contentView)
 

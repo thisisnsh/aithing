@@ -20,14 +20,15 @@ Missing Features
 
 
 Saturday    
-- Add Privacy Policy
-- Add Terms of Use
+- Release
+
+- Add Privacy Policy (https://aithing.dev/privacy)
+- Add Latest Version (https://aithing.dev/latest)
 - Update documentation for Sarah & David 
 - Update the Form and Waitlist
  
 
 Sunday 
-- Release
 - Promotion Graphics 
 - Promotion Websites - hackernews / reddit / mcp client docs / update server documents
 - Email people using AI Thing and show it 
@@ -41,8 +42,6 @@ Monday
 
 ------------------------
     
-    
-
 
 Anthropic
 <your-anthropic-api-key>
@@ -65,3 +64,44 @@ Apple
 
 Google Sheets
 https://docs.google.com/spreadsheets/d/<spreadsheet-id>
+
+
+------------------------
+
+
+Release
+https://chatgpt.com/g/g-p-6873dd743bb48191b8a269cab99e4c01-ai-thing/c/688ff3cc-7be8-8329-9fed-0be50ddd3485
+
+spctl --assess --type execute --verbose AIThing.app 
+AIThing.app: accepted
+source=Notarized Developer ID
+
+hdiutil create -volname "AIThing" \
+  -srcfolder "AIThing_dmg" \
+  -format UDRW \
+  -fs HFS+ \
+  -ov "AIThing-temp.dmg"
+
+hdiutil attach "AIThing-temp.dmg"
+
+open /Volumes/AIThing
+
+hdiutil detach /Volumes/AIThing
+
+hdiutil convert "AIThing-temp.dmg" \
+  -format UDZO \
+  -imagekey zlib-level=9 \
+  -o "AIThing.dmg"
+
+rm AIThing-temp.dmg
+
+codesign -dv --verbose=4 AIThing.app 2>&1 | grep -E 'Authority|TeamIdentifier|Identifier'
+
+codesign --sign "Developer ID Application: Nishant Hada (983LBM5U6B)" \
+  --timestamp \
+  AIThing.dmg
+
+xcrun notarytool submit "AIThing.dmg" --keychain-profile "notary-profile" --wait
+xcrun stapler staple "AIThing.dmg"
+
+codesign -dv --verbose=4 AIThing.dmg 2>&1 | grep -E 'Authority|TeamIdentifier|Identifier'

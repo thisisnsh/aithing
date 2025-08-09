@@ -423,6 +423,24 @@ struct TabView: View {
     // MARK: - AI Functions
 
     private func callModel(query: String) async {
+        // Check if version is expired
+        let dateFormatter = DateFormatter()
+        dateFormatter.dateFormat = "yyyy-MM-dd"
+        if let expiryDate = dateFormatter.date(from: "2025-08-25") {
+            let today = Date()
+            if today > expiryDate {
+                isThinking = false
+                await animateOutput(
+                    content: """
+                        Please download [Latest Version](https://aithing.dev/latest) of AI Thing to continue.
+                        
+                        Why? To access new and exciting features.
+                        """
+                )
+                return
+            }
+        }
+
         // Check if user is logged in
         switch loginManager.authState {
         case .signedIn(_):
@@ -457,7 +475,7 @@ struct TabView: View {
 
         // Fake data // DEBUG_MODE
         // await callModel(query: query + "X")
-        return await fakeData(query: query)
+        // return await fakeData(query: query)
 
         let model = "claude-sonnet-4-20250514"
 
