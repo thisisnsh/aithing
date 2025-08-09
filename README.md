@@ -3,76 +3,55 @@
 
 Missing Features
 - No History 
-- No Screen recording / audio
-- No CMD+- to change font size
+- No Audio recording 
 - No Theme Change
+- No Usage
+- No Ability to Choose Tools 
+- Understand you and suggest things based on time and this
+- No RAG
+- No Get API from Firebase
+- No Elicitation 
+- No Type into Applications
+- No One Click Integrations 
+- Move Tabs Up
+
+------------------------
+
+
+Friday
+- Fix Select and Copy
+- Fix Tab Animation
+- Selection-Only Screenshot
+- Black Box
+- Visibilty Toggle
+
+
+- Study Raycast
 - Add Privacy Policy
 - Add Terms of Use
-- Show Usage
-- Ability to choose tools -> add MCP choose tools 
-- Understand you and suggest things based on time and this
-- Make programmatic typing possible
-- Make JSON addition easier (format and type hint) or button to put the schema
-- Email in promotion
-- RAG MCP
-- Login Firebase
-- Get API from Firebase
-- OAuth Claude MCP Style
-- Selection-Only Screenshot
-- Black Box (Area that will not be captured by the AI) ^M
-- Elicitation 
+- Update documentation for Sarah & David 
+- Update the Form and Waitlist
+
+
+Satursday
+- Promotion Graphics 
+- Promotion Websites - hackernews / reddit / mcp client docs / update server documents 
 - Release
 
-------------------------
+- Meetup
+    - How to make it work better for non-developers
+    - How to market it? 
+    - What one click integrations do you want?
 
 
-Sunday
-- Demo Video
-- YC Application
-- Delete API Keys
-- QA Website & App
-
-Monday 
-- YC Founder Video
-- YC Submit 
-- Release Reddit 
+Sunday 
+- Email people using AI Thing and show it 
 
 
 ------------------------
-
-- Demo video like yesterday but slow paces
-
-- Black Screen
-- Rounded Corner Video 
-- Text Below  
-
-- Introducing AI Thing [Floats Up]
-- [N] Open AI Thing 
-- A thing that understands this. That's all you need to know
-- [N] Open Safari with Google Sheets
-- Let's use this thing to email customers
-- Before that lets use this thing to create fake customers
-- [N] Ask AI 
-- Ok we have the customers
-- Let's send the emails
-- Let's wait for the emails [No fast forwards]
-- Emails have arrived, this wasnt complex. complexity starts now
-- [XX] Screen shifts down 
-
-
-- [N] Ask AI 
-- [N] Open Mail App
-- [N] Open another tab in safari
-- [N] Add another random user and send the email
-- [N] Find latest songs of @this artist
-- [N] Go back to old AI thing tab
-- [N] Go back to old spreadsheet tab 
-
-
-    - Open YC Page
-    - Select incubator text
-    - Ask what does this mean
     
+    
+
 
 Anthropic
 <your-anthropic-api-key>
@@ -95,21 +74,3 @@ Apple
 
 Google Sheets
 https://docs.google.com/spreadsheets/d/<spreadsheet-id>
-
-Add 3 rows to @this sheet with random names but emails should be help+<name>@aithing.dev
-
-[[[thinking]]]... 
-
-Who is @this artist?
-
-Send email to all these users with text 
-"Hi <name>, Thank you for using AI Thing" 
-After that in the sheet add column “Emailed” with value “Yes”
-
-[[[wait]]] 
-
-Find her latest songs
-
-Add another customer and email them
-
-

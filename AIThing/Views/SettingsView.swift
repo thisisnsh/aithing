@@ -18,6 +18,8 @@ struct AgentEntry: Codable, Identifiable, Equatable {
 }
 
 struct SettingsView: View {
+    @EnvironmentObject var loginManager: LoginManager
+
     @Binding var isPresented: Bool
     @State private var selectedTab: SettingsTab = .account
 
@@ -38,7 +40,7 @@ struct SettingsView: View {
     @State private var agentSecondary = ""
 
     @State private var agentMaxCount = 3
-    
+
     var body: some View {
         HStack(spacing: 0) {
             Sidebar()
@@ -120,17 +122,20 @@ struct SettingsView: View {
                     .padding(.horizontal, 8)
             }
             .buttonStyle(.plain)
-            
-            Text("Version 1.1\nExpires: 2025-08-11")
+
+            Text("Version 1.3\nExpires: 2025-08-20")
                 .font(.system(size: 10, weight: .medium))
                 .padding(.top, 8)
                 .padding(.horizontal, 16)
-            
-            Link("Report Bug", destination: URL(string: "https://github.com/WeAreAIThing/help.aithing.dev/issues")!)
-                .font(.system(size: 10, weight: .medium))
-                .padding(.vertical, 8)
-                .padding(.horizontal, 16)
-            
+
+            Link(
+                "Report Bug",
+                destination: URL(string: "https://github.com/WeAreAIThing/help.aithing.dev/issues")!
+            )
+            .font(.system(size: 10, weight: .medium))
+            .padding(.vertical, 8)
+            .padding(.horizontal, 16)
+
             Color.clear.frame(height: 32)
         }
         .frame(width: 150)
@@ -147,38 +152,41 @@ struct SettingsView: View {
 
             VStack(alignment: .leading, spacing: 16) {
                 GroupBox(
-                    label: Text("Login (Coming Soon)")
+                    label: Text("Login")
                         .font(.system(size: 10, weight: .medium))
                         .padding(.vertical, 4)
                 ) {
                     VStack(alignment: .leading) {
-                        Button(action: {}) {
+                        Button(action: {
+                            Task {
+                                await loginManager.signInWithGoogle()
+                            }
+                        }) {
                             HStack {
                                 Image("google")
                                     .resizable()
                                     .frame(width: 16, height: 16)
-                                Text("Google")
-                                    .font(.system(size: 14, weight: .medium))
-                                Spacer()
-                                Image(systemName: "chevron.right")
-                                    .frame(width: 10, height: 10)
-                            }
-                        }
-                        .buttonStyle(.plain)
-                        .padding(4)
 
-                        Divider()
+                                switch loginManager.authState {
+                                case .signedIn(let user):
+                                    Text(user.displayName ?? user.displayName ?? "Logged In")
+                                        .font(.system(size: 14, weight: .medium))
+                                    Spacer()
+                                    Button(action: {
+                                        loginManager.signOut()
+                                    }) {
+                                        Text("Log Out")
+                                            .font(.system(size: 10, weight: .medium))
+                                    }
+                                    .buttonStyle(.plain)
+                                default:
+                                    Text("Google")
+                                        .font(.system(size: 14, weight: .medium))
+                                    Spacer()
+                                    Image(systemName: "chevron.right")
+                                        .frame(width: 10, height: 10)
+                                }
 
-                        Button(action: {}) {
-                            HStack {
-                                Image("github")
-                                    .resizable()
-                                    .frame(width: 16, height: 16)
-                                Text("GitHub")
-                                    .font(.system(size: 14, weight: .medium))
-                                Spacer()
-                                Image(systemName: "chevron.right")
-                                    .frame(width: 10, height: 10)
                             }
                         }
                         .buttonStyle(.plain)
@@ -194,15 +202,30 @@ struct SettingsView: View {
                                 Text("Apple")
                                     .font(.system(size: 14, weight: .medium))
                                 Spacer()
-                                Image(systemName: "chevron.right")
-                                    .frame(width: 10, height: 10)
+                                Text("Coming Soon")
+                                    .font(.system(size: 10, weight: .medium))
                             }
                         }
                         .buttonStyle(.plain)
                         .padding(4)
+                        .opacity(0.5)
+
+                        Divider()
+
+                        Button(action: {}) {
+                            HStack {
+                                Text("Custom SSO")
+                                    .font(.system(size: 14, weight: .medium))
+                                Spacer()
+                                Text("Coming Soon")
+                                    .font(.system(size: 10, weight: .medium))
+                            }
+                        }
+                        .buttonStyle(.plain)
+                        .padding(4)
+                        .opacity(0.5)
                     }
                     .padding(4)
-                    .opacity(0.5)
                 }
 
                 GroupBox(

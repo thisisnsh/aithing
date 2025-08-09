@@ -12,6 +12,7 @@ import SwiftUI
 
 struct TabView: View {
     @EnvironmentObject var mcp: MCPManager
+    @EnvironmentObject var loginManager: LoginManager
 
     @Binding var isFocused: Bool
     var tabId: UUID
@@ -341,17 +342,34 @@ struct TabView: View {
     // MARK: - AI Functions
 
     private func callModel(query: String) async {
+        // Check if user is logged in
+        switch loginManager.authState {
+        case .signedIn(_):
+            ()
+        default:
+            isThinking = false
+            await animateOutput(
+                content: """
+                    Please log in to use AI Thing. [Privacy Policy](https://aithing.dev/privacy)
+
+                    1. Open Settings by pressing  ` ^ (Control) + S `
+                    2. Click on  ` Google `
+                    """
+            )
+            return
+        }
+
         // Check if tab is alive, else return without processing
         if !allTabs.contains(where: { $0.id == tabId }) {
+            isThinking = false
             print("Exiting callModel for \(tabId)")
             return
         }
 
         do {
-            try await Task.sleep(nanoseconds: 200_000_000)
-        } catch {
             // Sleeping just to complete debounce on typing
-        }
+            try await Task.sleep(nanoseconds: 200_000_000)
+        } catch {}
 
         // Load latest tools
         modelTools = allClientTools.values.flatMap { $0 }
@@ -419,7 +437,8 @@ struct TabView: View {
         ]
 
         print("--------")
-        print("messages: \(modelInput.index(after: 1))")
+        print("messages:", body["messages"] as! [[String: Any]])
+        print("tools:", (body["tools"] as! [[String: Any]]).count)
 
         request.httpBody = try? JSONSerialization.data(withJSONObject: body)
 
@@ -676,7 +695,7 @@ struct TabView: View {
     }
 
     private func fakeData(query: String) async {
-        var fakeContent = """
+        let fakeContent = """
             "Vishal" can refer to several things:
 
             1. **As a name**: Vishal is a popular Indian name, particularly common in Hindi-speaking regions. It means "large," "vast," or "magnificent" in Sanskrit.
@@ -690,24 +709,25 @@ struct TabView: View {
             Could you provide more context about which "Vishal" you're asking about? That would help me give you a more specific answer.
             """
 
-        //        if query == "a" {
-        fakeContent += fakeContent + fakeContent
-        //        }
+        await animateOutput(content: fakeContent + fakeContent)
+        isThinking = false
+
         do {
             try await Task.sleep(for: .seconds(10))
+        } catch {}
+    }
 
-        } catch {
-
+    private func animateOutput(content: String) async {
+        var partial = ""
+        for char in content {
+            partial += String(char)
+            await MainActor.run {
+                modelOutput = partial + " " + shimmerPlaceholder()
+            }
+            do {
+                try await Task.sleep(for: .milliseconds(10))
+            } catch {}
         }
-
-        _ = ""
-        //        for char in fakeContent {
-        //            fakePartial += String(char)
-        await MainActor.run {
-            isThinking = false
-            modelOutput = fakeContent  //fakePartial + " " + shimmerPlaceholder()
-        }
-
-        //        }
+        modelOutput = partial
     }
 }

@@ -13,6 +13,7 @@ struct TabItem: Identifiable {
 
 struct ContentView: View {
     @EnvironmentObject var mcp: MCPManager
+    @StateObject private var loginManager = LoginManager()
 
     var onClose: () -> Void
     var resizePanel: (CGFloat) -> Void
@@ -35,6 +36,7 @@ struct ContentView: View {
     @State private var toastColor: Color = .white
 
     @State private var showHelp = false
+
     private var helpText: String {
         return """
             ## Help Sheet: 
@@ -206,6 +208,7 @@ struct ContentView: View {
             .padding(.leading, CGFloat(48 + focusedIndex * 72))
             .padding(.trailing, CGFloat(80 + (tabs.count - 1 - focusedIndex) * 72))
             .padding(.top, 96)
+            .environmentObject(loginManager)
     }
 
     private func Help() -> some View {
@@ -328,6 +331,7 @@ struct ContentView: View {
             }
         )
         .environmentObject(mcp)
+        .environmentObject(loginManager)
         .animation(.easeInOut, value: focusedIndex)
     }
 

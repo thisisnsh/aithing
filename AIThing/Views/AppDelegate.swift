@@ -8,6 +8,8 @@
 import AppKit
 import ApplicationServices
 import Cocoa
+import FirebaseAuth
+import FirebaseCore
 import HotKey
 import ServiceManagement
 import SwiftUI
@@ -33,6 +35,8 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate {
             object: nil
         )
 
+        FirebaseApp.configure()
+
         setupWindow()
         setupHotKey()
 
@@ -53,7 +57,7 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate {
         let dateFormatter = DateFormatter()
         dateFormatter.dateFormat = "yyyy-MM-dd"
         // Change in settings as well
-        let expiryDate = dateFormatter.date(from: "2025-08-11")!
+        let expiryDate = dateFormatter.date(from: "2025-08-20")!
         let today = Date()
 
         let contentView: AnyView
@@ -90,7 +94,7 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate {
         floatingWindow.alphaValue = 1
         floatingWindow.center()
         floatingWindow.orderFrontRegardless()  // no app activation
-        floatingWindow.sharingType = .none  // Comment during DEBUG_MODE mode
+        // floatingWindow.sharingType = .none  // Comment during DEBUG_MODE mode
     }
 
     func setupHotKey() {
