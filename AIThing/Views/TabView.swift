@@ -55,9 +55,25 @@ struct TabView: View {
     @State private var seenCommands: Set<String> = []
     @State private var showResponseArea: Bool = false
 
+    @State private var showDragIcon: Bool = false
+
     var body: some View {
         VStack(alignment: .leading, spacing: 8) {
-            Color.clear.frame(height: 32)
+            Color.clear.frame(height: 32).overlay(alignment: .bottom) {
+                if showDragIcon {
+                    Image(systemName: "square.grid.3x2.fill")
+                        .resizable()
+                        .scaledToFit()
+                        .frame(width: 16, height: 16)
+                        .onHover { inside in
+                            updatePassthrough(inside: inside)
+                        }
+                }
+            }
+            .onHover { inside in
+                showDragIcon = inside
+            }
+
             VStack(alignment: .leading, spacing: 0) {
                 inputView()
                     .onHover { inside in
