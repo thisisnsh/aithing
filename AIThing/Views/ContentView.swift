@@ -107,7 +107,7 @@ struct ContentView: View {
                 return event
             }
         }
-        .onChange(of: showSettings) {
+        .onChange(of: showSettings) { newValue in
             updatePanelSizeFromCurrent(showSettings ? 500 : -500)
             Task {
                 await loadAllClientTools()

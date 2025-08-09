@@ -683,7 +683,7 @@ struct SettingsView: View {
                                 .toggleStyle(.switch)
                                 .tint(.black)
                                 .scaleEffect(0.7)
-                                .onChange(of: preferencesShowInScreenshot) {
+                                .onChange(of: preferencesShowInScreenshot) { newValue in
                                     preferencesShowInScreenshot.toggle()
                                     setPreferencesShowInScreenshot(
                                         value: preferencesShowInScreenshot
@@ -713,7 +713,7 @@ struct SettingsView: View {
                                 .toggleStyle(.switch)
                                 .tint(.black)
                                 .scaleEffect(0.7)
-                                .onChange(of: preferencesCaptureFullScreen) {
+                                .onChange(of: preferencesCaptureFullScreen) { newValue in
                                     preferencesCaptureFullScreen.toggle()
                                     setPreferencesCaptureFullScreen(
                                         value: preferencesCaptureFullScreen

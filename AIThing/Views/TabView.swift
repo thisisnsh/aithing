@@ -128,7 +128,7 @@ struct TabView: View {
                     updatePanelSizeFromDefault(getResponseHeight())
                 }
             }
-            .onChange(of: isFocused) {
+            .onChange(of: isFocused) { newValue in
                 // Delay size change when in focus so that other
                 // views not in focus adjust height first
                 if isFocused {
@@ -295,7 +295,7 @@ struct TabView: View {
                     }
                 }
             }
-            .onChange(of: modelOutput) {
+            .onChange(of: modelOutput) { newValue in
                 if responseHeight == responseHeightMax {
                     DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
                         withAnimation {
