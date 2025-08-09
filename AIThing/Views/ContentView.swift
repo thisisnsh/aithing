@@ -15,7 +15,7 @@ struct ContentView: View {
     @EnvironmentObject var mcp: MCPManager
     @StateObject private var loginManager = LoginManager()
     @EnvironmentObject var screenshotManager: ScreenshotManager
-    
+
     var onClose: () -> Void
     var resizePanel: (CGFloat) -> Void
     var incrementSizePanel: (CGFloat) -> Void
@@ -57,11 +57,9 @@ struct ContentView: View {
     var body: some View {
         ZStack(alignment: .top) {
             HStack(alignment: .top, spacing: 8) {
-                Color.clear.frame(width: 40)
                 ForEach(Array(tabs.enumerated()), id: \.element.id) { index, tab in
                     tabView(at: index, tab: tab)
                 }
-                Color.clear.frame(width: 72)
             }
             if showSettings {
                 Settings()
@@ -73,7 +71,7 @@ struct ContentView: View {
                 Toast()
             }
         }
-        .frame(width: CGFloat(640 + 48) + CGFloat((tabs.count)) * CGFloat(72))
+        .frame(width: CGFloat(640) + CGFloat(tabs.count - 1) * CGFloat(72))
         .background(Color.clear)
         .onAppear {
             addTab()
@@ -106,14 +104,18 @@ struct ContentView: View {
                 return event
             }
         }
-        .onChange(of: showSettings) {
-            incrementSizePanel(showSettings ? 500 : -500)
-            Task {
-                await loadAllClientTools()
-            }
-        }
         .task {
             await loadAllClientTools()
+        }
+        .onChange(of: showSettings) {
+            incrementSizePanel(showSettings ? 500 : -500)
+            Task { await loadAllClientTools() }
+        }
+        .onChange(of: showHelp) {
+            incrementSizePanel(showHelp ? 70 : -70)
+        }
+        .onChange(of: showToast) {
+            incrementSizePanel(showToast ? 60 : -60)
         }
     }
 
@@ -198,19 +200,22 @@ struct ContentView: View {
     }
 
     func Settings() -> some View {
-        SettingsView(isPresented: $showSettings, setFloatingWindowVisibility: { self.setFloatingWindowVisibility() })
-            .background(.ultraThinMaterial)
-            .overlay {
-                RoundedRectangle(cornerRadius: 24)
-                    .stroke(Color.white, lineWidth: 1.5)
-            }
-            .cornerRadius(24)
-            .zIndex(1)
-            .frame(width: 600, height: 500)
-            .padding(.leading, CGFloat(48 + focusedIndex * 72))
-            .padding(.trailing, CGFloat(80 + (tabs.count - 1 - focusedIndex) * 72))
-            .padding(.top, 96)
-            .environmentObject(loginManager)
+        SettingsView(
+            isPresented: $showSettings,
+            setFloatingWindowVisibility: { self.setFloatingWindowVisibility() }
+        )
+        .background(.ultraThinMaterial)
+        .overlay {
+            RoundedRectangle(cornerRadius: 24)
+                .stroke(Color.white, lineWidth: 1.5)
+        }
+        .cornerRadius(24)
+        .zIndex(1)
+        .frame(width: 600, height: 500)
+        .padding(.leading, CGFloat(focusedIndex * 72))
+        .padding(.trailing, CGFloat((tabs.count - 1 - focusedIndex) * 72))
+        .padding(.top, 56)
+        .environmentObject(loginManager)
     }
 
     private func Help() -> some View {
@@ -224,9 +229,9 @@ struct ContentView: View {
             .cornerRadius(24)
             .zIndex(2)
             .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top)
-            .padding(.leading, CGFloat(48 + focusedIndex * 72))
-            .padding(.trailing, CGFloat(80 + (tabs.count - 1 - focusedIndex) * 72))
-            .padding(.top, 96)
+            .padding(.leading, CGFloat(focusedIndex * 72))
+            .padding(.trailing, CGFloat((tabs.count - 1 - focusedIndex) * 72))
+            .padding(.top, 56)
     }
 
     private func Toast() -> some View {
@@ -234,18 +239,15 @@ struct ContentView: View {
             .padding()
             .background(.ultraThinMaterial)
             .overlay {
-                AnimatedGradientBorder(
-                    cornerRadius: 24,
-                    lineWidth: 1.5,
-                    color: toastColor
-                )
+                RoundedRectangle(cornerRadius: 24)
+                    .stroke(Color.white, lineWidth: 1.5)
             }
             .cornerRadius(24)
             .zIndex(3)
             .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top)
-            .padding(.leading, CGFloat(48 + focusedIndex * 72))
-            .padding(.trailing, CGFloat(80 + (tabs.count - 1 - focusedIndex) * 72))
-            .padding(.top, 96)
+            .padding(.leading, CGFloat(focusedIndex * 72))
+            .padding(.trailing, CGFloat((tabs.count - 1 - focusedIndex) * 72))
+            .padding(.top, 56)
     }
 
     private func onSetting() {
@@ -263,7 +265,7 @@ struct ContentView: View {
 
     private func addTab() {
         screenshotManager.cancelScreenshot()
-        
+
         if tabs.count >= maxTabs {
             toastColor = .red
             toastText = "Maximum of \(maxTabs) tabs reached"
@@ -275,46 +277,32 @@ struct ContentView: View {
             return
         }
 
-        withAnimation {
-            tabs.append(TabItem())
-            focusedIndex = tabs.count - 1
-        }
+        tabs.append(TabItem())
+        focusedIndex = tabs.count - 1
     }
 
     private func closeTab() {
         screenshotManager.cancelScreenshot()
-        
-        let indexToRemove = focusedIndex
 
+        let indexToRemove = focusedIndex
         if tabs.count == 1 { addTab() }  // Don't remove the last =tab
 
-        withAnimation {
-            tabs.remove(at: indexToRemove)
+        tabs.remove(at: indexToRemove)
 
-            // Adjust focus index safely
-            if focusedIndex >= tabs.count {
-                focusedIndex = tabs.count - 1
-            }
+        // Adjust focus index safely
+        if focusedIndex >= tabs.count {
+            focusedIndex = tabs.count - 1
         }
     }
 
     private func moveFocus(_ direction: Int) {
         screenshotManager.cancelScreenshot()
-        
-        withAnimation {
-            let count = tabs.count
-            guard count > 0 else { return }
 
-            let newIndex = (focusedIndex + direction + count) % count
-            DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
-                // Increase height to max while switching
-                // It will be resized when tab in focus
-                resizePanel(1000)
-            }
-            DispatchQueue.main.asyncAfter(deadline: .now() + 0.2) {
-                focusedIndex = newIndex
-            }
-        }
+        let count = tabs.count
+        guard count > 0 else { return }
+
+        let newIndex = (focusedIndex + direction + count) % count
+        focusedIndex = newIndex
     }
 
     @ViewBuilder
@@ -341,7 +329,6 @@ struct ContentView: View {
         .environmentObject(mcp)
         .environmentObject(loginManager)
         .environmentObject(screenshotManager)
-        .animation(.easeInOut, value: focusedIndex)
     }
 
 }

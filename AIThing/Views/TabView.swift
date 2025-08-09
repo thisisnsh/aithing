@@ -52,7 +52,7 @@ struct TabView: View {
 
     var body: some View {
         VStack(alignment: .leading, spacing: 8) {
-            Color.clear.frame(height: 32)
+//            Color.clear.frame(height: 32)
             VStack(alignment: .leading, spacing: 0) {
                 inputView()
                 if isFocused, showResponseArea {
@@ -90,7 +90,6 @@ struct TabView: View {
                 }
             )
             .cornerRadius(getCornerRadius())
-            .animation(.easeInOut(duration: 0.25), value: isFocused)
             .onAppear {
                 DispatchQueue.main.async {
                     resizePanel(getResponseHeight())

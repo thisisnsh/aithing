@@ -18,8 +18,8 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate {
     var floatingWindow: NonActivatingPanel!
     var hotKey: HotKey?
 
-    let width: CGFloat = 1000
-    let height: CGFloat = 96
+    let width: CGFloat = 640
+    let height: CGFloat = 48
 
     static var allowQuit = false
 
@@ -101,6 +101,7 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate {
         floatingWindow.alphaValue = 1
         floatingWindow.center()
         floatingWindow.orderFrontRegardless()  // no app activation
+        floatingWindow.backgroundColor = .black.withAlphaComponent(0.5)
         setFloatingWindowVisibility()
     }
 

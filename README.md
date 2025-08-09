@@ -20,21 +20,23 @@ Missing Features
 
 
 Satursday    
-- Fix dimensions of the view
-
 - Add Privacy Policy
 - Add Terms of Use
 - Update documentation for Sarah & David 
 - Update the Form and Waitlist
- 
+
+- Fix dimensions of the view 
+    - single tab left right
+    - add remove context image
+
+
+- Release
+
 
 Sunday 
-- Release
 - Promotion Graphics 
 - Promotion Websites - hackernews / reddit / mcp client docs / update server documents
 - Email people using AI Thing and show it 
-
-
 
 
 Monday
