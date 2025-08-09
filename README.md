@@ -34,10 +34,11 @@ Satursday
     - What one click integrations do you want?
 
 - Study Raycast
-- Fix "AttributeGraph: cycle detected through attribute"
 - Selection-Only Screenshot
 - Black Box
 
+- Fix "AttributeGraph: cycle detected through attribute"
+- Fix Flickering Animation
 
 Sunday 
 - Email people using AI Thing and show it 

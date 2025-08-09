@@ -150,7 +150,10 @@ struct SettingsView: View {
 
             Link(
                 "Report Bug",
-                destination: URL(string: "https://github.com/WeAreAIThing/help.aithing.dev/issues")!
+                destination: URL(
+                    string:
+                        "mailto:help@aithing.dev?subject=Bug Report \(Date())&body=Description:\nPlease describe the issue.\n\nScreenshot:\n(Optional) Attach a screenshot. Make sure 'Show in Screenshot' is enabled in Settings."
+                )!
             )
             .font(.system(size: 10, weight: .medium))
             .padding(.vertical, 8)

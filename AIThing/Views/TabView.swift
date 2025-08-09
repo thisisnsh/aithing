@@ -28,8 +28,8 @@ struct TabView: View {
     @State private var imageName: String = "Logo"
     @State private var title: String = "AI Thing"
 
-    @State private var responseHeightMin: CGFloat = 100
-    @State private var responseHeightMax: CGFloat = 700
+    let responseHeightMin: CGFloat = 100
+    let responseHeightMax: CGFloat = 700
     @State private var responseHeight: CGFloat = 100
 
     @State private var isThinking: Bool = false
@@ -251,9 +251,7 @@ struct TabView: View {
                 let checkedHeight = min(max(responseHeightMin, height), responseHeightMax)
 
                 if responseHeight < checkedHeight {
-                    withTransaction(Transaction(animation: nil)) {
-                        responseHeight = checkedHeight
-                    }
+                    responseHeight = checkedHeight
                     if isFocused {
                         DispatchQueue.main.async {
                             resizePanel(getResponseHeight())
