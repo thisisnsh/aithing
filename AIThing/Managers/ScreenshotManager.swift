@@ -19,7 +19,6 @@ class ScreenshotManager: ObservableObject {
     }
 
     /// Captures the screen under the mouse pointer and returns (NSImage, base64 string).
-    @MainActor
     func captureScreenUnderMouse() async -> (NSImage, String)? {
         do {
             guard let display = try await getDisplayUnderMouse() else {
@@ -61,7 +60,6 @@ class ScreenshotManager: ObservableObject {
     /// - Drag: returns cropped region
     /// - Click: captures the app window at the click point; if none, captures whole screen
     /// Reuses `getDisplayUnderMouse()` to choose the display. Returns (NSImage, base64) or nil if cancelled.
-    @MainActor
     func captureSelectedScreenUnderMouse() async -> (NSImage, String)? {
         do {
             guard let display = try await getDisplayUnderMouse() else {
@@ -209,7 +207,6 @@ class ScreenshotManager: ObservableObject {
     ///   - clickLocalOnScreen: Click point in *that screen's local points* (SelectionOverlay coordinates)
     ///   - display: SCDisplay you are capturing from
     ///   - screen: NSScreen corresponding to `display`
-    @MainActor
     private func topmostWindow(
         at clickLocalOnScreen: CGPoint,
         on display: SCDisplay,
@@ -256,7 +253,6 @@ class ScreenshotManager: ObservableObject {
     }
 
     /// Crop an NSImage of a full display to a rect in that display’s *local points*.
-    @MainActor
     private func crop(
         image: NSImage,
         selectionLocalPoints rectPts: CGRect,
@@ -352,7 +348,6 @@ private final class SelectionOverlay: NSWindow {
     private let selectionView = SelectionView()
 
     /// Present on a single screen; returns either a region (screen-local points) or a click point.
-    @MainActor
     static func presentAndSelect(on screen: NSScreen) async -> SelectionOutcome? {
         let win = SelectionOverlay(
             contentRect: screen.frame,

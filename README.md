@@ -21,7 +21,6 @@ Missing Features
 
 Satursday    
 - Add cross on context image to remove
-- Cancel function - No duplication
 
 - Add Privacy Policy
 - Add Terms of Use
