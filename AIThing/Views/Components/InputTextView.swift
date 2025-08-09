@@ -132,10 +132,12 @@ struct InputTextView: NSViewRepresentable {
 
         func applyCommandHighlighting(to textView: NSTextView) {
             let fullText = textView.string
+            let baseFont = NSFont.systemFont(ofSize: 18, weight: .medium)
+
             let attributedText = NSMutableAttributedString(
                 string: fullText,
                 attributes: [
-                    .font: NSFont.systemFont(ofSize: 18, weight: .medium),
+                    .font: baseFont,
                     .foregroundColor: NSColor.white,
                 ]
             )
@@ -144,10 +146,16 @@ struct InputTextView: NSViewRepresentable {
             if let regex = try? NSRegularExpression(pattern: pattern) {
                 let nsrange = NSRange(fullText.startIndex..<fullText.endIndex, in: fullText)
                 for match in regex.matches(in: fullText, range: nsrange) {
+                    let monoFont = NSFont.monospacedSystemFont(ofSize: 16, weight: .medium)
+
+                    // Calculate baseline shift to visually center it
+                    let baselineShift = (baseFont.capHeight - monoFont.capHeight) / 2
+
                     attributedText.addAttributes(
                         [
-                            .font: NSFont.monospacedSystemFont(ofSize: 16, weight: .medium),
+                            .font: monoFont,
                             .foregroundColor: NSColor.white,
+                            .baselineOffset: baselineShift,
                         ],
                         range: match.range
                     )

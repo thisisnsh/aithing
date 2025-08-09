@@ -66,6 +66,11 @@ struct TabView: View {
                         .scaledToFit()
                         .frame(width: 16, height: 16)
                         .onHover { inside in
+                            if inside {
+                                NSCursor.openHand.set()
+                            } else {
+                                NSCursor.arrow.set()
+                            }
                             updatePassthrough(inside: inside)
                         }
                 }
