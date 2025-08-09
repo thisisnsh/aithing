@@ -240,7 +240,7 @@ struct SettingsView: View {
                                 Text("Custom SSO")
                                     .font(.system(size: 14, weight: .medium))
                                 Spacer()
-                                Text("Coming Soon")
+                                Text("Enterprise Plan Required")
                                     .font(.system(size: 10, weight: .medium))
                             }
                         }

@@ -14,12 +14,17 @@ Missing Features
 - No One Click Integrations 
 - Move Tabs Up
 - No Markdown Select
-
+- No Black Box
 
 ------------------------
 
 
 Satursday
+- Improve Context
+    - Setting to capture entire screen on @this
+    - Or allow to capture the portion
+
+
 - Add Privacy Policy
 - Add Terms of Use
 - Update documentation for Sarah & David 
@@ -34,8 +39,6 @@ Satursday
     - What one click integrations do you want?
 
 - Study Raycast
-- Selection-Only Screenshot
-- Black Box
 
 - Fix "AttributeGraph: cycle detected through attribute"
 - Fix Flickering Animation

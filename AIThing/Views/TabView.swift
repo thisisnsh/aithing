@@ -317,14 +317,15 @@ struct TabView: View {
     private func handleCommand(type: String, command: String) async {
         switch type {
         case "add":
-            if command == "this" || command == "selected" {
-                if let (image, base64) = await manager.captureScreenUnderMouse() {
+            if command == "this" {
+                // captureScreenUnderMouse
+                if let (image, base64) = await manager.captureSelectedScreenUnderMouse() {
                     modelInputImage = image
                     modelInputImageBase64 = base64
                 }
             }
         case "remove":
-            if command == "this" || command == "selected" {
+            if command == "this" {
                 modelInputImage = nil
                 modelInputImageBase64 = nil
             }
