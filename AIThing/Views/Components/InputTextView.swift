@@ -28,6 +28,47 @@ struct InputTextView: NSViewRepresentable {
             self.parent = parent
         }
 
+        // MARK: - Commit helper
+        private func commit(from textView: NSTextView) {
+            let rawText = textView.string
+            let trimmed = rawText.trimmingCharacters(in: .newlines)
+            if trimmed != rawText {
+                textView.string = trimmed
+            }
+            parent.text = trimmed
+
+            let lineCount = calculateLineCount(from: textView)
+            parent.onSpillover(lineCount)
+
+            parent.onCommit()
+        }
+
+        // MARK: - Intercept Return vs Shift+Return
+        func textView(_ textView: NSTextView, doCommandBy commandSelector: Selector) -> Bool {
+            // Shift+Enter in AppKit usually maps to insertLineBreak:
+            if commandSelector == #selector(NSResponder.insertLineBreak(_:)) {
+                // Allow normal newline behavior for Shift+Enter
+                return false
+            }
+
+            // Plain Enter is insertNewline: (and sometimes insertNewlineIgnoringFieldEditor:)
+            if commandSelector == #selector(NSResponder.insertNewline(_:))
+                || commandSelector == #selector(NSResponder.insertNewlineIgnoringFieldEditor(_:))
+            {
+                // If Shift is held, let it fall through (safety check for some keyboards)
+                if NSEvent.modifierFlags.contains(.shift) {
+                    return false
+                }
+
+                // Consume the command and commit instead of inserting a newline
+                commit(from: textView)
+                return true
+            }
+
+            // Anything else: default handling
+            return false
+        }
+
         func calculateLineCount(from textView: NSTextView) -> Int {
             guard let layoutManager = textView.layoutManager,
                 let container = textView.textContainer
@@ -46,25 +87,6 @@ struct InputTextView: NSViewRepresentable {
         func textDidChange(_ notification: Notification) {
             guard let textView = notification.object as? NSTextView else { return }
             parent.text = textView.string
-
-            // Handle Return key (Commit)
-            if let event = NSApp.currentEvent, event.type == .keyDown {
-                if event.keyCode == 36, !event.modifierFlags.contains(.shift) {
-                    // 36 = Return key
-                    // Commit on plain Enter
-                    let rawText = textView.string
-                    let trimmed = rawText.trimmingCharacters(in: .newlines)
-                    textView.string = trimmed
-                    parent.text = trimmed
-
-                    // Always update spillover on any text change
-                    let lineCount = calculateLineCount(from: textView)
-                    parent.onSpillover(lineCount)
-
-                    parent.onCommit()
-                    return
-                }
-            }
 
             // Always update spillover on any text change
             let lineCount = calculateLineCount(from: textView)
@@ -152,6 +174,7 @@ struct InputTextView: NSViewRepresentable {
     func updateNSView(_ nsView: NSScrollView, context: Context) {
         if let textView = nsView.documentView as? NSTextView {
             if textView.string != text {
+                print(text)
                 textView.string = text
             }
             textView.isEditable = !isNotEditable
