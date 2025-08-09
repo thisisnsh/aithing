@@ -15,12 +15,13 @@ struct ContentView: View {
     @EnvironmentObject var mcp: MCPManager
     @StateObject private var loginManager = LoginManager()
     @EnvironmentObject var screenshotManager: ScreenshotManager
-    
+
     var onClose: () -> Void
-    var resizePanel: (CGFloat) -> Void
-    var incrementSizePanel: (CGFloat) -> Void
+    var updatePanelSizeFromDefault: (CGFloat) -> Void
+    var updatePanelSizeFromCurrent: (CGFloat) -> Void
     var getExtraSize: () -> CGFloat
-    var setFloatingWindowVisibility: () -> Void
+    var setPanelVisibility: () -> Void
+    let setPanelPassthrough: (_ enabled: Bool) -> Void
 
     @State private var agents: [AgentEntry] = []
     @State private var allClientTools: [String: [[String: Any]]] = [:]
@@ -107,7 +108,7 @@ struct ContentView: View {
             }
         }
         .onChange(of: showSettings) {
-            incrementSizePanel(showSettings ? 500 : -500)
+            updatePanelSizeFromCurrent(showSettings ? 500 : -500)
             Task {
                 await loadAllClientTools()
             }
@@ -198,19 +199,23 @@ struct ContentView: View {
     }
 
     func Settings() -> some View {
-        SettingsView(isPresented: $showSettings, setFloatingWindowVisibility: { self.setFloatingWindowVisibility() })
-            .background(.ultraThinMaterial)
-            .overlay {
-                RoundedRectangle(cornerRadius: 24)
-                    .stroke(Color.white, lineWidth: 1.5)
-            }
-            .cornerRadius(24)
-            .zIndex(1)
-            .frame(width: 600, height: 500)
-            .padding(.leading, CGFloat(48 + focusedIndex * 72))
-            .padding(.trailing, CGFloat(80 + (tabs.count - 1 - focusedIndex) * 72))
-            .padding(.top, 96)
-            .environmentObject(loginManager)
+        SettingsView(
+            isPresented: $showSettings,
+            setPanelVisibility: { self.setPanelVisibility() },
+            setPanelPassthrough: { self.setPanelPassthrough($0) }
+        )
+        .background(.ultraThinMaterial)
+        .overlay {
+            RoundedRectangle(cornerRadius: 24)
+                .stroke(Color.white, lineWidth: 1.5)
+        }
+        .cornerRadius(24)
+        .zIndex(1)
+        .frame(width: 600, height: 500)
+        .padding(.leading, CGFloat(48 + focusedIndex * 72))
+        .padding(.trailing, CGFloat(80 + (tabs.count - 1 - focusedIndex) * 72))
+        .padding(.top, 96)
+        .environmentObject(loginManager)
     }
 
     private func Help() -> some View {
@@ -254,16 +259,16 @@ struct ContentView: View {
 
     private func onHelp() {
         showHelp = true
-        incrementSizePanel(200)
+        updatePanelSizeFromCurrent(200)
         DispatchQueue.main.asyncAfter(deadline: .now() + 2) {
             showHelp = false
-            incrementSizePanel(-200)
+            updatePanelSizeFromCurrent(-200)
         }
     }
 
     private func addTab() {
         screenshotManager.cancelScreenshot()
-        
+
         if tabs.count >= maxTabs {
             toastColor = .red
             toastText = "Maximum of \(maxTabs) tabs reached"
@@ -275,45 +280,41 @@ struct ContentView: View {
             return
         }
 
-        withAnimation {
-            tabs.append(TabItem())
-            focusedIndex = tabs.count - 1
-        }
+        tabs.append(TabItem())
+        focusedIndex = tabs.count - 1
     }
 
     private func closeTab() {
         screenshotManager.cancelScreenshot()
-        
+
         let indexToRemove = focusedIndex
 
         if tabs.count == 1 { addTab() }  // Don't remove the last =tab
 
-        withAnimation {
-            tabs.remove(at: indexToRemove)
+        tabs.remove(at: indexToRemove)
 
-            // Adjust focus index safely
-            if focusedIndex >= tabs.count {
-                focusedIndex = tabs.count - 1
-            }
+        // Adjust focus index safely
+        if focusedIndex >= tabs.count {
+            focusedIndex = tabs.count - 1
         }
     }
 
     private func moveFocus(_ direction: Int) {
         screenshotManager.cancelScreenshot()
-        
-        withAnimation {
-            let count = tabs.count
-            guard count > 0 else { return }
 
-            let newIndex = (focusedIndex + direction + count) % count
-            DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
-                // Increase height to max while switching
-                // It will be resized when tab in focus
-                resizePanel(1000)
+        let count = tabs.count
+        guard count > 0 else { return }
+
+        let newIndex = (focusedIndex + direction + count) % count
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
+            // Increase height to max while switching
+            // It will be resized when tab in focus
+            if count > 1 {
+                updatePanelSizeFromDefault(1000)
             }
-            DispatchQueue.main.asyncAfter(deadline: .now() + 0.2) {
-                focusedIndex = newIndex
-            }
+        }
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.2) {
+            focusedIndex = newIndex
         }
     }
 
@@ -331,17 +332,17 @@ struct ContentView: View {
             showSettings: $showSettings,
             onSetting: { self.onSetting() },
             onHelp: { self.onHelp() },
-            resizePanel: { extraHeight in
-                resizePanel(extraHeight)
+            updatePanelSizeFromDefault: { extraHeight in
+                updatePanelSizeFromDefault(extraHeight)
             },
-            incrementSizePanel: { height in
-                incrementSizePanel(height)
-            }
+            updatePanelSizeFromCurrent: { height in
+                updatePanelSizeFromCurrent(height)
+            },
+            setPanelPassthrough: { self.setPanelPassthrough($0) }
         )
         .environmentObject(mcp)
         .environmentObject(loginManager)
         .environmentObject(screenshotManager)
-        .animation(.easeInOut, value: focusedIndex)
     }
 
 }

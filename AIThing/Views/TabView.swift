@@ -22,8 +22,13 @@ struct TabView: View {
     @Binding var showSettings: Bool
     var onSetting: () -> Void
     var onHelp: () -> Void
-    var resizePanel: (CGFloat) -> Void
-    var incrementSizePanel: (CGFloat) -> Void
+    var updatePanelSizeFromDefault: (CGFloat) -> Void
+    var updatePanelSizeFromCurrent: (CGFloat) -> Void
+    let setPanelPassthrough: (_ enabled: Bool) -> Void
+
+    private func updatePassthrough(inside: Bool) {
+        setPanelPassthrough(!inside)
+    }
 
     @State private var inputHeight: CGFloat = 48
     @State private var imageName: String = "Logo"
@@ -55,8 +60,14 @@ struct TabView: View {
             Color.clear.frame(height: 32)
             VStack(alignment: .leading, spacing: 0) {
                 inputView()
+                    .onHover { inside in
+                        updatePassthrough(inside: inside)
+                    }
                 if isFocused, showResponseArea {
                     responseView()
+                        .onHover { inside in
+                            updatePassthrough(inside: inside)
+                        }
                 }
             }
             .background(.ultraThinMaterial)
@@ -93,7 +104,7 @@ struct TabView: View {
             .animation(.easeInOut(duration: 0.25), value: isFocused)
             .onAppear {
                 DispatchQueue.main.async {
-                    resizePanel(getResponseHeight())
+                    updatePanelSizeFromDefault(getResponseHeight())
                 }
             }
             .onChange(of: isFocused) {
@@ -101,17 +112,20 @@ struct TabView: View {
                 // views not in focus adjust height first
                 if isFocused {
                     DispatchQueue.main.asyncAfter(deadline: .now() + 0.2) {
-                        resizePanel(getResponseHeight())
+                        updatePanelSizeFromDefault(getResponseHeight())
                     }
                 } else {
                     DispatchQueue.main.async {
-                        resizePanel(getResponseHeight())
+                        updatePanelSizeFromDefault(getResponseHeight())
                     }
                 }
             }
 
             if let image = modelInputImage, isFocused {
                 contextView(image: image)
+                    .onHover { inside in
+                        updatePassthrough(inside: inside)
+                    }
             }
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
@@ -166,7 +180,7 @@ struct TabView: View {
                             } else {
                                 newHeight = 48
                             }
-                            incrementSizePanel(newHeight - inputHeight)
+                            updatePanelSizeFromCurrent(newHeight - inputHeight)
                             inputHeight = newHeight
                         }
                     )
@@ -255,7 +269,7 @@ struct TabView: View {
                     responseHeight = checkedHeight
                     if isFocused {
                         DispatchQueue.main.async {
-                            resizePanel(getResponseHeight())
+                            updatePanelSizeFromDefault(getResponseHeight())
                         }
                     }
                 }
@@ -294,18 +308,18 @@ struct TabView: View {
                         .spring(response: 0.3, dampingFraction: 0.7, blendDuration: 0.2)
                     ) {
                         isZoomedModelInputImage.toggle()
-                        incrementSizePanel(isZoomedModelInputImage ? 150 : -150)
+                        updatePanelSizeFromCurrent(isZoomedModelInputImage ? 150 : -150)
                     }
                 }
                 .padding(.vertical, 8)
                 .onAppear {
-                    incrementSizePanel(64)
+                    updatePanelSizeFromCurrent(64)
                 }
 
             Button(action: {
-                incrementSizePanel(-64)
+                updatePanelSizeFromCurrent(-64)
                 if isZoomedModelInputImage {
-                    incrementSizePanel(-150)
+                    updatePanelSizeFromCurrent(-150)
                 }
                 isZoomedModelInputImage = false
                 modelInputImage = nil
@@ -377,7 +391,7 @@ struct TabView: View {
 
         responseHeight = responseHeightMin
         DispatchQueue.main.async {
-            resizePanel(getResponseHeight())
+            updatePanelSizeFromDefault(getResponseHeight())
         }
 
         isViewBlinking = true

@@ -78,14 +78,15 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate {
             contentView = AnyView(
                 ContentView(
                     onClose: { self.toggleWindow() },
-                    resizePanel: { extraHeight in
-                        self.resizePanel(extraHeight: extraHeight)
+                    updatePanelSizeFromDefault: { extraHeight in
+                        self.updatePanelSizeFromDefault(extraHeight: extraHeight)
                     },
-                    incrementSizePanel: { extraHeight in
-                        return self.incrementSizePanel(extraHeight: extraHeight)
+                    updatePanelSizeFromCurrent: { extraHeight in
+                        return self.updatePanelSizeFromCurrent(extraHeight: extraHeight)
                     },
-                    getExtraSize: { return self.getExtraHeightPanel() },
-                    setFloatingWindowVisibility: { return self.setFloatingWindowVisibility() }
+                    getExtraSize: { return self.getExtraPanelSizeFromDefault() },
+                    setPanelVisibility: { return self.setPanelVisibility() },
+                    setPanelPassthrough: { self.setPanelPassthrough($0) }
                 )
                 .environmentObject(mcp)
                 .environmentObject(screenshotManager)
@@ -101,7 +102,7 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate {
         floatingWindow.alphaValue = 1
         floatingWindow.center()
         floatingWindow.orderFrontRegardless()  // no app activation
-        setFloatingWindowVisibility()
+        setPanelVisibility()
     }
 
     func setupHotKey() {
@@ -143,7 +144,7 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate {
         }
     }
 
-    func resizePanel(extraHeight: CGFloat) {
+    func updatePanelSizeFromDefault(extraHeight: CGFloat) {
         let targetSize = NSSize(width: width, height: height + extraHeight)
 
         var frame = floatingWindow.frame
@@ -153,7 +154,7 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate {
         floatingWindow.setFrame(frame, display: true, animate: false)
     }
 
-    func incrementSizePanel(extraHeight: CGFloat) {
+    func updatePanelSizeFromCurrent(extraHeight: CGFloat) {
         var frame = floatingWindow.frame
         let targetSize = NSSize(width: frame.width, height: frame.height + extraHeight)
 
@@ -163,12 +164,18 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate {
         floatingWindow.setFrame(frame, display: true, animate: false)
     }
 
-    func getExtraHeightPanel() -> CGFloat {
+    func getExtraPanelSizeFromDefault() -> CGFloat {
         let frame = floatingWindow.frame
         return frame.size.height - height
     }
 
-    func setFloatingWindowVisibility() {
+    func setPanelVisibility() {
         floatingWindow.sharingType = getPreferencesShowInScreenshot() ? .readOnly : .none
+    }
+
+    func setPanelPassthrough(_ enabled: Bool) {
+        // true  -> panel ignores events (clicks pass through)
+        // false -> panel receives events (interactive)
+        floatingWindow.ignoresMouseEvents = enabled
     }
 }

@@ -19,9 +19,7 @@ Missing Features
 ------------------------
 
 
-Satursday    
-- Fix dimensions of the view
-
+Saturday    
 - Add Privacy Policy
 - Add Terms of Use
 - Update documentation for Sarah & David 
@@ -33,8 +31,6 @@ Sunday
 - Promotion Graphics 
 - Promotion Websites - hackernews / reddit / mcp client docs / update server documents
 - Email people using AI Thing and show it 
-
-
 
 
 Monday

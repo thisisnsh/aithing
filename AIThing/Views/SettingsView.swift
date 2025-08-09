@@ -21,7 +21,12 @@ struct SettingsView: View {
     @EnvironmentObject var loginManager: LoginManager
 
     @Binding var isPresented: Bool
-    var setFloatingWindowVisibility: () -> Void
+    var setPanelVisibility: () -> Void
+    let setPanelPassthrough: (_ enabled: Bool) -> Void
+
+    private func updatePassthrough(inside: Bool) {
+        setPanelPassthrough(!inside)
+    }
 
     @State private var selectedTab: SettingsTab = .account
 
@@ -75,6 +80,9 @@ struct SettingsView: View {
                     .padding(20)
             }
             .buttonStyle(PlainButtonStyle())
+        }
+        .onHover { inside in
+            updatePassthrough(inside: inside)
         }
     }
 
@@ -680,7 +688,7 @@ struct SettingsView: View {
                                     setPreferencesShowInScreenshot(
                                         value: preferencesShowInScreenshot
                                     )
-                                    setFloatingWindowVisibility()
+                                    setPanelVisibility()
                                 }
                         }
                     }
