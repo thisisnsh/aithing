@@ -17,10 +17,10 @@ struct ContentView: View {
     @EnvironmentObject var screenshotManager: ScreenshotManager
 
     var onClose: () -> Void
-    var replacePanelSize: (CGFloat) -> Void
-    var updatePanelSize: (CGFloat) -> Void
-    var getPanelSize: () -> CGFloat
-    var setPanelVisibility: () -> Void
+    var resizePanel: (CGFloat) -> Void
+    var incrementSizePanel: (CGFloat) -> Void
+    var getExtraSize: () -> CGFloat
+    var setFloatingWindowVisibility: () -> Void
 
     @State private var agents: [AgentEntry] = []
     @State private var allClientTools: [String: [[String: Any]]] = [:]
@@ -108,7 +108,14 @@ struct ContentView: View {
             await loadAllClientTools()
         }
         .onChange(of: showSettings) {
+            incrementSizePanel(showSettings ? 500 : -500)
             Task { await loadAllClientTools() }
+        }
+        .onChange(of: showHelp) {
+            incrementSizePanel(showHelp ? 70 : -70)
+        }
+        .onChange(of: showToast) {
+            incrementSizePanel(showToast ? 60 : -60)
         }
     }
 
@@ -195,7 +202,7 @@ struct ContentView: View {
     func Settings() -> some View {
         SettingsView(
             isPresented: $showSettings,
-            setPanelVisibility: { self.setPanelVisibility() }
+            setFloatingWindowVisibility: { self.setFloatingWindowVisibility() }
         )
         .background(.ultraThinMaterial)
         .overlay {
@@ -249,8 +256,10 @@ struct ContentView: View {
 
     private func onHelp() {
         showHelp = true
+        incrementSizePanel(200)
         DispatchQueue.main.asyncAfter(deadline: .now() + 2) {
             showHelp = false
+            incrementSizePanel(-200)
         }
     }
 
@@ -310,11 +319,11 @@ struct ContentView: View {
             showSettings: $showSettings,
             onSetting: { self.onSetting() },
             onHelp: { self.onHelp() },
-            replacePanelSize: { extraHeight in
-                replacePanelSize(extraHeight)
+            resizePanel: { extraHeight in
+                resizePanel(extraHeight)
             },
-            updatePanelSize: { height in
-                updatePanelSize(height)
+            incrementSizePanel: { height in
+                incrementSizePanel(height)
             }
         )
         .environmentObject(mcp)
