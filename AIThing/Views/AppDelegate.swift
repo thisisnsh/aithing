@@ -43,8 +43,11 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate {
         try? SMAppService.mainApp.register()
     }
 
-    @objc func appDidActivate(_ note: Notification) {
+    func applicationShouldTerminate(_ sender: NSApplication) -> NSApplication.TerminateReply {
+        return AppDelegate.allowQuit ? .terminateNow : .terminateCancel
     }
+
+    @objc func appDidActivate(_ note: Notification) {}
 
     func setupWindow() {
         NSWorkspace.shared.notificationCenter.addObserver(
@@ -80,7 +83,8 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate {
                     incrementSizePanel: { extraHeight in
                         return self.incrementSizePanel(extraHeight: extraHeight)
                     },
-                    getExtraSize: { return self.getExtraHeightPanel() }
+                    getExtraSize: { return self.getExtraHeightPanel() },
+                    toggleVisibility: { return self.toggleVisibility() }
                 ).environmentObject(mcp)
             )
         }
@@ -94,7 +98,7 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate {
         floatingWindow.alphaValue = 1
         floatingWindow.center()
         floatingWindow.orderFrontRegardless()  // no app activation
-        // floatingWindow.sharingType = .none  // Comment during DEBUG_MODE mode
+        toggleVisibility()
     }
 
     func setupHotKey() {
@@ -159,7 +163,11 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate {
         return frame.size.height - height
     }
 
-    func applicationShouldTerminate(_ sender: NSApplication) -> NSApplication.TerminateReply {
-        return AppDelegate.allowQuit ? .terminateNow : .terminateCancel
+    func toggleVisibility() {
+        if UserDefaults.standard.bool(forKey: "PreferencesShowInScreenshot") {
+            floatingWindow.sharingType = .readOnly
+        } else {
+            floatingWindow.sharingType = .none
+        }
     }
 }

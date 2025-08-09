@@ -8,7 +8,7 @@
 import SwiftUI
 
 enum SettingsTab {
-    case account, agents
+    case account, agents, preferences
 }
 
 struct AgentEntry: Codable, Identifiable, Equatable {
@@ -21,6 +21,8 @@ struct SettingsView: View {
     @EnvironmentObject var loginManager: LoginManager
 
     @Binding var isPresented: Bool
+    var toggleVisibility: () -> Void
+
     @State private var selectedTab: SettingsTab = .account
 
     @State private var apiKey: String =
@@ -38,8 +40,10 @@ struct SettingsView: View {
     @State private var agentName = ""
     @State private var agentPrimary = ""
     @State private var agentSecondary = ""
-
     @State private var agentMaxCount = 3
+
+    @State private var preferencesShowInScreenshot =
+        UserDefaults.standard.bool(forKey: "PreferencesShowInScreenshot")
 
     var body: some View {
         HStack(spacing: 0) {
@@ -47,10 +51,13 @@ struct SettingsView: View {
             Divider()
             ScrollView(.vertical, showsIndicators: false) {
                 VStack(alignment: .leading, spacing: 16) {
-                    if selectedTab == .account {
+                    switch selectedTab {
+                    case .account:
                         AccountTab()
-                    } else if selectedTab == .agents {
+                    case .agents:
                         AgentTab()
+                    case .preferences:
+                        PreferencesTab()
                     }
                 }
                 .padding()
@@ -106,8 +113,21 @@ struct SettingsView: View {
             }
             .buttonStyle(.plain)
 
-            Spacer()
+            Button(action: { selectedTab = .preferences }) {
+                Text("Preferences")
+                    .font(.system(size: 14, weight: .medium))
+                    .frame(maxWidth: .infinity, alignment: .leading)
+                    .padding(.vertical, 8)
+                    .padding(.horizontal, 16)
+                    .background(
+                        .preferences == selectedTab ? Color.black.opacity(0.5) : Color.clear
+                    )
+                    .clipShape(RoundedRectangle(cornerRadius: 8))
+                    .padding(.horizontal, 8)
+            }
+            .buttonStyle(.plain)
 
+            Spacer()
             Button(action: {
                 AppDelegate.allowQuit = true
                 NSApplication.shared.terminate(nil)
@@ -624,6 +644,49 @@ struct SettingsView: View {
                 }
                 .padding(4)
                 .opacity(0.5)
+            }
+        }
+        .frame(maxWidth: .infinity, alignment: .leading)
+    }
+
+    func PreferencesTab() -> some View {
+        VStack(alignment: .leading, spacing: 16) {
+            GroupBox(
+                label: Text("Look")
+                    .font(.system(size: 10, weight: .medium))
+                    .padding(.vertical, 4)
+            ) {
+                VStack(alignment: .leading) {
+                    Button(action: {}) {
+                        HStack {
+                            Image(
+                                systemName: preferencesShowInScreenshot
+                                    ? "eye.fill" : "eye.slash.fill"
+                            )
+                            .resizable()
+                            .scaledToFit()
+                            .frame(width: 16, height: 16)
+                            Text("Show in Screenshots")
+                                .font(.system(size: 14, weight: .medium))
+                            Spacer()
+                            Toggle("", isOn: $preferencesShowInScreenshot)
+                                .toggleStyle(.switch)
+                                .tint(.black)
+                                .scaleEffect(0.7)
+                                .onChange(of: preferencesShowInScreenshot) {
+                                    preferencesShowInScreenshot.toggle()
+                                    UserDefaults.standard.set(
+                                        preferencesShowInScreenshot,
+                                        forKey: "PreferencesShowInScreenshot"
+                                    )
+                                    toggleVisibility()
+                                }
+                        }
+                    }
+                    .buttonStyle(.plain)
+                    .padding(4)
+                }
+                .padding(4)
             }
         }
         .frame(maxWidth: .infinity, alignment: .leading)

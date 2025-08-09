@@ -4,7 +4,6 @@
 Missing Features
 - No History 
 - No Audio recording 
-- No Theme Change
 - No Usage
 - No Ability to Choose Tools 
 - Understand you and suggest things based on time and this
@@ -15,6 +14,7 @@ Missing Features
 - No One Click Integrations 
 - Move Tabs Up
 
+
 ------------------------
 
 
@@ -23,7 +23,9 @@ Friday
 - Fix Tab Animation
 - Selection-Only Screenshot
 - Black Box
-- Visibilty Toggle
+- Drag Icon
+- Fix Height Width of Box
+- No Theme Change
 
 
 - Study Raycast
@@ -37,7 +39,6 @@ Satursday
 - Promotion Graphics 
 - Promotion Websites - hackernews / reddit / mcp client docs / update server documents 
 - Release
-
 - Meetup
     - How to make it work better for non-developers
     - How to market it? 
