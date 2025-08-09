@@ -13,28 +13,18 @@ Missing Features
 - No Type into Applications
 - No One Click Integrations 
 - Move Tabs Up
+- No Markdown Select
 
 
 ------------------------
 
 
-Friday
-- Fix Select and Copy
-- Fix Tab Animation
-- Selection-Only Screenshot
-- Black Box
-- Drag Icon
-- Fix Height Width of Box
-
-
-- Study Raycast
+Satursday
 - Add Privacy Policy
 - Add Terms of Use
 - Update documentation for Sarah & David 
 - Update the Form and Waitlist
 
-
-Satursday
 - Promotion Graphics 
 - Promotion Websites - hackernews / reddit / mcp client docs / update server documents 
 - Release
@@ -42,6 +32,11 @@ Satursday
     - How to make it work better for non-developers
     - How to market it? 
     - What one click integrations do you want?
+
+- Study Raycast
+- Fix "AttributeGraph: cycle detected through attribute"
+- Selection-Only Screenshot
+- Black Box
 
 
 Sunday 

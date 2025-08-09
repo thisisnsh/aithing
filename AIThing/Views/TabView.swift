@@ -73,9 +73,19 @@ struct TabView: View {
                             cornerRadius: getCornerRadius(),
                             lineWidth: 2.5
                         )
+                        .frame(
+                            width: isFocused ? 640 : 64,
+                            height: isFocused ? inputHeight + getResponseHeight() : 48,
+                            alignment: .topLeading
+                        )
                     } else {
                         RoundedRectangle(cornerRadius: getCornerRadius())
                             .stroke(Color.white, lineWidth: 1.5)
+                            .frame(
+                                width: isFocused ? 640 : 64,
+                                height: isFocused ? inputHeight + getResponseHeight() : 48,
+                                alignment: .topLeading
+                            )
                     }
                 }
             )
@@ -101,9 +111,7 @@ struct TabView: View {
             }
 
             if let image = modelInputImage, isFocused {
-                withAnimation {
-                    contextView(image: image)
-                }
+                contextView(image: image)
             }
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
@@ -169,12 +177,23 @@ struct TabView: View {
                             .padding(.leading, 8)
                     }
                 }
-                Button(action: onHelp) {
-                    Image(systemName: "questionmark.circle.fill")
-                        .resizable()
-                        .scaledToFit()
-                        .frame(width: 18, height: 18)
-                        .foregroundColor(.white.opacity(0.5))
+                Button(
+                    action: {
+                        if modelOutput.isEmpty {
+                            onHelp()
+                        } else {
+                            copyToClipboard(string: modelOutput)
+                        }
+                    }
+                ) {
+                    Image(
+                        systemName: modelOutput.isEmpty
+                            ? "questionmark.circle.fill" : "document.on.document.fill"
+                    )
+                    .resizable()
+                    .scaledToFit()
+                    .frame(width: 18, height: 18)
+                    .foregroundColor(modelOutput.isEmpty ? .white.opacity(0.5) : .white)
                 }
                 .buttonStyle(PlainButtonStyle())
             }
@@ -226,15 +245,15 @@ struct TabView: View {
                     }
                 )
             }
-            .frame(
-                height: getResponseHeight()
-            )
+            .frame(height: getResponseHeight())
             .background(Color.black.opacity(0.3))
             .onPreferenceChange(ViewHeightKey.self) { height in
                 let checkedHeight = min(max(responseHeightMin, height), responseHeightMax)
 
                 if responseHeight < checkedHeight {
-                    responseHeight = checkedHeight
+                    withTransaction(Transaction(animation: nil)) {
+                        responseHeight = checkedHeight
+                    }
                     if isFocused {
                         DispatchQueue.main.async {
                             resizePanel(getResponseHeight())
@@ -376,7 +395,7 @@ struct TabView: View {
 
         // Fake data // DEBUG_MODE
         // await callModel(query: query + "X")
-        // return await fakeData(query: query)
+        return await fakeData(query: query)
 
         let model = "claude-sonnet-4-20250514"
 
@@ -709,12 +728,12 @@ struct TabView: View {
             Could you provide more context about which "Vishal" you're asking about? That would help me give you a more specific answer.
             """
 
-        await animateOutput(content: fakeContent + fakeContent)
-        isThinking = false
-
         do {
-            try await Task.sleep(for: .seconds(10))
+            try await Task.sleep(for: .seconds(3))
         } catch {}
+
+        isThinking = false
+        await animateOutput(content: fakeContent + fakeContent)
     }
 
     private func animateOutput(content: String) async {
@@ -730,4 +749,11 @@ struct TabView: View {
         }
         modelOutput = partial
     }
+
+    private func copyToClipboard(string: String) {
+        let pasteboard = NSPasteboard.general
+        pasteboard.clearContents()
+        pasteboard.setString(string, forType: .string)
+    }
+
 }
