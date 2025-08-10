@@ -208,6 +208,9 @@ final class ScreenshotManager: ObservableObject {
                 if title.contains("loom control menu") { return false }
                 if title.contains("loom cropping") { return false }
                 if title.contains("mouse highlight overlay") { return false }
+                if title == "desktop" { return false }
+                if title == "" { return false }
+                if title.starts(with: "wallpaper-") { return false }
             }
 
             return w.frame.contains(clickGlobalPx)
@@ -215,7 +218,7 @@ final class ScreenshotManager: ObservableObject {
         for c in candidates {
             print(c.title ?? "unknown")
         }
-
+        
         return candidates.sorted {
             if $0.windowLayer != $1.windowLayer { return $0.windowLayer > $1.windowLayer }
             let a0 = $0.frame.width * $0.frame.height
