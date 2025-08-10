@@ -203,9 +203,17 @@ final class ScreenshotManager: ObservableObject {
             // Ignore cursor/compositor surfaces (tiny size or suspicious titles)
             let minSize: CGFloat = 5
             if w.frame.width < minSize || w.frame.height < minSize { return false }
-            if let title = w.title?.lowercased(), title.contains("cursor") { return false }
+            if let title = w.title?.lowercased() {
+                if title.contains("cursor") { return false }
+                if title.contains("loom control menu") { return false }
+                if title.contains("loom cropping") { return false }
+                if title.contains("mouse highlight overlay") { return false }
+            }
 
             return w.frame.contains(clickGlobalPx)
+        }
+        for c in candidates {
+            print(c.title ?? "unknown")
         }
 
         return candidates.sorted {

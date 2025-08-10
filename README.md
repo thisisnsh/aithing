@@ -19,20 +19,6 @@ Missing Features
 ------------------------
 
 
-Saturday    
-- Release
-
-- Add Privacy Policy (https://aithing.dev/privacy)
-- Add Latest Version (https://aithing.dev/latest)
-- Update documentation for Sarah & David 
-- Update the Form and Waitlist
- 
-
-Sunday 
-- Promotion Graphics 
-- Promotion Websites - hackernews / reddit / mcp client docs / update server documents
-- Email people using AI Thing and show it 
-
 
 Monday
 - Study Raycast
@@ -91,7 +77,7 @@ hdiutil detach /Volumes/AIThing
 hdiutil convert "AIThing-temp.dmg" \
   -format UDZO \
   -imagekey zlib-level=9 \
-  -o "AIThing.dmg"
+  -o "AIThing-<version>.dmg"
 
 rm AIThing-temp.dmg
 
@@ -99,9 +85,9 @@ codesign -dv --verbose=4 AIThing.app 2>&1 | grep -E 'Authority|TeamIdentifier|Id
 
 codesign --sign "Developer ID Application: Nishant Hada (983LBM5U6B)" \
   --timestamp \
-  AIThing.dmg
+  AIThing-<version>.dmg
 
-xcrun notarytool submit "AIThing.dmg" --keychain-profile "notary-profile" --wait
-xcrun stapler staple "AIThing.dmg"
+xcrun notarytool submit "AIThing-<version>.dmg" --keychain-profile "notary-profile" --wait
+xcrun stapler staple "AIThing-<version>.dmg"
 
-codesign -dv --verbose=4 AIThing.dmg 2>&1 | grep -E 'Authority|TeamIdentifier|Identifier'
+codesign -dv --verbose=4 AIThing-<version>.dmg 2>&1 | grep -E 'Authority|TeamIdentifier|Identifier'
