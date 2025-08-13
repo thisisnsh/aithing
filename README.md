@@ -2,9 +2,7 @@
 
 
 Missing Features
-- No History 
 - No Audio recording 
-- No Usage
 - No Ability to Choose Tools 
 - Understand you and suggest things based on time and this
 - No RAG
@@ -12,18 +10,47 @@ Missing Features
 - No Elicitation 
 - No Type into Applications
 - No One Click Integrations 
-- Move Tabs Up
-- No Markdown Select
-- No Black Box
+- No Markdown Select
+- Fix "AttributeGraph: cycle detected through attribute"
+- Fix Flickering Animation
 
-------------------------
+
+------------------------ 
+
+13 Wednesday
+- You sign in to get 100 credits 
+- You choose between BYOK or Managed
+- See usage on agents tab 
+- See credits on accounts tab 
+- Free Version 100 Credits - Claude Haiku 3.5 (1) & Claude Sonnet 4 (2) & Claude Opus 4.1 (10) 
+- Free Version BYOK - Claude Opus 4.1, Claude Sonnet 4, Claude Haiku 3.5
+
+14 Thursday
+- Video 1 - Introducing 
+- Video 2 - Selective Context 
+- Video 3 - Privacy 
+
+15 Friday
+- Store History Locally (Modify The Location)
+
+16 Satursday
+- a
+
+17 Sunday
+- a
+
+18 Monday
+- a
+
+19 Tuesday
+- a
+
+20 Wednesday
+- a
 
 
 
 Monday
-- Study Raycast
-- Fix "AttributeGraph: cycle detected through attribute"
-- Fix Flickering Animation
 
 
 ------------------------

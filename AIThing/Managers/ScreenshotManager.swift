@@ -196,6 +196,20 @@ final class ScreenshotManager: ObservableObject {
 
         let ownPID = NSRunningApplication.current.processIdentifier
 
+        // Build front-to-back z-order map from CoreGraphics window list.
+        // This list is already ordered: index 0 is the frontmost window.
+        var zIndexByWindowID: [CGWindowID: Int] = [:]
+        if let infoList = CGWindowListCopyWindowInfo(
+            [.optionOnScreenOnly, .excludeDesktopElements],
+            kCGNullWindowID
+        ) as? [[String: Any]] {
+            for (idx, info) in infoList.enumerated() {
+                if let num = info[kCGWindowNumber as String] as? NSNumber {
+                    zIndexByWindowID[CGWindowID(num.uint32Value)] = idx
+                }
+            }
+        }
+
         let candidates = content.windows.filter { w in
             guard w.isOnScreen else { return false }
             guard w.owningApplication?.processID != ownPID else { return false }
@@ -209,22 +223,40 @@ final class ScreenshotManager: ObservableObject {
                 if title.contains("loom cropping") { return false }
                 if title.contains("mouse highlight overlay") { return false }
                 if title == "desktop" { return false }
-                if title == "" { return false }
-                if title.starts(with: "wallpaper-") { return false }
+                if title.isEmpty { return false }
+                if title.hasPrefix("wallpaper-") { return false }
             }
 
             return w.frame.contains(clickGlobalPx)
         }
-        for c in candidates {
-            print(c.title ?? "unknown")
+
+        // Prefer true z-order (front-most first). If two windows aren’t in the CG list,
+        // break ties by layer, then (last resort) by area just to have a deterministic order.
+        let sorted = candidates.sorted { a, b in
+            let za = zIndexByWindowID[a.windowID]
+            let zb = zIndexByWindowID[b.windowID]
+            switch (za, zb) {
+            case let (ia?, ib?):
+                return ia < ib  // lower index == more frontmost
+            case (nil, nil):
+                if a.windowLayer != b.windowLayer {  // higher layer usually above
+                    return a.windowLayer > b.windowLayer
+                }
+                let aa = a.frame.width * a.frame.height
+                let ab = b.frame.width * b.frame.height
+                return aa > ab
+            case (_?, nil):
+                return true  // a is known front-to-back; prefer it
+            case (nil, _?):
+                return false
+            }
         }
-        
-        return candidates.sorted {
-            if $0.windowLayer != $1.windowLayer { return $0.windowLayer > $1.windowLayer }
-            let a0 = $0.frame.width * $0.frame.height
-            let a1 = $1.frame.width * $1.frame.height
-            return a0 > a1
-        }.first
+
+        for s in sorted {
+            print(s.title ?? "unknown")
+        }
+
+        return sorted.first
     }
 
     /// Crops a full-display image to a rectangle expressed in the screen's local points.
