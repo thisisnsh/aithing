@@ -19,11 +19,18 @@ Missing Features
 
 13 Wednesday
 - You sign in to get 100 credits 
+    - if ID exists you fetch the value
+    - if not, you set 100, and fetch the value 
+
 - You choose between BYOK or Managed
+
 - See usage on agents tab 
 - See credits on accounts tab 
+
 - Free Version 100 Credits - Claude Haiku 3.5 (1) & Claude Sonnet 4 (2) & Claude Opus 4.1 (10) 
 - Free Version BYOK - Claude Opus 4.1, Claude Sonnet 4, Claude Haiku 3.5
+
+- Analytics for usage 
 
 14 Thursday
 - Video 1 - Introducing 
@@ -34,7 +41,7 @@ Missing Features
 - Store History Locally (Modify The Location)
 
 16 Satursday
-- a
+- Fetch expiry from firebase 
 
 17 Sunday
 - a
