@@ -59,7 +59,7 @@ class FirestoreManager: ObservableObject {
                 return profile
             }
 
-            print("[FirestoreManager] Failed to decode profile for ID \(id)")
+            print("[FirestoreManager] Failed to find profile for ID \(id)")
             return nil
         } catch {
             print(

@@ -18,10 +18,6 @@ Missing Features
 ------------------------ 
 
 13 Wednesday
-- You sign in to get 100 credits 
-    - if ID exists you fetch the value
-    - if not, you set 100, and fetch the value 
-
 - You choose between BYOK or Managed
 
 - See usage on agents tab 

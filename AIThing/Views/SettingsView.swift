@@ -8,13 +8,33 @@
 import SwiftUI
 
 enum SettingsTab {
-    case account, brains, capabilities, preferences
+    case account, models, agents, preferences
 }
 
 struct AgentEntry: Codable, Identifiable, Equatable {
     let id: UUID
     var entry: Entry
     var isEnabled: Bool
+}
+
+enum ModelName {
+    case byok_claude_opus_4_1
+    case byok_claude_sonnet_4
+    case byok_claude_haiku_3_5
+    case managed_claude_opus_4_1
+    case managed_claude_sonnet_4
+    case managed_claude_haiku_3_5
+
+    var rawValue: String {
+        switch self {
+        case .byok_claude_opus_4_1, .managed_claude_opus_4_1:
+            return "claude-opus-4-1-20250805"
+        case .byok_claude_sonnet_4, .managed_claude_sonnet_4:
+            return "claude-sonnet-4-20250514"
+        case .byok_claude_haiku_3_5, .managed_claude_haiku_3_5:
+            return "claude-3-5-haiku-20241022"
+        }
+    }
 }
 
 struct SettingsView: View {
@@ -37,8 +57,9 @@ struct SettingsView: View {
     @State private var showToast = false
     @State private var toastText: String = ""
 
-    @State private var agents: [AgentEntry] = getAgentEntries()
+    @State private var modelSelected: ModelName = .managed_claude_sonnet_4
 
+    @State private var agents: [AgentEntry] = getAgentEntries()
     @State private var showAddAgent = false
     @State private var agentTypes: [String] = ["Global", "Local"]
     @State private var agentType = "Global"
@@ -62,10 +83,10 @@ struct SettingsView: View {
                     switch selectedTab {
                     case .account:
                         AccountTab()
-                    case .brains:
-                        BrainsTab()
-                    case .capabilities:
-                        BrainsTab()  // CapabilityTab()
+                    case .models:
+                        ModelsTab()
+                    case .agents:
+                        AgentTab()
                     case .preferences:
                         PreferencesTab()
                     }
@@ -74,8 +95,8 @@ struct SettingsView: View {
             }
         }
         .onDisappear {
-            // saveBrain()
-            // saveCapability()
+            saveModels()
+            saveAgents()
         }
         .overlay(alignment: .topLeading) {
             Button(action: {
@@ -97,7 +118,7 @@ struct SettingsView: View {
 
     // MARK: - Subviews
 
-    func AccountTab() -> some View {
+    func ModelsTab() -> some View {
         ZStack(alignment: .top) {
             Color.clear
                 .contentShape(Rectangle())
@@ -107,44 +128,41 @@ struct SettingsView: View {
 
             VStack(alignment: .leading, spacing: 16) {
                 GroupBox(
-                    label: Text("Login")
+                    label: Text("Use Managed Models")
                         .font(.system(size: 10, weight: .medium))
                         .padding(.vertical, 4)
                 ) {
                     VStack(alignment: .leading) {
-                        Button(action: {
-                            Task {
-                                await signIn()
-                            }
-                        }) {
+                        Button(action: {}) {
                             HStack {
-                                Image("google")
+                                Image("anthropic")
                                     .resizable()
                                     .frame(width: 16, height: 16)
-
-                                switch loginManager.authState {
-                                case .signedIn(let user):
-                                    Text(user.displayName ?? user.displayName ?? "Logged In")
-                                        .font(.system(size: 14, weight: .medium))
-                                    Spacer()
-                                    Button(action: {
-                                        Task {
-                                            await signOut()
-                                        }
-
-                                    }) {
-                                        Text("Log Out")
+                                VStack(alignment: .leading) {
+                                    if $modelSelected == .managed_claude_haiku_3_5 {
+                                        Text("Anthropic")
                                             .font(.system(size: 10, weight: .medium))
+                                            .opacity(0.5)
                                     }
-                                    .buttonStyle(.plain)
-                                default:
-                                    Text("Google")
+                                    Text("Claude Haiku 3.5")
                                         .font(.system(size: 14, weight: .medium))
-                                    Spacer()
-                                    Image(systemName: "chevron.right")
-                                        .frame(width: 10, height: 10)
+                                    if $modelSelected == .managed_claude_haiku_3_5 {
+                                        Text("Understanding: 4/5\nSpeed: 3/5\nCreativity: 4/5")
+                                            .font(.system(size: 10, weight: .medium))
+                                            .opacity(0.5)
+                                    }
                                 }
-
+                                Spacer()
+                                Toggle(
+                                    "",
+                                    isOn: bindingForModel(
+                                        $modelSelected,
+                                        equals: .managed_claude_haiku_3_5
+                                    )
+                                )
+                                .toggleStyle(.switch)
+                                .tint(.black)
+                                .scaleEffect(0.7)
                             }
                         }
                         .buttonStyle(.plain)
@@ -154,10 +172,84 @@ struct SettingsView: View {
 
                         Button(action: {}) {
                             HStack {
-                                Image("apple")
+                                Image("anthropic")
                                     .resizable()
                                     .frame(width: 16, height: 16)
-                                Text("Apple")
+                                VStack(alignment: .leading) {
+                                    if $modelSelected == .managed_claude_sonnet_4 {
+                                        Text("Anthropic")
+                                            .font(.system(size: 10, weight: .medium))
+                                            .opacity(0.5)
+                                    }
+                                    Text("Claude Sonnet 4")
+                                        .font(.system(size: 14, weight: .medium))
+                                    if $modelSelected == .managed_claude_sonnet_4 {
+                                        Text("Understanding: 4/5\nSpeed: 3/5\nCreativity: 4/5")
+                                            .font(.system(size: 10, weight: .medium))
+                                            .opacity(0.5)
+                                    }
+                                }
+                                Spacer()
+                                Toggle(
+                                    "",
+                                    isOn: bindingForModel(
+                                        $modelSelected,
+                                        equals: .managed_claude_sonnet_4
+                                    )
+                                )
+                                .toggleStyle(.switch)
+                                .tint(.black)
+                                .scaleEffect(0.7)
+                            }
+                        }
+                        .buttonStyle(.plain)
+                        .padding(4)
+
+                        Divider()
+
+                        Button(action: {}) {
+                            HStack {
+                                Image("anthropic")
+                                    .resizable()
+                                    .frame(width: 16, height: 16)
+                                VStack(alignment: .leading) {
+                                    if $modelSelected == .managed_claude_opus_4_1 {
+                                        Text("Anthropic")
+                                            .font(.system(size: 10, weight: .medium))
+                                            .opacity(0.5)
+                                    }
+                                    Text("Claude Opus 4.1")
+                                        .font(.system(size: 14, weight: .medium))
+                                    if $modelSelected == .managed_claude_opus_4_1 {
+                                        Text("Understanding: 4/5\nSpeed: 3/5\nCreativity: 4/5")
+                                            .font(.system(size: 10, weight: .medium))
+                                            .opacity(0.5)
+                                    }
+                                }
+                                Spacer()
+                                Toggle(
+                                    "",
+                                    isOn: bindingForModel(
+                                        $modelSelected,
+                                        equals: .managed_claude_opus_4_1
+                                    )
+                                )
+                                .toggleStyle(.switch)
+                                .tint(.black)
+                                .scaleEffect(0.7)
+                            }
+                        }
+                        .buttonStyle(.plain)
+                        .padding(4)
+
+                        Divider()
+
+                        Button(action: {}) {
+                            HStack {
+                                Image("openai")
+                                    .resizable()
+                                    .frame(width: 16, height: 16)
+                                Text("OpenAI: GPT-5")
                                     .font(.system(size: 14, weight: .medium))
                                 Spacer()
                                 Text("Coming Soon")
@@ -167,268 +259,146 @@ struct SettingsView: View {
                         .buttonStyle(.plain)
                         .padding(4)
                         .opacity(0.5)
+                    }
+                    .padding(4)
+                }
+
+                GroupBox(
+                    label: Text("Use Own API Key")
+                        .font(.system(size: 10, weight: .medium))
+                        .padding(.vertical, 4)
+                ) {
+                    VStack(alignment: .leading) {
+                        Button(action: {}) {
+                            HStack {
+                                Image("anthropic")
+                                    .resizable()
+                                    .frame(width: 16, height: 16)
+                                Text("Anthropic: Claude Haiku 3.5")
+                                    .font(.system(size: 14, weight: .medium))
+                                Spacer()
+                                Toggle(
+                                    "",
+                                    isOn: bindingForModel(
+                                        $modelSelected,
+                                        equals: .byok_claude_haiku_3_5
+                                    )
+                                )
+                                .toggleStyle(.switch)
+                                .tint(.black)
+                                .scaleEffect(0.7)
+                            }
+                        }
+                        .buttonStyle(.plain)
+                        .padding(4)
+
+                        if modelSelected == .byok_claude_haiku_3_5 {
+                            TextField("sk-ant-...", text: $apiKey, onCommit: saveModels)
+                                .padding(.horizontal, 8)
+                                .frame(height: 32)
+                                .background(Color.black.opacity(0.2))
+                                .clipShape(RoundedRectangle(cornerRadius: 4))
+                                .padding(.bottom, 4)
+                                .font(.system(size: 14, weight: .medium))
+                                .focused($apiKeyFieldFocused)
+                                .textFieldStyle(PlainTextFieldStyle())
+                        }
 
                         Divider()
 
                         Button(action: {}) {
                             HStack {
-                                Image(systemName: "key.fill")
+                                Image("anthropic")
                                     .resizable()
-                                    .aspectRatio(contentMode: .fit)
                                     .frame(width: 16, height: 16)
-                                Text("Custom SSO")
+                                Text("Anthropic: Claude Sonnet 4")
                                     .font(.system(size: 14, weight: .medium))
                                 Spacer()
-                                Text("Enterprise Plan Required")
-                                    .font(.system(size: 10, weight: .medium))
+                                Toggle(
+                                    "",
+                                    isOn: bindingForModel(
+                                        $modelSelected,
+                                        equals: .byok_claude_sonnet_4
+                                    )
+                                )
+                                .toggleStyle(.switch)
+                                .tint(.black)
+                                .scaleEffect(0.7)
                             }
                         }
                         .buttonStyle(.plain)
                         .padding(4)
-                        .opacity(0.5)
-                    }
-                    .padding(4)
-                }
 
-                GroupBox(
-                    label: Text("Usage")
-                        .font(.system(size: 10, weight: .medium))
-                        .padding(.vertical, 4)
-                ) {
-                    VStack(alignment: .leading) {
-                        HStack {
-                            Text("Credits")
+                        if modelSelected == .byok_claude_sonnet_4 {
+                            TextField("sk-ant-...", text: $apiKey, onCommit: saveModels)
+                                .padding(.horizontal, 8)
+                                .frame(height: 32)
+                                .background(Color.black.opacity(0.2))
+                                .clipShape(RoundedRectangle(cornerRadius: 4))
+                                .padding(.bottom, 4)
                                 .font(.system(size: 14, weight: .medium))
-                            Text("(used/total)")
-                                .font(.system(size: 10, weight: .medium))
-                                .opacity(0.5)
-                                .frame(maxHeight: .infinity, alignment: .bottom)
-                            Spacer()
-                            Text("(\(creditsUsed)/\(creditsTotal))")
-                                .font(.system(size: 10, weight: .medium))
+                                .focused($apiKeyFieldFocused)
+                                .textFieldStyle(PlainTextFieldStyle())
                         }
+
+                        Divider()
+
+                        Button(action: {}) {
+                            HStack {
+                                Image("anthropic")
+                                    .resizable()
+                                    .frame(width: 16, height: 16)
+                                Text("Anthropic: Claude Opus 4.1")
+                                    .font(.system(size: 14, weight: .medium))
+                                Spacer()
+                                Toggle(
+                                    "",
+                                    isOn: bindingForModel(
+                                        $modelSelected,
+                                        equals: .byok_claude_opus_4_1
+                                    )
+                                )
+                                .toggleStyle(.switch)
+                                .tint(.black)
+                                .scaleEffect(0.7)
+                            }
+                        }
+                        .buttonStyle(.plain)
                         .padding(4)
 
-                        // button: buy more
+                        if modelSelected == .byok_claude_opus_4_1 {
+                            TextField("sk-ant-...", text: $apiKey, onCommit: saveModels)
+                                .padding(.horizontal, 8)
+                                .frame(height: 32)
+                                .background(Color.black.opacity(0.2))
+                                .clipShape(RoundedRectangle(cornerRadius: 4))
+                                .padding(.bottom, 4)
+                                .font(.system(size: 14, weight: .medium))
+                                .focused($apiKeyFieldFocused)
+                                .textFieldStyle(PlainTextFieldStyle())
+                        }
                     }
                     .padding(4)
                 }
 
                 GroupBox(
-                    label: Text("Tokens")
+                    label: Text("Custom Models")
                         .font(.system(size: 10, weight: .medium))
                         .padding(.vertical, 4)
                 ) {
                     VStack(alignment: .leading) {
-                        HStack {
-                            Text("Coming Soon")
-                                .font(.system(size: 14, weight: .medium))
-                            Spacer()
+                        Button(action: {}) {
+                            HStack {
+                                Text("Enterprise Plan Required")
+                                    .font(.system(size: 14, weight: .medium))
+                                Spacer()
+                            }
                         }
+                        .buttonStyle(.plain)
                         .padding(4)
                     }
                     .padding(4)
                     .opacity(0.5)
-                }
-            }
-        }
-        .frame(maxWidth: .infinity, alignment: .leading)
-    }
-
-    func BrainsTab() -> some View {
-        ZStack(alignment: .top) {
-            Color.clear
-                .contentShape(Rectangle())
-                .onTapGesture {
-                    apiKeyFieldFocused = false
-                }
-
-            VStack(alignment: .leading, spacing: 16) {
-                GroupBox(
-                    label: Text("Login")
-                        .font(.system(size: 10, weight: .medium))
-                        .padding(.vertical, 4)
-                ) {
-                    VStack(alignment: .leading) {
-                        Button(action: {
-                            Task {
-                                await loginManager.signInWithGoogle()
-                            }
-                        }) {
-                            HStack {
-                                Image("google")
-                                    .resizable()
-                                    .frame(width: 16, height: 16)
-
-                                switch loginManager.authState {
-                                case .signedIn(let user):
-                                    Text(user.displayName ?? user.displayName ?? "Logged In")
-                                        .font(.system(size: 14, weight: .medium))
-                                    Spacer()
-                                    Button(action: {
-                                        loginManager.signOut()
-                                    }) {
-                                        Text("Log Out")
-                                            .font(.system(size: 10, weight: .medium))
-                                    }
-                                    .buttonStyle(.plain)
-                                default:
-                                    Text("Google")
-                                        .font(.system(size: 14, weight: .medium))
-                                    Spacer()
-                                    Image(systemName: "chevron.right")
-                                        .frame(width: 10, height: 10)
-                                }
-
-                            }
-                        }
-                        .buttonStyle(.plain)
-                        .padding(4)
-
-                        Divider()
-
-                        Button(action: {}) {
-                            HStack {
-                                Image("apple")
-                                    .resizable()
-                                    .frame(width: 16, height: 16)
-                                Text("Apple")
-                                    .font(.system(size: 14, weight: .medium))
-                                Spacer()
-                                Text("Coming Soon")
-                                    .font(.system(size: 10, weight: .medium))
-                            }
-                        }
-                        .buttonStyle(.plain)
-                        .padding(4)
-                        .opacity(0.5)
-
-                        Divider()
-
-                        Button(action: {}) {
-                            HStack {
-                                Text("Custom SSO")
-                                    .font(.system(size: 14, weight: .medium))
-                                Spacer()
-                                Text("Enterprise Plan Required")
-                                    .font(.system(size: 10, weight: .medium))
-                            }
-                        }
-                        .buttonStyle(.plain)
-                        .padding(4)
-                        .opacity(0.5)
-                    }
-                    .padding(4)
-                }
-
-                GroupBox(
-                    label: Text("Choose the Brain")
-                        .font(.system(size: 10, weight: .medium))
-                        .padding(.vertical, 4)
-                ) {
-                    VStack(alignment: .leading) {
-                        GroupBox(
-                            label: Text("Self Managed API Key")
-                                .font(.system(size: 10, weight: .medium))
-                                .padding(.vertical, 4)
-                        ) {
-                            VStack(alignment: .leading) {
-
-                                HStack {
-                                    Image("anthropic")
-                                        .resizable()
-                                        .frame(width: 16, height: 16)
-                                    Text("Anthropic: Claude Sonnet 4")
-                                        .font(.system(size: 14, weight: .medium))
-                                    Spacer()
-                                    Toggle("", isOn: .constant(true))
-                                        .toggleStyle(.switch)
-                                        .tint(.black)
-                                        .scaleEffect(0.7)
-                                }
-                                .padding(4)
-
-                                TextField("sk-ant-...", text: $apiKey, onCommit: saveAPIKey)
-                                    .padding(.horizontal, 8)
-                                    .frame(height: 32)
-                                    .background(Color.black.opacity(0.2))
-                                    .clipShape(RoundedRectangle(cornerRadius: 4))
-                                    .padding(.bottom, 4)
-                                    .font(.system(size: 14, weight: .medium))
-                                    .focused($apiKeyFieldFocused)
-                                    .textFieldStyle(PlainTextFieldStyle())
-                            }
-                            .padding(4)
-                        }
-
-                        GroupBox(
-                            label: Text("Managed by AI Thing (Individual Plan Required)")
-                                .font(.system(size: 10, weight: .medium))
-                                .padding(.vertical, 4)
-                        ) {
-                            VStack(alignment: .leading) {
-
-                                Button(action: {}) {
-                                    HStack {
-                                        Image("anthropic")
-                                            .resizable()
-                                            .frame(width: 16, height: 16)
-                                        Text("Anthropic: Claude Sonnet 4")
-                                            .font(.system(size: 14, weight: .medium))
-                                        Spacer()
-                                        Toggle("", isOn: .constant(false))
-                                            .toggleStyle(.switch)
-                                            .tint(.black)
-                                            .scaleEffect(0.7)
-                                    }
-                                }
-                                .buttonStyle(.plain)
-                                .padding(4)
-
-                                Divider()
-
-                                Button(action: {}) {
-                                    HStack {
-                                        Image("openai")
-                                            .resizable()
-                                            .frame(width: 16, height: 16)
-                                        Text("OpenAI: GPT-4.1")
-                                            .font(.system(size: 14, weight: .medium))
-                                        Spacer()
-                                        Toggle("", isOn: .constant(false))
-                                            .toggleStyle(.switch)
-                                            .tint(.black)
-                                            .scaleEffect(0.7)
-                                    }
-                                }
-                                .buttonStyle(.plain)
-                                .padding(4)
-                            }
-                            .padding(4)
-                            .opacity(0.5)
-                        }
-
-                        GroupBox(
-                            label: Text("Managed by Organization (Enterprise Plan Required)")
-                                .font(.system(size: 10, weight: .medium))
-                                .padding(.vertical, 4)
-                        ) {
-                            VStack(alignment: .leading) {
-                                Button(action: {}) {
-                                    HStack {
-                                        Text("No Brains Available")
-                                            .font(.system(size: 14, weight: .medium))
-                                        Spacer()
-                                    }
-                                }
-                                .buttonStyle(.plain)
-                                .padding(4)
-                            }
-                            .padding(4)
-                            .opacity(0.5)
-                        }
-                    }
-                    .padding(4)
                 }
             }
         }
@@ -722,6 +692,245 @@ struct SettingsView: View {
         .frame(maxWidth: .infinity, alignment: .leading)
     }
 
+    func Sidebar() -> some View {
+        VStack(alignment: .leading, spacing: 0) {
+            Color.clear.frame(height: 64)
+
+            Button(action: { selectedTab = .account }) {
+                Text("Account")
+                    .font(.system(size: 14, weight: .medium))
+                    .frame(maxWidth: .infinity, alignment: .leading)
+                    .padding(.vertical, 8)
+                    .padding(.horizontal, 16)
+                    .background(
+                        .account == selectedTab ? Color.black.opacity(0.5) : Color.clear
+                    )
+                    .clipShape(RoundedRectangle(cornerRadius: 8))
+                    .padding(.horizontal, 8)
+            }
+            .buttonStyle(.plain)
+
+            Button(action: { selectedTab = .models }) {
+                Text("Models")
+                    .font(.system(size: 14, weight: .medium))
+                    .frame(maxWidth: .infinity, alignment: .leading)
+                    .padding(.vertical, 8)
+                    .padding(.horizontal, 16)
+                    .background(
+                        .models == selectedTab ? Color.black.opacity(0.5) : Color.clear
+                    )
+                    .clipShape(RoundedRectangle(cornerRadius: 8))
+                    .padding(.horizontal, 8)
+            }
+            .buttonStyle(.plain)
+
+            Button(action: { selectedTab = .agents }) {
+                Text("Agents")
+                    .font(.system(size: 14, weight: .medium))
+                    .frame(maxWidth: .infinity, alignment: .leading)
+                    .padding(.vertical, 8)
+                    .padding(.horizontal, 16)
+                    .background(
+                        .agents == selectedTab ? Color.black.opacity(0.5) : Color.clear
+                    )
+                    .clipShape(RoundedRectangle(cornerRadius: 8))
+                    .padding(.horizontal, 8)
+            }
+            .buttonStyle(.plain)
+
+            Button(action: { selectedTab = .preferences }) {
+                Text("Preferences")
+                    .font(.system(size: 14, weight: .medium))
+                    .frame(maxWidth: .infinity, alignment: .leading)
+                    .padding(.vertical, 8)
+                    .padding(.horizontal, 16)
+                    .background(
+                        .preferences == selectedTab ? Color.black.opacity(0.5) : Color.clear
+                    )
+                    .clipShape(RoundedRectangle(cornerRadius: 8))
+                    .padding(.horizontal, 8)
+            }
+            .buttonStyle(.plain)
+
+            Spacer()
+            Button(action: {
+                AppDelegate.allowQuit = true
+                NSApplication.shared.terminate(nil)
+            }) {
+                Text("Quit")
+                    .font(.system(size: 14, weight: .medium))
+                    .frame(maxWidth: .infinity, alignment: .leading)
+                    .padding(.vertical, 8)
+                    .padding(.horizontal, 16)
+                    .background(Color.black.opacity(0.1))
+                    .clipShape(RoundedRectangle(cornerRadius: 8))
+                    .padding(.horizontal, 8)
+            }
+            .buttonStyle(.plain)
+
+            Text("Version 1.4\nExpires: 2025-08-25")
+                .font(.system(size: 10, weight: .medium))
+                .padding(.top, 8)
+                .padding(.horizontal, 16)
+
+            Link(
+                "Report Bug",
+                destination: URL(
+                    string:
+                        "mailto:help@aithing.dev?subject=Bug Report \(Date())&body=Description:\nPlease describe the issue.\n\nScreenshot:\n(Optional) Attach a screenshot. Make sure 'Show in Screenshot' is enabled in Settings."
+                )!
+            )
+            .font(.system(size: 10, weight: .medium))
+            .padding(.vertical, 8)
+            .padding(.horizontal, 16)
+
+            Color.clear.frame(height: 32)
+        }
+        .frame(width: 150)
+        .background(Color.gray.opacity(0.1))
+    }
+
+    func AccountTab() -> some View {
+
+        VStack(alignment: .leading, spacing: 16) {
+            GroupBox(
+                label: Text("Login")
+                    .font(.system(size: 10, weight: .medium))
+                    .padding(.vertical, 4)
+            ) {
+                VStack(alignment: .leading) {
+                    Button(action: {
+                        Task {
+                            await signIn()
+                        }
+                    }) {
+                        HStack {
+                            Image("google")
+                                .resizable()
+                                .frame(width: 16, height: 16)
+
+                            switch loginManager.authState {
+                            case .signedIn(let user):
+                                Text(user.displayName ?? user.displayName ?? "Logged In")
+                                    .font(.system(size: 14, weight: .medium))
+                                Spacer()
+                                Button(action: {
+                                    Task {
+                                        await signOut()
+                                    }
+
+                                }) {
+                                    Text("Log Out")
+                                        .font(.system(size: 10, weight: .medium))
+                                }
+                                .buttonStyle(.plain)
+                            default:
+                                Text("Google")
+                                    .font(.system(size: 14, weight: .medium))
+                                Spacer()
+                                Image(systemName: "chevron.right")
+                                    .frame(width: 10, height: 10)
+                            }
+
+                        }
+                    }
+                    .buttonStyle(.plain)
+                    .padding(4)
+
+                    Divider()
+
+                    Button(action: {}) {
+                        HStack {
+                            Image("apple")
+                                .resizable()
+                                .frame(width: 16, height: 16)
+                            Text("Apple")
+                                .font(.system(size: 14, weight: .medium))
+                            Spacer()
+                            Text("Coming Soon")
+                                .font(.system(size: 10, weight: .medium))
+                        }
+                    }
+                    .buttonStyle(.plain)
+                    .padding(4)
+                    .opacity(0.5)
+
+                    Divider()
+
+                    Button(action: {}) {
+                        HStack {
+                            Image(systemName: "key.fill")
+                                .resizable()
+                                .aspectRatio(contentMode: .fit)
+                                .frame(width: 16, height: 16)
+                            Text("Custom SSO")
+                                .font(.system(size: 14, weight: .medium))
+                            Spacer()
+                            Text("Enterprise Plan Required")
+                                .font(.system(size: 10, weight: .medium))
+                        }
+                    }
+                    .buttonStyle(.plain)
+                    .padding(4)
+                    .opacity(0.5)
+                }
+                .padding(4)
+            }
+
+            GroupBox(
+                label: Text("Usage")
+                    .font(.system(size: 10, weight: .medium))
+                    .padding(.vertical, 4)
+            ) {
+                VStack(alignment: .leading) {
+                    HStack {
+                        Text("Credits")
+                            .font(.system(size: 14, weight: .medium))
+                        Text("(used/total)")
+                            .font(.system(size: 10, weight: .medium))
+                            .opacity(0.5)
+                            .frame(maxHeight: .infinity, alignment: .bottom)
+                        Spacer()
+                        Text("(\(creditsUsed)/\(creditsTotal))")
+                            .font(.system(size: 10, weight: .medium))
+                    }
+                    .padding(4)
+
+                    Button(action: {
+                        // todo: get metric and open aithing.dev
+                        // get how much can they pay for the credit
+                    }) {
+                        Text("Get More Credits")
+                            .font(.system(size: 12, weight: .medium))
+                            .padding(.vertical, 4)
+                            .padding(.horizontal, 8)
+                            .background(Color.black.opacity(0.2))
+                            .clipShape(RoundedRectangle(cornerRadius: 4))
+                    }
+                    .buttonStyle(.plain)
+                }
+                .padding(4)
+            }
+
+            GroupBox(
+                label: Text("Tokens")
+                    .font(.system(size: 10, weight: .medium))
+                    .padding(.vertical, 4)
+            ) {
+                VStack(alignment: .leading) {
+                    HStack {
+                        Text("Coming Soon")
+                            .font(.system(size: 14, weight: .medium))
+                        Spacer()
+                    }
+                    .padding(4)
+                }
+                .padding(4)
+                .opacity(0.5)
+            }
+        }.frame(maxWidth: .infinity, alignment: .leading)
+    }
+
     func PreferencesTab() -> some View {
         VStack(alignment: .leading, spacing: 16) {
             GroupBox(
@@ -812,105 +1021,18 @@ struct SettingsView: View {
         .frame(maxWidth: .infinity, alignment: .leading)
     }
 
-    func Sidebar() -> some View {
-        VStack(alignment: .leading, spacing: 0) {
-            Color.clear.frame(height: 64)
-
-            Button(action: { selectedTab = .account }) {
-                Text("Account")
-                    .font(.system(size: 14, weight: .medium))
-                    .frame(maxWidth: .infinity, alignment: .leading)
-                    .padding(.vertical, 8)
-                    .padding(.horizontal, 16)
-                    .background(
-                        .account == selectedTab ? Color.black.opacity(0.5) : Color.clear
-                    )
-                    .clipShape(RoundedRectangle(cornerRadius: 8))
-                    .padding(.horizontal, 8)
-            }
-            .buttonStyle(.plain)
-
-            Button(action: { selectedTab = .brains }) {
-                Text("Brains")
-                    .font(.system(size: 14, weight: .medium))
-                    .frame(maxWidth: .infinity, alignment: .leading)
-                    .padding(.vertical, 8)
-                    .padding(.horizontal, 16)
-                    .background(
-                        .brains == selectedTab ? Color.black.opacity(0.5) : Color.clear
-                    )
-                    .clipShape(RoundedRectangle(cornerRadius: 8))
-                    .padding(.horizontal, 8)
-            }
-            .buttonStyle(.plain)
-
-            Button(action: { selectedTab = .capabilities }) {
-                Text("Capabilities")
-                    .font(.system(size: 14, weight: .medium))
-                    .frame(maxWidth: .infinity, alignment: .leading)
-                    .padding(.vertical, 8)
-                    .padding(.horizontal, 16)
-                    .background(
-                        .capabilities == selectedTab ? Color.black.opacity(0.5) : Color.clear
-                    )
-                    .clipShape(RoundedRectangle(cornerRadius: 8))
-                    .padding(.horizontal, 8)
-            }
-            .buttonStyle(.plain)
-
-            Button(action: { selectedTab = .preferences }) {
-                Text("Preferences")
-                    .font(.system(size: 14, weight: .medium))
-                    .frame(maxWidth: .infinity, alignment: .leading)
-                    .padding(.vertical, 8)
-                    .padding(.horizontal, 16)
-                    .background(
-                        .preferences == selectedTab ? Color.black.opacity(0.5) : Color.clear
-                    )
-                    .clipShape(RoundedRectangle(cornerRadius: 8))
-                    .padding(.horizontal, 8)
-            }
-            .buttonStyle(.plain)
-
-            Spacer()
-            Button(action: {
-                AppDelegate.allowQuit = true
-                NSApplication.shared.terminate(nil)
-            }) {
-                Text("Quit")
-                    .font(.system(size: 14, weight: .medium))
-                    .frame(maxWidth: .infinity, alignment: .leading)
-                    .padding(.vertical, 8)
-                    .padding(.horizontal, 16)
-                    .background(Color.black.opacity(0.1))
-                    .clipShape(RoundedRectangle(cornerRadius: 8))
-                    .padding(.horizontal, 8)
-            }
-            .buttonStyle(.plain)
-
-            Text("Version 1.4\nExpires: 2025-08-25")
-                .font(.system(size: 10, weight: .medium))
-                .padding(.top, 8)
-                .padding(.horizontal, 16)
-
-            Link(
-                "Report Bug",
-                destination: URL(
-                    string:
-                        "mailto:help@aithing.dev?subject=Bug Report \(Date())&body=Description:\nPlease describe the issue.\n\nScreenshot:\n(Optional) Attach a screenshot. Make sure 'Show in Screenshot' is enabled in Settings."
-                )!
-            )
-            .font(.system(size: 10, weight: .medium))
-            .padding(.vertical, 8)
-            .padding(.horizontal, 16)
-
-            Color.clear.frame(height: 32)
-        }
-        .frame(width: 150)
-        .background(Color.gray.opacity(0.1))
-    }
-
     // MARK: - Agents Handling
+
+    func bindingForModel(_ binding: Binding<ModelName>, equals target: ModelName) -> Binding<Bool> {
+        Binding<Bool>(
+            get: { binding.wrappedValue == target },
+            set: { newValue in
+                if newValue {
+                    binding.wrappedValue = target
+                }
+            }
+        )
+    }
 
     func signIn() async {
         await loginManager.signInWithGoogle()
@@ -934,7 +1056,7 @@ struct SettingsView: View {
         }
     }
 
-    func saveAPIKey() {
+    func saveModels() {
         setAnthropicAPIKey(value: apiKey)
     }
 
