@@ -47,9 +47,9 @@ struct ContentView: View {
 
             | Command | Description |   | Command | Description | 
             | ------- | ----------- | - | ------- | ----------- | 
-            | ` Control (⌃) + Space ` | Show/Hide AI Thing | | | | 
-            | ` Control (⌃) + N `     | New Tab            | | ` Control (⌃) + W ` | Close Tab |
-            | ` Control (⌃) + S `     | Show/Hide Settings | | ` Control (⌃) + H ` | Show/Hide Help |
+            | ` Control (⌃) + Space ` | Show/Hide AI Thing | | ` Control (⌃) + ? ` | Show/Hide Help    | 
+            | ` Control (⌃) + N `     | New Tab            | | ` Control (⌃) + W ` | Close Tab         |
+            | ` Control (⌃) + S `     | Show/Hide Settings | | ` Control (⌃) + H ` | Show/Hide History |
             | ` Control (⌃) + > `     | Move to Right Tab  | | ` Control (⌃) + < ` | Move to Left Tab  |
 
             Still Stuck? Check http://aithing.dev 
@@ -257,10 +257,12 @@ struct ContentView: View {
 
     private func onSetting() {
         showSettings.toggle()
+        showHelp = false
     }
 
     private func onHelp() {
         showHelp.toggle()
+        showSettings = false
     }
 
     private func addTab() {

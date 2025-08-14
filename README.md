@@ -6,7 +6,6 @@ Missing Features
 - No Ability to Choose Tools 
 - Understand you and suggest things based on time and this
 - No RAG
-- No Get API from Firebase
 - No Elicitation 
 - No Type into Applications
 - No One Click Integrations 
@@ -24,27 +23,25 @@ Missing Features
 - Video 3 - Privacy 
 
 15 Friday
-- Store History Locally (Modify The Location)
+- Store history locally 
+- Ability to load history -> show a window like settings and click on the row to expand the history 
 - Analytics for usage 
 
 16 Satursday
-- Fetch expiry from firebase 
+- QA 
 
 17 Sunday
-- a
+- Release
 
 18 Monday
-- a
+- 
 
 19 Tuesday
-- a
+- 
 
 20 Wednesday
-- a
+- 
 
-
-
-Monday
 
 
 ------------------------
