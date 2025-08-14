@@ -15,7 +15,8 @@ struct ContentView: View {
     @EnvironmentObject var mcp: MCPManager
     @StateObject private var loginManager = LoginManager()
     @EnvironmentObject var screenshotManager: ScreenshotManager
-
+    @StateObject private var firestoreManager = FirestoreManager()
+    
     var onClose: () -> Void
     var updatePanelSizeFromDefault: (CGFloat) -> Void
     var updatePanelSizeFromCurrent: (CGFloat) -> Void
@@ -216,6 +217,7 @@ struct ContentView: View {
         .padding(.trailing, CGFloat(80 + (tabs.count - 1 - focusedIndex) * 72))
         .padding(.top, 96)
         .environmentObject(loginManager)
+        .environmentObject(firestoreManager)
     }
 
     private func Help() -> some View {

@@ -10,10 +10,11 @@ import FirebaseFirestore
 import Foundation
 
 struct Profile: Codable {
+    var id: String
     var name: String?
     var email: String
-    var credits_total: Int
-    var credits_remaining: Int
+    var creditsTotal: Int
+    var creditsUsed: Int
     var blocked: Bool?
 }
 
@@ -22,50 +23,65 @@ class FirestoreManager: ObservableObject {
 
     func getBreakglass() async -> Bool {
         do {
-            let snapshot = try await db.collection("System").document("Breakglass").getDocument()
-            return snapshot.exists
+            let snapshot = try await db.collection("System").document("Configs").getDocument()
+            guard let data = snapshot.data() else { return false }
+            guard let breakglass = data["Breakglass"] as? Bool else { return false }
+            return breakglass
         } catch {
             print(
-                "[FirestoreManager] Error fetching Breakglass document: \(error.localizedDescription)"
+                "[FirestoreManager] Error fetching Breakglass: \(error.localizedDescription)"
             )
             return false
         }
     }
 
-    func getProfile(profileId: String) async -> Profile? {
+    func getExpiry() async -> Bool {
         do {
-            let snapshot = try await db.collection("Profiles").document(profileId).getDocument()
+            let snapshot = try await db.collection("System").document("Configs").getDocument()
+            guard let data = snapshot.data() else { return false }
+            guard let expiry = data["Expiry"] as? Bool else { return false }
+            return expiry
+        } catch {
+            print(
+                "[FirestoreManager] Error fetching Expiry: \(error.localizedDescription)"
+            )
+            return false
+        }
+    }
+
+    private func _getProfile(user: AppUser) async -> Profile? {
+        let id = user.uid
+
+        do {
+            let snapshot = try await db.collection("Profiles").document(id).getDocument()
             if let profile = try? snapshot.data(as: Profile.self) {
                 print("Profile loaded: \(profile)")
                 return profile
             }
 
-            print("[FirestoreManager] Failed to decode profile for ID \(profileId)")
+            print("[FirestoreManager] Failed to decode profile for ID \(id)")
             return nil
         } catch {
             print(
-                "[FirestoreManager] Error fetching profile for ID \(profileId): \(error.localizedDescription)"
+                "[FirestoreManager] Error fetching profile for ID \(id): \(error.localizedDescription)"
             )
             return nil
         }
     }
 
-    func createProfile(user: User) async -> Profile? {
+    func getProfile(user: AppUser) async -> Profile? {
         let id = user.uid
 
-        if let profile = await getProfile(profileId: id) {
+        if let profile = await _getProfile(user: user) {
             return profile
         }
 
-        let name = user.displayName
-        let email = user.email
-        let credit = 100
-
         let profile = Profile(
+            id: id,
             name: user.displayName,
             email: user.email ?? "",  // todo: handle properly
-            credits_total: 100,
-            credits_remaining: 100,
+            creditsTotal: 100,
+            creditsUsed: 0,
             blocked: false
         )
 
@@ -80,14 +96,16 @@ class FirestoreManager: ObservableObject {
         }
     }
 
-    func decrementCredits(profileId: String, by amount: Int) async {
+    func incrementCredits(user: AppUser, by amount: Int) async {
+        let id = user.uid
+
         do {
-            try await db.collection("Profiles").document(profileId).updateData([
-                "credits": FieldValue.increment(Int64(-amount))
+            try await db.collection("Profiles").document(id).updateData([
+                "credits": FieldValue.increment(Int64(amount))
             ])
         } catch {
             print(
-                "[FirestoreManager] Error decrementing credits by \(amount) for ID \(profileId): \(error.localizedDescription)"
+                "[FirestoreManager] Error incrementing credits by \(amount) for ID \(id): \(error.localizedDescription)"
             )
         }
     }

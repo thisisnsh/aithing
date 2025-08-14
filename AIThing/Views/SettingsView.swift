@@ -8,7 +8,7 @@
 import SwiftUI
 
 enum SettingsTab {
-    case account, agents, preferences
+    case account, brains, capabilities, preferences
 }
 
 struct AgentEntry: Codable, Identifiable, Equatable {
@@ -19,6 +19,7 @@ struct AgentEntry: Codable, Identifiable, Equatable {
 
 struct SettingsView: View {
     @EnvironmentObject var loginManager: LoginManager
+    @EnvironmentObject var firestoreManager: FirestoreManager
 
     @Binding var isPresented: Bool
     var setPanelVisibility: () -> Void
@@ -49,6 +50,9 @@ struct SettingsView: View {
     @State private var preferencesShowInScreenshot = getPreferencesShowInScreenshot()
     @State private var preferencesCaptureFullScreen = getPreferencesCaptureFullScreen()
 
+    @State private var creditsTotal = 0
+    @State private var creditsUsed = 0
+
     var body: some View {
         HStack(spacing: 0) {
             Sidebar()
@@ -58,8 +62,10 @@ struct SettingsView: View {
                     switch selectedTab {
                     case .account:
                         AccountTab()
-                    case .agents:
-                        AgentTab()
+                    case .brains:
+                        BrainsTab()
+                    case .capabilities:
+                        BrainsTab()  // CapabilityTab()
                     case .preferences:
                         PreferencesTab()
                     }
@@ -68,8 +74,8 @@ struct SettingsView: View {
             }
         }
         .onDisappear {
-            saveAPIKey()
-            saveAgents()
+            // saveBrain()
+            // saveCapability()
         }
         .overlay(alignment: .topLeading) {
             Button(action: {
@@ -84,95 +90,152 @@ struct SettingsView: View {
         .onHover { inside in
             updatePassthrough(inside: inside)
         }
+        .task {
+            await getCredits()
+        }
     }
 
     // MARK: - Subviews
 
-    func Sidebar() -> some View {
-        VStack(alignment: .leading, spacing: 0) {
-            Color.clear.frame(height: 64)
+    func AccountTab() -> some View {
+        ZStack(alignment: .top) {
+            Color.clear
+                .contentShape(Rectangle())
+                .onTapGesture {
+                    apiKeyFieldFocused = false
+                }
 
-            Button(action: { selectedTab = .account }) {
-                Text("Account")
-                    .font(.system(size: 14, weight: .medium))
-                    .frame(maxWidth: .infinity, alignment: .leading)
-                    .padding(.vertical, 8)
-                    .padding(.horizontal, 16)
-                    .background(
-                        .account == selectedTab ? Color.black.opacity(0.5) : Color.clear
-                    )
-                    .clipShape(RoundedRectangle(cornerRadius: 8))
-                    .padding(.horizontal, 8)
+            VStack(alignment: .leading, spacing: 16) {
+                GroupBox(
+                    label: Text("Login")
+                        .font(.system(size: 10, weight: .medium))
+                        .padding(.vertical, 4)
+                ) {
+                    VStack(alignment: .leading) {
+                        Button(action: {
+                            Task {
+                                await signIn()
+                            }
+                        }) {
+                            HStack {
+                                Image("google")
+                                    .resizable()
+                                    .frame(width: 16, height: 16)
+
+                                switch loginManager.authState {
+                                case .signedIn(let user):
+                                    Text(user.displayName ?? user.displayName ?? "Logged In")
+                                        .font(.system(size: 14, weight: .medium))
+                                    Spacer()
+                                    Button(action: {
+                                        Task {
+                                            await signOut()
+                                        }
+
+                                    }) {
+                                        Text("Log Out")
+                                            .font(.system(size: 10, weight: .medium))
+                                    }
+                                    .buttonStyle(.plain)
+                                default:
+                                    Text("Google")
+                                        .font(.system(size: 14, weight: .medium))
+                                    Spacer()
+                                    Image(systemName: "chevron.right")
+                                        .frame(width: 10, height: 10)
+                                }
+
+                            }
+                        }
+                        .buttonStyle(.plain)
+                        .padding(4)
+
+                        Divider()
+
+                        Button(action: {}) {
+                            HStack {
+                                Image("apple")
+                                    .resizable()
+                                    .frame(width: 16, height: 16)
+                                Text("Apple")
+                                    .font(.system(size: 14, weight: .medium))
+                                Spacer()
+                                Text("Coming Soon")
+                                    .font(.system(size: 10, weight: .medium))
+                            }
+                        }
+                        .buttonStyle(.plain)
+                        .padding(4)
+                        .opacity(0.5)
+
+                        Divider()
+
+                        Button(action: {}) {
+                            HStack {
+                                Image(systemName: "key.fill")
+                                    .resizable()
+                                    .aspectRatio(contentMode: .fit)
+                                    .frame(width: 16, height: 16)
+                                Text("Custom SSO")
+                                    .font(.system(size: 14, weight: .medium))
+                                Spacer()
+                                Text("Enterprise Plan Required")
+                                    .font(.system(size: 10, weight: .medium))
+                            }
+                        }
+                        .buttonStyle(.plain)
+                        .padding(4)
+                        .opacity(0.5)
+                    }
+                    .padding(4)
+                }
+
+                GroupBox(
+                    label: Text("Usage")
+                        .font(.system(size: 10, weight: .medium))
+                        .padding(.vertical, 4)
+                ) {
+                    VStack(alignment: .leading) {
+                        HStack {
+                            Text("Credits")
+                                .font(.system(size: 14, weight: .medium))
+                            Text("(used/total)")
+                                .font(.system(size: 10, weight: .medium))
+                                .opacity(0.5)
+                                .frame(maxHeight: .infinity, alignment: .bottom)
+                            Spacer()
+                            Text("(\(creditsUsed)/\(creditsTotal))")
+                                .font(.system(size: 10, weight: .medium))
+                        }
+                        .padding(4)
+
+                        // button: buy more
+                    }
+                    .padding(4)
+                }
+
+                GroupBox(
+                    label: Text("Tokens")
+                        .font(.system(size: 10, weight: .medium))
+                        .padding(.vertical, 4)
+                ) {
+                    VStack(alignment: .leading) {
+                        HStack {
+                            Text("Coming Soon")
+                                .font(.system(size: 14, weight: .medium))
+                            Spacer()
+                        }
+                        .padding(4)
+                    }
+                    .padding(4)
+                    .opacity(0.5)
+                }
             }
-            .buttonStyle(.plain)
-
-            Button(action: { selectedTab = .agents }) {
-                Text("Agents")
-                    .font(.system(size: 14, weight: .medium))
-                    .frame(maxWidth: .infinity, alignment: .leading)
-                    .padding(.vertical, 8)
-                    .padding(.horizontal, 16)
-                    .background(
-                        .agents == selectedTab ? Color.black.opacity(0.5) : Color.clear
-                    )
-                    .clipShape(RoundedRectangle(cornerRadius: 8))
-                    .padding(.horizontal, 8)
-            }
-            .buttonStyle(.plain)
-
-            Button(action: { selectedTab = .preferences }) {
-                Text("Preferences")
-                    .font(.system(size: 14, weight: .medium))
-                    .frame(maxWidth: .infinity, alignment: .leading)
-                    .padding(.vertical, 8)
-                    .padding(.horizontal, 16)
-                    .background(
-                        .preferences == selectedTab ? Color.black.opacity(0.5) : Color.clear
-                    )
-                    .clipShape(RoundedRectangle(cornerRadius: 8))
-                    .padding(.horizontal, 8)
-            }
-            .buttonStyle(.plain)
-
-            Spacer()
-            Button(action: {
-                AppDelegate.allowQuit = true
-                NSApplication.shared.terminate(nil)
-            }) {
-                Text("Quit")
-                    .font(.system(size: 14, weight: .medium))
-                    .frame(maxWidth: .infinity, alignment: .leading)
-                    .padding(.vertical, 8)
-                    .padding(.horizontal, 16)
-                    .background(Color.black.opacity(0.1))
-                    .clipShape(RoundedRectangle(cornerRadius: 8))
-                    .padding(.horizontal, 8)
-            }
-            .buttonStyle(.plain)
-
-            Text("Version 1.4\nExpires: 2025-08-25")
-                .font(.system(size: 10, weight: .medium))
-                .padding(.top, 8)
-                .padding(.horizontal, 16)
-
-            Link(
-                "Report Bug",
-                destination: URL(
-                    string:
-                        "mailto:help@aithing.dev?subject=Bug Report \(Date())&body=Description:\nPlease describe the issue.\n\nScreenshot:\n(Optional) Attach a screenshot. Make sure 'Show in Screenshot' is enabled in Settings."
-                )!
-            )
-            .font(.system(size: 10, weight: .medium))
-            .padding(.vertical, 8)
-            .padding(.horizontal, 16)
-
-            Color.clear.frame(height: 32)
         }
-        .frame(width: 150)
-        .background(Color.gray.opacity(0.1))
+        .frame(maxWidth: .infinity, alignment: .leading)
     }
 
-    func AccountTab() -> some View {
+    func BrainsTab() -> some View {
         ZStack(alignment: .top) {
             Color.clear
                 .contentShape(Rectangle())
@@ -749,7 +812,127 @@ struct SettingsView: View {
         .frame(maxWidth: .infinity, alignment: .leading)
     }
 
+    func Sidebar() -> some View {
+        VStack(alignment: .leading, spacing: 0) {
+            Color.clear.frame(height: 64)
+
+            Button(action: { selectedTab = .account }) {
+                Text("Account")
+                    .font(.system(size: 14, weight: .medium))
+                    .frame(maxWidth: .infinity, alignment: .leading)
+                    .padding(.vertical, 8)
+                    .padding(.horizontal, 16)
+                    .background(
+                        .account == selectedTab ? Color.black.opacity(0.5) : Color.clear
+                    )
+                    .clipShape(RoundedRectangle(cornerRadius: 8))
+                    .padding(.horizontal, 8)
+            }
+            .buttonStyle(.plain)
+
+            Button(action: { selectedTab = .brains }) {
+                Text("Brains")
+                    .font(.system(size: 14, weight: .medium))
+                    .frame(maxWidth: .infinity, alignment: .leading)
+                    .padding(.vertical, 8)
+                    .padding(.horizontal, 16)
+                    .background(
+                        .brains == selectedTab ? Color.black.opacity(0.5) : Color.clear
+                    )
+                    .clipShape(RoundedRectangle(cornerRadius: 8))
+                    .padding(.horizontal, 8)
+            }
+            .buttonStyle(.plain)
+
+            Button(action: { selectedTab = .capabilities }) {
+                Text("Capabilities")
+                    .font(.system(size: 14, weight: .medium))
+                    .frame(maxWidth: .infinity, alignment: .leading)
+                    .padding(.vertical, 8)
+                    .padding(.horizontal, 16)
+                    .background(
+                        .capabilities == selectedTab ? Color.black.opacity(0.5) : Color.clear
+                    )
+                    .clipShape(RoundedRectangle(cornerRadius: 8))
+                    .padding(.horizontal, 8)
+            }
+            .buttonStyle(.plain)
+
+            Button(action: { selectedTab = .preferences }) {
+                Text("Preferences")
+                    .font(.system(size: 14, weight: .medium))
+                    .frame(maxWidth: .infinity, alignment: .leading)
+                    .padding(.vertical, 8)
+                    .padding(.horizontal, 16)
+                    .background(
+                        .preferences == selectedTab ? Color.black.opacity(0.5) : Color.clear
+                    )
+                    .clipShape(RoundedRectangle(cornerRadius: 8))
+                    .padding(.horizontal, 8)
+            }
+            .buttonStyle(.plain)
+
+            Spacer()
+            Button(action: {
+                AppDelegate.allowQuit = true
+                NSApplication.shared.terminate(nil)
+            }) {
+                Text("Quit")
+                    .font(.system(size: 14, weight: .medium))
+                    .frame(maxWidth: .infinity, alignment: .leading)
+                    .padding(.vertical, 8)
+                    .padding(.horizontal, 16)
+                    .background(Color.black.opacity(0.1))
+                    .clipShape(RoundedRectangle(cornerRadius: 8))
+                    .padding(.horizontal, 8)
+            }
+            .buttonStyle(.plain)
+
+            Text("Version 1.4\nExpires: 2025-08-25")
+                .font(.system(size: 10, weight: .medium))
+                .padding(.top, 8)
+                .padding(.horizontal, 16)
+
+            Link(
+                "Report Bug",
+                destination: URL(
+                    string:
+                        "mailto:help@aithing.dev?subject=Bug Report \(Date())&body=Description:\nPlease describe the issue.\n\nScreenshot:\n(Optional) Attach a screenshot. Make sure 'Show in Screenshot' is enabled in Settings."
+                )!
+            )
+            .font(.system(size: 10, weight: .medium))
+            .padding(.vertical, 8)
+            .padding(.horizontal, 16)
+
+            Color.clear.frame(height: 32)
+        }
+        .frame(width: 150)
+        .background(Color.gray.opacity(0.1))
+    }
+
     // MARK: - Agents Handling
+
+    func signIn() async {
+        await loginManager.signInWithGoogle()
+        await getCredits()
+    }
+
+    func signOut() async {
+        loginManager.signOut()
+        await getCredits()
+    }
+
+    func getCredits() async {
+        switch loginManager.authState {
+        case .signedIn(let user):
+            guard let profile = await firestoreManager.getProfile(user: user) else { return }
+            creditsTotal = profile.creditsTotal
+            creditsUsed = profile.creditsUsed
+        default:
+            creditsTotal = 0
+            creditsUsed = 0
+        }
+    }
 
     func saveAPIKey() {
         setAnthropicAPIKey(value: apiKey)

@@ -32,6 +32,8 @@ Missing Features
 
 - Analytics for usage 
 
+- Show "settings" when settings is open 
+
 14 Thursday
 - Video 1 - Introducing 
 - Video 2 - Selective Context 
