@@ -18,12 +18,10 @@ Missing Features
 ------------------------ 
 
 13 Wednesday
-- Free Version 100 Credits - Claude Haiku 3.5 (1) & Claude Sonnet 4 (2) & Claude Opus 4.1 (10) 
-- Free Version BYOK - Claude Opus 4.1, Claude Sonnet 4, Claude Haiku 3.5
-
 - Analytics for usage 
-
 - Show "settings" when settings is open 
+- expiry from firebase
+- breakglass from firebase 
 
 14 Thursday
 - Video 1 - Introducing 

@@ -345,6 +345,7 @@ struct ContentView: View {
         .environmentObject(mcp)
         .environmentObject(loginManager)
         .environmentObject(screenshotManager)
+        .environmentObject(firestoreManager)
     }
 
 }

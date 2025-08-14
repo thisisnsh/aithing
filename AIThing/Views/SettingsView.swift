@@ -115,12 +115,12 @@ struct SettingsView: View {
     var setPanelVisibility: () -> Void
     let setPanelPassthrough: (_ enabled: Bool) -> Void
 
-    @State private var selectedTab: SettingsTab = getSelectedTab() ?? .account
+    @State private var selectedTab: SettingsTab = getSelectedTab()
 
     // Models
     @State private var apiKey: String = getAnthropicAPIKey() ?? ""
     @FocusState private var apiKeyFieldFocused: Bool
-    @State private var modelSelected: ModelName = getModel() ?? .managed_claude_sonnet_4
+    @State private var modelSelected: ModelName = getModel()
 
     // Agents
     @State private var agents: [AgentEntry] = getAgentEntries()

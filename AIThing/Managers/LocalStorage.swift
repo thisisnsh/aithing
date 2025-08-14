@@ -28,18 +28,18 @@ func getPreferencesCaptureFullScreen() -> Bool {
     UserDefaults.standard.bool(forKey: "PreferencesCaptureFullScreen")
 }
 
-func getModel() -> ModelName? {
+func getModel() -> ModelName {
     if let name = UserDefaults.standard.string(forKey: "ModelName") {
-        return ModelName(rawValue: name)
+        return ModelName(rawValue: name) ?? .managed_claude_sonnet_4
     }
-    return nil
+    return .managed_claude_sonnet_4
 }
 
-func getSelectedTab() -> SettingsTab? {
+func getSelectedTab() -> SettingsTab {
     if let name = UserDefaults.standard.string(forKey: "SelectedTab") {
-        return SettingsTab(rawValue: name)
+        return SettingsTab(rawValue: name) ?? .account
     }
-    return nil
+    return .account
 }
 
 func setSelectedTab(value: SettingsTab) {

@@ -14,6 +14,7 @@ struct TabView: View {
     @EnvironmentObject var mcp: MCPManager
     @EnvironmentObject var loginManager: LoginManager
     @EnvironmentObject var screenshotManager: ScreenshotManager
+    @EnvironmentObject var firestoreManager: FirestoreManager
 
     @Binding var isFocused: Bool
     var tabId: UUID
@@ -433,7 +434,7 @@ struct TabView: View {
                 await animateOutput(
                     content: """
                         Please download [Latest Version](https://aithing.dev/latest) of AI Thing to continue.
-                        
+
                         Why? To access new and exciting features.
                         """
                 )
@@ -441,20 +442,36 @@ struct TabView: View {
             }
         }
 
-        // Check if user is logged in
+        // Common error message for profile issues
+        let profileErrorMessage = """
+            Something went wrong. Please log out and log in again. 
+
+            [Report Bug](mailto:help@aithing.dev?subject=Bug Report \(Date())&body=Description:\nPlease describe the issue.\n\nScreenshot:\n(Optional) Attach a screenshot. Make sure 'Show in Screenshot' is enabled in Settings.)
+            """
+
+        // Common message for not logged in
+        let loginPromptMessage = """
+            Please log in to receive **100 free credits.** You can use 1 credit for 1 query. 
+
+            1. Open **Settings** by pressing `Control (^) + S`
+            2. Click **Google**
+
+            [Privacy Policy](https://aithing.dev/privacy)
+            """
+
         switch loginManager.authState {
-        case .signedIn(_):
-            ()
+        case .signedIn(let user):
+            if let profile = await firestoreManager.getProfile(user: user),
+                profile.creditsUsed < profile.creditsTotal
+            {
+                break  // User is signed in and has credits, continue
+            }
+            isThinking = false
+            await animateOutput(content: profileErrorMessage)
+            return
         default:
             isThinking = false
-            await animateOutput(
-                content: """
-                    Please log in to use AI Thing. [Privacy Policy](https://aithing.dev/privacy)
-
-                    1. Open Settings by pressing  ` ^ (Control) + S `
-                    2. Click on  ` Google `
-                    """
-            )
+            await animateOutput(content: loginPromptMessage)
             return
         }
 
@@ -477,7 +494,9 @@ struct TabView: View {
         // await callModel(query: query + "X")
         // return await fakeData(query: query)
 
-        let model = "claude-sonnet-4-20250514"
+        let model = getModel().rawValue
+            .replacingOccurrences(of: "byok-", with: "")
+            .replacingOccurrences(of: "managed-", with: "")
 
         guard let apiKey = getAnthropicAPIKey(), !apiKey.isEmpty
         else {
