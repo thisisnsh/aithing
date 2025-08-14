@@ -2,7 +2,7 @@ import SwiftUI
 
 // MARK: - Core Types shared by tabs
 
-enum SettingsTab { case account, models, agents, preferences }
+enum SettingsTab: String { case account, models, agents, preferences }
 
 struct AgentEntry: Codable, Identifiable, Equatable {
     let id: UUID
@@ -10,32 +10,28 @@ struct AgentEntry: Codable, Identifiable, Equatable {
     var isEnabled: Bool
 }
 
-enum ModelName: Hashable, Equatable {
-    case byok_claude_opus_4_1
-    case byok_claude_sonnet_4
-    case byok_claude_haiku_3_5
-    case managed_claude_opus_4_1
-    case managed_claude_sonnet_4
-    case managed_claude_haiku_3_5
-
-    var rawValue: String {
-        switch self {
-        case .byok_claude_opus_4_1, .managed_claude_opus_4_1:
-            return "claude-opus-4-1-20250805"
-        case .byok_claude_sonnet_4, .managed_claude_sonnet_4:
-            return "claude-sonnet-4-20250514"
-        case .byok_claude_haiku_3_5, .managed_claude_haiku_3_5:
-            return "claude-3-5-haiku-20241022"
-        }
-    }
+enum ModelName: String, Hashable, Equatable {
+    case byok_claude_opus_4_1 = "byok-claude-opus-4-1-20250805"
+    case byok_claude_sonnet_4 = "byok-claude-sonnet-4-20250514"
+    case byok_claude_haiku_3_5 = "byok-claude-3-5-haiku-20241022"
+    case managed_claude_opus_4_1 = "managed-claude-opus-4-1-20250805"
+    case managed_claude_sonnet_4 = "managed-claude-sonnet-4-20250514"
+    case managed_claude_haiku_3_5 = "managed-claude-3-5-haiku-20241022"
 }
 
 struct Ratings {
     let understanding: Int
     let speed: Int
     let creativity: Int
+
+    private func stars(for rating: Int) -> String {
+        let filled = String(repeating: "★", count: rating)
+        let empty = String(repeating: "", count: max(0, 5 - rating))
+        return filled + empty
+    }
+
     var shortText: String {
-        "Understanding: \(understanding)/5\nSpeed: \(speed)/5\nCreativity: \(creativity)/5"
+        "Understanding: \(understanding)/5 Speed: \(speed)/5 Creativity: \(creativity)/5"
     }
 }
 
@@ -44,7 +40,9 @@ struct ModelInfo: Identifiable {
     let provider: String
     let title: String
     let ratings: Ratings
+    let description: String
     let iconName: String?
+    let cost: Int
 }
 
 private let MANAGED_MODELS: [ModelInfo] = [
@@ -53,21 +51,27 @@ private let MANAGED_MODELS: [ModelInfo] = [
         provider: "Anthropic",
         title: "Claude Haiku 3.5",
         ratings: .init(understanding: 3, speed: 5, creativity: 3),
-        iconName: "anthropic"
+        description: "Fastest, most cost-effective model",
+        iconName: "anthropic",
+        cost: 1,
     ),
     .init(
         id: .managed_claude_sonnet_4,
         provider: "Anthropic",
         title: "Claude Sonnet 4",
         ratings: .init(understanding: 4, speed: 4, creativity: 4),
-        iconName: "anthropic"
+        description: "Optimal balance of intelligence, cost, and speed",
+        iconName: "anthropic",
+        cost: 2,
     ),
     .init(
         id: .managed_claude_opus_4_1,
         provider: "Anthropic",
         title: "Claude Opus 4.1",
         ratings: .init(understanding: 5, speed: 3, creativity: 4),
-        iconName: "anthropic"
+        description: "Most intelligent, but most expensive and slower",
+        iconName: "anthropic",
+        cost: 5,
     ),
 ]
 
@@ -77,21 +81,27 @@ private let BYOK_MODELS: [ModelInfo] = [
         provider: "Anthropic",
         title: "Claude Haiku 3.5",
         ratings: .init(understanding: 3, speed: 5, creativity: 3),
-        iconName: "anthropic"
+        description: "Fastest, most cost-effective model",
+        iconName: "anthropic",
+        cost: 0,
     ),
     .init(
         id: .byok_claude_sonnet_4,
         provider: "Anthropic",
         title: "Claude Sonnet 4",
         ratings: .init(understanding: 4, speed: 4, creativity: 4),
-        iconName: "anthropic"
+        description: "Optimal balance of intelligence, cost, and speed",
+        iconName: "anthropic",
+        cost: 0,
     ),
     .init(
         id: .byok_claude_opus_4_1,
         provider: "Anthropic",
         title: "Claude Opus 4.1",
         ratings: .init(understanding: 5, speed: 3, creativity: 4),
-        iconName: "anthropic"
+        description: "Most intelligent, but most expensive and slower",
+        iconName: "anthropic",
+        cost: 0,
     ),
 ]
 
@@ -105,12 +115,12 @@ struct SettingsView: View {
     var setPanelVisibility: () -> Void
     let setPanelPassthrough: (_ enabled: Bool) -> Void
 
-    @State private var selectedTab: SettingsTab = .account
+    @State private var selectedTab: SettingsTab = getSelectedTab() ?? .account
 
     // Models
     @State private var apiKey: String = getAnthropicAPIKey() ?? ""
     @FocusState private var apiKeyFieldFocused: Bool
-    @State private var modelSelected: ModelName = .managed_claude_sonnet_4
+    @State private var modelSelected: ModelName = getModel() ?? .managed_claude_sonnet_4
 
     // Agents
     @State private var agents: [AgentEntry] = getAgentEntries()
@@ -214,11 +224,29 @@ struct SettingsView: View {
         VStack(alignment: .leading, spacing: 0) {
             Color.clear.frame(height: 64)
 
-            sidebarButton("Account", isActive: selectedTab == .account) { selectedTab = .account }
-            sidebarButton("Models", isActive: selectedTab == .models) { selectedTab = .models }
-            sidebarButton("Agents", isActive: selectedTab == .agents) { selectedTab = .agents }
+            sidebarButton("Account", isActive: selectedTab == .account) {
+                selectedTab = .account
+                setSelectedTab(value: selectedTab)
+                saveModels()
+                saveAgents()
+            }
+            sidebarButton("Models", isActive: selectedTab == .models) {
+                selectedTab = .models
+                setSelectedTab(value: selectedTab)
+                saveModels()
+                saveAgents()
+            }
+            sidebarButton("Agents", isActive: selectedTab == .agents) {
+                selectedTab = .agents
+                setSelectedTab(value: selectedTab)
+                saveModels()
+                saveAgents()
+            }
             sidebarButton("Preferences", isActive: selectedTab == .preferences) {
                 selectedTab = .preferences
+                setSelectedTab(value: selectedTab)
+                saveModels()
+                saveAgents()
             }
 
             Spacer()
@@ -315,7 +343,10 @@ struct SettingsView: View {
 
     // MARK: - Persistence (Models/Agents)
 
-    func saveModels() { setAnthropicAPIKey(value: apiKey) }
+    func saveModels() {
+        setModel(value: modelSelected)
+        setAnthropicAPIKey(value: apiKey)
+    }
 
     func addAgentEntry() -> String {
         let entry: Entry

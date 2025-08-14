@@ -28,6 +28,28 @@ func getPreferencesCaptureFullScreen() -> Bool {
     UserDefaults.standard.bool(forKey: "PreferencesCaptureFullScreen")
 }
 
+func getModel() -> ModelName? {
+    if let name = UserDefaults.standard.string(forKey: "ModelName") {
+        return ModelName(rawValue: name)
+    }
+    return nil
+}
+
+func getSelectedTab() -> SettingsTab? {
+    if let name = UserDefaults.standard.string(forKey: "SelectedTab") {
+        return SettingsTab(rawValue: name)
+    }
+    return nil
+}
+
+func setSelectedTab(value: SettingsTab) {
+    UserDefaults.standard.set(value.rawValue, forKey: "SelectedTab")
+}
+
+func setModel(value: ModelName) {
+    UserDefaults.standard.set(value.rawValue, forKey: "ModelName")
+}
+
 func setAnthropicAPIKey(value: String) {
     UserDefaults.standard.set(value, forKey: "AnthropicAPIKey")
 }

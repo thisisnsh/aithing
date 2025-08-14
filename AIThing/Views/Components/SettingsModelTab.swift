@@ -25,7 +25,12 @@ struct SettingsModelTab: View {
                 .onTapGesture { apiKeyFieldFocused = false }
 
             VStack(alignment: .leading, spacing: 16) {
-                GroupBox(label: title("Use Managed Models")) {
+                GroupBox(
+                    label: title(
+                        "Use Managed Models",
+                        note: "Using these models will deduct credits from your AI Thing account."
+                    )
+                ) {
                     VStack(alignment: .leading) {
                         ForEach(Array(managedModels.enumerated()), id: \.offset) { idx, info in
                             modelRow(info, showDetails: modelSelected == info.id)
@@ -46,10 +51,16 @@ struct SettingsModelTab: View {
                     .padding(4)
                 }
 
-                GroupBox(label: title("Use Own API Key")) {
+                GroupBox(
+                    label: title(
+                        "Use Own API Key",
+                        note:
+                            "You will need to purchase credits at https://console.anthropic.com/settings/billing, and those credits will be used. Using these models will not deduct credits from your AI Thing account."
+                    )
+                ) {
                     VStack(alignment: .leading) {
                         ForEach(Array(byokModels.enumerated()), id: \.offset) { idx, info in
-                            VStack(alignment: .leading, spacing: 4) {
+                            VStack(alignment: .leading) {
                                 modelRow(info, showDetails: modelSelected == info.id)
                                 if modelSelected == info.id {
                                     TextField("sk-ant-...", text: $apiKey, onCommit: saveModels)
@@ -64,19 +75,35 @@ struct SettingsModelTab: View {
                                 }
                                 if idx < byokModels.count - 1 { Divider() }
                             }
-                            .padding(.vertical, 2)
                         }
                     }
                     .padding(4)
                 }
 
-                GroupBox(label: title("Custom Models")) {
+                GroupBox(
+                    label: title(
+                        "Custom Models",
+                        note:
+                            "Using these models will not deduct any credits from your AI Thing account."
+                    )
+                ) {
                     HStack {
                         Text("Enterprise Plan Required").font(.system(size: 14, weight: .medium))
+                            .opacity(0.5)
                         Spacer()
+                        Button {
+                            // todo something
+                        } label: {
+                            Text("Contact Us")
+                                .font(.system(size: 12, weight: .medium))
+                                .padding(.vertical, 4)
+                                .padding(.horizontal, 8)
+                                .background(Color.black.opacity(0.2))
+                                .clipShape(RoundedRectangle(cornerRadius: 4))
+                        }
+                        .buttonStyle(.plain)
                     }
                     .padding(4)
-                    .opacity(0.5)
                 }
             }
         }
@@ -91,15 +118,16 @@ struct SettingsModelTab: View {
                 Image(icon).resizable().frame(width: 16, height: 16)
             }
             VStack(alignment: .leading, spacing: 2) {
-                if showDetails {
-                    Text(info.provider)
-                        .font(.system(size: 10, weight: .medium))
-                        .opacity(0.5)
+                HStack {
+                    Text(info.title).font(.system(size: 14, weight: .medium))
+                    if info.cost > 0 {
+                        Text("Cost: \(info.cost) Credit\(info.cost > 1 ? "s" : "") / Query")
+                            .font(.system(size: 10, weight: .medium))
+                            .opacity(0.5)
+                    }
                 }
-                Text(info.title)
-                    .font(.system(size: 14, weight: .medium))
                 if showDetails {
-                    Text(info.ratings.shortText)
+                    Text(info.description)
                         .font(.system(size: 10, weight: .medium))
                         .opacity(0.5)
                 }
@@ -118,7 +146,12 @@ struct SettingsModelTab: View {
         .onTapGesture { modelSelected = info.id }
     }
 
-    private func title(_ text: String) -> some View {
-        Text(text).font(.system(size: 10, weight: .medium)).padding(.vertical, 4)
+    private func title(_ text: String, note: String) -> some View {
+        VStack(alignment: .leading) {
+            Text(text).font(.system(size: 10, weight: .medium)).padding(.top, 4)
+            Text(note).font(.system(size: 10, weight: .medium)).padding(.bottom, 4).opacity(0.5)
+                .textSelection(.enabled)
+        }
+        .textSelection(.enabled)
     }
 }

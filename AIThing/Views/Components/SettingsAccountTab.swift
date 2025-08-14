@@ -64,18 +64,18 @@ struct SettingsAccountTab: View {
                 VStack(alignment: .leading) {
                     HStack {
                         Text("Credits").font(.system(size: 14, weight: .medium))
-                        Text("(used/total)")
+                        Text("used / total")
                             .font(.system(size: 10, weight: .medium))
                             .opacity(0.5)
                             .frame(maxHeight: .infinity, alignment: .bottom)
                         Spacer()
-                        Text("(\(creditsUsed)/\(creditsTotal))")
+                        Text("\(creditsUsed) / \(creditsTotal)")
                             .font(.system(size: 10, weight: .medium))
                     }
                     .padding(4)
 
                     Button {
-                        // open pricing / top-up
+                        // todo open pricing / top-up
                     } label: {
                         Text("Get More Credits")
                             .font(.system(size: 12, weight: .medium))

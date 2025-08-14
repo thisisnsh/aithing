@@ -55,11 +55,11 @@ class FirestoreManager: ObservableObject {
         do {
             let snapshot = try await db.collection("Profiles").document(id).getDocument()
             if let profile = try? snapshot.data(as: Profile.self) {
-                print("Profile loaded: \(profile)")
+                // print("Profile loaded: \(profile)")
                 return profile
             }
 
-            print("[FirestoreManager] Failed to find profile for ID \(id)")
+            // print("[FirestoreManager] Failed to find profile for ID \(id)")
             return nil
         } catch {
             print(
