@@ -452,7 +452,6 @@
 				);
 				MACOSX_DEPLOYMENT_TARGET = 13.0;
 				MARKETING_VERSION = 1.4;
-				"OTHER_SWIFT_FLAGS[arch=*]" = "-Xfrontend -typecheck-timeout=60000";
 				PRODUCT_BUNDLE_IDENTIFIER = com.thisisnsh.mac.AIThing;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				PROVISIONING_PROFILE_SPECIFIER = "";
