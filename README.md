@@ -18,7 +18,6 @@ Missing Features
 ------------------------ 
 
 13 Wednesday
-- Analytics for usage 
 - Show "settings" when settings is open 
 - expiry from firebase
 - breakglass from firebase 
@@ -30,6 +29,7 @@ Missing Features
 
 15 Friday
 - Store History Locally (Modify The Location)
+- Analytics for usage 
 
 16 Satursday
 - Fetch expiry from firebase 

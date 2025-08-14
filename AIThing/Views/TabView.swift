@@ -446,17 +446,17 @@ struct TabView: View {
         let profileErrorMessage = """
             Something went wrong. Please log out and log in again. 
 
-            [Report Bug](mailto:help@aithing.dev?subject=Bug Report \(Date())&body=Description:\nPlease describe the issue.\n\nScreenshot:\n(Optional) Attach a screenshot. Make sure 'Show in Screenshot' is enabled in Settings.)
+            Report Bug at help@aithing.dev
             """
 
         // Common message for not logged in
         let loginPromptMessage = """
-            Please log in to receive **100 free credits.** You can use 1 credit for 1 query. 
+            Please log in to receive **100 free credits.** 
 
             1. Open **Settings** by pressing `Control (^) + S`
-            2. Click **Google**
+            2. Click on **Google** to log in using your Google account
 
-            [Privacy Policy](https://aithing.dev/privacy)
+            Read our [Privacy Policy](https://aithing.dev/privacy)
             """
 
         switch loginManager.authState {
@@ -468,17 +468,17 @@ struct TabView: View {
             }
             isThinking = false
             await animateOutput(content: profileErrorMessage)
-            return
+            return ()
         default:
             isThinking = false
             await animateOutput(content: loginPromptMessage)
-            return
+            return ()
         }
 
         // Check if tab is alive, else return without processing
         if !allTabs.contains(where: { $0.id == tabId }) {
             isThinking = false
-            print("Exiting callModel for \(tabId)")
+            print("Exiting callModel for \(tabId) as it was closed")
             return
         }
 
