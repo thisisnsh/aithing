@@ -30,9 +30,9 @@ func getPreferencesCaptureFullScreen() -> Bool {
 
 func getModel() -> ModelName {
     if let name = UserDefaults.standard.string(forKey: "ModelName") {
-        return ModelName(rawValue: name) ?? .managed_claude_sonnet_4
+        return ModelName(rawValue: name) ?? .claude_sonnet_4
     }
-    return .managed_claude_sonnet_4
+    return .claude_sonnet_4
 }
 
 func getSelectedTab() -> SettingsTab {
@@ -40,6 +40,17 @@ func getSelectedTab() -> SettingsTab {
         return SettingsTab(rawValue: name) ?? .account
     }
     return .account
+}
+
+func getByokSelected() -> Bool {
+    UserDefaults.standard.bool(forKey: "ByokSelected")
+}
+
+func setByokSelected(value: Bool) {
+    UserDefaults.standard.set(
+        value,
+        forKey: "ByokSelected"
+    )
 }
 
 func setSelectedTab(value: SettingsTab) {

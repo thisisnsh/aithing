@@ -11,20 +11,25 @@ struct AgentEntry: Codable, Identifiable, Equatable {
 }
 
 enum ModelName: String, Hashable, Equatable {
-    case byok_claude_opus_4_1 = "byok-claude-opus-4-1-20250805"
-    case byok_claude_sonnet_4 = "byok-claude-sonnet-4-20250514"
-    case byok_claude_haiku_3_5 = "byok-claude-3-5-haiku-20241022"
-    case managed_claude_opus_4_1 = "managed-claude-opus-4-1-20250805"
-    case managed_claude_sonnet_4 = "managed-claude-sonnet-4-20250514"
-    case managed_claude_haiku_3_5 = "managed-claude-3-5-haiku-20241022"
+    case claude_opus_4_1 = "claude-opus-4-1-20250805"
+    case claude_sonnet_4 = "claude-sonnet-4-20250514"
+    case claude_haiku_3_5 = "claude-3-5-haiku-20241022"
 }
 
 func getModelTitle(_ model: ModelName) -> String {
-    ALL_MODELS.first(where: { $0.id == model })?.title ?? model.rawValue
+    MANAGED_MODELS.first(where: { $0.id == model })?.title ?? model.rawValue
 }
 
 func getModelCost(_ model: ModelName) -> Int {
-    ALL_MODELS.first(where: { $0.id == model })?.cost ?? 1
+    MANAGED_MODELS.first(where: { $0.id == model })?.cost ?? 1
+}
+
+func getModelRating(_ model: ModelName) -> String {
+    MANAGED_MODELS.first(where: { $0.id == model })?.ratings.shortText ?? "No Ratings"
+}
+
+func getModelIcon(_ model: ModelName) -> String {
+    MANAGED_MODELS.first(where: { $0.id == model })?.iconName ?? ""
 }
 
 struct Ratings {
@@ -39,7 +44,7 @@ struct Ratings {
     }
 
     var shortText: String {
-        "Understanding: \(understanding)/5 Speed: \(speed)/5 Creativity: \(creativity)/5"
+        "Understanding: \(stars(for: understanding))\nSpeed: \(stars(for: speed))\nCreativity: \(stars(for: creativity))"
     }
 }
 
@@ -55,7 +60,7 @@ struct ModelInfo: Identifiable {
 
 private let MANAGED_MODELS: [ModelInfo] = [
     .init(
-        id: .managed_claude_haiku_3_5,
+        id: .claude_haiku_3_5,
         provider: "Anthropic",
         title: "Claude Haiku 3.5",
         ratings: .init(understanding: 3, speed: 5, creativity: 3),
@@ -64,56 +69,24 @@ private let MANAGED_MODELS: [ModelInfo] = [
         cost: 1,
     ),
     .init(
-        id: .managed_claude_sonnet_4,
+        id: .claude_sonnet_4,
         provider: "Anthropic",
         title: "Claude Sonnet 4",
         ratings: .init(understanding: 4, speed: 4, creativity: 4),
-        description: "Optimal balance of intelligence, cost, and speed",
+        description: "Optimal balance of everything",
         iconName: "anthropic",
         cost: 2,
     ),
     .init(
-        id: .managed_claude_opus_4_1,
+        id: .claude_opus_4_1,
         provider: "Anthropic",
         title: "Claude Opus 4.1",
         ratings: .init(understanding: 5, speed: 3, creativity: 4),
-        description: "Most intelligent, but most expensive and slower",
+        description: "Most intelligent, but slower",
         iconName: "anthropic",
         cost: 5,
     ),
 ]
-
-private let BYOK_MODELS: [ModelInfo] = [
-    .init(
-        id: .byok_claude_haiku_3_5,
-        provider: "Anthropic",
-        title: "Claude Haiku 3.5",
-        ratings: .init(understanding: 3, speed: 5, creativity: 3),
-        description: "Fastest, most cost-effective model",
-        iconName: "anthropic",
-        cost: 0,
-    ),
-    .init(
-        id: .byok_claude_sonnet_4,
-        provider: "Anthropic",
-        title: "Claude Sonnet 4",
-        ratings: .init(understanding: 4, speed: 4, creativity: 4),
-        description: "Optimal balance of intelligence, cost, and speed",
-        iconName: "anthropic",
-        cost: 0,
-    ),
-    .init(
-        id: .byok_claude_opus_4_1,
-        provider: "Anthropic",
-        title: "Claude Opus 4.1",
-        ratings: .init(understanding: 5, speed: 3, creativity: 4),
-        description: "Most intelligent, but most expensive and slower",
-        iconName: "anthropic",
-        cost: 0,
-    ),
-]
-
-private let ALL_MODELS = MANAGED_MODELS + BYOK_MODELS
 
 // MARK: - Main View with all state
 
@@ -131,6 +104,7 @@ struct SettingsView: View {
     @State private var apiKey: String = getAnthropicAPIKey() ?? ""
     @FocusState private var apiKeyFieldFocused: Bool
     @State private var modelSelected: ModelName = getModel()
+    @State private var byokSelected: Bool = getByokSelected()
 
     // Agents
     @State private var agents: [AgentEntry] = getAgentEntries()
@@ -173,8 +147,8 @@ struct SettingsView: View {
                     case .models:
                         SettingsModelTab(
                             managedModels: MANAGED_MODELS,
-                            byokModels: BYOK_MODELS,
                             modelSelected: $modelSelected,
+                            byokSelected: $byokSelected,
                             apiKey: $apiKey,
                             apiKeyFieldFocused: _apiKeyFieldFocused,
                             saveModels: saveModels,
@@ -355,6 +329,7 @@ struct SettingsView: View {
 
     func saveModels() {
         setModel(value: modelSelected)
+        setByokSelected(value: byokSelected)
         setAnthropicAPIKey(value: apiKey)
     }
 

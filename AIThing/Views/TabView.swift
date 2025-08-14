@@ -502,10 +502,8 @@ struct TabView: View {
         // await callModel(query: query + "X")
         // return await fakeData(query: query)
 
-        let byok: Bool = getModel().rawValue.starts(with: "byok-")
+        let byok = getByokSelected()
         let model = getModel().rawValue
-            .replacingOccurrences(of: "byok-", with: "")
-            .replacingOccurrences(of: "managed-", with: "")
 
         guard let apiKey = byok ? getAnthropicAPIKey() : apiKeyManaged, !apiKey.isEmpty
         else {

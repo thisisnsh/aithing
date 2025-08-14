@@ -9,9 +9,9 @@ import SwiftUI
 
 struct SettingsModelTab: View {
     let managedModels: [ModelInfo]
-    let byokModels: [ModelInfo]
 
     @Binding var modelSelected: ModelName
+    @Binding var byokSelected: Bool
     @Binding var apiKey: String
     @FocusState var apiKeyFieldFocused: Bool
 
@@ -26,6 +26,36 @@ struct SettingsModelTab: View {
 
             VStack(alignment: .leading, spacing: 16) {
                 GroupBox(
+                    label: title("Selected Model", note: "")
+                ) {
+                    VStack(alignment: .leading) {
+                        HStack {
+                            Image(getModelIcon(modelSelected))
+                                .resizable()
+                                .aspectRatio(contentMode: .fit)
+                                .frame(width: 16, height: 16)
+                            VStack(alignment: .leading, spacing: 2) {
+                                Text(getModelTitle(modelSelected))
+                                    .font(.system(size: 14, weight: .medium))
+                                Text(getModelRating(modelSelected))
+                                    .font(.system(size: 10, weight: .medium))
+                                    .opacity(0.5)
+                            }
+                            Spacer()
+                            if !byokSelected {
+                                Text(
+                                    "Cost:\n\(getModelCost(modelSelected)) Credit\(getModelCost(modelSelected) > 1 ? "s" : "") per Query"
+                                )
+                                .font(.system(size: 10, weight: .medium))
+                                .multilineTextAlignment(.trailing)
+                            }
+                        }
+                        .padding(4)
+                    }
+                    .padding(4)
+                }
+
+                GroupBox(
                     label: title(
                         "Use Managed Models",
                         note: "Using these models will deduct credits from your AI Thing account."
@@ -36,46 +66,48 @@ struct SettingsModelTab: View {
                             modelRow(info, showDetails: modelSelected == info.id)
                             if idx < managedModels.count - 1 { Divider() }
                         }
-
-                        Divider()
-
-                        HStack {
-                            Image("openai").resizable().frame(width: 16, height: 16)
-                            Text("OpenAI: GPT-5").font(.system(size: 14, weight: .medium))
-                            Spacer()
-                            Text("Coming Soon").font(.system(size: 10, weight: .medium))
-                        }
-                        .padding(4)
-                        .opacity(0.5)
                     }
                     .padding(4)
                 }
 
-                GroupBox(
-                    label: title(
-                        "Use Own API Key",
-                        note:
-                            "You will need to purchase credits at https://console.anthropic.com/settings/billing, and those credits will be used. Using these models will not deduct credits from your AI Thing account."
-                    )
-                ) {
+                GroupBox {
                     VStack(alignment: .leading) {
-                        ForEach(Array(byokModels.enumerated()), id: \.offset) { idx, info in
-                            VStack(alignment: .leading) {
-                                modelRow(info, showDetails: modelSelected == info.id)
-                                if modelSelected == info.id {
-                                    TextField("sk-ant-...", text: $apiKey, onCommit: saveModels)
-                                        .padding(.horizontal, 8)
-                                        .frame(height: 32)
-                                        .background(Color.black.opacity(0.2))
-                                        .clipShape(RoundedRectangle(cornerRadius: 4))
-                                        .font(.system(size: 14, weight: .medium))
-                                        .focused($apiKeyFieldFocused)
-                                        .textFieldStyle(.plain)
-                                        .padding(.bottom, 4)
-                                }
-                                if idx < byokModels.count - 1 { Divider() }
-                            }
+                        HStack {
+                            Image(systemName: "key.fill")
+                                .resizable()
+                                .aspectRatio(contentMode: .fit)
+                                .frame(width: 16, height: 16)
+                            Text("Use Your Own Key").font(.system(size: 14, weight: .medium))
+                            Spacer()
+                            Toggle("", isOn: $byokSelected)
+                                .toggleStyle(.switch)
+                                .tint(.black)
+                                .scaleEffect(0.7)
+
                         }
+                        .padding(4)
+                        .contentShape(Rectangle())
+
+                        if byokSelected {
+                            TextField("sk-ant-...", text: $apiKey, onCommit: saveModels)
+                                .padding(.horizontal, 8)
+                                .frame(height: 32)
+                                .background(Color.black.opacity(0.2))
+                                .clipShape(RoundedRectangle(cornerRadius: 4))
+                                .font(.system(size: 14, weight: .medium))
+                                .focused($apiKeyFieldFocused)
+                                .textFieldStyle(.plain)
+                                .padding(.bottom, 4)
+                        }
+
+                        Text(
+                            "You will need to purchase credits at https://console.anthropic.com/settings/billing. Using these models will not deduct credits from your AI Thing account."
+                        )
+                        .font(.system(size: 10, weight: .medium))
+                        .padding(4)
+                        .lineLimit(nil)
+                        .fixedSize(horizontal: false, vertical: true)
+                        .opacity(0.5)
                     }
                     .padding(4)
                 }
@@ -114,23 +146,8 @@ struct SettingsModelTab: View {
 
     private func modelRow(_ info: ModelInfo, showDetails: Bool) -> some View {
         HStack(spacing: 8) {
-            if let icon = info.iconName {
-                Image(icon).resizable().frame(width: 16, height: 16)
-            }
             VStack(alignment: .leading, spacing: 2) {
-                HStack {
-                    Text(info.title).font(.system(size: 14, weight: .medium))
-                    if info.cost > 0 {
-                        Text("Cost: \(info.cost) Credit\(info.cost > 1 ? "s" : "") / Query")
-                            .font(.system(size: 10, weight: .medium))
-                            .opacity(0.5)
-                    }
-                }
-                if showDetails {
-                    Text(info.description)
-                        .font(.system(size: 10, weight: .medium))
-                        .opacity(0.5)
-                }
+                Text(info.description).font(.system(size: 14, weight: .medium))
             }
             Spacer()
             Toggle(
@@ -148,9 +165,14 @@ struct SettingsModelTab: View {
 
     private func title(_ text: String, note: String) -> some View {
         VStack(alignment: .leading) {
-            Text(text).font(.system(size: 10, weight: .medium)).padding(.top, 4)
-            Text(note).font(.system(size: 10, weight: .medium)).padding(.bottom, 4).opacity(0.5)
-                .textSelection(.enabled)
+            Text(text)
+                .font(.system(size: 10, weight: .medium))
+                .padding(.top, 4)
+                .padding(.bottom, note.isEmpty ? 4 : 0)
+            if !note.isEmpty {
+                Text(note).font(.system(size: 10, weight: .medium)).padding(.bottom, 4).opacity(0.5)
+                    .textSelection(.enabled)
+            }
         }
         .textSelection(.enabled)
     }
