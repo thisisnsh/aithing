@@ -16,7 +16,7 @@ struct ContentView: View {
     @StateObject private var loginManager = LoginManager()
     @EnvironmentObject var screenshotManager: ScreenshotManager
     @StateObject private var firestoreManager = FirestoreManager()
-    
+
     var onClose: () -> Void
     var updatePanelSizeFromDefault: (CGFloat) -> Void
     var updatePanelSizeFromCurrent: (CGFloat) -> Void
@@ -43,13 +43,13 @@ struct ContentView: View {
 
     private var helpText: String {
         return """
-            ## Help Sheet: 
+            ## Help: 
 
             | Command | Description |   | Command | Description | 
             | ------- | ----------- | - | ------- | ----------- | 
             | ` Control (⌃) + Space ` | Show/Hide AI Thing | | | | 
             | ` Control (⌃) + N `     | New Tab            | | ` Control (⌃) + W ` | Close Tab |
-            | ` Control (⌃) + S `     | Show/Hide Settings | | ` Control (⌃) + H ` | Show Help |
+            | ` Control (⌃) + S `     | Show/Hide Settings | | ` Control (⌃) + H ` | Show/Hide Help |
             | ` Control (⌃) + > `     | Move to Right Tab  | | ` Control (⌃) + < ` | Move to Left Tab  |
 
             Still Stuck? Check http://aithing.dev 
@@ -260,12 +260,7 @@ struct ContentView: View {
     }
 
     private func onHelp() {
-        showHelp = true
-        updatePanelSizeFromCurrent(200)
-        DispatchQueue.main.asyncAfter(deadline: .now() + 2) {
-            showHelp = false
-            updatePanelSizeFromCurrent(-200)
-        }
+        showHelp.toggle()
     }
 
     private func addTab() {
