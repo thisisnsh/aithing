@@ -420,22 +420,29 @@ struct TabView: View {
     // MARK: - AI Functions
 
     private func callModel(query: String) async {
-        // Check if version is expired
-        let dateFormatter = DateFormatter()
-        dateFormatter.dateFormat = "yyyy-MM-dd"
-        if let expiryDate = dateFormatter.date(from: "2025-08-25") {
-            let today = Date()
-            if today > expiryDate {
-                isThinking = false
-                await animateOutput(
-                    content: """
-                        Please download [Latest Version](https://aithing.dev/latest) of AI Thing to continue.
+        // Check if version is breakglassed
+        if await firestoreManager.getBreakglass() {
+            isThinking = false
+            await animateOutput(
+                content: """
+                    This version has been disabled due to an internal issue.
+                    We apologize for the inconvenience. The app will be re-enabled soon.
+                    For updates, please contact help@aithing.dev.
+                    """
+            )
+            return
+        }
 
-                        Why? To access new and exciting features.
-                        """
-                )
-                return
-            }
+        // Check if version is expired
+        if await firestoreManager.getExpired() {
+            isThinking = false
+            await animateOutput(
+                content: """
+                    Current version has expired.
+                    Please download the [latest version](https://aithing.dev/latest) to enjoy new features and continue using the app.
+                    """
+            )
+            return
         }
 
         // Common error message for profile issues

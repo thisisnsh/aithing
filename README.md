@@ -17,9 +17,6 @@ Missing Features
 
 ------------------------ 
 
-13 Wednesday
-- expiry from firebase
-- breakglass from firebase  
 
 14 Thursday
 - Video 1 - Introducing 
