@@ -170,7 +170,7 @@ struct TabView: View {
             if isFocused {
                 ZStack(alignment: .leading) {
                     InputTextView(
-                        text: $query,
+                        text: showSettings ? .constant("Settings") : $query,
                         seenCommands: $seenCommands,
                         isNotEditable: isViewBlinking || showSettings,
                         onCommit: {
@@ -206,12 +206,13 @@ struct TabView: View {
                             inputHeight = newHeight
                         }
                     )
+                    .opacity(showSettings ? 0.6 : 1)
 
-                    if query.isEmpty {
+                    if query.isEmpty && !showSettings {
                         Text("Ask anything on this AI Thing...")
                             .foregroundColor(.white.opacity(0.6))
                             .font(.system(size: 18, weight: .medium))
-                            .padding(.leading, 8)
+                            .padding(.leading, 6)
                     }
                 }
                 Button(

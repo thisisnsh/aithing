@@ -205,6 +205,7 @@ struct InputTextView: NSViewRepresentable {
 
         // Set initial text
         textView.string = text
+
         context.coordinator.applyCommandHighlighting(to: textView)
 
         DispatchQueue.main.async {

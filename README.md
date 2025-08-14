@@ -18,9 +18,8 @@ Missing Features
 ------------------------ 
 
 13 Wednesday
-- Show "settings" when settings is open 
 - expiry from firebase
-- breakglass from firebase 
+- breakglass from firebase  
 
 14 Thursday
 - Video 1 - Introducing 
