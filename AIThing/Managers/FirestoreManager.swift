@@ -16,6 +16,8 @@ struct Profile: Codable {
     var creditsTotal: Int
     var creditsUsed: Int
     var blocked: Bool?
+    var apiKeyAnthropic: String
+    var apiKeyOpenAI: String
 }
 
 class FirestoreManager: ObservableObject {
@@ -23,29 +25,43 @@ class FirestoreManager: ObservableObject {
 
     func getBreakglass() async -> Bool {
         do {
-            let snapshot = try await db.collection("System").document("Configs").getDocument()
+            let snapshot = try await db.collection("System").document("Configs-1.4").getDocument()
             guard let data = snapshot.data() else { return false }
-            guard let breakglass = data["Breakglass"] as? Bool else { return false }
+            guard let breakglass = data["breakglass"] as? Bool else { return false }
             return breakglass
         } catch {
             print(
-                "[FirestoreManager] Error fetching Breakglass: \(error.localizedDescription)"
+                "[FirestoreManager] Error fetching breakglass: \(error.localizedDescription)"
             )
             return false
         }
     }
 
-    func getExpiry() async -> Bool {
+    func getExpired() async -> Bool {
         do {
-            let snapshot = try await db.collection("System").document("Configs").getDocument()
+            let snapshot = try await db.collection("System").document("Configs-1.4").getDocument()
             guard let data = snapshot.data() else { return false }
-            guard let expiry = data["Expiry"] as? Bool else { return false }
-            return expiry
+            guard let expired = data["expired"] as? Bool else { return false }
+            return expired
         } catch {
             print(
-                "[FirestoreManager] Error fetching Expiry: \(error.localizedDescription)"
+                "[FirestoreManager] Error fetching expired: \(error.localizedDescription)"
             )
             return false
+        }
+    }
+
+    func getApiKeyAnthropic() async -> String {
+        do {
+            let snapshot = try await db.collection("System").document("Configs-1.4").getDocument()
+            guard let data = snapshot.data() else { return "" }
+            guard let apiKeyAnthropic = data["apiKeyAnthropic"] as? String else { return "" }
+            return apiKeyAnthropic
+        } catch {
+            print(
+                "[FirestoreManager] Error fetching apiKeyAnthropic: \(error.localizedDescription)"
+            )
+            return ""
         }
     }
 
@@ -76,13 +92,17 @@ class FirestoreManager: ObservableObject {
             return profile
         }
 
+        let apiKeyAnthropic = await getApiKeyAnthropic()
+
         let profile = Profile(
             id: id,
             name: user.displayName,
             email: user.email ?? "",  // todo: handle properly
             creditsTotal: 100,
             creditsUsed: 0,
-            blocked: false
+            blocked: false,
+            apiKeyAnthropic: apiKeyAnthropic,
+            apiKeyOpenAI: ""
         )
 
         do {
@@ -101,11 +121,11 @@ class FirestoreManager: ObservableObject {
 
         do {
             try await db.collection("Profiles").document(id).updateData([
-                "credits": FieldValue.increment(Int64(amount))
+                "creditsUsed": FieldValue.increment(Int64(amount))
             ])
         } catch {
             print(
-                "[FirestoreManager] Error incrementing credits by \(amount) for ID \(id): \(error.localizedDescription)"
+                "[FirestoreManager] Error incrementing creditsUsed by \(amount) for ID \(id): \(error.localizedDescription)"
             )
         }
     }

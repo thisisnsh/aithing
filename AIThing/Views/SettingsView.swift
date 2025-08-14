@@ -19,6 +19,14 @@ enum ModelName: String, Hashable, Equatable {
     case managed_claude_haiku_3_5 = "managed-claude-3-5-haiku-20241022"
 }
 
+func getModelTitle(_ model: ModelName) -> String {
+    ALL_MODELS.first(where: { $0.id == model })?.title ?? model.rawValue
+}
+
+func getModelCost(_ model: ModelName) -> Int {
+    ALL_MODELS.first(where: { $0.id == model })?.cost ?? 1
+}
+
 struct Ratings {
     let understanding: Int
     let speed: Int
@@ -104,6 +112,8 @@ private let BYOK_MODELS: [ModelInfo] = [
         cost: 0,
     ),
 ]
+
+private let ALL_MODELS = MANAGED_MODELS + BYOK_MODELS
 
 // MARK: - Main View with all state
 
@@ -266,7 +276,7 @@ struct SettingsView: View {
             }
             .buttonStyle(.plain)
 
-            Text("Version 1.4\nExpires: 2025-08-25")
+            Text("Version 1.4")
                 .font(.system(size: 10, weight: .medium))
                 .padding(.top, 8)
                 .padding(.horizontal, 16)

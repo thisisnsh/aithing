@@ -45,7 +45,6 @@ struct TabView: View {
 
     @State private var modelInput: [[String: Any]] = []
     @State private var modelOutput: String = ""
-    @State private var modelOutputError: String = ""
     @State private var modelTools: [[String: Any]] = []
 
     @State private var modelInputImage: NSImage? = nil
@@ -261,15 +260,12 @@ struct TabView: View {
                                 }
                             }
                     } else {
-                        MarkdownText(
-                            text: modelOutputError.isEmpty
-                                ? modelOutput : modelOutputError
-                        )
-                        .foregroundColor(modelOutputError.isEmpty ? .white : .red)
-                        .font(.system(size: 14))
-                        .frame(maxWidth: .infinity, alignment: .leading)
-                        .padding(.horizontal, 24)
-                        .padding(.vertical, 16)
+                        MarkdownText(text: modelOutput)
+                            .foregroundColor(.white)
+                            .font(.system(size: 14))
+                            .frame(maxWidth: .infinity, alignment: .leading)
+                            .padding(.horizontal, 24)
+                            .padding(.vertical, 16)
                     }
 
                     Color.clear
@@ -407,7 +403,6 @@ struct TabView: View {
         screenshotManager.cancelScreenshot()
 
         modelOutput = ""
-        modelOutputError = ""
 
         isThinking = true
         showResponseArea = true
@@ -447,7 +442,7 @@ struct TabView: View {
         let profileErrorMessage = """
             Something went wrong. Please log out and log in again. 
 
-            Report Bug at help@aithing.dev
+            Report issue at help@aithing.dev
             """
 
         // Common message for not logged in
@@ -460,11 +455,16 @@ struct TabView: View {
             Read our [Privacy Policy](https://aithing.dev/privacy)
             """
 
+        var apiKeyManaged = ""
+        var appUser: AppUser?
+
         switch loginManager.authState {
         case .signedIn(let user):
             if let profile = await firestoreManager.getProfile(user: user),
                 profile.creditsUsed < profile.creditsTotal
             {
+                appUser = user
+                apiKeyManaged = profile.apiKeyAnthropic
                 break  // User is signed in and has credits, continue
             }
             isThinking = false
@@ -495,15 +495,42 @@ struct TabView: View {
         // await callModel(query: query + "X")
         // return await fakeData(query: query)
 
+        let byok: Bool = getModel().rawValue.starts(with: "byok-")
         let model = getModel().rawValue
             .replacingOccurrences(of: "byok-", with: "")
             .replacingOccurrences(of: "managed-", with: "")
 
-        guard let apiKey = getAnthropicAPIKey(), !apiKey.isEmpty
+        guard let apiKey = byok ? getAnthropicAPIKey() : apiKeyManaged, !apiKey.isEmpty
         else {
+            // Common error message for profile issues
+            var apiErrorMessage = ""
+            if byok {
+                apiErrorMessage = """
+                    API key not found.
+
+                    You have selected the \(getModelTitle(getModel())) model in **Settings** under the *"Use Own API Key"* section in the **Models** tab.
+
+                    This model requires you to provide an API key.
+
+                    You can create one at: https://console.anthropic.com/settings/keys
+
+                    For setup instructions, visit: https://aithing.dev/quickstart
+                    """
+            } else {
+                apiErrorMessage = """
+                    API key not found. Please quit and restart the app.
+
+                    1. Open **Settings** by pressing `Control (^) + S`
+                    2. Click **Quit** in the bottom-left corner
+                    3. Reopen **AI Thing** from the Applications folder
+
+                    Report issue at help@aithing.dev
+                    """
+            }
+
             isThinking = false
-            modelOutputError = "Missing Anthropic API Key"
-            return
+            await animateOutput(content: apiErrorMessage)
+            return ()
         }
 
         guard let url = URL(string: "https://api.anthropic.com/v1/messages") else { return }
@@ -555,7 +582,9 @@ struct TabView: View {
 
         ]
 
-        print("--------")
+        print("apiKey:", apiKey)
+        print("model:", model)
+        print("cost:", getModelCost(getModel()))
         print("messages:", body["messages"] as! [[String: Any]])
         print("tools:", (body["tools"] as! [[String: Any]]).count)
 
@@ -567,7 +596,7 @@ struct TabView: View {
             guard let httpResponse = response as? HTTPURLResponse
             else {
                 isThinking = false
-                modelOutputError = "Invalid response"
+                modelOutput = "Invalid response\n\nReport issue at help@aithing.dev"
                 return
             }
 
@@ -577,8 +606,15 @@ struct TabView: View {
                 for try await line in stream.lines {
                     error += line
                 }
-                modelOutputError = "Error \(httpResponse.statusCode)\n\(error)"
+                modelOutput =
+                    "Error \(httpResponse.statusCode)\n\(error)\n\nReport issue at help@aithing.dev"
                 return
+            }
+
+            if let appUser {
+                await firestoreManager.incrementCredits(user: appUser, by: getModelCost(getModel()))
+            } else {
+                // todo analytics
             }
 
             var finalResponse = ""
@@ -717,8 +753,8 @@ struct TabView: View {
         } catch {
             await MainActor.run {
                 isThinking = false
-                modelOutputError =
-                    "Error streaming response: \(error.localizedDescription)"
+                modelOutput =
+                    "Error streaming response: \(error.localizedDescription)\n\nReport issue at help@aithing.dev"
             }
         }
     }
