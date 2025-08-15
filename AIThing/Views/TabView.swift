@@ -21,6 +21,8 @@ struct TabView: View {
     @Binding var allTabs: [TabItem]
     @Binding var allClientTools: [String: [[String: Any]]]
     @Binding var showSettings: Bool
+    @Binding var showHistory: Bool
+    //    var history: [[String: Any]]
     var onSetting: () -> Void
     var onHelp: () -> Void
     var updatePanelSizeFromDefault: (CGFloat) -> Void
@@ -45,7 +47,6 @@ struct TabView: View {
 
     @State private var modelInput: [[String: Any]] = []
     @State private var modelOutput: String = ""
-    @State private var modelTools: [[String: Any]] = []
 
     @State private var modelInputImage: NSImage? = nil
     @State private var modelInputImageBase64: String? = nil
@@ -169,9 +170,10 @@ struct TabView: View {
             if isFocused {
                 ZStack(alignment: .leading) {
                     InputTextView(
-                        text: showSettings ? .constant("Settings") : $query,
+                        text: showSettings
+                            ? .constant("Settings") : (showHistory ? .constant("History") : $query),
                         seenCommands: $seenCommands,
-                        isNotEditable: isViewBlinking || showSettings,
+                        isNotEditable: isViewBlinking || showSettings || showHistory,
                         onCommit: {
                             Task {
                                 await handleQuery()
@@ -205,9 +207,9 @@ struct TabView: View {
                             inputHeight = newHeight
                         }
                     )
-                    .opacity(showSettings ? 0.6 : 1)
+                    .opacity(showSettings || showHistory ? 0.6 : 1)
 
-                    if query.isEmpty && !showSettings {
+                    if query.isEmpty && !showSettings && !showHistory {
                         Text("Ask anything on this AI Thing...")
                             .foregroundColor(.white.opacity(0.6))
                             .font(.system(size: 18, weight: .medium))
@@ -496,7 +498,7 @@ struct TabView: View {
         } catch {}
 
         // Load latest tools
-        modelTools = allClientTools.values.flatMap { $0 }
+        let modelTools = allClientTools.values.flatMap { $0 }
 
         // Fake data // DEBUG_MODE
         // await callModel(query: query + "X")
@@ -687,6 +689,9 @@ struct TabView: View {
                         await MainActor.run {
                             modelOutput = finalResponse
                         }
+                    //                        HistoryManager.shared.setHistory(modelInput, for: tabId.uuidString)
+                    //                        let ok = await HistoryManager.shared.save()
+                    //                        print("Saved:", ok)
 
                     case "message_delta":
                         guard let delta = json["delta"] as? [String: Any] else { continue }

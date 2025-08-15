@@ -26,7 +26,7 @@ struct SettingsModelTab: View {
 
             VStack(alignment: .leading, spacing: 16) {
                 GroupBox(
-                    label: title("Selected Model", note: "")
+                    label: title("Selected Model")
                 ) {
                     VStack(alignment: .leading) {
                         HStack {
@@ -56,10 +56,7 @@ struct SettingsModelTab: View {
                 }
 
                 GroupBox(
-                    label: title(
-                        "Use Managed Models",
-                        note: "Using these models will deduct credits from your AI Thing account."
-                    )
+                    label: title("Managed Models")
                 ) {
                     VStack(alignment: .leading) {
                         ForEach(Array(managedModels.enumerated()), id: \.offset) { idx, info in
@@ -101,7 +98,7 @@ struct SettingsModelTab: View {
                         }
 
                         Text(
-                            "You will need to purchase credits at https://console.anthropic.com/settings/billing. Using these models will not deduct credits from your AI Thing account."
+                            "You will need to purchase credits at https://console.anthropic.com/settings/billing. Using own key will not deduct credits from your AI Thing account."
                         )
                         .font(.system(size: 10, weight: .medium))
                         .padding(4)
@@ -113,11 +110,7 @@ struct SettingsModelTab: View {
                 }
 
                 GroupBox(
-                    label: title(
-                        "Custom Models",
-                        note:
-                            "Using these models will not deduct any credits from your AI Thing account."
-                    )
+                    label: title("Enterprise Models")
                 ) {
                     HStack {
                         Text("Enterprise Plan Required").font(.system(size: 14, weight: .medium))
@@ -163,16 +156,11 @@ struct SettingsModelTab: View {
         .onTapGesture { modelSelected = info.id }
     }
 
-    private func title(_ text: String, note: String) -> some View {
+    private func title(_ text: String) -> some View {
         VStack(alignment: .leading) {
             Text(text)
                 .font(.system(size: 10, weight: .medium))
-                .padding(.top, 4)
-                .padding(.bottom, note.isEmpty ? 4 : 0)
-            if !note.isEmpty {
-                Text(note).font(.system(size: 10, weight: .medium)).padding(.bottom, 4).opacity(0.5)
-                    .textSelection(.enabled)
-            }
+                .padding(.bottom, 4)
         }
         .textSelection(.enabled)
     }

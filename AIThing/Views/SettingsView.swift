@@ -64,7 +64,7 @@ private let MANAGED_MODELS: [ModelInfo] = [
         provider: "Anthropic",
         title: "Claude Haiku 3.5",
         ratings: .init(understanding: 3, speed: 5, creativity: 3),
-        description: "Fastest, most cost-effective model",
+        description: "Get quick and cost-effective answers",
         iconName: "anthropic",
         cost: 1,
     ),
@@ -82,7 +82,7 @@ private let MANAGED_MODELS: [ModelInfo] = [
         provider: "Anthropic",
         title: "Claude Opus 4.1",
         ratings: .init(understanding: 5, speed: 3, creativity: 4),
-        description: "Most intelligent, but slower",
+        description: "Perform complex tasks",
         iconName: "anthropic",
         cost: 5,
     ),
@@ -189,15 +189,6 @@ struct SettingsView: View {
             saveModels()
             saveAgents()
         }
-        .overlay(alignment: .topLeading) {
-            Button {
-                isPresented = false
-            } label: {
-                Image(systemName: "xmark.circle.fill")
-                    .frame(width: 12, height: 12)
-                    .padding(20)
-            }.buttonStyle(.plain)
-        }
         .onHover(perform: updatePassthrough)
         .task { await getCredits() }
     }
@@ -206,7 +197,7 @@ struct SettingsView: View {
 
     private var sidebar: some View {
         VStack(alignment: .leading, spacing: 0) {
-            Color.clear.frame(height: 64)
+            Color.clear.frame(height: 16)
 
             sidebarButton("Account", isActive: selectedTab == .account) {
                 selectedTab = .account
@@ -266,7 +257,7 @@ struct SettingsView: View {
             .padding(.vertical, 8)
             .padding(.horizontal, 16)
 
-            Color.clear.frame(height: 32)
+            Color.clear.frame(height: 16)
         }
         .frame(width: 150)
         .background(Color.gray.opacity(0.1))

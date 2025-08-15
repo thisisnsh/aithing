@@ -34,6 +34,7 @@ struct ContentView: View {
     @State private var width: CGFloat = 640 + 48
 
     @State private var showSettings = false
+    @State private var showHistory = false
 
     @State private var showToast = false
     @State private var toastText: String = ""
@@ -68,6 +69,9 @@ struct ContentView: View {
             if showSettings {
                 Settings()
             }
+            if showHistory {
+                History()
+            }
             if showHelp {
                 Help()
             }
@@ -87,7 +91,7 @@ struct ContentView: View {
                         onSetting()
                         return nil
                     case 4:  // H key
-                        onHelp()
+                        onHistory()
                         return nil
                     case 45:  // N key
                         addTab()
@@ -100,6 +104,9 @@ struct ContentView: View {
                         return nil
                     case 47:  // Right angular bracket
                         moveFocus(1)
+                        return nil
+                    case 44:  // ?
+                        onHelp()
                         return nil
                     default:
                         break
@@ -117,6 +124,182 @@ struct ContentView: View {
         .task {
             await loadAllClientTools()
         }
+    }
+
+    func Settings() -> some View {
+        SettingsView(
+            isPresented: $showSettings,
+            setPanelVisibility: { self.setPanelVisibility() },
+            setPanelPassthrough: { self.setPanelPassthrough($0) }
+        )
+        .background(.ultraThinMaterial)
+        .overlay {
+            RoundedRectangle(cornerRadius: 24)
+                .stroke(Color.white, lineWidth: 1.5)
+        }
+        .cornerRadius(24)
+        .zIndex(1)
+        .frame(width: 640, height: 500)
+        .padding(.leading, CGFloat(48 + focusedIndex * 72))
+        .padding(.trailing, CGFloat(80 + (tabs.count - 1 - focusedIndex) * 72))
+        .padding(.top, 96)
+        .environmentObject(loginManager)
+        .environmentObject(firestoreManager)
+    }
+
+    func History() -> some View {
+        HistoryView(
+            isPresented: $showHistory,
+            setPanelVisibility: { self.setPanelVisibility() },
+            setPanelPassthrough: { self.setPanelPassthrough($0) }
+        )
+        .background(.ultraThinMaterial)
+        .overlay {
+            RoundedRectangle(cornerRadius: 24)
+                .stroke(Color.white, lineWidth: 1.5)
+        }
+        .cornerRadius(24)
+        .zIndex(1)
+        .frame(width: 640, height: 500)
+        .padding(.leading, CGFloat(48 + focusedIndex * 72))
+        .padding(.trailing, CGFloat(80 + (tabs.count - 1 - focusedIndex) * 72))
+        .padding(.top, 96)
+        .environmentObject(loginManager)
+        .environmentObject(firestoreManager)
+    }
+
+    private func Help() -> some View {
+        MarkdownText(text: helpText)
+            .padding()
+            .background(.ultraThinMaterial)
+            .overlay {
+                RoundedRectangle(cornerRadius: 24)
+                    .stroke(Color.white, lineWidth: 1.5)
+            }
+            .cornerRadius(24)
+            .zIndex(2)
+            .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top)
+            .padding(.leading, CGFloat(48 + focusedIndex * 72))
+            .padding(.trailing, CGFloat(80 + (tabs.count - 1 - focusedIndex) * 72))
+            .padding(.top, 96)
+    }
+
+    private func Toast() -> some View {
+        MarkdownText(text: toastText)
+            .padding()
+            .background(.ultraThinMaterial)
+            .overlay {
+                AnimatedGradientBorder(
+                    cornerRadius: 24,
+                    lineWidth: 1.5,
+                    color: toastColor
+                )
+            }
+            .cornerRadius(24)
+            .zIndex(3)
+            .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top)
+            .padding(.leading, CGFloat(48 + focusedIndex * 72))
+            .padding(.trailing, CGFloat(80 + (tabs.count - 1 - focusedIndex) * 72))
+            .padding(.top, 96)
+    }
+
+    private func onSetting() {
+        showSettings.toggle()
+        showHelp = false
+        showHistory = false
+    }
+
+    private func onHistory() {
+        showHistory.toggle()
+        showHelp = false
+        showSettings = false
+    }
+
+    private func onHelp() {
+        showHelp.toggle()
+        showSettings = false
+        showHistory = false
+    }
+
+    private func addTab() {
+        screenshotManager.cancelScreenshot()
+
+        if tabs.count >= maxTabs {
+            toastColor = .red
+            toastText = "Maximum of \(maxTabs) tabs reached"
+            showToast = true
+            DispatchQueue.main.asyncAfter(deadline: .now() + 2) {
+                showToast = false
+                toastColor = .white
+            }
+            return
+        }
+
+        tabs.append(TabItem())
+        focusedIndex = tabs.count - 1
+    }
+
+    private func closeTab() {
+        screenshotManager.cancelScreenshot()
+
+        let indexToRemove = focusedIndex
+
+        if tabs.count == 1 { addTab() }  // Don't remove the last =tab
+
+        tabs.remove(at: indexToRemove)
+
+        // Adjust focus index safely
+        if focusedIndex >= tabs.count {
+            focusedIndex = tabs.count - 1
+        }
+    }
+
+    private func moveFocus(_ direction: Int) {
+        screenshotManager.cancelScreenshot()
+
+        let count = tabs.count
+        guard count > 0 else { return }
+
+        let newIndex = (focusedIndex + direction + count) % count
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
+            // Increase height to max while switching
+            // It will be resized when tab in focus
+            if count > 1 {
+                updatePanelSizeFromDefault(1000)
+            }
+        }
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.2) {
+            focusedIndex = newIndex
+        }
+    }
+
+    @ViewBuilder
+    private func tabView(at index: Int, tab: TabItem) -> some View {
+        let isFocusedBinding = Binding(
+            get: { focusedIndex == index },
+            set: { if $0 { focusedIndex = index } }
+        )
+        TabView(
+            isFocused: isFocusedBinding,
+            tabId: tab.id,
+            allTabs: $tabs,
+            allClientTools: $allClientTools,
+            showSettings: $showSettings,
+            showHistory: $showHistory,
+            onSetting: { self.onSetting() },
+            onHelp: { self.onHelp() },
+            updatePanelSizeFromDefault: { extraHeight in
+                updatePanelSizeFromDefault(extraHeight)
+            },
+            updatePanelSizeFromCurrent: { height in
+                updatePanelSizeFromCurrent(height)
+            },
+            setPanelPassthrough: { self.setPanelPassthrough($0) }
+        )
+        .environmentObject(mcp)
+        .environmentObject(loginManager)
+        .environmentObject(screenshotManager)
+        .environmentObject(firestoreManager)
     }
 
     private func loadAllClientTools() async {
@@ -197,152 +380,6 @@ struct ContentView: View {
             showToast = false
             toastColor = .white
         }
-    }
-
-    func Settings() -> some View {
-        SettingsView(
-            isPresented: $showSettings,
-            setPanelVisibility: { self.setPanelVisibility() },
-            setPanelPassthrough: { self.setPanelPassthrough($0) }
-        )
-        .background(.ultraThinMaterial)
-        .overlay {
-            RoundedRectangle(cornerRadius: 24)
-                .stroke(Color.white, lineWidth: 1.5)
-        }
-        .cornerRadius(24)
-        .zIndex(1)
-        .frame(width: 600, height: 500)
-        .padding(.leading, CGFloat(48 + focusedIndex * 72))
-        .padding(.trailing, CGFloat(80 + (tabs.count - 1 - focusedIndex) * 72))
-        .padding(.top, 96)
-        .environmentObject(loginManager)
-        .environmentObject(firestoreManager)
-    }
-
-    private func Help() -> some View {
-        MarkdownText(text: helpText)
-            .padding()
-            .background(.ultraThinMaterial)
-            .overlay {
-                RoundedRectangle(cornerRadius: 24)
-                    .stroke(Color.white, lineWidth: 1.5)
-            }
-            .cornerRadius(24)
-            .zIndex(2)
-            .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top)
-            .padding(.leading, CGFloat(48 + focusedIndex * 72))
-            .padding(.trailing, CGFloat(80 + (tabs.count - 1 - focusedIndex) * 72))
-            .padding(.top, 96)
-    }
-
-    private func Toast() -> some View {
-        MarkdownText(text: toastText)
-            .padding()
-            .background(.ultraThinMaterial)
-            .overlay {
-                AnimatedGradientBorder(
-                    cornerRadius: 24,
-                    lineWidth: 1.5,
-                    color: toastColor
-                )
-            }
-            .cornerRadius(24)
-            .zIndex(3)
-            .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top)
-            .padding(.leading, CGFloat(48 + focusedIndex * 72))
-            .padding(.trailing, CGFloat(80 + (tabs.count - 1 - focusedIndex) * 72))
-            .padding(.top, 96)
-    }
-
-    private func onSetting() {
-        showSettings.toggle()
-        showHelp = false
-    }
-
-    private func onHelp() {
-        showHelp.toggle()
-        showSettings = false
-    }
-
-    private func addTab() {
-        screenshotManager.cancelScreenshot()
-
-        if tabs.count >= maxTabs {
-            toastColor = .red
-            toastText = "Maximum of \(maxTabs) tabs reached"
-            showToast = true
-            DispatchQueue.main.asyncAfter(deadline: .now() + 2) {
-                showToast = false
-                toastColor = .white
-            }
-            return
-        }
-
-        tabs.append(TabItem())
-        focusedIndex = tabs.count - 1
-    }
-
-    private func closeTab() {
-        screenshotManager.cancelScreenshot()
-
-        let indexToRemove = focusedIndex
-
-        if tabs.count == 1 { addTab() }  // Don't remove the last =tab
-
-        tabs.remove(at: indexToRemove)
-
-        // Adjust focus index safely
-        if focusedIndex >= tabs.count {
-            focusedIndex = tabs.count - 1
-        }
-    }
-
-    private func moveFocus(_ direction: Int) {
-        screenshotManager.cancelScreenshot()
-
-        let count = tabs.count
-        guard count > 0 else { return }
-
-        let newIndex = (focusedIndex + direction + count) % count
-        DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
-            // Increase height to max while switching
-            // It will be resized when tab in focus
-            if count > 1 {
-                updatePanelSizeFromDefault(1000)
-            }
-        }
-        DispatchQueue.main.asyncAfter(deadline: .now() + 0.2) {
-            focusedIndex = newIndex
-        }
-    }
-
-    @ViewBuilder
-    private func tabView(at index: Int, tab: TabItem) -> some View {
-        let isFocusedBinding = Binding(
-            get: { focusedIndex == index },
-            set: { if $0 { focusedIndex = index } }
-        )
-        TabView(
-            isFocused: isFocusedBinding,
-            tabId: tab.id,
-            allTabs: $tabs,
-            allClientTools: $allClientTools,
-            showSettings: $showSettings,
-            onSetting: { self.onSetting() },
-            onHelp: { self.onHelp() },
-            updatePanelSizeFromDefault: { extraHeight in
-                updatePanelSizeFromDefault(extraHeight)
-            },
-            updatePanelSizeFromCurrent: { height in
-                updatePanelSizeFromCurrent(height)
-            },
-            setPanelPassthrough: { self.setPanelPassthrough($0) }
-        )
-        .environmentObject(mcp)
-        .environmentObject(loginManager)
-        .environmentObject(screenshotManager)
-        .environmentObject(firestoreManager)
     }
 
 }

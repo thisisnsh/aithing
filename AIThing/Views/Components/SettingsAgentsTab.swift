@@ -34,13 +34,13 @@ struct SettingsAgentsTab: View {
                         .padding(4)
                     Spacer()
                 }
-                .padding(4)
+                .padding(.bottom, 4)
             }
 
             GroupBox(
                 label: Text("Self Managed (Max \(agentMaxCount) with current plan)")
                     .font(.system(size: 10, weight: .medium))
-                    .padding(.vertical, 4)
+                    .padding(.bottom, 4)
             ) {
 
                 VStack(alignment: .leading) {
@@ -130,7 +130,7 @@ struct SettingsAgentsTab: View {
             GroupBox(
                 label: Text("Managed by AI Thing (Individual Plan Required)")
                     .font(.system(size: 10, weight: .medium))
-                    .padding(.vertical, 4)
+                    .padding(.bottom, 4)
             ) {
                 VStack(alignment: .leading) {
                     ManagedAgentRow(icon: "github", title: "GitHub")
@@ -148,7 +148,7 @@ struct SettingsAgentsTab: View {
             GroupBox(
                 label: Text("Managed by Organization (Enterprise Plan Required)")
                     .font(.system(size: 10, weight: .medium))
-                    .padding(.vertical, 4)
+                    .padding(.bottom, 4)
             ) {
                 HStack {
                     Text("No Agents Available")

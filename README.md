@@ -12,26 +12,28 @@ Missing Features
 - No Markdown Select
 - Fix "AttributeGraph: cycle detected through attribute"
 - Fix Flickering Animation
+- Search History
 
 
 ------------------------ 
 
 
-14 Thursday
+15 Friday
 - Video 1 - Introducing 
 - Video 2 - Selective Context 
 - Video 3 - Privacy 
-
-15 Friday
-- Store history locally 
-- Ability to load history -> show a window like settings and click on the row to expand the history 
-- Analytics for usage 
+- Click to change tab
+- History
+- summarize title 
 
 16 Satursday
+- Analytics
+- Model Cost & Credits from Firebase 
 - QA 
+- Release
 
 17 Sunday
-- Release
+- Demo Videos
 
 18 Monday
 - 

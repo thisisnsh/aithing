@@ -65,7 +65,7 @@ struct SettingsPreferencesTab: View {
     }
 
     private func title(_ text: String) -> some View {
-        Text(text).font(.system(size: 10, weight: .medium)).padding(.vertical, 4)
+        Text(text).font(.system(size: 10, weight: .medium)).padding(.bottom, 4)
     }
 }
 
