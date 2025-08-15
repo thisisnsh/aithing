@@ -9,193 +9,191 @@ import AppKit
 import CoreData
 import Foundation
 
-// MARK: - Managed Object
+// MARK: - Public model
 
-@objc(HistoryEntryMO)
-final class HistoryEntryMO: NSManagedObject {
-    @NSManaged var id: UUID
-    @NSManaged var timestamp: Date
-    @NSManaged var title: String?
-    @NSManaged var kind: String?
-    @NSManaged var json: Data  // JSON blob for arbitrary payload
+struct History: Identifiable, Equatable {
+    let id: String
+    let lastUpdated: String  // epoch seconds as String
+    let title: String?
+    let history: [[String: Any]]
+
+    static func == (lhs: History, rhs: History) -> Bool { lhs.id == rhs.id }
 }
 
-// MARK: - HistoryCoreDataManager
+// MARK: - Managed Object
+
+@objc(HistoryDocMO)
+final class HistoryDocMO: NSManagedObject {
+    @NSManaged var id: String
+    @NSManaged var lastUpdated: Double  // epoch seconds
+    @NSManaged var title: String?
+    @NSManaged var json: Data  // JSON for [[String: Any]]
+}
+
+// MARK: - Manager
 
 @MainActor
-final class HistoryCoreDataManager: ObservableObject {
-    static let shared = HistoryCoreDataManager()
-
-    // MARK: Public API (non-throwing)
-
-    /// Append an entry for a tab (newest-first by timestamp).
-    @discardableResult
-    func append(
-        _ item: [String: Any],
-        for tabId: String,
-        title: String? = nil,
-        kind: String? = nil
-    ) async -> Bool {
-        guard JSONSerialization.isValidJSONObject(item),
-            let json = try? JSONSerialization.data(withJSONObject: item, options: [])
-        else {
-            log("append invalid JSON")
-            return false
-        }
-
-        guard let container = await container(for: tabId) else { return false }
-        let ctx = container.newBackgroundContext()
-        return await ctx.perform {
-            let obj = HistoryEntryMO(context: ctx)
-            obj.id = UUID()
-            obj.timestamp = Date()
-            obj.title = title
-            obj.kind = kind
-            obj.json = json
-            do {
-                try ctx.save()
-                return true
-            } catch {
-                self.log("append save failed: \(error)")
-                return false
-            }
-        }
-    }
-
-    /// Fetch entries for a tab (newest-first). Optional filters.
-    ///
-    /// - Parameters:
-    ///   - limit: cap result count (nil = no cap)
-    ///   - since: only items with timestamp >= since
-    ///   - kind: filter by kind (exact match)
-    ///   - search: case/diacritic-insensitive contains on `title`
-    func fetch(
-        for tabId: String,
-        limit: Int? = nil,
-        since: Date? = nil,
-        kind: String? = nil,
-        search: String? = nil
-    ) async -> [HistoryEntry] {
-        guard let container = await container(for: tabId) else { return [] }
-        let ctx = container.viewContext
-
-        return await ctx.perform {
-            let req = NSFetchRequest<HistoryEntryMO>(entityName: "HistoryEntry")
-            var preds: [NSPredicate] = []
-            if let since { preds.append(NSPredicate(format: "timestamp >= %@", since as NSDate)) }
-            if let kind { preds.append(NSPredicate(format: "kind == %@", kind)) }
-            if let q = search, !q.isEmpty {
-                preds.append(NSPredicate(format: "title CONTAINS[cd] %@", q))
-            }
-            if !preds.isEmpty {
-                req.predicate = NSCompoundPredicate(andPredicateWithSubpredicates: preds)
-            }
-            req.sortDescriptors = [NSSortDescriptor(key: "timestamp", ascending: false)]
-            if let limit { req.fetchLimit = limit }
-
-            do {
-                let results = try ctx.fetch(req)
-                return results.compactMap { mo in
-                    HistoryEntry(
-                        id: mo.id,
-                        timestamp: mo.timestamp,
-                        title: mo.title,
-                        kind: mo.kind,
-                        json: (try? JSONSerialization.jsonObject(with: mo.json)) as? [String: Any]
-                            ?? [:]
-                    )
-                }
-            } catch {
-                self.log("fetch failed: \(error)")
-                return []
-            }
-        }
-    }
-
-    /// Delete a single entry by id in a tab store.
-    @discardableResult
-    func deleteEntry(id: UUID, for tabId: String) async -> Bool {
-        guard let container = await container(for: tabId) else { return false }
-        let ctx = container.newBackgroundContext()
-        return await ctx.perform {
-            let req = NSFetchRequest<NSFetchRequestResult>(entityName: "HistoryEntry")
-            req.predicate = NSPredicate(format: "id == %@", id as CVarArg)
-            let del = NSBatchDeleteRequest(fetchRequest: req)
-            do {
-                try ctx.execute(del)
-                try ctx.save()
-                return true
-            } catch {
-                self.log("deleteEntry failed: \(error)")
-                return false
-            }
-        }
-    }
-
-    /// Remove all entries for a tab (drops the SQLite file).
-    @discardableResult
-    func clear(tabId: String) async -> Bool {
-        guard let container = tabContainers[tabId] else {
-            // Nothing loaded; try removing file if it exists
-            let url = Self.storeURL(for: tabId)
-            try? FileManager.default.removeItem(at: url)
-            return true
-        }
-        // Tear down store cleanly
-        let psc = container.persistentStoreCoordinator
-        if let store = psc.persistentStores.first {
-            do {
-                try psc.remove(store)
-            } catch {
-                log("remove store failed: \(error)")
-            }
-        }
-        // Remove files on disk
-        let url = Self.storeURL(for: tabId)
-        let shm = url.deletingPathExtension().appendingPathExtension("sqlite-shm")
-        let wal = url.deletingPathExtension().appendingPathExtension("sqlite-wal")
-        [url, shm, wal].forEach { try? FileManager.default.removeItem(at: $0) }
-        tabContainers.removeValue(forKey: tabId)
-        return true
-    }
-
-    /// Count entries in a tab.
-    func count(for tabId: String) async -> Int {
-        guard let container = await container(for: tabId) else { return 0 }
-        let ctx = container.viewContext
-        return await ctx.perform {
-            let req = NSFetchRequest<NSNumber>(entityName: "HistoryEntry")
-            req.resultType = .countResultType
-            do { return try ctx.count(for: req) } catch {
-                self.log("count failed: \(error)")
-                return 0
-            }
-        }
-    }
-
-    // MARK: Internals
+final class HistoryStore: ObservableObject {
+    static let shared = HistoryStore()
 
     private init() {}
 
-    // One container per tabId (=> one SQLite per tab)
-    private var tabContainers: [String: NSPersistentContainer] = [:]
+    // Keep a container per id (=> one SQLite per id)
+    private var containers: [String: NSPersistentContainer] = [:]
 
-    /// Lazily create/load a container for a given tabId.
-    private func container(for tabId: String) async -> NSPersistentContainer? {
-        if let c = tabContainers[tabId] { return c }
+    // MARK: - Public API
+
+    /// Idempotent: inserts when new, updates when existing. lastUpdated is set to now (epoch).
+    @discardableResult
+    func store(id: String, title: String? = nil, history: [[String: Any]]) async -> Bool {
+        guard JSONSerialization.isValidJSONObject(history) else {
+            log("store invalid JSON for id=\(id)")
+            return false
+        }
+        guard let container = await container(for: id) else { return false }
+        let ctx = container.newBackgroundContext()
+        return await ctx.perform {
+            do {
+                let req = NSFetchRequest<HistoryDocMO>(entityName: "HistoryDoc")
+                req.predicate = NSPredicate(format: "id == %@", id)
+                req.fetchLimit = 1
+                let mo: HistoryDocMO
+                if let existing = try ctx.fetch(req).first {
+                    mo = existing
+                } else {
+                    mo = HistoryDocMO(context: ctx)
+                    mo.id = id
+                }
+                mo.title = title
+                mo.lastUpdated = Date().timeIntervalSince1970
+                mo.json = try JSONSerialization.data(withJSONObject: history, options: [])
+
+                try ctx.save()
+                return true
+            } catch {
+                self.log("store failed for id=\(id): \(error)")
+                return false
+            }
+        }
+    }
+
+    /// Return all History objects from all per-id stores, newest first.
+    func getAll(limit: Int? = nil) async -> [History] {
+        let urls = Self.existingStoreURLs()
+        var results: [History] = []
+
+        for url in urls {
+            // open container for this file's id (derived from filename)
+            let id = Self.idFromStoreURL(url)
+            guard let container = await container(for: id) else { continue }
+            let ctx = container.viewContext
+            let items: [History] = await ctx.perform {
+                let req = NSFetchRequest<HistoryDocMO>(entityName: "HistoryDoc")
+                req.fetchLimit = 1
+                do {
+                    guard let mo = try ctx.fetch(req).first else { return [] }
+                    let obj =
+                        (try? JSONSerialization.jsonObject(with: mo.json, options: []))
+                        as? [[String: Any]] ?? []
+                    let hist = History(
+                        id: mo.id,
+                        lastUpdated: String(Int64(mo.lastUpdated)),
+                        title: mo.title,
+                        history: obj
+                    )
+                    return [hist]
+                } catch {
+                    self.log("getAll fetch failed for id=\(id): \(error)")
+                    return []
+                }
+            }
+            results.append(contentsOf: items)
+        }
+
+        results.sort { (lhs, rhs) in
+            // Compare by numeric epoch descending
+            (Double(lhs.lastUpdated) ?? 0) > (Double(rhs.lastUpdated) ?? 0)
+        }
+        if let limit, results.count > limit {
+            return Array(results.prefix(limit))
+        }
+        return results
+    }
+
+    /// Fetch a single History by id.
+    func get(id: String) async -> History? {
+        guard let container = await container(for: id) else { return nil }
+        let ctx = container.viewContext
+        return await ctx.perform {
+            let req = NSFetchRequest<HistoryDocMO>(entityName: "HistoryDoc")
+            req.predicate = NSPredicate(format: "id == %@", id)
+            req.fetchLimit = 1
+            do {
+                guard let mo = try ctx.fetch(req).first else { return nil }
+                let obj =
+                    (try? JSONSerialization.jsonObject(with: mo.json, options: []))
+                    as? [[String: Any]] ?? []
+                return History(
+                    id: mo.id,
+                    lastUpdated: String(Int64(mo.lastUpdated)),
+                    title: mo.title,
+                    history: obj
+                )
+            } catch {
+                self.log("get failed for id=\(id): \(error)")
+                return nil
+            }
+        }
+    }
+
+    /// Remove a single id (deletes its SQLite file).
+    @discardableResult
+    func delete(id: String) async -> Bool {
+        guard let container = containers[id] else {
+            // Not loaded yet, just delete files
+            Self.deleteStoreFiles(for: id)
+            return true
+        }
+        let psc = container.persistentStoreCoordinator
+        if let store = psc.persistentStores.first {
+            do { try psc.remove(store) } catch { log("remove store failed: \(error)") }
+        }
+        Self.deleteStoreFiles(for: id)
+        containers.removeValue(forKey: id)
+        return true
+    }
+
+    /// Remove all ids (deletes directory).
+    @discardableResult
+    func clearAll() async -> Bool {
+        // Remove all loaded stores
+        for (id, container) in containers {
+            let psc = container.persistentStoreCoordinator
+            if let store = psc.persistentStores.first {
+                try? psc.remove(store)
+            }
+            containers.removeValue(forKey: id)
+        }
+        // Delete directory
+        let dir = Self.historyDir()
+        try? FileManager.default.removeItem(at: dir)
+        return true
+    }
+
+    // MARK: - Core Data plumbing (one store per id)
+
+    private func container(for id: String) async -> NSPersistentContainer? {
+        if let c = containers[id] { return c }
         let model = Self.makeModel()
-        let c = NSPersistentContainer(name: "HistoryModel", managedObjectModel: model)
+        let c = NSPersistentContainer(name: "HistoryPerId", managedObjectModel: model)
 
-        // Store location: ~/Library/Application Support/com.thisisnsh.mac.AIThing/History/<tabId>.sqlite
-        let storeURL = Self.storeURL(for: tabId)
-        do {
-            try Self.ensureParentDir(storeURL)
-        } catch {
+        let url = Self.storeURL(for: id)
+        do { try Self.ensureParentDir(url) } catch {
             log("ensure dir failed: \(error)")
             return nil
         }
 
-        let desc = NSPersistentStoreDescription(url: storeURL)
+        let desc = NSPersistentStoreDescription(url: url)
         desc.type = NSSQLiteStoreType
         desc.setOption(true as NSNumber, forKey: NSMigratePersistentStoresAutomaticallyOption)
         desc.setOption(true as NSNumber, forKey: NSInferMappingModelAutomaticallyOption)
@@ -212,46 +210,39 @@ final class HistoryCoreDataManager: ObservableObject {
             }
         }
         if !ok {
-            log("load store failed: \(String(describing: loadError))")
+            log("load store failed for id=\(id): \(String(describing: loadError))")
             return nil
         }
-        // Performance niceties
         c.viewContext.automaticallyMergesChangesFromParent = true
         c.viewContext.mergePolicy = NSMergeByPropertyObjectTrumpMergePolicy
 
-        tabContainers[tabId] = c
+        containers[id] = c
         return c
     }
 
-    // MARK: Model + Paths
+    // MARK: - Model & Paths
 
     private static func makeModel() -> NSManagedObjectModel {
         let model = NSManagedObjectModel()
 
-        // Entity: HistoryEntry
         let entity = NSEntityDescription()
-        entity.name = "HistoryEntry"
-        entity.managedObjectClassName = NSStringFromClass(HistoryEntryMO.self)
+        entity.name = "HistoryDoc"
+        entity.managedObjectClassName = NSStringFromClass(HistoryDocMO.self)
 
         let id = NSAttributeDescription()
         id.name = "id"
-        id.attributeType = .UUIDAttributeType
+        id.attributeType = .stringAttributeType
         id.isOptional = false
 
-        let timestamp = NSAttributeDescription()
-        timestamp.name = "timestamp"
-        timestamp.attributeType = .dateAttributeType
-        timestamp.isOptional = false
+        let lastUpdated = NSAttributeDescription()
+        lastUpdated.name = "lastUpdated"
+        lastUpdated.attributeType = .doubleAttributeType
+        lastUpdated.isOptional = false
 
         let title = NSAttributeDescription()
         title.name = "title"
         title.attributeType = .stringAttributeType
         title.isOptional = true
-
-        let kind = NSAttributeDescription()
-        kind.name = "kind"
-        kind.attributeType = .stringAttributeType
-        kind.isOptional = true
 
         let json = NSAttributeDescription()
         json.name = "json"
@@ -259,18 +250,12 @@ final class HistoryCoreDataManager: ObservableObject {
         json.isOptional = false
         json.allowsExternalBinaryDataStorage = true
 
-        entity.properties = [id, timestamp, title, kind, json]
+        entity.properties = [id, lastUpdated, title, json]
         entity.uniquenessConstraints = [["id"]]
 
-        model.entities = [entity]
+        let modelEntities = [entity]
+        model.entities = modelEntities
         return model
-    }
-
-    private static func storeURL(for tabId: String) -> URL {
-        let base = appSupportDir()
-            .appendingPathComponent("com.thisisnsh.mac.AIThing", isDirectory: true)
-            .appendingPathComponent("History", isDirectory: true)
-        return base.appendingPathComponent("\(safeFilename(tabId)).sqlite")
     }
 
     private static func appSupportDir() -> URL {
@@ -282,10 +267,31 @@ final class HistoryCoreDataManager: ObservableObject {
         )
     }
 
-    private static func safeFilename(_ name: String) -> String {
-        // Sanitize tab IDs for filesystem
-        let invalid = CharacterSet(charactersIn: "/:\\?%*|\"<>.")
-        return name.components(separatedBy: invalid).joined(separator: "_")
+    private static func historyDir() -> URL {
+        appSupportDir()
+            .appendingPathComponent("com.thisisnsh.mac.AIThing", isDirectory: true)
+            .appendingPathComponent("History", isDirectory: true)
+    }
+
+    private static func storeURL(for id: String) -> URL {
+        historyDir().appendingPathComponent("\(safeFilename(id)).sqlite")
+    }
+
+    /// Best-effort reverse (used only for directory scanning; we still read id from DB).
+    private static func idFromStoreURL(_ url: URL) -> String {
+        url.deletingPathExtension().lastPathComponent
+    }
+
+    private static func existingStoreURLs() -> [URL] {
+        let dir = historyDir()
+        guard
+            let contents = try? FileManager.default.contentsOfDirectory(
+                at: dir,
+                includingPropertiesForKeys: nil,
+                options: [.skipsHiddenFiles]
+            )
+        else { return [] }
+        return contents.filter { $0.pathExtension == "sqlite" }
     }
 
     private static func ensureParentDir(_ url: URL) throws {
@@ -295,21 +301,18 @@ final class HistoryCoreDataManager: ObservableObject {
         )
     }
 
-    private func log(_ msg: String) {
-        NSLog("[HistoryCoreData] \(msg)")
-    }
-}
-
-// MARK: - Lightweight value type for consumers
-
-struct HistoryEntry: Identifiable {
-    static func == (lhs: HistoryEntry, rhs: HistoryEntry) -> Bool {
-        lhs.id == rhs.id
+    private static func deleteStoreFiles(for id: String) {
+        let url = storeURL(for: id)
+        let shm = url.deletingPathExtension().appendingPathExtension("sqlite-shm")
+        let wal = url.deletingPathExtension().appendingPathExtension("sqlite-wal")
+        [url, shm, wal].forEach { try? FileManager.default.removeItem(at: $0) }
     }
 
-    let id: UUID
-    let timestamp: Date
-    let title: String?
-    let kind: String?
-    let json: [String: Any]
+    private static func safeFilename(_ name: String) -> String {
+        // Sanitize filename for filesystem; mapping back is lossy – we read the canonical id from Core Data anyway.
+        let invalid = CharacterSet(charactersIn: "/:\\?%*|\"<>.")
+        return name.components(separatedBy: invalid).joined(separator: "_")
+    }
+
+    private func log(_ msg: String) { NSLog("[HistoryStore] \(msg)") }
 }

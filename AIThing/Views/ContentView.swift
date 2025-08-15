@@ -8,7 +8,13 @@
 import SwiftUI
 
 struct TabItem: Identifiable {
-    let id = UUID()
+    let id: UUID
+    let history: [[String: Any]]
+
+    init(id: UUID = UUID(), history: [[String: Any]] = []) {
+        self.id = id
+        self.history = history
+    }
 }
 
 struct ContentView: View {
@@ -139,7 +145,7 @@ struct ContentView: View {
         }
         .cornerRadius(24)
         .zIndex(1)
-        .frame(width: 640, height: 500)
+        .frame(width: 600, height: 500)
         .padding(.leading, CGFloat(48 + focusedIndex * 72))
         .padding(.trailing, CGFloat(80 + (tabs.count - 1 - focusedIndex) * 72))
         .padding(.top, 96)
@@ -150,8 +156,8 @@ struct ContentView: View {
     func History() -> some View {
         HistoryView(
             isPresented: $showHistory,
-            setPanelVisibility: { self.setPanelVisibility() },
-            setPanelPassthrough: { self.setPanelPassthrough($0) }
+            setPanelPassthrough: { self.setPanelPassthrough($0) },
+            continueConversation: { self.continueConversation($0) }
         )
         .background(.ultraThinMaterial)
         .overlay {
@@ -160,7 +166,7 @@ struct ContentView: View {
         }
         .cornerRadius(24)
         .zIndex(1)
-        .frame(width: 640, height: 500)
+        .frame(width: 600, height: 500)
         .padding(.leading, CGFloat(48 + focusedIndex * 72))
         .padding(.trailing, CGFloat(80 + (tabs.count - 1 - focusedIndex) * 72))
         .padding(.top, 96)
@@ -219,6 +225,28 @@ struct ContentView: View {
         showHelp.toggle()
         showSettings = false
         showHistory = false
+    }
+
+    private func continueConversation(_ history: History) {
+        screenshotManager.cancelScreenshot()
+        showSettings = false
+        showHistory = false
+        showHelp = false
+
+        if tabs.count >= maxTabs {
+            toastColor = .red
+            toastText = "Maximum of \(maxTabs) tabs reached"
+            showToast = true
+            DispatchQueue.main.asyncAfter(deadline: .now() + 2) {
+                showToast = false
+                toastColor = .white
+            }
+            return
+        }
+
+        let uuid = UUID(uuidString: history.id) ?? UUID()
+        tabs.append(TabItem(id: uuid, history: history.history))
+        focusedIndex = tabs.count - 1
     }
 
     private func addTab() {
@@ -282,6 +310,7 @@ struct ContentView: View {
         TabView(
             isFocused: isFocusedBinding,
             tabId: tab.id,
+            tabHistory: tab.history,
             allTabs: $tabs,
             allClientTools: $allClientTools,
             showSettings: $showSettings,

@@ -18,11 +18,12 @@ struct TabView: View {
 
     @Binding var isFocused: Bool
     var tabId: UUID
+    var tabHistory: [[String: Any]]
     @Binding var allTabs: [TabItem]
     @Binding var allClientTools: [String: [[String: Any]]]
     @Binding var showSettings: Bool
     @Binding var showHistory: Bool
-    //    var history: [[String: Any]]
+
     var onSetting: () -> Void
     var onHelp: () -> Void
     var updatePanelSizeFromDefault: (CGFloat) -> Void
@@ -125,8 +126,14 @@ struct TabView: View {
             .cornerRadius(getCornerRadius())
             .animation(.easeInOut(duration: 0.25), value: isFocused)
             .onAppear {
+                print("onAppear", tabId)
                 DispatchQueue.main.async {
                     updatePanelSizeFromDefault(getResponseHeight())
+                }
+                modelInput = tabHistory
+                modelOutput = assistantMessages(from: tabHistory)
+                if !modelOutput.isEmpty {
+                    showResponseArea = true
                 }
             }
             .onChange(of: isFocused) { newValue in
@@ -210,10 +217,13 @@ struct TabView: View {
                     .opacity(showSettings || showHistory ? 0.6 : 1)
 
                     if query.isEmpty && !showSettings && !showHistory {
-                        Text("Ask anything on this AI Thing...")
-                            .foregroundColor(.white.opacity(0.6))
-                            .font(.system(size: 18, weight: .medium))
-                            .padding(.leading, 6)
+                        Text(
+                            tabHistory.isEmpty
+                                ? "Ask anything on this AI Thing..." : "Continue conversation..."
+                        )
+                        .foregroundColor(.white.opacity(0.6))
+                        .font(.system(size: 18, weight: .medium))
+                        .padding(.leading, 6)
                     }
                 }
                 Button(
@@ -689,9 +699,6 @@ struct TabView: View {
                         await MainActor.run {
                             modelOutput = finalResponse
                         }
-                    //                        HistoryManager.shared.setHistory(modelInput, for: tabId.uuidString)
-                    //                        let ok = await HistoryManager.shared.save()
-                    //                        print("Saved:", ok)
 
                     case "message_delta":
                         guard let delta = json["delta"] as? [String: Any] else { continue }
@@ -704,6 +711,11 @@ struct TabView: View {
                                 "role": "assistant",
                                 "content": [["text": modelOutput, "type": "text"]],
                             ])
+                            await HistoryStore.shared.store(
+                                id: tabId.uuidString,
+                                title: nil,  // todo get title
+                                history: modelInput
+                            )
                         }
 
                         switch delta_stop_reason {

@@ -8,17 +8,6 @@
 import AppKit
 import SwiftUI
 
-// MARK: - Model
-
-struct History: Identifiable, Equatable {
-    let id: String
-    let lastUpdated: String
-    let history: [[String: Any]]
-    static func == (lhs: History, rhs: History) -> Bool {
-        lhs.id == rhs.id
-    }
-}
-
 // MARK: - Chat parsing primitives
 
 enum ChatRole {
@@ -45,6 +34,24 @@ struct ChatItem: Identifiable, Equatable {
     let id = UUID()
     let role: ChatRole
     let payload: ChatPayload
+}
+
+func assistantMessages(from history: [[String: Any]]) -> String {
+    let chatItems = parseHistory(history).filter { $0.role == .assistant }
+    var messages = ""
+    let last = chatItems.last
+    if last != nil {
+        switch last!.payload {
+        case .text(let text):
+            messages += "\(text)\n\n"
+        case .image(let _):
+            ()
+        case .toolUse(let name):
+            messages += "`Called tool: \(name)`\n\n"
+        }
+    }
+
+    return messages
 }
 
 func parseHistory(_ history: [[String: Any]]) -> [ChatItem] {
@@ -115,8 +122,10 @@ private func base64ToNSImage(_ base64: String) -> NSImage? {
 
 final class ChatController: ObservableObject {
     @Published var items: [ChatItem] = []
-    func setHistory(_ history: [[String: Any]]) {
-        items = parseHistory(history)
+    @Published var history: History?
+    func setHistory(_ history: History) {
+        items = parseHistory(history.history)
+        self.history = history
     }
 }
 
@@ -125,38 +134,46 @@ final class ChatController: ObservableObject {
 struct ChatView: View {
     @ObservedObject var controller: ChatController
     let lastUpdated: String
+    let continueConversation: (_ history: History) -> Void
+
+    var formattedLastUpdated: String? {
+        return formatEpoch(lastUpdated)
+    }
 
     var body: some View {
         VStack(spacing: 0) {
-            // Header with last updated
-            HStack {
-                Text("Last updated: \(lastUpdated)")
-                    .font(.footnote)
-                    .foregroundColor(.secondary)
-                Spacer()
-                Button {
-                    // todo
-                } label: {
-                    HStack {
-                        Text("Continue")
-                            .font(.system(size: 12, weight: .medium))
-                        Image(systemName: "arrow.up.right")
-                            .resizable()
-                            .aspectRatio(contentMode: .fit)
-                            .frame(width: 8)
+            if let formattedLastUpdated {
+                HStack {
+                    Text("Last updated: \(formattedLastUpdated)")
+                        .font(.footnote)
+                        .foregroundColor(.secondary)
+                    Spacer()
+                    if controller.history != nil {
+                        Button {
+                            continueConversation(controller.history!)
+                        } label: {
+                            HStack {
+                                Text("Continue")
+                                    .font(.system(size: 12, weight: .medium))
+                                Image(systemName: "arrow.up.right")
+                                    .resizable()
+                                    .aspectRatio(contentMode: .fit)
+                                    .frame(width: 8)
+                            }
+                            .padding(.vertical, 4)
+                            .padding(.horizontal, 8)
+                            .background(Color.black.opacity(0.2))
+                            .clipShape(RoundedRectangle(cornerRadius: 8))
+                        }
+                        .buttonStyle(.plain)
                     }
-                    .padding(.vertical, 4)
-                    .padding(.horizontal, 8)
-                    .background(Color.black.opacity(0.2))
-                    .clipShape(RoundedRectangle(cornerRadius: 8))
                 }
-                .buttonStyle(.plain)
-            }
-            .padding(.top, 4)
-            .padding(.horizontal, 16)
-            .padding(.vertical, 8)
+                .padding(.top, 4)
+                .padding(.horizontal, 16)
+                .padding(.vertical, 8)
 
-            Divider()
+                Divider()
+            }
 
             ScrollViewReader { proxy in
                 ScrollView {
@@ -251,5 +268,16 @@ struct ImageBubble: View {
                 RoundedRectangle(cornerRadius: 16, style: .continuous)
                     .stroke(Color.gray.opacity(0.5), lineWidth: isUser ? 0 : 1)
             )
+    }
+}
+
+func formatEpoch(_ epochS: String, format: String = "MMMM, dd yyyy HH:mm") -> String? {
+    if let epoch = Double(epochS) {
+        let date = Date(timeIntervalSince1970: epoch)
+        let formatter = DateFormatter()
+        formatter.dateFormat = format
+        return formatter.string(from: date)
+    } else {
+        return nil
     }
 }
