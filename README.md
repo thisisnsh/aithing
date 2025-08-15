@@ -17,13 +17,13 @@ Missing Features
 
 ------------------------ 
 
-
-15 Friday
 - Video 1 - Introducing 
 - Video 2 - Selective Context 
 - Video 3 - Privacy 
+
+15 Friday
 - Click to change tab
-- History
+- History close
 - summarize title 
 
 16 Satursday

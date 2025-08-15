@@ -50,14 +50,25 @@ struct HistoryView: View {
                 Color.clear.frame(height: 16)
 
                 ForEach(Array(histories.enumerated()), id: \.offset) { (i, h) in
-                    sidebarButton(
-                        h.title ?? title(for: h.history, fallback: "Session #\(i + 1)"),
-                        subtitle: h.lastUpdated,
-                        isActive: (i == index)
-                    ) {
-                        index = i
-                        chatController.setHistory(h)
-                    }
+                    HoverableTabButton(
+                        title: h.title ?? title(for: h.history, fallback: "Session #\(i + 1)"),
+                        isActive: (i == index),
+                        action: {
+                            index = i
+                            chatController.setHistory(h)
+                        },
+                        deleteAction: {
+                            Task {
+                                await HistoryStore.shared.delete(id: h.id)
+                                histories = await HistoryStore.shared.getAll()
+                                if i == index {
+                                    if let first = histories.first {
+                                        chatController.setHistory(first)
+                                    }
+                                }
+                            }
+                        }
+                    )
                 }
 
                 if histories.isEmpty {
@@ -75,28 +86,6 @@ struct HistoryView: View {
         .background(Color.gray.opacity(0.08))
     }
 
-    private func sidebarButton(
-        _ title: String,
-        subtitle: String,
-        isActive: Bool,
-        action: @escaping () -> Void
-    ) -> some View {
-        Button(action: action) {
-            VStack(alignment: .leading, spacing: 0) {
-                Text(title)
-                    .font(.system(size: 12, weight: .medium))
-                    .lineLimit(2)
-            }
-            .frame(maxWidth: .infinity, alignment: .leading)
-            .padding(.vertical, 8)
-            .padding(.horizontal, 12)
-            .background(isActive ? Color.black.opacity(0.5) : .clear)
-            .clipShape(RoundedRectangle(cornerRadius: 8))
-            .padding(.horizontal, 8)
-        }
-        .buttonStyle(.plain)
-    }
-
     // MARK: - Helpers
 
     private func title(for history: [[String: Any]], fallback: String) -> String {
@@ -112,6 +101,48 @@ struct HistoryView: View {
             }
         }
         return fallback
+    }
+}
+
+struct HoverableTabButton: View {
+    let title: String
+    let isActive: Bool
+    let action: () -> Void
+    let deleteAction: () -> Void
+
+    @State private var isHovered = false
+
+    var body: some View {
+        HStack(spacing: 8) {
+            // Main clickable area
+            Button(action: action) {
+                Text(title)
+                    .font(.system(size: 12, weight: .medium))
+                    .lineLimit(1)
+                    .frame(maxWidth: .infinity, alignment: .leading)
+                    .padding(.vertical, 8)
+                    .padding(.horizontal, 12)
+                    .background(isActive ? Color.black.opacity(0.5) : .clear)
+                    .clipShape(RoundedRectangle(cornerRadius: 8))
+            }
+            .buttonStyle(.plain)
+
+            // Trash button (shown only when hovered)
+            if isHovered {
+                Button(action: deleteAction) {
+                    Image(systemName: "trash.fill")
+                        .foregroundColor(.red)
+                }
+                .buttonStyle(.plain)
+                .transition(.opacity.combined(with: .move(edge: .trailing)))
+            }
+        }
+        .padding(.horizontal, 8)
+        .onHover { hovering in
+            withAnimation(.easeInOut(duration: 0.2)) {
+                isHovered = hovering
+            }
+        }
     }
 }
 
