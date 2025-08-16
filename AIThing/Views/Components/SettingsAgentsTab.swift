@@ -152,17 +152,34 @@ struct SettingsAgentsTab: View {
             }
 
             GroupBox(
-                label: Text("Managed by Organization (Enterprise Plan Required)")
+                label: Text("Managed by Organization")
                     .font(.system(size: 10, weight: .medium))
                     .padding(.bottom, 4)
             ) {
                 HStack {
-                    Text("No Agents Available")
-                        .font(.system(size: 14, weight: .medium))
+                    Text("Enterprise Plan Required").font(.system(size: 14, weight: .medium))
+                        .opacity(0.5)
                     Spacer()
+                    Link(
+                        "Join Waitlist",
+                        destination: URL(string: "https://get.aithing.dev/join")!
+                    )
+                    .foregroundStyle(.white)
+                    .font(.system(size: 12, weight: .medium))
+                    .padding(.vertical, 4)
+                    .padding(.horizontal, 8)
+                    .background(Color.black.opacity(0.2))
+                    .clipShape(RoundedRectangle(cornerRadius: 4))
+                    .onHover { perform in
+                        if perform {
+                            AnalyticsManager.shared.selectItem(
+                                itemID: "join_waitlist_agent_hover",
+                                itemName: "join_waitlist_agent_hover"
+                            )
+                        }
+                    }
                 }
                 .padding(4)
-                .opacity(0.5)
             }
         }
         .frame(maxWidth: .infinity, alignment: .leading)

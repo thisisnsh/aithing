@@ -214,6 +214,14 @@ struct SettingsModelTab: View {
                         .padding(.horizontal, 8)
                         .background(Color.black.opacity(0.2))
                         .clipShape(RoundedRectangle(cornerRadius: 4))
+                        .onHover { perform in
+                            if perform {
+                                AnalyticsManager.shared.selectItem(
+                                    itemID: "join_waitlist_model_hover",
+                                    itemName: "join_waitlist_model_hover"
+                                )
+                            }
+                        }
                     }
                     .padding(4)
                 }

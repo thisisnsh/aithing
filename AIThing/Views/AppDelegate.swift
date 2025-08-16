@@ -121,6 +121,8 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate {
                 context.duration = 0.2
                 floatingWindow.animator().alphaValue = 1
             }
+
+            AnalyticsManager.shared.appOpen()
         }
     }
 

@@ -5,6 +5,7 @@
 //  Created by Nishant Singh Hada on 7/19/25.
 //
 
+import Firebase
 import SwiftUI
 
 struct TabItem: Identifiable, Equatable {
@@ -17,7 +18,6 @@ struct TabItem: Identifiable, Equatable {
     }
 }
 
-// 1) PreferenceKey to collect per-tab widths
 struct TabWidthsKey: PreferenceKey {
     static var defaultValue: [UUID: CGFloat] = [:]
     static func reduce(value: inout [UUID: CGFloat], nextValue: () -> [UUID: CGFloat]) {
@@ -144,10 +144,14 @@ struct ContentView: View {
                         onHistory()
                         return nil
                     case 45:  // N key
-                        addTab()
+                        if !showSettings && !showHistory {
+                            addTab()
+                        }
                         return nil
                     case 13:  // W key
-                        closeTab()
+                        if !showSettings && !showHistory {
+                            closeTab()
+                        }
                         return nil
                     case 43:  // Left angular arrow
                         moveFocus(-1)
@@ -173,6 +177,13 @@ struct ContentView: View {
             }
         }
         .task {
+            switch loginManager.authState {
+            case .signedIn(let user):
+                AnalyticsManager.shared.setUserId(user.uid)
+            default:
+                AnalyticsManager.shared.setUserId(nil)
+            }
+            
             managedModels = await firestoreManager.getModelInfos()
             await loadAllClientTools()
         }
@@ -285,12 +296,15 @@ struct ContentView: View {
                 showToast = false
                 toastColor = .white
             }
+            AnalyticsManager.shared.customEventTab(action: "tab_capacity_reached")
             return
         }
 
         let uuid = UUID(uuidString: history.id) ?? UUID()
         tabs.append(TabItem(id: uuid, history: history))
         focusedIndex = tabs.count - 1
+
+        AnalyticsManager.shared.customEventTab(action: "tab_continue_conversation")
     }
 
     private func addTab() {
@@ -305,6 +319,7 @@ struct ContentView: View {
                 showToast = false
                 toastColor = .white
             }
+            AnalyticsManager.shared.customEventTab(action: "tab_capacity_reached")
             return
         }
 
@@ -317,6 +332,8 @@ struct ContentView: View {
         DispatchQueue.main.asyncAfter(deadline: .now() + 0.2) {
             focusedIndex = tabs.count - 1
         }
+
+        AnalyticsManager.shared.customEventTab(action: "tab_add")
     }
 
     private func addTabWithoutAnimation() {
@@ -336,6 +353,8 @@ struct ContentView: View {
 
         tabs.append(TabItem())
         focusedIndex = tabs.count - 1
+
+        AnalyticsManager.shared.customEventTab(action: "tab_add_without_animation")
     }
 
     private func closeTab() {
@@ -351,6 +370,8 @@ struct ContentView: View {
         if focusedIndex >= tabs.count {
             focusedIndex = tabs.count - 1
         }
+
+        AnalyticsManager.shared.customEventTab(action: "tab_close")
     }
 
     private func onClick(tabId: UUID) {
@@ -368,6 +389,8 @@ struct ContentView: View {
                 focusedIndex = newIndex
             }
         }
+
+        AnalyticsManager.shared.customEventTab(action: "tab_click")
     }
 
     private func moveFocus(_ direction: Int) {
@@ -387,6 +410,8 @@ struct ContentView: View {
         DispatchQueue.main.asyncAfter(deadline: .now() + 0.2) {
             focusedIndex = newIndex
         }
+
+        AnalyticsManager.shared.customEventTab(action: "tab_move")
     }
 
     private func recalcZStackWidth() {
@@ -494,6 +519,11 @@ struct ContentView: View {
         if !disconnectRc.isEmpty {
             toastColor = .red
             toastText = "Failed to wake up agents: \(disconnectRc)"
+            AnalyticsManager.shared.customError(
+                type: "failure_disconnect_agents",
+                severity: "low",
+                location: "content_view"
+            )
             DispatchQueue.main.asyncAfter(deadline: .now() + 2) {
                 showToast = false
                 toastColor = .white
@@ -536,6 +566,11 @@ struct ContentView: View {
         if !failure.isEmpty {
             toastColor = .red
             toastText = "Failed to wake up agents\n" + failure
+            AnalyticsManager.shared.customError(
+                type: "failure_connect_agents",
+                severity: "warning",
+                location: "content_view"
+            )
         }
 
         DispatchQueue.main.asyncAfter(deadline: .now() + (failure.isEmpty ? 2 : 5)) {

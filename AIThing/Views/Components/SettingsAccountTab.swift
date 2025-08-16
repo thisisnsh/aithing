@@ -84,6 +84,14 @@ struct SettingsAccountTab: View {
                     .padding(.horizontal, 8)
                     .background(Color.black.opacity(0.2))
                     .clipShape(RoundedRectangle(cornerRadius: 4))
+                    .onHover { perform in
+                        if perform {
+                            AnalyticsManager.shared.selectItem(
+                                itemID: "get_more_credits_hover",
+                                itemName: "get_more_credits_hover"
+                            )
+                        }
+                    }
                 }
                 .padding(4)
             }
@@ -91,7 +99,7 @@ struct SettingsAccountTab: View {
             GroupBox {
                 dimmedRow(
                     systemIcon: "chart.bar.fill",
-                    text: "Credit Details",
+                    text: "Usage Breakdown",
                     trailing: "Coming Soon"
                 )
                 .padding(4)

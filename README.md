@@ -22,16 +22,16 @@ Missing Features
 - Video 3 - Privacy 
 
 16 Satursday
-- Analytics 
-- Credit Page
-- QA & Release
+- [Afternoon] Demo Video & Site Update
+- [Afternoon] Credit Page
+- [Evening] Video
+- [Night] QA & Release
 
 17 Sunday
-- Demo Videos
-
+- 
 
 18 Monday
-- 
+- Popup to download new version
 
 19 Tuesday
 - 

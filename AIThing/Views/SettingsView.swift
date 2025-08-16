@@ -104,6 +104,10 @@ struct SettingsView: View {
         .onHover(perform: updatePassthrough)
         .task {
             await getCredits()
+            AnalyticsManager.shared.screenView(
+                screenName: "settings_view",
+                screenClass: "settings_view"
+            )
         }
     }
 
@@ -116,29 +120,46 @@ struct SettingsView: View {
                 setSelectedTab(value: selectedTab)
                 saveModels()
                 saveAgents()
+                AnalyticsManager.shared.screenView(
+                    screenName: "account",
+                    screenClass: "settings_view"
+                )
             }
             sidebarButton("Models", isActive: selectedTab == .models) {
                 selectedTab = .models
                 setSelectedTab(value: selectedTab)
                 saveModels()
                 saveAgents()
+                AnalyticsManager.shared.screenView(
+                    screenName: "models",
+                    screenClass: "settings_view"
+                )
             }
             sidebarButton("Agents", isActive: selectedTab == .agents) {
                 selectedTab = .agents
                 setSelectedTab(value: selectedTab)
                 saveModels()
                 saveAgents()
+                AnalyticsManager.shared.screenView(
+                    screenName: "agents",
+                    screenClass: "settings_view"
+                )
             }
             sidebarButton("Preferences", isActive: selectedTab == .preferences) {
                 selectedTab = .preferences
                 setSelectedTab(value: selectedTab)
                 saveModels()
                 saveAgents()
+                AnalyticsManager.shared.screenView(
+                    screenName: "preferences",
+                    screenClass: "settings_view"
+                )
             }
 
             Spacer()
 
             Button(action: {
+                AnalyticsManager.shared.customAppQuit()
                 AppDelegate.allowQuit = true
                 NSApplication.shared.terminate(nil)
             }) {
@@ -168,6 +189,14 @@ struct SettingsView: View {
             .font(.system(size: 10, weight: .medium))
             .padding(.vertical, 8)
             .padding(.horizontal, 16)
+            .onHover { perform in
+                if perform {
+                    AnalyticsManager.shared.selectItem(
+                        itemID: "report_bug_hover",
+                        itemName: "report_bug_hover"
+                    )
+                }
+            }
 
             Color.clear.frame(height: 16)
         }
@@ -205,11 +234,21 @@ struct SettingsView: View {
     func signIn() async {
         await loginManager.signInWithGoogle()
         await getCredits()
+
+        switch loginManager.authState {
+        case .signedIn(let user):
+            AnalyticsManager.shared.setUserId(user.uid)
+        default:
+            AnalyticsManager.shared.setUserId(nil)
+        }
+
+        AnalyticsManager.shared.login(method: "google")
     }
 
     func signOut() async {
         loginManager.signOut()
         await getCredits()
+        AnalyticsManager.shared.setUserId(nil)
     }
 
     func getCredits() async {
@@ -247,6 +286,9 @@ struct SettingsView: View {
 
         let newAgent = AgentEntry(id: UUID(), entry: entry, isEnabled: true)
         agents.append(newAgent)
+
+        AnalyticsManager.shared.customEventAgent(agent: agentName)
+
         agentType = "Global"
         agentName = ""
         agentPrimary = ""

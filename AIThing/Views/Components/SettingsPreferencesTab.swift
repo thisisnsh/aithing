@@ -27,6 +27,18 @@ struct SettingsPreferencesTab: View {
                         onChange: { newValue in
                             setPreferencesShowInScreenshot(newValue)
                             setPanelVisibility()
+
+                            if newValue {
+                                AnalyticsManager.shared.selectItem(
+                                    itemID: "preference_show_in_screenshot_true",
+                                    itemName: "preference_show_in_screenshot_true"
+                                )
+                            } else {
+                                AnalyticsManager.shared.selectItem(
+                                    itemID: "preference_show_in_screenshot_false",
+                                    itemName: "preference_show_in_screenshot_false"
+                                )
+                            }
                         }
                     )
 
@@ -39,6 +51,18 @@ struct SettingsPreferencesTab: View {
                         title: "Capture Entire Screen on @this",
                         onChange: { newValue in
                             setPreferencesCaptureFullScreen(newValue)
+
+                            if newValue {
+                                AnalyticsManager.shared.selectItem(
+                                    itemID: "preference_capture_full_screen_true",
+                                    itemName: "preference_capture_full_screen_true"
+                                )
+                            } else {
+                                AnalyticsManager.shared.selectItem(
+                                    itemID: "preference_capture_full_screen_false",
+                                    itemName: "preference_capture_full_screen_false"
+                                )
+                            }
                         }
                     )
 

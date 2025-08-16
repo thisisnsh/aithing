@@ -34,6 +34,10 @@ struct HistoryView: View {
                     chatController.setHistory(first)
                 }
             }
+            AnalyticsManager.shared.screenView(
+                screenName: "history_view",
+                screenClass: "history_view"
+            )
         }
         .onHover(perform: updatePassthrough)
     }
@@ -50,6 +54,10 @@ struct HistoryView: View {
                         action: {
                             index = i
                             chatController.setHistory(h)
+                            AnalyticsManager.shared.selectItem(
+                                itemID: "history_read",
+                                itemName: "history_read"
+                            )
                         },
                         deleteAction: {
                             Task {
@@ -64,6 +72,10 @@ struct HistoryView: View {
                                     chatController.setHistory(history)
                                 }
                             }
+                            AnalyticsManager.shared.selectItem(
+                                itemID: "history_remove",
+                                itemName: "history_remove"
+                            )
                         }
                     )
                 }

@@ -132,6 +132,10 @@ struct TabView: View {
                     }
                     tabTitle = tabHistory.title
                 }
+                AnalyticsManager.shared.screenView(
+                    screenName: "tab_view",
+                    screenClass: "tab_view"
+                )
             }
             .onChange(of: isFocused) { newValue in
                 // Delay size change when in focus so that other
@@ -231,8 +235,10 @@ struct TabView: View {
                     action: {
                         if modelOutput.isEmpty {
                             onHelp()
+                            AnalyticsManager.shared.customEventTab(action: "tab_click_help")
                         } else {
                             copyToClipboard(string: modelOutput)
+                            AnalyticsManager.shared.customEventTab(action: "tab_click_copy")
                         }
                     }
                 ) {
@@ -362,6 +368,7 @@ struct TabView: View {
                 isZoomedModelInputImage = false
                 modelInputImage = nil
                 modelInputImageBase64 = nil
+                AnalyticsManager.shared.customEventTab(action: "tab_image_remove")
             }) {
                 Image(systemName: "xmark.circle.fill")
                     .frame(width: 12, height: 12)
@@ -392,6 +399,7 @@ struct TabView: View {
                     if let (image, base64) = await screenshotManager.captureScreenUnderMouse() {
                         modelInputImage = image
                         modelInputImageBase64 = base64
+                        AnalyticsManager.shared.customEventTab(action: "tab_image_add_entire")
                     }
                 } else {
                     if let (image, base64) =
@@ -399,6 +407,7 @@ struct TabView: View {
                     {
                         modelInputImage = image
                         modelInputImageBase64 = base64
+                        AnalyticsManager.shared.customEventTab(action: "tab_image_add_selected")
                     }
                 }
             }
@@ -429,9 +438,13 @@ struct TabView: View {
             updatePanelSizeFromDefault(getResponseHeight())
         }
 
+        AnalyticsManager.shared.customEventTab(action: "tab_query_handle_start")
+
         isViewBlinking = true
         await callModel(query: trimmed)
         isViewBlinking = false
+
+        AnalyticsManager.shared.customEventTab(action: "tab_query_handle_end")
     }
 
     private func callModel(query: String) async {
@@ -445,6 +458,11 @@ struct TabView: View {
                     For updates, please contact help@aithing.dev.
                     """
             )
+            AnalyticsManager.shared.customError(
+                type: "breakglass_enabled",
+                severity: "low",
+                location: "tab_view"
+            )
             return
         }
 
@@ -456,6 +474,11 @@ struct TabView: View {
                     Current version has expired.
                     Please download the [latest version](https://aithing.dev/latest) to enjoy new features and continue using the app.
                     """
+            )
+            AnalyticsManager.shared.customError(
+                type: "version_expired",
+                severity: "low",
+                location: "tab_view"
             )
             return
         }
@@ -490,19 +513,35 @@ struct TabView: View {
                 if profile.creditsUsed < profile.creditsTotal {
                     appUser = user
                     apiKeyManaged = profile.apiKeyAnthropic
+                    AnalyticsManager.shared.setUserId(user.uid)
                     break  // User is signed in and has credits, continue
                 } else {
                     isThinking = false
                     await animateOutput(content: creditErrorMessage)
+                    AnalyticsManager.shared.customError(
+                        type: "credits_not_enough",
+                        severity: "high",
+                        location: "tab_view"
+                    )
                     return
                 }
             }
             isThinking = false
             await animateOutput(content: profileErrorMessage)
+            AnalyticsManager.shared.customError(
+                type: "profile_error",
+                severity: "high",
+                location: "tab_view"
+            )
             return
         default:
             isThinking = false
             await animateOutput(content: loginPromptMessage)
+            AnalyticsManager.shared.customError(
+                type: "query_without_login",
+                severity: "low",
+                location: "tab_view"
+            )
             return
         }
 
@@ -510,6 +549,7 @@ struct TabView: View {
         if !allTabs.contains(where: { $0.id == tabId }) {
             isThinking = false
             print("Exiting callModel for \(tabId) as it was closed")
+            AnalyticsManager.shared.customEventTab(action: "query_stop_on_close")
             return
         }
 
@@ -527,6 +567,11 @@ struct TabView: View {
 
         let byok = getByokSelected()
         let model = getModel()
+
+        AnalyticsManager.shared.customEventModel(
+            name: model,
+            type: byok ? "byok" : "managed"
+        )
 
         guard let apiKey = byok ? getAnthropicAPIKey() : apiKeyManaged, !apiKey.isEmpty
         else {
@@ -558,6 +603,11 @@ struct TabView: View {
 
             isThinking = false
             await animateOutput(content: apiErrorMessage)
+            AnalyticsManager.shared.customError(
+                type: "missing_api_key",
+                severity: byok ? "low" : "high",
+                location: "tab_view"
+            )
             return
         }
 
@@ -626,6 +676,11 @@ struct TabView: View {
             else {
                 isThinking = false
                 await animateOutput(content: "Invalid response\n\nReport issue at help@aithing.dev")
+                AnalyticsManager.shared.customError(
+                    type: "response_invalid",
+                    severity: "high",
+                    location: "tab_view"
+                )
                 return
             }
 
@@ -653,10 +708,20 @@ struct TabView: View {
                                 """
                         )
                     }
+                    AnalyticsManager.shared.customError(
+                        type: "response_rate_limit",
+                        severity: byok ? "low" : "high",
+                        location: "tab_view"
+                    )
                 } else {
                     await animateOutput(
                         content:
                             "Error \(httpResponse.statusCode)\n\(error)\n\nReport issue at help@aithing.dev"
+                    )
+                    AnalyticsManager.shared.customError(
+                        type: "response_failure",
+                        severity: "high",
+                        location: "tab_view"
                     )
                 }
                 return
@@ -670,7 +735,11 @@ struct TabView: View {
                     by: cost + costImage * modelImageCount
                 )
             } else {
-                // todo analytics
+                AnalyticsManager.shared.customError(
+                    type: "cost_not_calculated",
+                    severity: "high",
+                    location: "tab_view"
+                )
             }
 
             var finalResponse = ""
@@ -792,6 +861,9 @@ struct TabView: View {
                                 name: finalToolUseName,
                                 input: finalToolUseInputParam
                             )
+
+                            AnalyticsManager.shared.customEventTab(action: "query_tool_called")
+
                             print("--------")
                             print("call tool: \(finalToolUseName)")
                             print("tool input: \(finalToolUseInputParam)")
