@@ -282,6 +282,23 @@ struct ContentView: View {
         }
     }
 
+    private func onClick(tabId: UUID) {
+        if let newIndex = tabs.firstIndex(where: { $0.id == tabId }) {
+            screenshotManager.cancelScreenshot()
+
+            DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
+                // Increase height to max while switching
+                // It will be resized when tab in focus
+                if tabs.count > 1 {
+                    updatePanelSizeFromDefault(1000)
+                }
+            }
+            DispatchQueue.main.asyncAfter(deadline: .now() + 0.2) {
+                focusedIndex = newIndex
+            }
+        }
+    }
+
     private func moveFocus(_ direction: Int) {
         screenshotManager.cancelScreenshot()
 
@@ -315,6 +332,7 @@ struct ContentView: View {
             allClientTools: $allClientTools,
             showSettings: $showSettings,
             showHistory: $showHistory,
+            onClick: { tabId in onClick(tabId: tabId) },
             onSetting: { self.onSetting() },
             onHelp: { self.onHelp() },
             updatePanelSizeFromDefault: { extraHeight in

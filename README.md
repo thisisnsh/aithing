@@ -21,9 +21,6 @@ Missing Features
 - Video 2 - Selective Context 
 - Video 3 - Privacy 
 
-15 Friday
-- Click to change tab
-
 16 Satursday
 - Analytics
 - Model Cost & Credits from Firebase 

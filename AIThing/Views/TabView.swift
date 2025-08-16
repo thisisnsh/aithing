@@ -24,6 +24,7 @@ struct TabView: View {
     @Binding var showSettings: Bool
     @Binding var showHistory: Bool
 
+    var onClick: (_ tabId: UUID) -> Void
     var onSetting: () -> Void
     var onHelp: () -> Void
     var updatePanelSizeFromDefault: (CGFloat) -> Void
@@ -162,6 +163,11 @@ struct TabView: View {
             }
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
+        .onTapGesture {
+            if !isFocused {
+                onClick(tabId)
+            }
+        }
     }
 
     // MARK: - Private SubViews
@@ -605,9 +611,9 @@ struct TabView: View {
 
         print("apiKey:", apiKey)
         print("model:", model)
-        print("cost:", getModelCost(getModel()))
-        print("messages:", body["messages"] as! [[String: Any]])
-        print("tools:", (body["tools"] as! [[String: Any]]).count)
+        // print("cost:", getModelCost(getModel()))
+        // print("messages:", body["messages"] as! [[String: Any]])
+        // print("tools:", (body["tools"] as! [[String: Any]]).count)
 
         request.httpBody = try? JSONSerialization.data(withJSONObject: body)
 
