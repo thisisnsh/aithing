@@ -21,9 +21,6 @@ Missing Features
 - Video 2 - Selective Context 
 - Video 3 - Privacy 
 
-Rate limit error  
-
-
 16 Satursday
 - Analytics 
 - Credit Page

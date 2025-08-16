@@ -469,7 +469,7 @@ struct TabView: View {
         let creditErrorMessage = """
             You don’t have enough credits. Please [purchase more credits](https://get.aithing.dev/credits) to continue.
 
-            Learn more about [usage and credits](https://aithing.dev/usage).
+            Learn more about [usage and credits](https://aithing.dev/billing/usage).
             """
 
         let loginPromptMessage = """
@@ -494,16 +494,16 @@ struct TabView: View {
                 } else {
                     isThinking = false
                     await animateOutput(content: creditErrorMessage)
-                    return ()
+                    return
                 }
             }
             isThinking = false
             await animateOutput(content: profileErrorMessage)
-            return ()
+            return
         default:
             isThinking = false
             await animateOutput(content: loginPromptMessage)
-            return ()
+            return
         }
 
         // Check if tab is alive, else return without processing
@@ -558,7 +558,7 @@ struct TabView: View {
 
             isThinking = false
             await animateOutput(content: apiErrorMessage)
-            return ()
+            return
         }
 
         guard let url = URL(string: "https://api.anthropic.com/v1/messages") else { return }
@@ -625,7 +625,7 @@ struct TabView: View {
             guard let httpResponse = response as? HTTPURLResponse
             else {
                 isThinking = false
-                modelOutput = "Invalid response\n\nReport issue at help@aithing.dev"
+                await animateOutput(content: "Invalid response\n\nReport issue at help@aithing.dev")
                 return
             }
 
@@ -635,8 +635,30 @@ struct TabView: View {
                 for try await line in stream.lines {
                     error += line
                 }
-                modelOutput =
-                    "Error \(httpResponse.statusCode)\n\(error)\n\nReport issue at help@aithing.dev"
+                if httpResponse.statusCode == 429 {
+                    if byok {
+                        await animateOutput(
+                            content: """
+                                You’ve reached your API key’s rate limit.
+
+                                Learn more: https://console.anthropic.com/settings/limits
+                                """
+                        )
+                    } else {
+                        await animateOutput(
+                            content: """
+                                The system is under heavy load. Please try again in a minute. 
+
+                                We apologize for the disruption. Read more about this [error](https://aithing.dev/errors/ratelimit). 
+                                """
+                        )
+                    }
+                } else {
+                    await animateOutput(
+                        content:
+                            "Error \(httpResponse.statusCode)\n\(error)\n\nReport issue at help@aithing.dev"
+                    )
+                }
                 return
             }
 
