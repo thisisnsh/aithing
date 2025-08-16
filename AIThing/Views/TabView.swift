@@ -54,6 +54,7 @@ struct TabView: View {
     @State private var modelInput: [[String: Any]] = []
     @State private var modelOutput: String = ""
 
+    @State private var modelImageCount: Int = 0
     @State private var modelInputImage: NSImage? = nil
     @State private var modelInputImageBase64: String? = nil
     @State private var isZoomedModelInputImage = false
@@ -579,6 +580,7 @@ struct TabView: View {
                         ],
                     ]
                 )
+                modelImageCount += 1
             }
             modelInput.append(
                 [
@@ -632,7 +634,11 @@ struct TabView: View {
 
             if let appUser {
                 let cost = getModelCost(getModel(), all: managedModels)
-                await firestoreManager.incrementCredits(user: appUser, by: cost)
+                let costImage = getModelCostImage(getModel(), all: managedModels)
+                await firestoreManager.incrementCredits(
+                    user: appUser,
+                    by: cost + costImage * modelImageCount
+                )
             } else {
                 // todo analytics
             }

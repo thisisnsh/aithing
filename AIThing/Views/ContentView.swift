@@ -554,6 +554,7 @@ struct ContentView: View {
                 description: "Fast and cost-effective answers",
                 iconName: "anthropic",
                 cost: 1,
+                costImage: 1,
                 order: 1,
             )
         )
@@ -566,6 +567,7 @@ struct ContentView: View {
                 description: "Balanced performance and versatility",
                 iconName: "anthropic",
                 cost: 2,
+                costImage: 2,
                 order: 2,
             )
         )
@@ -578,6 +580,7 @@ struct ContentView: View {
                 description: "Best for complex, high-intelligence tasks",
                 iconName: "anthropic",
                 cost: 5,
+                costImage: 3,
                 order: 3,
             )
         )

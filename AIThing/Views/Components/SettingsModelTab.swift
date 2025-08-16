@@ -12,16 +12,19 @@ struct ModelInfo: Codable, Identifiable, Equatable {
     // case claude_opus_4_1 = "claude-opus-4-1-20250805"
     // case claude_sonnet_4 = "claude-sonnet-4-20250514"
     // case claude_haiku_3_5 = "claude-3-5-haiku-20241022"
-    
+
     let provider: String
     let title: String
-    
+
     let ratings: String
     // let ratings: Ratings
-    
+
     let description: String
     let iconName: String
+
     let cost: Int
+    let costImage: Int
+
     let order: Int
 }
 
@@ -31,6 +34,10 @@ func getModelTitle(_ model: String, all allModels: [ModelInfo]) -> String {
 
 func getModelCost(_ model: String, all allModels: [ModelInfo]) -> Int {
     allModels.first(where: { $0.id == model })?.cost ?? 1
+}
+
+func getModelCostImage(_ model: String, all allModels: [ModelInfo]) -> Int {
+    allModels.first(where: { $0.id == model })?.costImage ?? 1
 }
 
 func getModelRating(_ model: String, all allModels: [ModelInfo]) -> String {
@@ -80,6 +87,9 @@ struct SettingsModelTab: View {
     private var cost: Int {
         getModelCost(modelSelected, all: managedModels)
     }
+    private var costImage: Int {
+        getModelCostImage(modelSelected, all: managedModels)
+    }
 
     var body: some View {
         ZStack(alignment: .top) {
@@ -107,7 +117,11 @@ struct SettingsModelTab: View {
                             Spacer()
                             if !byokSelected {
                                 Text(
-                                    "Cost:\n\(cost) Credit\(cost > 1 ? "s" : "") per Query"
+                                    """
+                                    Cost:
+                                    \(cost) Credit\(cost > 1 ? "s" : "") per Query
+                                    \(costImage) Credit\(costImage > 1 ? "s" : "") per Image                              
+                                    """
                                 )
                                 .font(.system(size: 10, weight: .medium))
                                 .multilineTextAlignment(.trailing)
