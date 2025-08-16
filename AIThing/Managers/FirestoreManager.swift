@@ -130,4 +130,38 @@ class FirestoreManager: ObservableObject {
         }
     }
 
+    func getModelInfos() async -> [ModelInfo] {
+        do {
+            let snapshot = try await db.collection("Models").getDocuments()
+
+            let models: [ModelInfo] = snapshot.documents.compactMap { doc in
+                if let model = try? doc.data(as: ModelInfo.self) {
+                    return model
+                }
+                return nil
+            }
+
+            // Sort: first by order, then by title if order is equal
+            return models.sorted {
+                if $0.order == $1.order {
+                    return $0.title.localizedCompare($1.title) == .orderedAscending
+                }
+                return $0.order < $1.order
+            }
+        } catch {
+            print("[FirestoreManager] Error fetching models: \(error.localizedDescription)")
+            return []
+        }
+    }
+
+    func createModel(model: ModelInfo) async {
+        do {
+            try db.collection("Models").document(model.id).setData(from: model)
+            print("[FirestoreManager] Created/updated model with id \(model.id)")
+        } catch {
+            print(
+                "[FirestoreManager] Error creating model \(model.id): \(error.localizedDescription)"
+            )
+        }
+    }
 }

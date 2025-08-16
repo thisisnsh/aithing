@@ -28,7 +28,6 @@ struct InputTextView: NSViewRepresentable {
             self.parent = parent
         }
 
-        // MARK: - Commit helper
         private func commit(from textView: NSTextView) {
             let rawText = textView.string
             let trimmed = rawText.trimmingCharacters(in: .newlines)
@@ -43,7 +42,6 @@ struct InputTextView: NSViewRepresentable {
             parent.onCommit()
         }
 
-        // MARK: - Intercept Return vs Shift+Return
         func textView(_ textView: NSTextView, doCommandBy commandSelector: Selector) -> Bool {
             // Shift+Enter in AppKit usually maps to insertLineBreak:
             if commandSelector == #selector(NSResponder.insertLineBreak(_:)) {

@@ -10,7 +10,6 @@ import FirebaseCore
 import GoogleSignIn
 import SwiftUI
 
-// MARK: - User Model
 struct AppUser {
     let uid: String
     let email: String?
@@ -25,7 +24,6 @@ struct AppUser {
     }
 }
 
-// MARK: - Authentication State
 enum AuthState {
     case loading
     case signedOut
@@ -33,7 +31,6 @@ enum AuthState {
     case error(String)
 }
 
-// MARK: - Login Manager
 @MainActor
 class LoginManager: ObservableObject {
     @Published var authState: AuthState = .loading
@@ -51,7 +48,6 @@ class LoginManager: ObservableObject {
         }
     }
 
-    // MARK: - Auth State Management
     private func setupAuthStateListener() {
         authStateListener = Auth.auth().addStateDidChangeListener { [weak self] _, user in
             guard let self = self else { return }
@@ -65,7 +61,6 @@ class LoginManager: ObservableObject {
         }
     }
 
-    // MARK: - Google Sign In
     func signInWithGoogle() async {
         isLoading = true
 
@@ -109,7 +104,6 @@ class LoginManager: ObservableObject {
         isLoading = false
     }
 
-    // MARK: - Sign Out
     func signOut() {
         isLoading = true
 
@@ -124,7 +118,6 @@ class LoginManager: ObservableObject {
         isLoading = false
     }
 
-    // MARK: - Helper Properties
     var isSignedIn: Bool {
         if case .signedIn = authState {
             return true
@@ -140,7 +133,6 @@ class LoginManager: ObservableObject {
     }
 }
 
-// MARK: - Custom Errors
 enum LoginError: LocalizedError {
     case noPresentingWindow
     case noClientID
@@ -161,7 +153,6 @@ enum LoginError: LocalizedError {
     }
 }
 
-// MARK: - NSApplication Extension for Window Access
 extension NSApplication {
     var keyWindow: NSWindow? {
         return NSApplication.shared.windows.first { $0.isKeyWindow }

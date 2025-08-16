@@ -38,6 +38,8 @@ struct ContentView: View {
     var setPanelVisibility: () -> Void
     let setPanelPassthrough: (_ enabled: Bool) -> Void
 
+    @State private var managedModels: [ModelInfo] = []
+
     @State private var agents: [AgentEntry] = []
     @State private var allClientTools: [String: [[String: Any]]] = [:]
 
@@ -61,7 +63,6 @@ struct ContentView: View {
     @State private var toastColor: Color = .white
 
     @State private var showHelp = false
-
     private var helpText: String {
         return """
             ## Help
@@ -167,10 +168,12 @@ struct ContentView: View {
         .onChange(of: showSettings) { newValue in
             updatePanelSizeFromCurrent(showSettings ? 500 : -500)
             Task {
+                managedModels = await firestoreManager.getModelInfos()
                 await loadAllClientTools()
             }
         }
         .task {
+            managedModels = await firestoreManager.getModelInfos()
             await loadAllClientTools()
         }
     }
@@ -179,7 +182,8 @@ struct ContentView: View {
         SettingsView(
             isPresented: $showSettings,
             setPanelVisibility: { self.setPanelVisibility() },
-            setPanelPassthrough: { self.setPanelPassthrough($0) }
+            setPanelPassthrough: { self.setPanelPassthrough($0) },
+            managedModels: managedModels
         )
         .background(.ultraThinMaterial)
         .overlay {
@@ -439,6 +443,7 @@ struct ContentView: View {
             tabHistory: tab.history,
             allTabs: $tabs,
             allClientTools: $allClientTools,
+            managedModels: managedModels,
             showSettings: $showSettings,
             showHistory: $showHistory,
             onClick: { tabId in onClick(tabId: tabId) },
@@ -539,4 +544,42 @@ struct ContentView: View {
         }
     }
 
+    private func createModels() async {
+        await firestoreManager.createModel(
+            model: .init(
+                id: "claude-3-5-haiku-20241022",
+                provider: "Anthropic",
+                title: "Claude Haiku 3.5",
+                ratings: Ratings(intelligence: 3, speed: 5, context: 3).shortText,
+                description: "Fast and cost-effective answers",
+                iconName: "anthropic",
+                cost: 1,
+                order: 1,
+            )
+        )
+        await firestoreManager.createModel(
+            model: .init(
+                id: "claude-sonnet-4-20250514",
+                provider: "Anthropic",
+                title: "Claude Sonnet 4",
+                ratings: Ratings(intelligence: 4, speed: 4, context: 4).shortText,
+                description: "Balanced performance and versatility",
+                iconName: "anthropic",
+                cost: 2,
+                order: 2,
+            )
+        )
+        await firestoreManager.createModel(
+            model: .init(
+                id: "claude-opus-4-1-20250805",
+                provider: "Anthropic",
+                title: "Claude Opus 4.1",
+                ratings: Ratings(intelligence: 5, speed: 3, context: 4).shortText,
+                description: "Best for complex, high-intelligence tasks",
+                iconName: "anthropic",
+                cost: 5,
+                order: 3,
+            )
+        )
+    }
 }

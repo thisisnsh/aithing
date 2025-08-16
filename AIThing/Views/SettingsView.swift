@@ -1,94 +1,6 @@
 import SwiftUI
 
-// MARK: - Core Types shared by tabs
-
 enum SettingsTab: String { case account, models, agents, preferences }
-
-struct AgentEntry: Codable, Identifiable, Equatable {
-    let id: UUID
-    var entry: Entry
-    var isEnabled: Bool
-}
-
-enum ModelName: String, Hashable, Equatable {
-    case claude_opus_4_1 = "claude-opus-4-1-20250805"
-    case claude_sonnet_4 = "claude-sonnet-4-20250514"
-    case claude_haiku_3_5 = "claude-3-5-haiku-20241022"
-}
-
-func getModelTitle(_ model: ModelName) -> String {
-    MANAGED_MODELS.first(where: { $0.id == model })?.title ?? model.rawValue
-}
-
-func getModelCost(_ model: ModelName) -> Int {
-    MANAGED_MODELS.first(where: { $0.id == model })?.cost ?? 1
-}
-
-func getModelRating(_ model: ModelName) -> String {
-    MANAGED_MODELS.first(where: { $0.id == model })?.ratings.shortText ?? "No Ratings"
-}
-
-func getModelIcon(_ model: ModelName) -> String {
-    MANAGED_MODELS.first(where: { $0.id == model })?.iconName ?? ""
-}
-
-struct Ratings {
-    let understanding: Int
-    let speed: Int
-    let creativity: Int
-
-    private func stars(for rating: Int) -> String {
-        let filled = String(repeating: "★", count: rating)
-        let empty = String(repeating: "", count: max(0, 5 - rating))
-        return filled + empty
-    }
-
-    var shortText: String {
-        "Understanding: \(stars(for: understanding))\nSpeed: \(stars(for: speed))\nCreativity: \(stars(for: creativity))"
-    }
-}
-
-struct ModelInfo: Identifiable {
-    let id: ModelName
-    let provider: String
-    let title: String
-    let ratings: Ratings
-    let description: String
-    let iconName: String?
-    let cost: Int
-}
-
-private let MANAGED_MODELS: [ModelInfo] = [
-    .init(
-        id: .claude_haiku_3_5,
-        provider: "Anthropic",
-        title: "Claude Haiku 3.5",
-        ratings: .init(understanding: 3, speed: 5, creativity: 3),
-        description: "Get quick and cost-effective answers",
-        iconName: "anthropic",
-        cost: 1,
-    ),
-    .init(
-        id: .claude_sonnet_4,
-        provider: "Anthropic",
-        title: "Claude Sonnet 4",
-        ratings: .init(understanding: 4, speed: 4, creativity: 4),
-        description: "Optimal balance of everything",
-        iconName: "anthropic",
-        cost: 2,
-    ),
-    .init(
-        id: .claude_opus_4_1,
-        provider: "Anthropic",
-        title: "Claude Opus 4.1",
-        ratings: .init(understanding: 5, speed: 3, creativity: 4),
-        description: "Perform complex tasks",
-        iconName: "anthropic",
-        cost: 5,
-    ),
-]
-
-// MARK: - Main View with all state
 
 struct SettingsView: View {
     @EnvironmentObject var loginManager: LoginManager
@@ -97,13 +9,13 @@ struct SettingsView: View {
     @Binding var isPresented: Bool
     var setPanelVisibility: () -> Void
     let setPanelPassthrough: (_ enabled: Bool) -> Void
-
+    var managedModels: [ModelInfo]
     @State private var selectedTab: SettingsTab = getSelectedTab()
 
     // Models
     @State private var apiKey: String = getAnthropicAPIKey() ?? ""
     @FocusState private var apiKeyFieldFocused: Bool
-    @State private var modelSelected: ModelName = getModel()
+    @State private var modelSelected: String = getModel()
     @State private var byokSelected: Bool = getByokSelected()
 
     // Agents
@@ -146,7 +58,7 @@ struct SettingsView: View {
 
                     case .models:
                         SettingsModelTab(
-                            managedModels: MANAGED_MODELS,
+                            managedModels: managedModels,
                             modelSelected: $modelSelected,
                             byokSelected: $byokSelected,
                             apiKey: $apiKey,
@@ -190,10 +102,10 @@ struct SettingsView: View {
             saveAgents()
         }
         .onHover(perform: updatePassthrough)
-        .task { await getCredits() }
+        .task {
+            await getCredits()
+        }
     }
-
-    // MARK: - Sidebar
 
     private var sidebar: some View {
         VStack(alignment: .leading, spacing: 0) {
@@ -279,9 +191,7 @@ struct SettingsView: View {
         .buttonStyle(.plain)
     }
 
-    // MARK: - Shared helpers (kept here; passed down as closures/bindings)
-
-    func bindingForModel(_ binding: Binding<ModelName>, _ target: ModelName) -> Binding<Bool> {
+    func bindingForModel(_ binding: Binding<String>, _ target: String) -> Binding<Bool> {
         Binding<Bool>(
             get: { binding.wrappedValue == target },
             set: { newValue in if newValue { binding.wrappedValue = target } }
@@ -291,8 +201,6 @@ struct SettingsView: View {
     func boxTitle(_ text: String) -> some View {
         Text(text).font(.system(size: 10, weight: .medium)).padding(.vertical, 4)
     }
-
-    // MARK: - Auth / Credits
 
     func signIn() async {
         await loginManager.signInWithGoogle()
@@ -315,8 +223,6 @@ struct SettingsView: View {
             creditsUsed = 0
         }
     }
-
-    // MARK: - Persistence (Models/Agents)
 
     func saveModels() {
         setModel(value: modelSelected)

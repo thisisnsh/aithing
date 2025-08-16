@@ -7,6 +7,12 @@
 
 import SwiftUI
 
+struct AgentEntry: Codable, Identifiable, Equatable {
+    let id: UUID
+    var entry: Entry
+    var isEnabled: Bool
+}
+
 struct SettingsAgentsTab: View {
     @Binding var agents: [AgentEntry]
     @Binding var showAddAgent: Bool
@@ -162,8 +168,6 @@ struct SettingsAgentsTab: View {
         .frame(maxWidth: .infinity, alignment: .leading)
     }
 }
-
-// MARK: - Local subviews (kept small)
 
 private struct ManagedAgentRow: View {
     let icon: String

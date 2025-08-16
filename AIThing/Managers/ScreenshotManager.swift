@@ -10,11 +10,7 @@ import CoreGraphics
 import Foundation
 import ScreenCaptureKit
 
-// MARK: - ScreenshotManager
-
 final class ScreenshotManager: ObservableObject {
-
-    // MARK: Public API
 
     /// Cancels any active selection overlay and removes the dim.
     func cancelScreenshot() {
@@ -119,8 +115,6 @@ final class ScreenshotManager: ObservableObject {
             return nil
         }
     }
-
-    // MARK: Private helpers
 
     /// Returns the `SCDisplay` currently under the mouse cursor.
     private func getDisplayUnderMouse() async throws -> SCDisplay? {
@@ -294,8 +288,6 @@ final class ScreenshotManager: ObservableObject {
     }
 }
 
-// MARK: - FrameCaptureHandler
-
 final class FrameCaptureHandler: NSObject, SCStreamOutput {
     var capturedImage: NSImage?
 
@@ -314,8 +306,6 @@ final class FrameCaptureHandler: NSObject, SCStreamOutput {
     }
 }
 
-// MARK: - NSImage JPEG
-
 extension NSImage {
     /// Encodes the image to JPEG with the given compression factor.
     func jpegData(compression: CGFloat = 0.9) -> Data? {
@@ -330,8 +320,6 @@ extension NSImage {
         return jpg
     }
 }
-
-// MARK: - Selection Overlay (single-screen)
 
 private enum SelectionOutcome {
     case region(CGRect)

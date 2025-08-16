@@ -9,8 +9,6 @@ import AppKit
 import CoreData
 import Foundation
 
-// MARK: - Public model
-
 struct History: Identifiable, Equatable {
     let id: String
     let lastUpdated: String  // epoch seconds as String
@@ -20,8 +18,6 @@ struct History: Identifiable, Equatable {
     static func == (lhs: History, rhs: History) -> Bool { lhs.id == rhs.id }
 }
 
-// MARK: - Managed Object
-
 @objc(HistoryDocMO)
 final class HistoryDocMO: NSManagedObject {
     @NSManaged var id: String
@@ -29,8 +25,6 @@ final class HistoryDocMO: NSManagedObject {
     @NSManaged var title: String?
     @NSManaged var json: Data  // JSON for [[String: Any]]
 }
-
-// MARK: - Manager
 
 @MainActor
 final class HistoryStore: ObservableObject {
@@ -40,8 +34,6 @@ final class HistoryStore: ObservableObject {
 
     // Keep a container per id (=> one SQLite per id)
     private var containers: [String: NSPersistentContainer] = [:]
-
-    // MARK: - Public API
 
     /// Idempotent: inserts when new, updates when existing. lastUpdated is set to now (epoch).
     @discardableResult
@@ -180,8 +172,6 @@ final class HistoryStore: ObservableObject {
         return true
     }
 
-    // MARK: - Core Data plumbing (one store per id)
-
     private func container(for id: String) async -> NSPersistentContainer? {
         if let c = containers[id] { return c }
         let model = Self.makeModel()
@@ -219,8 +209,6 @@ final class HistoryStore: ObservableObject {
         containers[id] = c
         return c
     }
-
-    // MARK: - Model & Paths
 
     private static func makeModel() -> NSManagedObjectModel {
         let model = NSManagedObjectModel()

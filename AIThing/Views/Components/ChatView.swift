@@ -8,8 +8,6 @@
 import AppKit
 import SwiftUI
 
-// MARK: - Chat parsing primitives
-
 enum ChatRole {
     case user
     case assistant
@@ -118,8 +116,6 @@ private func base64ToNSImage(_ base64: String) -> NSImage? {
     return img
 }
 
-// MARK: - Chat controller
-
 final class ChatController: ObservableObject {
     @Published var items: [ChatItem] = []
     @Published var history: History?
@@ -133,8 +129,6 @@ final class ChatController: ObservableObject {
         }
     }
 }
-
-// MARK: - Chat UI
 
 struct ChatView: View {
     @ObservedObject var controller: ChatController

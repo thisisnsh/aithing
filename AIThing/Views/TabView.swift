@@ -21,6 +21,8 @@ struct TabView: View {
     var tabHistory: History?
     @Binding var allTabs: [TabItem]
     @Binding var allClientTools: [String: [[String: Any]]]
+    var managedModels: [ModelInfo]
+
     @Binding var showSettings: Bool
     @Binding var showHistory: Bool
 
@@ -157,8 +159,6 @@ struct TabView: View {
             }
         }
     }
-
-    // MARK: - Private SubViews
 
     private func inputView() -> some View {
         HStack(spacing: 8) {
@@ -370,8 +370,6 @@ struct TabView: View {
         }
     }
 
-    // MARK: - Private Functions
-
     private func getResponseHeight() -> CGFloat {
         var height: CGFloat = 0
         if showResponseArea {
@@ -434,8 +432,6 @@ struct TabView: View {
         await callModel(query: trimmed)
         isViewBlinking = false
     }
-
-    // MARK: - AI Functions
 
     private func callModel(query: String) async {
         // Check if version is breakglassed
@@ -521,17 +517,17 @@ struct TabView: View {
         // return await fakeData(query: query)
 
         let byok = getByokSelected()
-        let model = getModel().rawValue
+        let model = getModel()
 
         guard let apiKey = byok ? getAnthropicAPIKey() : apiKeyManaged, !apiKey.isEmpty
         else {
-            // Common error message for profile issues
             var apiErrorMessage = ""
+            let modelTitle = getModelTitle(getModel(), all: managedModels)
             if byok {
                 apiErrorMessage = """
                     API key not found.
 
-                    You have selected the \(getModelTitle(getModel())) model in **Settings** under the *"Use Own API Key"* section in the **Models** tab.
+                    You have selected the \(modelTitle) model in **Settings** under the *"Use Own API Key"* section in the **Models** tab.
 
                     This model requires you to provide an API key.
 
@@ -605,7 +601,7 @@ struct TabView: View {
 
         ]
 
-        // print("apiKey:", apiKey)
+        print("apiKey:", apiKey)
         print("model:", model)
         // print("cost:", getModelCost(getModel()))
         // print("messages:", body["messages"] as! [[String: Any]])
@@ -635,7 +631,8 @@ struct TabView: View {
             }
 
             if let appUser {
-                await firestoreManager.incrementCredits(user: appUser, by: getModelCost(getModel()))
+                let cost = getModelCost(getModel(), all: managedModels)
+                await firestoreManager.incrementCredits(user: appUser, by: cost)
             } else {
                 // todo analytics
             }

@@ -21,13 +21,13 @@ Missing Features
 - Video 2 - Selective Context 
 - Video 3 - Privacy 
 
-- Type anywhere 
+Rate limit error 
+high credit usage on image 
 
 16 Satursday
 - Analytics
-- Model Cost & Credits from Firebase 
-- QA 
-- Release
+- QA & Release
+- Type anywhere 
 
 17 Sunday
 - Demo Videos

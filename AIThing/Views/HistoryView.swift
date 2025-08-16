@@ -8,10 +8,6 @@
 import SwiftUI
 
 struct HistoryView: View {
-    // If you use these:
-    // @EnvironmentObject var loginManager: LoginManager
-    // @EnvironmentObject var firestoreManager: FirestoreManager
-
     @Binding var isPresented: Bool
     let setPanelPassthrough: (_ enabled: Bool) -> Void
     private func updatePassthrough(inside: Bool) { setPanelPassthrough(!inside) }
@@ -41,8 +37,6 @@ struct HistoryView: View {
         }
         .onHover(perform: updatePassthrough)
     }
-
-    // MARK: - Sidebar
 
     private var sidebar: some View {
         ScrollView(.vertical, showsIndicators: false) {
