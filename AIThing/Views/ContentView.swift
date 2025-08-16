@@ -183,7 +183,7 @@ struct ContentView: View {
             isPresented: $showSettings,
             setPanelVisibility: { self.setPanelVisibility() },
             setPanelPassthrough: { self.setPanelPassthrough($0) },
-            managedModels: managedModels
+            managedModels: $managedModels
         )
         .background(.ultraThinMaterial)
         .overlay {
@@ -443,7 +443,7 @@ struct ContentView: View {
             tabHistory: tab.history,
             allTabs: $tabs,
             allClientTools: $allClientTools,
-            managedModels: managedModels,
+            managedModels: $managedModels,
             showSettings: $showSettings,
             showHistory: $showHistory,
             onClick: { tabId in onClick(tabId: tabId) },

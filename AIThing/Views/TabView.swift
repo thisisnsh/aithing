@@ -21,7 +21,7 @@ struct TabView: View {
     var tabHistory: History?
     @Binding var allTabs: [TabItem]
     @Binding var allClientTools: [String: [[String: Any]]]
-    var managedModels: [ModelInfo]
+    @Binding var managedModels: [ModelInfo]
 
     @Binding var showSettings: Bool
     @Binding var showHistory: Bool
@@ -460,14 +460,18 @@ struct TabView: View {
             return
         }
 
-        // Common error message for profile issues
         let profileErrorMessage = """
             Something went wrong. Please log out and log in again. 
 
             Report issue at help@aithing.dev
             """
 
-        // Common message for not logged in
+        let creditErrorMessage = """
+            You don’t have enough credits. Please [purchase more credits](https://get.aithing.dev/credits) to continue.
+
+            Learn more about [usage and credits](https://aithing.dev/usage).
+            """
+
         let loginPromptMessage = """
             Please log in to receive **100 free credits.** 
 
@@ -482,12 +486,16 @@ struct TabView: View {
 
         switch loginManager.authState {
         case .signedIn(let user):
-            if let profile = await firestoreManager.getProfile(user: user),
-                profile.creditsUsed < profile.creditsTotal
-            {
-                appUser = user
-                apiKeyManaged = profile.apiKeyAnthropic
-                break  // User is signed in and has credits, continue
+            if let profile = await firestoreManager.getProfile(user: user) {
+                if profile.creditsUsed < profile.creditsTotal {
+                    appUser = user
+                    apiKeyManaged = profile.apiKeyAnthropic
+                    break  // User is signed in and has credits, continue
+                } else {
+                    isThinking = false
+                    await animateOutput(content: creditErrorMessage)
+                    return ()
+                }
             }
             isThinking = false
             await animateOutput(content: profileErrorMessage)
@@ -643,14 +651,6 @@ struct TabView: View {
                 // todo analytics
             }
 
-            Task {
-                await createTitle(
-                    query: query,
-                    model: model,
-                    apiKey: apiKey
-                )
-            }
-
             var finalResponse = ""
             var finalToolUseInputParam = ""
             var finalToolUseId = ""
@@ -728,11 +728,14 @@ struct TabView: View {
                                 "role": "assistant",
                                 "content": [["text": modelOutput, "type": "text"]],
                             ])
+
                             await createTitle(
-                                query: query,
+                                query: modelOutput,
                                 model: model,
-                                apiKey: apiKey
+                                apiKey: apiKey,
+                                byok: byok
                             )
+
                             await HistoryStore.shared.store(
                                 id: tabId.uuidString,
                                 title: tabTitle,
@@ -891,8 +894,10 @@ struct TabView: View {
         return messages
     }
 
-    private func createTitle(query: String, model: String, apiKey: String) async {
-        if tabTitle != nil && !tabTitle!.isEmpty { return }
+    private func createTitle(query: String, model: String, apiKey: String, byok: Bool) async {
+        if tabTitle != nil && !tabTitle!.isEmpty {
+            return
+        }
 
         // Check if version is breakglassed
         if await firestoreManager.getBreakglass() {
@@ -922,8 +927,13 @@ struct TabView: View {
             ]
         ]
 
+        var bestModel = model
+        if let cheapestModel = getCheapestModel(in: managedModels), !byok {
+            bestModel = cheapestModel.id
+        }
+        print("title model:", bestModel)
         let body: [String: Any] = [
-            "model": model,
+            "model": bestModel,
             "stream": false,
             "max_tokens": 5,
             "temperature": 0.7,

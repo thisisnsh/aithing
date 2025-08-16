@@ -9,7 +9,7 @@ struct SettingsView: View {
     @Binding var isPresented: Bool
     var setPanelVisibility: () -> Void
     let setPanelPassthrough: (_ enabled: Bool) -> Void
-    var managedModels: [ModelInfo]
+    @Binding var managedModels: [ModelInfo]
     @State private var selectedTab: SettingsTab = getSelectedTab()
 
     // Models
@@ -180,7 +180,7 @@ struct SettingsView: View {
     {
         Button(action: action) {
             Text(title)
-                .font(.system(size: 14, weight: .medium))
+                .font(.system(size: 12, weight: .medium))
                 .frame(maxWidth: .infinity, alignment: .leading)
                 .padding(.vertical, 8)
                 .padding(.horizontal, 16)

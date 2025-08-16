@@ -48,6 +48,17 @@ func getModelIcon(_ model: String, all allModels: [ModelInfo]) -> String {
     allModels.first(where: { $0.id == model })?.iconName ?? ""
 }
 
+func getCheapestModel(in models: [ModelInfo]) -> ModelInfo? {
+    let result = models.min {
+        $0.cost == $1.cost
+            ? ($0.order == $1.order
+                ? $0.title.localizedCompare($1.title) == .orderedAscending
+                : $0.order < $1.order)
+            : $0.cost < $1.cost
+    }
+    return result
+}
+
 struct Ratings {
     let intelligence: Int
     let speed: Int
@@ -193,17 +204,16 @@ struct SettingsModelTab: View {
                         Text("Enterprise Plan Required").font(.system(size: 14, weight: .medium))
                             .opacity(0.5)
                         Spacer()
-                        Button {
-                            // todo something
-                        } label: {
-                            Text("Contact Us")
-                                .font(.system(size: 12, weight: .medium))
-                                .padding(.vertical, 4)
-                                .padding(.horizontal, 8)
-                                .background(Color.black.opacity(0.2))
-                                .clipShape(RoundedRectangle(cornerRadius: 4))
-                        }
-                        .buttonStyle(.plain)
+                        Link(
+                            "Join Waitlist",
+                            destination: URL(string: "https://get.aithing.dev/join")!
+                        )
+                        .foregroundStyle(.white)
+                        .font(.system(size: 12, weight: .medium))
+                        .padding(.vertical, 4)
+                        .padding(.horizontal, 8)
+                        .background(Color.black.opacity(0.2))
+                        .clipShape(RoundedRectangle(cornerRadius: 4))
                     }
                     .padding(4)
                 }

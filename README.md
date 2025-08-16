@@ -21,8 +21,8 @@ Missing Features
 - Video 2 - Selective Context 
 - Video 3 - Privacy 
 
-Rate limit error 
-high credit usage on image 
+Rate limit error  
+
 
 16 Satursday
 - Analytics
@@ -31,6 +31,7 @@ high credit usage on image
 
 17 Sunday
 - Demo Videos
+- Credit Page
 
 18 Monday
 - 

@@ -74,28 +74,27 @@ struct SettingsAccountTab: View {
                     }
                     .padding(4)
 
-                    Button {
-                        // todo open pricing / top-up
-                    } label: {
-                        Text("Get More Credits")
-                            .font(.system(size: 12, weight: .medium))
-                            .padding(.vertical, 4)
-                            .padding(.horizontal, 8)
-                            .background(Color.black.opacity(0.2))
-                            .clipShape(RoundedRectangle(cornerRadius: 4))
-                    }
-                    .buttonStyle(.plain)
+                    Link(
+                        "Get More Credits",
+                        destination: URL(string: "https://get.aithing.dev/credits")!
+                    )
+                    .foregroundStyle(.white)
+                    .font(.system(size: 12, weight: .medium))
+                    .padding(.vertical, 4)
+                    .padding(.horizontal, 8)
+                    .background(Color.black.opacity(0.2))
+                    .clipShape(RoundedRectangle(cornerRadius: 4))
                 }
                 .padding(4)
             }
 
-            GroupBox(label: title("Tokens")) {
-                HStack {
-                    Text("Coming Soon").font(.system(size: 14, weight: .medium))
-                    Spacer()
-                }
+            GroupBox {
+                dimmedRow(
+                    systemIcon: "chart.bar.fill",
+                    text: "Credit Details",
+                    trailing: "Coming Soon"
+                )
                 .padding(4)
-                .opacity(0.5)
             }
         }
         .frame(maxWidth: .infinity, alignment: .leading)
