@@ -48,9 +48,10 @@ struct ContentView: View {
 
     @State private var zStackWidth: CGFloat? = nil
     @State private var measuredTabWidths: [UUID: CGFloat] = [:]
-
     private let horizontalPad: CGFloat = 72
     private let hSpacing: CGFloat = 8
+    @State private var leftPadding: CGFloat? = nil
+    @State private var rightPadding: CGFloat? = nil
 
     @State private var showSettings = false
     @State private var showHistory = false
@@ -77,7 +78,7 @@ struct ContentView: View {
     }
 
     var body: some View {
-        ZStack(alignment: .topLeading) {
+        ZStack(alignment: .top) {
             HStack(alignment: .top, spacing: hSpacing) {
                 Color.clear.frame(width: horizontalPad)
                 ForEach(Array(tabs.enumerated()), id: \.element.id) {
@@ -101,17 +102,32 @@ struct ContentView: View {
             .onPreferenceChange(TabWidthsKey.self) { dict in
                 measuredTabWidths = dict
                 recalcZStackWidth()
+                edgePadding(for: focusedIndex)
             }
 
-            if showSettings { Settings() }
-            if showHistory { History() }
-            if showHelp { Help() }
-            if showToast { Toast() }
+            if showSettings {
+                Settings()
+            }
+            if showHistory {
+                History()
+            }
+            if showHelp {
+                Help()
+            }
+            if showToast {
+                Toast()
+            }
         }
         .frame(width: zStackWidth)
-        .onAppear { recalcZStackWidth() }
+        .onAppear {
+            recalcZStackWidth()
+            edgePadding(for: focusedIndex)
+        }
         .onChange(of: tabs) { _ in
-            withAnimation(.easeInOut) { recalcZStackWidth() }
+            withAnimation(.easeInOut) {
+                recalcZStackWidth()
+            }
+            edgePadding(for: focusedIndex)
         }
         .background(Color.clear)
         .onAppear {
@@ -173,8 +189,8 @@ struct ContentView: View {
         .cornerRadius(24)
         .zIndex(1)
         .frame(width: 600, height: 500)
-        .padding(.leading, CGFloat(48 + focusedIndex * 72))
-        .padding(.trailing, CGFloat(80 + (tabs.count - 1 - focusedIndex) * 72))
+        .padding(.leading, leftPadding)
+        .padding(.trailing, rightPadding)
         .padding(.top, 96)
         .environmentObject(loginManager)
         .environmentObject(firestoreManager)
@@ -194,8 +210,8 @@ struct ContentView: View {
         .cornerRadius(24)
         .zIndex(1)
         .frame(width: 600, height: 500)
-        .padding(.leading, CGFloat(48 + focusedIndex * 72))
-        .padding(.trailing, CGFloat(80 + (tabs.count - 1 - focusedIndex) * 72))
+        .padding(.leading, leftPadding)
+        .padding(.trailing, rightPadding)
         .padding(.top, 96)
         .environmentObject(loginManager)
         .environmentObject(firestoreManager)
@@ -212,8 +228,8 @@ struct ContentView: View {
             .cornerRadius(24)
             .zIndex(2)
             .frame(minWidth: 600, maxWidth: .infinity, maxHeight: .infinity, alignment: .top)
-            .padding(.leading, CGFloat(48 + focusedIndex * 72))
-            .padding(.trailing, CGFloat(80 + (tabs.count - 1 - focusedIndex) * 72))
+            .padding(.leading, leftPadding)
+            .padding(.trailing, rightPadding)
             .padding(.top, 96)
     }
 
@@ -228,8 +244,8 @@ struct ContentView: View {
             .cornerRadius(24)
             .zIndex(3)
             .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top)
-            .padding(.leading, CGFloat(48 + focusedIndex * 72))
-            .padding(.trailing, CGFloat(80 + (tabs.count - 1 - focusedIndex) * 72))
+            .padding(.leading, leftPadding)
+            .padding(.trailing, rightPadding)
             .padding(.top, 96)
     }
 
@@ -382,6 +398,33 @@ struct ContentView: View {
         } else {
             zStackWidth = nil
         }
+    }
+
+    /// Returns the cumulative left/right padding (spacers + spacing + neighbor tabs)
+    /// for a given tab index in `tabs`.
+    private func edgePadding(for index: Int) {
+        guard index >= 0, index < tabs.count else {
+            leftPadding = nil
+            rightPadding = nil
+            return
+        }
+
+        // Left: left spacer + spacing + widths of all tabs before this one + inter-tab spacings
+        let leftTabs = tabs.prefix(index)
+        let leftWidth =
+            horizontalPad  // left spacer
+            + CGFloat(index + 1) * hSpacing  // gaps before this tab
+            + leftTabs.reduce(0) { $0 + (measuredTabWidths[$1.id] ?? 0) }
+
+        // Right: right spacer + spacing + widths of all tabs after this one + inter-tab spacings
+        let rightTabs = tabs.suffix(tabs.count - index - 1)
+        let rightWidth =
+            horizontalPad  // right spacer
+            + CGFloat(rightTabs.count + 1) * hSpacing  // gaps after this tab
+            + rightTabs.reduce(0) { $0 + (measuredTabWidths[$1.id] ?? 0) }
+
+        leftPadding = leftWidth
+        rightPadding = rightWidth
     }
 
     @ViewBuilder

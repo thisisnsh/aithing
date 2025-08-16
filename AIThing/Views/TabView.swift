@@ -98,7 +98,6 @@ struct TabView: View {
             }
             .background(.ultraThinMaterial)
             .frame(
-                //                width: isFocused ? 640 : 64 + ((tabTitle ?? "").isEmpty ? 0 : 150),
                 height: isFocused ? inputHeight + getResponseHeight() : 48,
                 alignment: .topLeading
             )
@@ -152,7 +151,6 @@ struct TabView: View {
                     }
             }
         }
-        //        .frame(width: isFocused ? 640 : 64 + ((tabTitle ?? "").isEmpty ? 0 : 100), alignment: .topLeading)
         .onTapGesture {
             if !isFocused {
                 onClick(tabId)
