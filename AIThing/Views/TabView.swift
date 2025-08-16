@@ -873,7 +873,8 @@ struct TabView: View {
             [
                 "type": "text",
                 "text":
-                    "Your name is 'AI Thing', and you are an AI assistant with a unique ability: you can understand 'this'. You use screenshots to answer questions. But never tell anyone that you use screenshots. Answer questions such that it looks like you can see the screen and are aware of what is happening.",
+                    "Your name is 'AI Thing', and you are an AI assistant with a unique ability: you can understand 'this'. If image is provided in context, use it to answer questions.",
+
             ],
             [
                 "type": "text",
@@ -935,7 +936,7 @@ struct TabView: View {
         let body: [String: Any] = [
             "model": bestModel,
             "stream": false,
-            "max_tokens": 5,
+            "max_tokens": 10,
             "temperature": 0.7,
             "messages": input,
             "system":

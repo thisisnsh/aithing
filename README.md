@@ -25,13 +25,13 @@ Rate limit error
 
 
 16 Satursday
-- Analytics
+- Analytics 
+- Credit Page
 - QA & Release
-- Type anywhere 
 
 17 Sunday
 - Demo Videos
-- Credit Page
+
 
 18 Monday
 - 
