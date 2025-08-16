@@ -259,7 +259,7 @@ struct SettingsView: View {
 
             Color.clear.frame(height: 16)
         }
-        .frame(width: 150)
+        .frame(width: 160)
         .background(Color.gray.opacity(0.1))
     }
 

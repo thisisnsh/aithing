@@ -9,9 +9,9 @@ import SwiftUI
 
 struct TabItem: Identifiable {
     let id: UUID
-    let history: [[String: Any]]
+    let history: History?
 
-    init(id: UUID = UUID(), history: [[String: Any]] = []) {
+    init(id: UUID = UUID(), history: History? = nil) {
         self.id = id
         self.history = history
     }
@@ -245,7 +245,7 @@ struct ContentView: View {
         }
 
         let uuid = UUID(uuidString: history.id) ?? UUID()
-        tabs.append(TabItem(id: uuid, history: history.history))
+        tabs.append(TabItem(id: uuid, history: history))
         focusedIndex = tabs.count - 1
     }
 
@@ -329,6 +329,7 @@ struct ContentView: View {
         .environmentObject(loginManager)
         .environmentObject(screenshotManager)
         .environmentObject(firestoreManager)
+        .animation(.easeInOut(duration: 0.25), value: focusedIndex)
     }
 
     private func loadAllClientTools() async {

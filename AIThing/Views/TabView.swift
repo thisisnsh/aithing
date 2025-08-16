@@ -18,7 +18,7 @@ struct TabView: View {
 
     @Binding var isFocused: Bool
     var tabId: UUID
-    var tabHistory: [[String: Any]]
+    var tabHistory: History?
     @Binding var allTabs: [TabItem]
     @Binding var allClientTools: [String: [[String: Any]]]
     @Binding var showSettings: Bool
@@ -33,6 +33,8 @@ struct TabView: View {
     private func updatePassthrough(inside: Bool) {
         setPanelPassthrough(!inside)
     }
+
+    @State private var tabTitle: String?
 
     @State private var inputHeight: CGFloat = 48
     @State private var imageName: String = "Logo"
@@ -126,14 +128,16 @@ struct TabView: View {
             .cornerRadius(getCornerRadius())
             .animation(.easeInOut(duration: 0.25), value: isFocused)
             .onAppear {
-                print("onAppear", tabId)
                 DispatchQueue.main.async {
                     updatePanelSizeFromDefault(getResponseHeight())
                 }
-                modelInput = tabHistory
-                modelOutput = assistantMessages(from: tabHistory)
-                if !modelOutput.isEmpty {
-                    showResponseArea = true
+                if let tabHistory {
+                    modelInput = tabHistory.history
+                    modelOutput = assistantMessages(from: tabHistory.history)
+                    if !modelOutput.isEmpty {
+                        showResponseArea = true
+                    }
+                    tabTitle = tabHistory.title
                 }
             }
             .onChange(of: isFocused) { newValue in
@@ -218,7 +222,7 @@ struct TabView: View {
 
                     if query.isEmpty && !showSettings && !showHistory {
                         Text(
-                            tabHistory.isEmpty
+                            tabHistory?.history.isEmpty ?? true
                                 ? "Ask anything on this AI Thing..." : "Continue conversation..."
                         )
                         .foregroundColor(.white.opacity(0.6))
@@ -711,9 +715,17 @@ struct TabView: View {
                                 "role": "assistant",
                                 "content": [["text": modelOutput, "type": "text"]],
                             ])
+                            if tabTitle == nil || tabTitle!.isEmpty {
+                                self.tabTitle = await createTitle(
+                                    query: query,
+                                    model: model,
+                                    apiKey: apiKey
+                                )
+                                print(self.tabTitle)
+                            }
                             await HistoryStore.shared.store(
                                 id: tabId.uuidString,
-                                title: nil,  // todo get title
+                                title: tabTitle,
                                 history: modelInput
                             )
                         }
@@ -867,6 +879,78 @@ struct TabView: View {
         ]
 
         return messages
+    }
+
+    private func createTitle(query: String, model: String, apiKey: String) async -> String? {
+        // Check if version is breakglassed
+        if await firestoreManager.getBreakglass() {
+            return nil
+        }
+
+        // Check if version is expired
+        if await firestoreManager.getExpired() {
+            return nil
+        }
+
+        guard let url = URL(string: "https://api.anthropic.com/v1/messages") else { return nil }
+
+        var request = URLRequest(url: url)
+        request.httpMethod = "POST"
+        request.setValue("application/json", forHTTPHeaderField: "Content-Type")
+        request.setValue("2023-06-01", forHTTPHeaderField: "anthropic-version")
+        request.setValue("\(apiKey)", forHTTPHeaderField: "x-api-key")
+        request.setValue("extended-cache-ttl-2025-04-11", forHTTPHeaderField: "anthropic-beta")
+
+        let input = [
+            [
+                "role": "user",
+                "content": [
+                    ["type": "text", "text": buildQuery(query: query)]
+                ],
+            ]
+        ]
+
+        let body: [String: Any] = [
+            "model": model,
+            "stream": false,
+            "max_tokens": 5,
+            "temperature": 0.7,
+            "messages": input,
+            "system":
+                "Generate a concise title of no more than 18 characters. Do not include quotation marks or any extra text. Output only the title, nothing else.",
+        ]
+
+        request.httpBody = try? JSONSerialization.data(withJSONObject: body)
+
+        do {
+            let (data, response) = try await URLSession.shared.data(for: request)
+
+            guard let httpResponse = response as? HTTPURLResponse,
+                (200..<300).contains(httpResponse.statusCode)
+            else {
+                print("Bad HTTP response")
+                return nil
+            }
+
+            // Parse JSON manually
+            if let json = try JSONSerialization.jsonObject(with: data) as? [String: Any],
+                let contentArray = json["content"] as? [[String: Any]]
+            {
+                // Find the first item with type = "text"
+                for item in contentArray {
+                    if let type = item["type"] as? String, type == "text",
+                        let text = item["text"] as? String
+                    {
+                        return text
+                    }
+                }
+            }
+
+            return nil
+
+        } catch {
+            return nil
+        }
     }
 
     private func fakeData(query: String) async {

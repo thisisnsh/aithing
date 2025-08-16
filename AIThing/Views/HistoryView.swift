@@ -59,12 +59,15 @@ struct HistoryView: View {
                         },
                         deleteAction: {
                             Task {
+                                let isActive = i == index
                                 await HistoryStore.shared.delete(id: h.id)
                                 histories = await HistoryStore.shared.getAll()
-                                if i == index {
-                                    if let first = histories.first {
-                                        chatController.setHistory(first)
+                                if isActive {
+                                    if index >= histories.count {
+                                        index = max(0, histories.count - 1)
                                     }
+                                    let history = histories[safe: index]
+                                    chatController.setHistory(history)
                                 }
                             }
                         }
@@ -82,7 +85,7 @@ struct HistoryView: View {
                 Color.clear.frame(height: 16)
             }
         }
-        .frame(width: 150)
+        .frame(width: 160)
         .background(Color.gray.opacity(0.08))
     }
 

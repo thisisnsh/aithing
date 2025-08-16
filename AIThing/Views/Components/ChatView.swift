@@ -123,9 +123,14 @@ private func base64ToNSImage(_ base64: String) -> NSImage? {
 final class ChatController: ObservableObject {
     @Published var items: [ChatItem] = []
     @Published var history: History?
-    func setHistory(_ history: History) {
-        items = parseHistory(history.history)
-        self.history = history
+    func setHistory(_ history: History?) {
+        if let history {
+            items = parseHistory(history.history)
+            self.history = history
+        } else {
+            items = []
+            self.history = history
+        }
     }
 }
 

@@ -23,8 +23,6 @@ Missing Features
 
 15 Friday
 - Click to change tab
-- History close
-- summarize title 
 
 16 Satursday
 - Analytics
