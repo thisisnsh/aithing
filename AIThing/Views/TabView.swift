@@ -98,7 +98,7 @@ struct TabView: View {
             }
             .background(.ultraThinMaterial)
             .frame(
-                width: isFocused ? 640 : 64,
+                //                width: isFocused ? 640 : 64 + ((tabTitle ?? "").isEmpty ? 0 : 150),
                 height: isFocused ? inputHeight + getResponseHeight() : 48,
                 alignment: .topLeading
             )
@@ -110,19 +110,9 @@ struct TabView: View {
                             cornerRadius: getCornerRadius(),
                             lineWidth: 2.5
                         )
-                        .frame(
-                            width: isFocused ? 640 : 64,
-                            height: isFocused ? inputHeight + getResponseHeight() : 48,
-                            alignment: .topLeading
-                        )
                     } else {
                         RoundedRectangle(cornerRadius: getCornerRadius())
                             .stroke(Color.white, lineWidth: 1.5)
-                            .frame(
-                                width: isFocused ? 640 : 64,
-                                height: isFocused ? inputHeight + getResponseHeight() : 48,
-                                alignment: .topLeading
-                            )
                     }
                 }
             )
@@ -145,7 +135,7 @@ struct TabView: View {
                 // Delay size change when in focus so that other
                 // views not in focus adjust height first
                 if isFocused {
-                    DispatchQueue.main.asyncAfter(deadline: .now() + 0.2) {
+                    DispatchQueue.main.asyncAfter(deadline: .now() + 0.4) {
                         updatePanelSizeFromDefault(getResponseHeight())
                     }
                 } else {
@@ -162,7 +152,7 @@ struct TabView: View {
                     }
             }
         }
-        .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
+        //        .frame(width: isFocused ? 640 : 64 + ((tabTitle ?? "").isEmpty ? 0 : 100), alignment: .topLeading)
         .onTapGesture {
             if !isFocused {
                 onClick(tabId)
@@ -175,7 +165,7 @@ struct TabView: View {
     private func inputView() -> some View {
         HStack(spacing: 8) {
             LogoShape()
-                .fill(isFocused ? .white : .white.opacity(0.5))
+                .fill(isFocused && !showSettings && !showHistory ? .white : .white.opacity(0.5))
                 .scaledToFit()
                 .frame(width: isFocused ? 32 : 24)
                 .onTapGesture {
@@ -225,6 +215,7 @@ struct TabView: View {
                         }
                     )
                     .opacity(showSettings || showHistory ? 0.6 : 1)
+                    .frame(width: 526)
 
                     if query.isEmpty && !showSettings && !showHistory {
                         Text(
@@ -236,6 +227,7 @@ struct TabView: View {
                         .padding(.leading, 6)
                     }
                 }
+
                 Button(
                     action: {
                         if modelOutput.isEmpty {
@@ -246,15 +238,21 @@ struct TabView: View {
                     }
                 ) {
                     Image(
-                        systemName: modelOutput.isEmpty
+                        systemName: modelOutput.isEmpty || showSettings || showHistory
                             ? "questionmark.circle.fill" : "document.on.document.fill"
                     )
                     .resizable()
                     .scaledToFit()
-                    .frame(width: 18, height: 18)
-                    .foregroundColor(modelOutput.isEmpty ? .white.opacity(0.5) : .white)
+                    .foregroundColor(.white.opacity(0.5))
                 }
                 .buttonStyle(PlainButtonStyle())
+                .frame(width: 18, height: 18)
+
+            } else if let tabTitle, !tabTitle.isEmpty {
+                Text(tabTitle)
+                    .font(.system(size: 10, weight: .medium))
+                    .lineLimit(1)
+                    .foregroundStyle(.white.opacity(0.5))
             }
         }
         .frame(height: isFocused ? inputHeight - 16 : 48)
@@ -301,7 +299,7 @@ struct TabView: View {
                     }
                 )
             }
-            .frame(height: getResponseHeight())
+            .frame(width: 24 + 32 + 8 + 526 + 8 + 18 + 24, height: getResponseHeight())
             .background(Color.black.opacity(0.3))
             .onPreferenceChange(ViewHeightKey.self) { height in
                 let checkedHeight = min(max(responseHeightMin, height), responseHeightMax)
@@ -317,7 +315,7 @@ struct TabView: View {
             }
             .onChange(of: modelOutput) { newValue in
                 if responseHeight == responseHeightMax {
-                    DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
+                    DispatchQueue.main.asyncAfter(deadline: .now() + 0.3) {
                         withAnimation {
                             proxy.scrollTo("BOTTOM", anchor: .bottom)
                         }
@@ -609,7 +607,7 @@ struct TabView: View {
 
         ]
 
-        print("apiKey:", apiKey)
+        // print("apiKey:", apiKey)
         print("model:", model)
         // print("cost:", getModelCost(getModel()))
         // print("messages:", body["messages"] as! [[String: Any]])
@@ -642,6 +640,14 @@ struct TabView: View {
                 await firestoreManager.incrementCredits(user: appUser, by: getModelCost(getModel()))
             } else {
                 // todo analytics
+            }
+
+            Task {
+                await createTitle(
+                    query: query,
+                    model: model,
+                    apiKey: apiKey
+                )
             }
 
             var finalResponse = ""
@@ -721,14 +727,11 @@ struct TabView: View {
                                 "role": "assistant",
                                 "content": [["text": modelOutput, "type": "text"]],
                             ])
-                            if tabTitle == nil || tabTitle!.isEmpty {
-                                self.tabTitle = await createTitle(
-                                    query: query,
-                                    model: model,
-                                    apiKey: apiKey
-                                )
-                                print(self.tabTitle)
-                            }
+                            await createTitle(
+                                query: query,
+                                model: model,
+                                apiKey: apiKey
+                            )
                             await HistoryStore.shared.store(
                                 id: tabId.uuidString,
                                 title: tabTitle,
@@ -887,18 +890,20 @@ struct TabView: View {
         return messages
     }
 
-    private func createTitle(query: String, model: String, apiKey: String) async -> String? {
+    private func createTitle(query: String, model: String, apiKey: String) async {
+        if tabTitle != nil && !tabTitle!.isEmpty { return }
+
         // Check if version is breakglassed
         if await firestoreManager.getBreakglass() {
-            return nil
+            return
         }
 
         // Check if version is expired
         if await firestoreManager.getExpired() {
-            return nil
+            return
         }
 
-        guard let url = URL(string: "https://api.anthropic.com/v1/messages") else { return nil }
+        guard let url = URL(string: "https://api.anthropic.com/v1/messages") else { return }
 
         var request = URLRequest(url: url)
         request.httpMethod = "POST"
@@ -935,7 +940,7 @@ struct TabView: View {
                 (200..<300).contains(httpResponse.statusCode)
             else {
                 print("Bad HTTP response")
-                return nil
+                return
             }
 
             // Parse JSON manually
@@ -947,15 +952,14 @@ struct TabView: View {
                     if let type = item["type"] as? String, type == "text",
                         let text = item["text"] as? String
                     {
-                        return text
+                        tabTitle = text
+                        return
                     }
                 }
             }
-
-            return nil
-
+            return
         } catch {
-            return nil
+            return
         }
     }
 

@@ -21,6 +21,8 @@ Missing Features
 - Video 2 - Selective Context 
 - Video 3 - Privacy 
 
+- Type anywhere 
+
 16 Satursday
 - Analytics
 - Model Cost & Credits from Firebase 

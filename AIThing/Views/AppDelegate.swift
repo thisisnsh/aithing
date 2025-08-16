@@ -18,7 +18,7 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate {
     var floatingWindow: NonActivatingPanel!
     var hotKey: HotKey?
 
-    let width: CGFloat = 1000
+    let width: CGFloat = 1400
     let height: CGFloat = 96
 
     static var allowQuit = false

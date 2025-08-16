@@ -7,13 +7,21 @@
 
 import SwiftUI
 
-struct TabItem: Identifiable {
+struct TabItem: Identifiable, Equatable {
     let id: UUID
     let history: History?
 
     init(id: UUID = UUID(), history: History? = nil) {
         self.id = id
         self.history = history
+    }
+}
+
+// 1) PreferenceKey to collect per-tab widths
+struct TabWidthsKey: PreferenceKey {
+    static var defaultValue: [UUID: CGFloat] = [:]
+    static func reduce(value: inout [UUID: CGFloat], nextValue: () -> [UUID: CGFloat]) {
+        value.merge(nextValue(), uniquingKeysWith: { _, new in new })
     }
 }
 
@@ -37,7 +45,12 @@ struct ContentView: View {
 
     @State private var tabs: [TabItem] = []
     @State private var maxTabs: Int = 3
-    @State private var width: CGFloat = 640 + 48
+
+    @State private var zStackWidth: CGFloat? = nil
+    @State private var measuredTabWidths: [UUID: CGFloat] = [:]
+
+    private let horizontalPad: CGFloat = 72
+    private let hSpacing: CGFloat = 8
 
     @State private var showSettings = false
     @State private var showHistory = false
@@ -50,7 +63,7 @@ struct ContentView: View {
 
     private var helpText: String {
         return """
-            ## Help: 
+            ## Help
 
             | Command | Description |   | Command | Description | 
             | ------- | ----------- | - | ------- | ----------- | 
@@ -64,28 +77,42 @@ struct ContentView: View {
     }
 
     var body: some View {
-        ZStack(alignment: .top) {
-            HStack(alignment: .top, spacing: 8) {
-                Color.clear.frame(width: 40)
-                ForEach(Array(tabs.enumerated()), id: \.element.id) { index, tab in
+        ZStack(alignment: .topLeading) {
+            HStack(alignment: .top, spacing: hSpacing) {
+                Color.clear.frame(width: horizontalPad)
+                ForEach(Array(tabs.enumerated()), id: \.element.id) {
+                    index,
+                    tab in
                     tabView(at: index, tab: tab)
+                        .fixedSize(horizontal: true, vertical: false)
+                        .background(
+                            GeometryReader { proxy in
+                                Color.clear.preference(
+                                    key: TabWidthsKey.self,
+                                    value: [
+                                        tab.id: proxy.size.width
+                                    ]
+                                )
+                            }
+                        )
                 }
-                Color.clear.frame(width: 72)
+                Color.clear.frame(width: horizontalPad)
             }
-            if showSettings {
-                Settings()
+            .onPreferenceChange(TabWidthsKey.self) { dict in
+                measuredTabWidths = dict
+                recalcZStackWidth()
             }
-            if showHistory {
-                History()
-            }
-            if showHelp {
-                Help()
-            }
-            if showToast {
-                Toast()
-            }
+
+            if showSettings { Settings() }
+            if showHistory { History() }
+            if showHelp { Help() }
+            if showToast { Toast() }
         }
-        .frame(width: CGFloat(640 + 48) + CGFloat((tabs.count)) * CGFloat(72))
+        .frame(width: zStackWidth)
+        .onAppear { recalcZStackWidth() }
+        .onChange(of: tabs) { _ in
+            withAnimation(.easeInOut) { recalcZStackWidth() }
+        }
         .background(Color.clear)
         .onAppear {
             addTab()
@@ -184,7 +211,7 @@ struct ContentView: View {
             }
             .cornerRadius(24)
             .zIndex(2)
-            .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top)
+            .frame(minWidth: 600, maxWidth: .infinity, maxHeight: .infinity, alignment: .top)
             .padding(.leading, CGFloat(48 + focusedIndex * 72))
             .padding(.trailing, CGFloat(80 + (tabs.count - 1 - focusedIndex) * 72))
             .padding(.top, 96)
@@ -195,11 +222,8 @@ struct ContentView: View {
             .padding()
             .background(.ultraThinMaterial)
             .overlay {
-                AnimatedGradientBorder(
-                    cornerRadius: 24,
-                    lineWidth: 1.5,
-                    color: toastColor
-                )
+                RoundedRectangle(cornerRadius: 24)
+                    .stroke(Color.white, lineWidth: 1.5)
             }
             .cornerRadius(24)
             .zIndex(3)
@@ -252,7 +276,34 @@ struct ContentView: View {
     private func addTab() {
         screenshotManager.cancelScreenshot()
 
-        if tabs.count >= maxTabs {
+        let count = tabs.count
+        if count >= maxTabs {
+            toastColor = .red
+            toastText = "Maximum of \(maxTabs) tabs reached"
+            showToast = true
+            DispatchQueue.main.asyncAfter(deadline: .now() + 2) {
+                showToast = false
+                toastColor = .white
+            }
+            return
+        }
+
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
+            tabs.append(TabItem())
+            if count > 1 {
+                updatePanelSizeFromDefault(1000)
+            }
+        }
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.2) {
+            focusedIndex = tabs.count - 1
+        }
+    }
+
+    private func addTabWithoutAnimation() {
+        screenshotManager.cancelScreenshot()
+
+        let count = tabs.count
+        if count >= maxTabs {
             toastColor = .red
             toastText = "Maximum of \(maxTabs) tabs reached"
             showToast = true
@@ -272,7 +323,7 @@ struct ContentView: View {
 
         let indexToRemove = focusedIndex
 
-        if tabs.count == 1 { addTab() }  // Don't remove the last =tab
+        if tabs.count == 1 { addTabWithoutAnimation() }  // Don't remove the last tab
 
         tabs.remove(at: indexToRemove)
 
@@ -315,6 +366,21 @@ struct ContentView: View {
         }
         DispatchQueue.main.asyncAfter(deadline: .now() + 0.2) {
             focusedIndex = newIndex
+        }
+    }
+
+    private func recalcZStackWidth() {
+        // items in HStack: left spacer + N tabs + right spacer → gaps = items - 1 = (N + 2) - 1 = N + 1
+        let gaps = CGFloat(tabs.count + 1)
+        let sumTabs = tabs.reduce(0) { acc, tab in acc + (measuredTabWidths[tab.id] ?? 0) }
+        let total = horizontalPad * 2 + gaps * hSpacing + sumTabs
+        // If we haven't measured yet, keep width nil so layout can occur and measurements can arrive.
+        if sumTabs > 0 || tabs.isEmpty {
+            withAnimation(.easeInOut) {
+                zStackWidth = max(total, 0)
+            }
+        } else {
+            zStackWidth = nil
         }
     }
 
