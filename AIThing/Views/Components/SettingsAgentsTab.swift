@@ -44,7 +44,7 @@ struct SettingsAgentsTab: View {
             }
 
             GroupBox(
-                label: Text("Self Managed (Max \(agentMaxCount) with current plan)")
+                label: Text("Own Agents (Max \(agentMaxCount) with current plan)")
                     .font(.system(size: 10, weight: .medium))
                     .padding(.bottom, 4)
             ) {
@@ -134,7 +134,7 @@ struct SettingsAgentsTab: View {
             }
 
             GroupBox(
-                label: Text("Managed by AI Thing (Individual Plan Required)")
+                label: Text("Managed Agents (Individual Plan Required)")
                     .font(.system(size: 10, weight: .medium))
                     .padding(.bottom, 4)
             ) {
@@ -152,7 +152,7 @@ struct SettingsAgentsTab: View {
             }
 
             GroupBox(
-                label: Text("Managed by Organization")
+                label: Text("Enterprise Agents")
                     .font(.system(size: 10, weight: .medium))
                     .padding(.bottom, 4)
             ) {

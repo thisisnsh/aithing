@@ -76,7 +76,7 @@ struct SettingsAccountTab: View {
 
                     Link(
                         "Get More Credits",
-                        destination: URL(string: "https://get.aithing.dev/credits")!
+                        destination: URL(string: "https://get.aithing.dev")!
                     )
                     .foregroundStyle(.white)
                     .font(.system(size: 12, weight: .medium))
@@ -96,14 +96,6 @@ struct SettingsAccountTab: View {
                 .padding(4)
             }
 
-            GroupBox {
-                dimmedRow(
-                    systemIcon: "chart.bar.fill",
-                    text: "Usage Breakdown",
-                    trailing: "Coming Soon"
-                )
-                .padding(4)
-            }
         }
         .frame(maxWidth: .infinity, alignment: .leading)
     }

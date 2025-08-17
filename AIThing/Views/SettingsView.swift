@@ -247,16 +247,25 @@ struct SettingsView: View {
 
     func signOut() async {
         loginManager.signOut()
-        await getCredits()
+        creditsTotal = 0
+        creditsUsed = 0
         AnalyticsManager.shared.setUserId(nil)
     }
 
     func getCredits() async {
         switch loginManager.authState {
         case .signedIn(let user):
-            guard let profile = await firestoreManager.getProfile(user: user) else { return }
-            creditsTotal = profile.creditsTotal
+            guard let profile = await firestoreManager.getProfile(user: user) else {
+                creditsTotal = 0
+                creditsUsed = 0
+                return
+            }
             creditsUsed = profile.creditsUsed
+
+            let creditsPlans = await firestoreManager.fetchCreditsPlans(
+                email: profile.email
+            )
+            creditsTotal = profile.creditsTotal + creditsPlans
         default:
             creditsTotal = 0
             creditsUsed = 0

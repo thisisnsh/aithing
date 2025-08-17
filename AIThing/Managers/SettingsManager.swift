@@ -36,6 +36,11 @@ enum Entry: Codable, Identifiable, Equatable {
         {
             self = .command(name: name, command: command, arguments: arguments)
         } else {
+            AnalyticsManager.shared.customError(
+                type: "unrecognized_json_structure",
+                severity: "high",
+                location: "settings_manager"
+            )
             throw DecodingError.dataCorrupted(
                 .init(codingPath: [], debugDescription: "Unrecognized JSON structure")
             )

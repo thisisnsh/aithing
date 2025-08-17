@@ -183,7 +183,7 @@ struct ContentView: View {
             default:
                 AnalyticsManager.shared.setUserId(nil)
             }
-            
+
             managedModels = await firestoreManager.getModelInfos()
             await loadAllClientTools()
         }
@@ -429,8 +429,6 @@ struct ContentView: View {
         }
     }
 
-    /// Returns the cumulative left/right padding (spacers + spacing + neighbor tabs)
-    /// for a given tab index in `tabs`.
     private func edgePadding(for index: Int) {
         guard index >= 0, index < tabs.count else {
             leftPadding = nil

@@ -400,6 +400,12 @@ struct TabView: View {
                         modelInputImage = image
                         modelInputImageBase64 = base64
                         AnalyticsManager.shared.customEventTab(action: "tab_image_add_entire")
+                    } else {
+                        AnalyticsManager.shared.customError(
+                            type: "failure_tab_image_add_entire",
+                            severity: "high",
+                            location: "tab_view"
+                        )
                     }
                 } else {
                     if let (image, base64) =
@@ -408,6 +414,12 @@ struct TabView: View {
                         modelInputImage = image
                         modelInputImageBase64 = base64
                         AnalyticsManager.shared.customEventTab(action: "tab_image_add_selected")
+                    } else {
+                        AnalyticsManager.shared.customError(
+                            type: "failure_tab_image_add_selected",
+                            severity: "high",
+                            location: "tab_view"
+                        )
                     }
                 }
             }
@@ -490,13 +502,13 @@ struct TabView: View {
             """
 
         let creditErrorMessage = """
-            You don’t have enough credits. Please [purchase more credits](https://get.aithing.dev/credits) to continue.
+            You don’t have enough credits. Please [purchase more credits](https://get.aithing.dev) to continue.
 
             Learn more about [usage and credits](https://aithing.dev/billing/usage).
             """
 
         let loginPromptMessage = """
-            Please log in to receive **100 free credits.** 
+            Please log in to receive **free credits.** 
 
             1. Open **Settings** by pressing `Control (^) + S`
             2. Click on **Google** to log in using your Google account
@@ -510,22 +522,29 @@ struct TabView: View {
         switch loginManager.authState {
         case .signedIn(let user):
             if let profile = await firestoreManager.getProfile(user: user) {
-                if profile.creditsUsed < profile.creditsTotal {
+                let creditsPlans = await firestoreManager.fetchCreditsPlans(
+                    email: profile.email
+                )
+                let creditsTotal = profile.creditsTotal + creditsPlans
+
+                // User is signed in and has credits, continue
+                if profile.creditsUsed < creditsTotal {
                     appUser = user
                     apiKeyManaged = profile.apiKeyAnthropic
                     AnalyticsManager.shared.setUserId(user.uid)
-                    break  // User is signed in and has credits, continue
-                } else {
-                    isThinking = false
-                    await animateOutput(content: creditErrorMessage)
-                    AnalyticsManager.shared.customError(
-                        type: "credits_not_enough",
-                        severity: "high",
-                        location: "tab_view"
-                    )
-                    return
+                    break
                 }
+
+                isThinking = false
+                await animateOutput(content: creditErrorMessage)
+                AnalyticsManager.shared.customError(
+                    type: "credits_not_enough",
+                    severity: "high",
+                    location: "tab_view"
+                )
+                return
             }
+
             isThinking = false
             await animateOutput(content: profileErrorMessage)
             AnalyticsManager.shared.customError(

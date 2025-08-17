@@ -110,7 +110,7 @@ struct SettingsModelTab: View {
 
             VStack(alignment: .leading, spacing: 16) {
                 GroupBox(
-                    label: title("Selected Model")
+                    label: title("Chosen Model")
                 ) {
                     VStack(alignment: .leading) {
                         HStack {

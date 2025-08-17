@@ -168,4 +168,18 @@ final class AnalyticsManager {
             ]
         )
     }
+    
+    /// custom_firestore
+    /// - Parameters:
+    ///   - action: e.g., getProfile
+    ///   - status: success, failure
+    func customFirestore(action: String, status: String) {
+        log(
+            "custom_firestore",
+            params: [
+                "action": action,
+                "status": status
+            ]
+        )
+    }
 }

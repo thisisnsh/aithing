@@ -17,21 +17,18 @@ Missing Features
 
 ------------------------ 
 
+
+17 Sunday
+- Site Update (Usage Page aithing.dev/billing/usage > Pricing Page > Plans Page > Coming Soon) 
+- Video Script
+- Demo Video 
 - Video 1 - Introducing 
 - Video 2 - Selective Context 
 - Video 3 - Privacy 
 
-16 Satursday
-- [Afternoon] Demo Video & Site Update
-- [Afternoon] Credit Page
-- [Evening] Video
-- [Night] QA & Release
-
-17 Sunday
-- 
-
 18 Monday
 - Popup to download new version
+- QA & Release
 
 19 Tuesday
 - 

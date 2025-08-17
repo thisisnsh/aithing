@@ -82,8 +82,17 @@ class MCPManager: ObservableObject {
 
             try await client.connect(transport: transport)
             print("Connected to MCP server for \(clientName)")
+            AnalyticsManager.shared.selectItem(
+                itemID: "mcp_connected_stdio",
+                itemName: "mcp_connected_stdio"
+            )
             return ""
         } catch {
+            AnalyticsManager.shared.customError(
+                type: "mcp_error_in_connecting_stdio",
+                severity: "high",
+                location: "mcp_manager"
+            )
             print("Error in connecting: \(error.localizedDescription)")
             return error.localizedDescription
         }
@@ -119,8 +128,17 @@ class MCPManager: ObservableObject {
 
             try await client.connect(transport: transport)
             print("Connected to MCP server for \(clientName)")
+            AnalyticsManager.shared.selectItem(
+                itemID: "mcp_connected_http",
+                itemName: "mcp_connected_http"
+            )
             return ""
         } catch {
+            AnalyticsManager.shared.customError(
+                type: "mcp_error_in_connecting_http",
+                severity: "high",
+                location: "mcp_manager"
+            )
             print("Error in connecting: \(error.localizedDescription)")
             return error.localizedDescription
         }
@@ -146,8 +164,17 @@ class MCPManager: ObservableObject {
                 try pipe.fileHandleForReading.close()
                 try pipe.fileHandleForWriting.close()
             }
+            AnalyticsManager.shared.selectItem(
+                itemID: "mcp_disconnected",
+                itemName: "mcp_disconnected"
+            )
             return ""
         } catch {
+            AnalyticsManager.shared.customError(
+                type: "mcp_error_in_disconnecting",
+                severity: "high",
+                location: "mcp_manager"
+            )
             print("Error in disconnecting: \(error.localizedDescription)")
             return error.localizedDescription
         }
@@ -161,8 +188,14 @@ class MCPManager: ObservableObject {
             }
 
             let (tools, _) = try await client.listTools()
+            AnalyticsManager.shared.selectItem(itemID: "mcp_get_tools", itemName: "mcp_get_tools")
             return toolsToDictionaries(tools)
         } catch {
+            AnalyticsManager.shared.customError(
+                type: "mcp_error_in_getting_tools",
+                severity: "high",
+                location: "mcp_manager"
+            )
             print("Error in getting tools: \(error.localizedDescription)")
             return []
         }
@@ -180,6 +213,11 @@ class MCPManager: ObservableObject {
 
             let (content, isError) = try await client.callTool(name: name, arguments: dict)
             if isError ?? false {
+                AnalyticsManager.shared.customError(
+                    type: "mcp_call_tools_error",
+                    severity: "high",
+                    location: "mcp_manager"
+                )
                 print("Error in calling tools")
                 return []
             }
@@ -195,8 +233,14 @@ class MCPManager: ObservableObject {
                 }
             }
 
+            AnalyticsManager.shared.selectItem(itemID: "mcp_call_tools", itemName: "mcp_call_tools")
             return response
         } catch {
+            AnalyticsManager.shared.customError(
+                type: "mcp_error_in_calling_tools",
+                severity: "high",
+                location: "mcp_manager"
+            )
             print("Error in calling tools: \(error.localizedDescription)")
             return []
         }
