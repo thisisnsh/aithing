@@ -192,7 +192,7 @@ struct SettingsModelTab: View {
                         .padding(4)
                         .lineLimit(nil)
                         .fixedSize(horizontal: false, vertical: true)
-                        .opacity(0.5)
+                        .opacity(byokSelected ? 1 : 0.5)
                     }
                     .padding(4)
                 }

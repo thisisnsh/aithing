@@ -15,7 +15,7 @@ struct Profile: Codable {
     var email: String
     var creditsTotal: Int
     var creditsUsed: Int
-    var blocked: Bool?
+    var blocked: Bool
     var apiKeyAnthropic: String
     var apiKeyOpenAI: String
 }

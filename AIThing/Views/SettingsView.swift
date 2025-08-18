@@ -233,15 +233,15 @@ struct SettingsView: View {
 
     func signIn() async {
         await loginManager.signInWithGoogle()
-        await getCredits()
-
+        
         switch loginManager.authState {
         case .signedIn(let user):
             AnalyticsManager.shared.setUserId(user.uid)
         default:
             AnalyticsManager.shared.setUserId(nil)
         }
-
+        
+        await getCredits()
         AnalyticsManager.shared.login(method: "google")
     }
 

@@ -134,7 +134,7 @@ struct SettingsAgentsTab: View {
             }
 
             GroupBox(
-                label: Text("Managed Agents (Individual Plan Required)")
+                label: Text("Managed Agents (Pro Plan Required)")
                     .font(.system(size: 10, weight: .medium))
                     .padding(.bottom, 4)
             ) {

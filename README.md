@@ -1,5 +1,24 @@
 # AI Thing (Previously This)
 
+------------------------ 
+
+
+18 Monday
+- QA & Release
+
+19 Tuesday
+- 
+
+20 Wednesday
+- 
+
+Next
+- Type in apps 
+- Read files documents 
+
+
+------------------------
+
 
 Missing Features
 - No Audio recording 
@@ -13,29 +32,6 @@ Missing Features
 - Fix "AttributeGraph: cycle detected through attribute"
 - Fix Flickering Animation
 - Search History
-
-
------------------------- 
-
-
-17 Sunday
-- Site Update (Usage Page aithing.dev/billing/usage > Pricing Page > Plans Page > Coming Soon) 
-- Video Script
-- Demo Video 
-- Video 1 - Introducing 
-- Video 2 - Selective Context 
-- Video 3 - Privacy 
-
-18 Monday
-- Popup to download new version
-- QA & Release
-
-19 Tuesday
-- 
-
-20 Wednesday
-- 
-
 
 
 ------------------------

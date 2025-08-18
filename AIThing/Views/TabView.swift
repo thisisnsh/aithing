@@ -484,7 +484,7 @@ struct TabView: View {
             await animateOutput(
                 content: """
                     Current version has expired.
-                    Please download the [latest version](https://aithing.dev/latest) to enjoy new features and continue using the app.
+                    Please [upgrade the version](https://aithing.dev/upgrade) to enjoy new features and continue using the app.
                     """
             )
             AnalyticsManager.shared.customError(
@@ -527,22 +527,32 @@ struct TabView: View {
                 )
                 let creditsTotal = profile.creditsTotal + creditsPlans
 
-                // User is signed in and has credits, continue
-                if profile.creditsUsed < creditsTotal {
-                    appUser = user
-                    apiKeyManaged = profile.apiKeyAnthropic
-                    AnalyticsManager.shared.setUserId(user.uid)
-                    break
+                if profile.blocked {
+                    isThinking = false
+                    await animateOutput(
+                        content: """
+                            You access has been disabled. We apologize for the inconvenience.
+                            Please contact help@aithing.dev.
+                            """
+                    )
+                    return
                 }
 
-                isThinking = false
-                await animateOutput(content: creditErrorMessage)
-                AnalyticsManager.shared.customError(
-                    type: "credits_not_enough",
-                    severity: "high",
-                    location: "tab_view"
-                )
-                return
+                if profile.creditsUsed >= creditsTotal {
+                    isThinking = false
+                    await animateOutput(content: creditErrorMessage)
+                    AnalyticsManager.shared.customError(
+                        type: "credits_not_enough",
+                        severity: "high",
+                        location: "tab_view"
+                    )
+                    return
+                }
+
+                appUser = user
+                apiKeyManaged = profile.apiKeyAnthropic
+                AnalyticsManager.shared.setUserId(user.uid)
+                break
             }
 
             isThinking = false
@@ -680,8 +690,8 @@ struct TabView: View {
 
         ]
 
-        print("apiKey:", apiKey)
-        print("model:", model)
+        // print("apiKey:", apiKey)
+        // print("model:", model)
         // print("cost:", getModelCost(getModel()))
         // print("messages:", body["messages"] as! [[String: Any]])
         // print("tools:", (body["tools"] as! [[String: Any]]).count)
@@ -723,7 +733,7 @@ struct TabView: View {
                             content: """
                                 The system is under heavy load. Please try again in a minute. 
 
-                                We apologize for the disruption. Read more about this [error](https://aithing.dev/errors/ratelimit). 
+                                We apologize for the disruption. Read more about this [error](https://aithing.dev/errors/rate-limit). 
                                 """
                         )
                     }
@@ -747,12 +757,15 @@ struct TabView: View {
             }
 
             if let appUser {
-                let cost = getModelCost(getModel(), all: managedModels)
-                let costImage = getModelCostImage(getModel(), all: managedModels)
-                await firestoreManager.incrementCredits(
-                    user: appUser,
-                    by: cost + costImage * modelImageCount
-                )
+                if !byok {
+                    let cost = getModelCost(getModel(), all: managedModels)
+                    let costImage = getModelCostImage(getModel(), all: managedModels)
+                    print("cost:", cost + costImage * modelImageCount)
+                    await firestoreManager.incrementCredits(
+                        user: appUser,
+                        by: cost + costImage * modelImageCount
+                    )
+                }
             } else {
                 AnalyticsManager.shared.customError(
                     type: "cost_not_calculated",
@@ -1045,7 +1058,7 @@ struct TabView: View {
         if let cheapestModel = getCheapestModel(in: managedModels), !byok {
             bestModel = cheapestModel.id
         }
-        print("title model:", bestModel)
+        // print("title model:", bestModel)
         let body: [String: Any] = [
             "model": bestModel,
             "stream": false,
