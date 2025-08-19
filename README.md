@@ -4,10 +4,11 @@
 
 
 18 Monday
-- QA & Release
+- Remove Preference
+- Type in app 
 
 19 Tuesday
-- 
+- QA & Release 
 
 20 Wednesday
 - 

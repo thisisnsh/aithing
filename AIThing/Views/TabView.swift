@@ -395,32 +395,18 @@ struct TabView: View {
         case "add":
             if command == "@this" {
                 screenshotManager.cancelScreenshot()
-                if getPreferencesCaptureFullScreen() {
-                    if let (image, base64) = await screenshotManager.captureScreenUnderMouse() {
-                        modelInputImage = image
-                        modelInputImageBase64 = base64
-                        AnalyticsManager.shared.customEventTab(action: "tab_image_add_entire")
-                    } else {
-                        AnalyticsManager.shared.customError(
-                            type: "failure_tab_image_add_entire",
-                            severity: "high",
-                            location: "tab_view"
-                        )
-                    }
+                if let (image, base64) =
+                    await screenshotManager.captureSelectedScreenUnderMouse()
+                {
+                    modelInputImage = image
+                    modelInputImageBase64 = base64
+                    AnalyticsManager.shared.customEventTab(action: "tab_image_add_selected")
                 } else {
-                    if let (image, base64) =
-                        await screenshotManager.captureSelectedScreenUnderMouse()
-                    {
-                        modelInputImage = image
-                        modelInputImageBase64 = base64
-                        AnalyticsManager.shared.customEventTab(action: "tab_image_add_selected")
-                    } else {
-                        AnalyticsManager.shared.customError(
-                            type: "failure_tab_image_add_selected",
-                            severity: "high",
-                            location: "tab_view"
-                        )
-                    }
+                    AnalyticsManager.shared.customError(
+                        type: "failure_tab_image_add_selected",
+                        severity: "high",
+                        location: "tab_view"
+                    )
                 }
             }
         case "remove":
