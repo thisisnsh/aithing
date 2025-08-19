@@ -415,7 +415,7 @@ struct TabView: View {
                 AnalyticsManager.shared.customEventTab(action: "tab_context_add_this")
             } else if command == "@selected" {
                 selectionContext = true
-                selectedText = ""
+                selectedText = TypingManager.shared.getSelectedText() ?? ""
                 AnalyticsManager.shared.customEventTab(action: "tab_context_add_selected")
             } else if command == "@here" {
                 hereContext = true
@@ -694,8 +694,15 @@ struct TabView: View {
                 } else {
                     isThinking = false
                     await animateOutput(
-                        content:
-                            "No selection found. This feature is in development. Please report issues at help@aithing.dev"
+                        content: """
+                            No selection detected. 
+                            
+                            Troubleshooting:
+                            - AI Thing may not be enabled in System Settings > Privacy & Security > Accessibility.
+                            - The application may not support selected text.
+                            
+                            This feature is still in development — please report any issues to help@aithing.dev
+                            """
                     )
                     AnalyticsManager.shared.customError(
                         type: "query_no_selection_found",

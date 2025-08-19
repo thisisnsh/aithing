@@ -23,6 +23,8 @@ final class TypingManager {
     }
 
     func getSelectedText() -> String? {
+        requestAXIfNeeded()
+        
         guard let frontApp = NSWorkspace.shared.frontmostApplication else {
             return nil
         }
