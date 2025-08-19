@@ -3,20 +3,16 @@
 ------------------------ 
 
 
-18 Monday
-- Remove Preference
-- Type in app 
-- event usage description
-
 19 Tuesday
+- Type Video [Beta] 
 - QA & Release 
 
 20 Wednesday
-- 
+- Post Reddit 
+- Make Video / Ad
 
 Next
-- Type in apps 
-- Read files documents 
+- Read Files Documents 
 
 
 ------------------------
@@ -28,7 +24,6 @@ Missing Features
 - Understand you and suggest things based on time and this
 - No RAG
 - No Elicitation 
-- No Type into Applications
 - No One Click Integrations 
 - No Markdown Select
 - Fix "AttributeGraph: cycle detected through attribute"

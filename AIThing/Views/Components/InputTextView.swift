@@ -142,17 +142,22 @@ struct InputTextView: NSViewRepresentable {
 
             let pattern = #"(?i)(?<!\w)@(?:this|selected|here)(?!\w)"#
             if let regex = try? NSRegularExpression(pattern: pattern) {
+                // Get the full range of the text for regex matching
                 let nsrange = NSRange(fullText.startIndex..<fullText.endIndex, in: fullText)
+                
+                // Find all matches of the pattern in the text
                 for match in regex.matches(in: fullText, range: nsrange) {
+                    // Use monospaced font for matched text
                     let monoFont = NSFont.monospacedSystemFont(ofSize: 16, weight: .medium)
 
-                    // Calculate baseline shift to visually center it
+                    // Calculate baseline shift to visually center it with the base font
                     let baselineShift = (baseFont.capHeight - monoFont.capHeight) / 2
 
+                    // Apply styling attributes to the matched range
                     attributedText.addAttributes(
                         [
                             .font: monoFont,
-                            .foregroundColor: NSColor.white,
+                            .foregroundColor: NSColor.white.withAlphaComponent(0.7),
                             .baselineOffset: baselineShift,
                         ],
                         range: match.range
