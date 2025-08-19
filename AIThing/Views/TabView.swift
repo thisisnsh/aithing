@@ -412,22 +412,28 @@ struct TabView: View {
                         location: "tab_view"
                     )
                 }
+                AnalyticsManager.shared.customEventTab(action: "tab_context_add_this")
             } else if command == "@selected" {
                 selectionContext = true
                 selectedText = ""
+                AnalyticsManager.shared.customEventTab(action: "tab_context_add_selected")
             } else if command == "@here" {
                 hereContext = true
+                AnalyticsManager.shared.customEventTab(action: "tab_context_add_here")
             }
         case "remove":
             if command == "@this" {
                 screenshotManager.cancelScreenshot()
                 modelInputImage = nil
                 modelInputImageBase64 = nil
+                AnalyticsManager.shared.customEventTab(action: "tab_context_remove_this")
             } else if command == "@selected" {
                 selectionContext = false
                 selectedText = ""
+                AnalyticsManager.shared.customEventTab(action: "tab_context_remove_selected")
             } else if command == "@here" {
                 hereContext = false
+                AnalyticsManager.shared.customEventTab(action: "tab_context_remove_here")
             }
         default:
             break

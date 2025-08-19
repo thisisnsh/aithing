@@ -3,15 +3,12 @@
 ------------------------ 
 
 
-19 Tuesday
-- Type Video [Beta] 
-- QA & Release 
-
 20 Wednesday
 - Post Reddit 
 - Make Video / Ad
 
 Next
+- Make selected here easy
 - Read Files Documents 
 
 
