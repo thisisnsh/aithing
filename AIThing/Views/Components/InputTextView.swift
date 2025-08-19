@@ -93,7 +93,7 @@ struct InputTextView: NSViewRepresentable {
 
             // Handle @ or \command tracking
             // let pattern = ##"[@\\#]([a-zA-Z]+)"##
-            let pattern = #"(?i)(?<!\w)@(?:this|selected)(?!\w)"#
+            let pattern = #"(?i)(?<!\w)@(?:this|selected|here)(?!\w)"#
             let regex = try? NSRegularExpression(pattern: pattern)
             let nsrange = NSRange(parent.text.startIndex..<parent.text.endIndex, in: parent.text)
 
@@ -140,7 +140,7 @@ struct InputTextView: NSViewRepresentable {
                 ]
             )
 
-            let pattern = #"(?i)(?<!\w)@(?:this|selected)(?!\w)"#
+            let pattern = #"(?i)(?<!\w)@(?:this|selected|here)(?!\w)"#
             if let regex = try? NSRegularExpression(pattern: pattern) {
                 let nsrange = NSRange(fullText.startIndex..<fullText.endIndex, in: fullText)
                 for match in regex.matches(in: fullText, range: nsrange) {

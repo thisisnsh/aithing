@@ -67,6 +67,7 @@ struct TabView: View {
 
     @State private var selectionContext: Bool = false
     @State private var selectedText: String = ""
+    @State private var hereContext: Bool = false
 
     var body: some View {
         VStack(alignment: .leading, spacing: 8) {
@@ -412,12 +413,10 @@ struct TabView: View {
                     )
                 }
             } else if command == "@selected" {
-                screenshotManager.cancelScreenshot()
-                modelInputImage = nil
-                modelInputImageBase64 = nil
-
                 selectionContext = true
                 selectedText = ""
+            } else if command == "@here" {
+                hereContext = true
             }
         case "remove":
             if command == "@this" {
@@ -427,6 +426,8 @@ struct TabView: View {
             } else if command == "@selected" {
                 selectionContext = false
                 selectedText = ""
+            } else if command == "@here" {
+                hereContext = false
             }
         default:
             break
@@ -868,7 +869,7 @@ struct TabView: View {
                     case "content_block_stop":
                         await MainActor.run {
                             modelOutput = finalResponse
-                            if selectionContext {
+                            if selectionContext || hereContext {
                                 TypingManager.shared.typeText(stripCodeBlock(from: finalResponse))
                             }
                         }
@@ -966,9 +967,10 @@ struct TabView: View {
     }
 
     private func buildQuery(query: String) -> String {
-        var finalQuery = ""
-        finalQuery = query.replacingOccurrences(of: "@this", with: "this")
-        return finalQuery
+        return query
+        // var finalQuery = ""
+        // finalQuery = query.replacingOccurrences(of: "@this", with: "this")
+        // return finalQuery
     }
 
     private func getClientName(toolName: String) -> String {
@@ -1037,7 +1039,12 @@ struct TabView: View {
             [
                 "type": "text",
                 "text":
-                    "If query has \"selected\" keyword. The query is about replacing the selected item with another one. Just output the response that will replace the selected data. # Do not create code blocks or anything fancy in the response. Output simple response that can be copy-pasted as is.",
+                    "If query has \"@selected\" keyword. The query is about replacing the selected item with another one. Just output the response that will replace the selected data. # Do not create code blocks or anything fancy in the response. Output simple response that can be copy-pasted as is.",
+            ],
+            [
+                "type": "text",
+                "text":
+                    "If query has \"@here\" keyword. Your response will be added to a file as is. So just output the response that will be put in the file. Do not output anything extra.",
             ],
             [
                 "type": "text",
