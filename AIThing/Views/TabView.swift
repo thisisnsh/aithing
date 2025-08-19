@@ -65,6 +65,9 @@ struct TabView: View {
 
     @State private var showDragIcon: Bool = false
 
+    @State private var selectionContext: Bool = false
+    @State private var selectedText: String = ""
+
     var body: some View {
         VStack(alignment: .leading, spacing: 8) {
             Color.clear.frame(height: 32).overlay(alignment: .bottom) {
@@ -408,12 +411,22 @@ struct TabView: View {
                         location: "tab_view"
                     )
                 }
+            } else if command == "@selected" {
+                screenshotManager.cancelScreenshot()
+                modelInputImage = nil
+                modelInputImageBase64 = nil
+
+                selectionContext = true
+                selectedText = ""
             }
         case "remove":
             if command == "@this" {
                 screenshotManager.cancelScreenshot()
                 modelInputImage = nil
                 modelInputImageBase64 = nil
+            } else if command == "@selected" {
+                selectionContext = false
+                selectedText = ""
             }
         default:
             break
@@ -655,6 +668,37 @@ struct TabView: View {
                 )
                 modelImageCount += 1
             }
+
+            if selectionContext {
+                selectedText = TypingManager.shared.getSelectedText() ?? ""
+                if !selectedText.isEmpty {
+                    print("selectedText", selectedText)
+                    modelInput.append(
+                        [
+                            "role": "user",
+                            "content": [
+                                [
+                                    "type": "text",
+                                    "text": "Selected text:\n\n\(selectedText)",
+                                ]
+                            ],
+                        ]
+                    )
+                } else {
+                    isThinking = false
+                    await animateOutput(
+                        content:
+                            "No selection found. This feature is in development. Please report issues at help@aithing.dev"
+                    )
+                    AnalyticsManager.shared.customError(
+                        type: "query_no_selection_found",
+                        severity: "low",
+                        location: "tab_view"
+                    )
+                    return
+                }
+            }
+
             modelInput.append(
                 [
                     "role": "user",
@@ -824,6 +868,9 @@ struct TabView: View {
                     case "content_block_stop":
                         await MainActor.run {
                             modelOutput = finalResponse
+                            if selectionContext {
+                                TypingManager.shared.typeText(stripCodeBlock(from: finalResponse))
+                            }
                         }
 
                     case "message_delta":
@@ -985,8 +1032,12 @@ struct TabView: View {
             [
                 "type": "text",
                 "text":
-                    "Your name is 'AI Thing', and you are an AI assistant with a unique ability: you can understand 'this'. If image is provided in context, use it to answer questions.",
-
+                    "Your name is 'AI Thing', and you are an AI assistant with a unique ability: you can understand 'this'. Use image that is provided in context, to answer questions. Usually the image is provided when query has \"@this\" keyword",
+            ],
+            [
+                "type": "text",
+                "text":
+                    "If query has \"selected\" keyword. The query is about replacing the selected item with another one. Just output the response that will replace the selected data. # Do not create code blocks or anything fancy in the response. Output simple response that can be copy-pasted as is.",
             ],
             [
                 "type": "text",
@@ -1128,6 +1179,21 @@ struct TabView: View {
         let pasteboard = NSPasteboard.general
         pasteboard.clearContents()
         pasteboard.setString(string, forType: .string)
+    }
+
+    func stripCodeBlock(from text: String) -> String {
+        // Regex matches:
+        // - opening ``` + optional word + newline
+        // - newline + closing ```
+        let pattern = #"^```[\w]*\n|\n```$"#
+
+        guard let regex = try? NSRegularExpression(pattern: pattern, options: [.anchorsMatchLines])
+        else {
+            return text
+        }
+
+        let range = NSRange(text.startIndex..<text.endIndex, in: text)
+        return regex.stringByReplacingMatches(in: text, options: [], range: range, withTemplate: "")
     }
 
 }

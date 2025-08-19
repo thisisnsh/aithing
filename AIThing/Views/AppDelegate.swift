@@ -137,20 +137,24 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate {
     }
 
     func updatePanelSizeFromCurrent(extraHeight: CGFloat) {
+        // Updates the floating window size by adding extra height while keeping the top edge aligned
         var frame = floatingWindow.frame
         let targetSize = NSSize(width: frame.width, height: frame.height + extraHeight)
-
+        
         frame.origin.y += (frame.size.height - targetSize.height)  // keep top aligned
         frame.size = targetSize
-
+        
         floatingWindow.setFrame(frame, display: true, animate: false)
     }
 
+    /// Returns the extra panel height by calculating the difference between the floating window's current height and the base height
     func getExtraPanelSizeFromDefault() -> CGFloat {
         let frame = floatingWindow.frame
         return frame.size.height - height
     }
 
+    /// Sets the panel visibility in screenshots based on user preferences
+    /// Uses readOnly sharing type to show the panel, or none to hide it from screenshots
     func setPanelVisibility() {
         floatingWindow.sharingType = getPreferencesShowInScreenshot() ? .readOnly : .none
     }
@@ -161,3 +165,5 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate {
         floatingWindow.ignoresMouseEvents = enabled
     }
 }
+
+

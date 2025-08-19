@@ -365,7 +365,8 @@ struct ContentView: View {
         if tabs.count == 1 { addTabWithoutAnimation() }  // Don't remove the last tab
 
         tabs.remove(at: indexToRemove)
-
+        TypingManager.shared.cancelTyping()
+        
         // Adjust focus index safely
         if focusedIndex >= tabs.count {
             focusedIndex = tabs.count - 1

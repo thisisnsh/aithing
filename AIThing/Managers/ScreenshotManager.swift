@@ -246,10 +246,6 @@ final class ScreenshotManager: ObservableObject {
             }
         }
 
-        for s in sorted {
-            print(s.title ?? "unknown")
-        }
-
         return sorted.first
     }
 

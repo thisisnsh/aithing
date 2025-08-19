@@ -6,6 +6,7 @@
 18 Monday
 - Remove Preference
 - Type in app 
+- event usage description
 
 19 Tuesday
 - QA & Release 
