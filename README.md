@@ -3,8 +3,7 @@
 ------------------------ 
 
 
-- minimize all tabs on settings open 
-
+- vertical context 
 
 Sunday 
 - integrate agents 

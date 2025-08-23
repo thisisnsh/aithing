@@ -44,6 +44,7 @@ struct ContentView: View {
     @State private var allClientTools: [String: [[String: Any]]] = [:]
 
     @State private var focusedIndex: Int = 0
+    @State private var lastFocusedIndex: Int = 0
 
     @State private var tabs: [TabItem] = []
     @State private var maxTabs: Int = 3
@@ -154,10 +155,14 @@ struct ContentView: View {
                         }
                         return nil
                     case 43:  // Left angular arrow
-                        moveFocus(-1)
+                        if !showSettings && !showHistory {
+                            moveFocus(-1)
+                        }
                         return nil
                     case 47:  // Right angular bracket
-                        moveFocus(1)
+                        if !showSettings && !showHistory {
+                            moveFocus(1)
+                        }
                         return nil
                     case 44:  // ?
                         onHelp()
@@ -265,30 +270,51 @@ struct ContentView: View {
     }
 
     private func onSetting() {
-        showSettings.toggle()
-        showHelp = false
-        showHistory = false
+        if !showSettings && !showHistory {
+            addTab(bypass: true)
+        }
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.3) {
+            showSettings.toggle()
+            showHelp = false
+            showHistory = false
+            if !showSettings && !showHistory {
+                closeTab()
+            }
+        }
     }
 
     private func onHistory() {
-        showHistory.toggle()
-        showHelp = false
-        showSettings = false
+        if !showSettings && !showHistory {
+            addTab(bypass: true)
+        }
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.3) {
+            showHistory.toggle()
+            showHelp = false
+            showSettings = false
+            if !showSettings && !showHistory {
+                closeTab()
+            }
+        }
     }
 
     private func onHelp() {
         showHelp.toggle()
-        showSettings = false
-        showHistory = false
     }
 
     private func continueConversation(_ history: History) {
         screenshotManager.cancelScreenshot()
-        showSettings = false
-        showHistory = false
-        showHelp = false
 
-        if tabs.count >= maxTabs {
+        // check if tab is already open
+        if let id = UUID(uuidString: history.id) {
+            if let index = tabs.firstIndex(where: { $0.id == id }) {
+                showHistory = false
+                closeTab()
+                focusedIndex = index
+                return
+            }
+        }
+
+        if tabs.count >= maxTabs + 1 {
             toastColor = .red
             toastText = "Maximum of \(maxTabs) tabs reached"
             showToast = true
@@ -300,6 +326,9 @@ struct ContentView: View {
             return
         }
 
+        showHistory = false
+        closeTab()
+
         let uuid = UUID(uuidString: history.id) ?? UUID()
         tabs.append(TabItem(id: uuid, history: history))
         focusedIndex = tabs.count - 1
@@ -307,11 +336,11 @@ struct ContentView: View {
         AnalyticsManager.shared.customEventTab(action: "tab_continue_conversation")
     }
 
-    private func addTab() {
+    private func addTab(bypass: Bool = false) {
         screenshotManager.cancelScreenshot()
 
         let count = tabs.count
-        if count >= maxTabs {
+        if !bypass, count >= maxTabs {
             toastColor = .red
             toastText = "Maximum of \(maxTabs) tabs reached"
             showToast = true
@@ -365,7 +394,7 @@ struct ContentView: View {
         if tabs.count == 1 { addTabWithoutAnimation() }  // Don't remove the last tab
 
         tabs.remove(at: indexToRemove)
-        
+
         // Adjust focus index safely
         if focusedIndex >= tabs.count {
             focusedIndex = tabs.count - 1
