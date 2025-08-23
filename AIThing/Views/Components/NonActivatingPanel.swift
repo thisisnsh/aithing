@@ -22,7 +22,7 @@ class NonActivatingPanel: NSPanel {
         self.isFloatingPanel = true
         self.hidesOnDeactivate = false
         self.level = .floating
-        self.hasShadow = true
+        self.hasShadow = false
         self.backgroundColor = .clear
         self.isOpaque = false
         self.ignoresMouseEvents = false

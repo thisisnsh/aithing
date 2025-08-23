@@ -3,6 +3,8 @@
 ------------------------ 
 
 
+- if below min height take double width 
+
 Sunday 
 - integrate agents 
 - github, google, slack, jira, mac 

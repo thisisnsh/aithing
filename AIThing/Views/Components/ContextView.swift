@@ -14,8 +14,10 @@ struct ImageContextView: View {
     let onTap: () -> Void
     let onDelete: () -> Void
 
+    @State private var trashShow = false
+
     var body: some View {
-        ZStack(alignment: .bottom) {
+        ZStack {
             Image(nsImage: image)
                 .resizable()
                 .aspectRatio(contentMode: .fit)
@@ -33,15 +35,17 @@ struct ImageContextView: View {
                 }
                 .padding(.top, 8)
 
-            if !compact {
+            if !compact && trashShow {
                 Button(action: onDelete) {
                     Image(systemName: "xmark.circle.fill")
                         .frame(width: 12, height: 12)
                         .foregroundStyle(.red)
-                        .padding(8)
                 }
                 .buttonStyle(PlainButtonStyle())
             }
+        }
+        .onHover { inside in
+            trashShow = inside
         }
     }
 }
@@ -53,8 +57,10 @@ struct PDFContextView: View {
     let onTap: () -> Void
     let onDelete: () -> Void
 
+    @State private var trashShow = false
+
     var body: some View {
-        ZStack(alignment: .bottom) {
+        ZStack {
             ZStack {
                 if isZoomed {
                     Image(nsImage: image)
@@ -107,15 +113,17 @@ struct PDFContextView: View {
                     .padding(.top, 8)
             }
 
-            if !compact {
+            if !compact && trashShow {
                 Button(action: onDelete) {
                     Image(systemName: "xmark.circle.fill")
                         .frame(width: 12, height: 12)
                         .foregroundStyle(.red)
-                        .padding(8)
                 }
                 .buttonStyle(PlainButtonStyle())
             }
+        }
+        .onHover { inside in
+            trashShow = inside
         }
     }
 }
@@ -127,8 +135,10 @@ struct TextContextView: View {
     let onTap: () -> Void
     let onDelete: () -> Void
 
+    @State private var trashShow = false
+
     var body: some View {
-        ZStack(alignment: .bottom) {
+        ZStack {
             Text(isZoomed ? name : name.components(separatedBy: ".").last ?? name)
                 .font(.system(size: 10, weight: .medium))
                 .lineLimit(isZoomed ? 4 : 2)
@@ -148,15 +158,17 @@ struct TextContextView: View {
                 }
                 .padding(.top, 8)
 
-            if !compact {
+            if !compact && trashShow {
                 Button(action: onDelete) {
                     Image(systemName: "xmark.circle.fill")
                         .frame(width: 12, height: 12)
                         .foregroundStyle(.red)
-                        .padding(8)
                 }
                 .buttonStyle(PlainButtonStyle())
             }
+        }
+        .onHover { inside in
+            trashShow = inside
         }
     }
 }

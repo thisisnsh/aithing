@@ -168,6 +168,8 @@ struct TabView: View {
 
             if isFocused {
                 contextView()
+                    .transition(.identity)
+                    .animation(nil, value: isFocused)
             }
         }
         .onTapGesture {
@@ -429,6 +431,9 @@ struct TabView: View {
                 updatePassthrough(inside: inside)
             }
         )
+        .onAppear {
+            updatePanelSizeFromCurrent(500)
+        }
     }
 
     private func getResponseHeight() -> CGFloat {

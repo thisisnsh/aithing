@@ -354,7 +354,7 @@ struct ContentView: View {
 
         DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
             tabs.append(TabItem())
-            if count > 1 {
+            if count > 0 {
                 updatePanelSizeFromDefault(1000)
             }
         }
@@ -410,7 +410,7 @@ struct ContentView: View {
             DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
                 // Increase height to max while switching
                 // It will be resized when tab in focus
-                if tabs.count > 1 {
+                if tabs.count > 0 {
                     updatePanelSizeFromDefault(1000)
                 }
             }
@@ -432,7 +432,7 @@ struct ContentView: View {
         DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
             // Increase height to max while switching
             // It will be resized when tab in focus
-            if count > 1 {
+            if count > 0 {
                 updatePanelSizeFromDefault(1000)
             }
         }
