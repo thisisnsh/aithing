@@ -17,6 +17,7 @@ import SwiftUI
 class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate {
     var floatingWindow: NonActivatingPanel!
     var hotKey: HotKey?
+    private var dragMonitor: Any?
 
     let width: CGFloat = 1400
     let height: CGFloat = 96
@@ -46,6 +47,12 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate {
 
     func applicationShouldTerminate(_ sender: NSApplication) -> NSApplication.TerminateReply {
         return AppDelegate.allowQuit ? .terminateNow : .terminateCancel
+    }
+
+    func applicationWillTerminate(_ notification: Notification) {
+        if let dragMonitor {
+            NSEvent.removeMonitor(dragMonitor)
+        }
     }
 
     @objc func appDidActivate(_ note: Notification) {}
@@ -83,6 +90,20 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate {
         floatingWindow.center()
         floatingWindow.orderFrontRegardless()  // no app activation
         setPanelVisibility()
+
+        // Monitor for drag begin / update
+        dragMonitor = NSEvent.addGlobalMonitorForEvents(matching: [
+            .leftMouseDragged, .rightMouseDragged, .otherMouseDragged,
+        ]) { [weak self] _ in
+            self?.floatingWindow.ignoresMouseEvents = false
+        }
+
+        // Local monitor for mouse up → drag ends
+        NSEvent.addLocalMonitorForEvents(matching: [.leftMouseUp, .rightMouseUp, .otherMouseUp]) {
+            [weak self] event in
+            self?.floatingWindow.ignoresMouseEvents = true
+            return event
+        }
     }
 
     func setupHotKey() {
@@ -140,10 +161,10 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate {
         // Updates the floating window size by adding extra height while keeping the top edge aligned
         var frame = floatingWindow.frame
         let targetSize = NSSize(width: frame.width, height: frame.height + extraHeight)
-        
+
         frame.origin.y += (frame.size.height - targetSize.height)  // keep top aligned
         frame.size = targetSize
-        
+
         floatingWindow.setFrame(frame, display: true, animate: false)
     }
 
@@ -165,5 +186,3 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate {
         floatingWindow.ignoresMouseEvents = enabled
     }
 }
-
-

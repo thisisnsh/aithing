@@ -4,7 +4,11 @@
 
 
 
-Friday / Satursday     
+Satursday 
+- drop the file into ai thing 
+- text: .doc, .docx, .text, .md, .py, no extension 
+- image: .pdf, .jpeg, .png
+- handle multi page by asking if all pages need to be parsed  
 - Read Files Documents 
     - sheet, doc, pdf, image, 
     - CSV
@@ -14,19 +18,6 @@ Friday / Satursday
     - Images (JPEG, PNG, GIF, WebP)
     - Text files (.txt, .md, .py, etc)
 
-
-
-
-
-Friday 
-- support multiple images in context 
-
-Satursday 
-- drop the file into ai thing 
-- text: .doc, .docx, .text, .md, .py, no extension 
-- image: .pdf, .jpeg, .png
-- handle multi page by asking if all pages need to be parsed  
-
 Sunday 
 - integrate agents 
 - github, google, slack, jira, mac 
@@ -34,6 +25,9 @@ Sunday
 Tuesday 
 - Post Reddit 
 - Make Video / Ad
+
+Not Now
+- Support multiple images in context 
 
 
 

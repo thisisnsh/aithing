@@ -231,6 +231,11 @@ struct TabView: View {
                     )
                     .opacity(showSettings || showHistory ? 0.6 : 1)
                     .frame(width: 526)
+                    .dropDestination(for: String.self) { items, location in
+                        print(items)
+                        print(location)
+                        return true
+                    }
 
                     if query.isEmpty && !showSettings && !showHistory {
                         Text(
