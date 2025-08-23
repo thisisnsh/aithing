@@ -419,6 +419,7 @@ struct TabView: View {
                 AnalyticsManager.shared.customEventTab(action: "tab_context_add_selected")
             } else if command == "@here" {
                 hereContext = true
+                TypingManager.shared.requestAXIfNeeded()
                 AnalyticsManager.shared.customEventTab(action: "tab_context_add_here")
             }
         case "remove":
@@ -673,7 +674,9 @@ struct TabView: View {
                         ],
                     ]
                 )
-                modelImageCount += 1
+                modelImageCount = 1
+            } else {
+                modelImageCount = 0
             }
 
             if selectionContext {

@@ -3,13 +3,47 @@
 ------------------------ 
 
 
-20 Wednesday
+
+Thursday
+- Make selected here easy
+    - @this @selected @here from 
+
+Friday / Satursday     
+- Read Files Documents 
+    - sheet, doc, pdf, image, 
+    - CSV
+    - Excel (.xlsx, .xls)
+    - JSON
+    - XML
+    - Images (JPEG, PNG, GIF, WebP)
+    - Text files (.txt, .md, .py, etc)
+
+
+drag drop files 
+
+
+
+Friday 
+- fix @this issues in the @selected text @here
+- @this gives two mode. app and small select. 
+- support multiple images in context 
+
+Satursday 
+- drop the file into ai thing 
+- text: .doc, .docx, .text, .md, .py, no extension 
+- image: .pdf, .jpeg, .png
+- handle multi page by asking if all pages need to be parsed  
+
+Sunday 
+- integrate agents 
+- github, google, slack, jira, mac 
+
+
+
+Tuesday 
 - Post Reddit 
 - Make Video / Ad
 
-Next
-- Make selected here easy
-- Read Files Documents 
 
 
 ------------------------
@@ -60,6 +94,8 @@ https://docs.google.com/spreadsheets/d/<spreadsheet-id>
 Release
 https://chatgpt.com/g/g-p-6873dd743bb48191b8a269cab99e4c01-ai-thing/c/688ff3cc-7be8-8329-9fed-0be50ddd3485
 
+export version=<version>
+
 spctl --assess --type execute --verbose AIThing.app 
 AIThing.app: accepted
 source=Notarized Developer ID
@@ -79,7 +115,7 @@ hdiutil detach /Volumes/AIThing
 hdiutil convert "AIThing-temp.dmg" \
   -format UDZO \
   -imagekey zlib-level=9 \
-  -o "AIThing-<version>.dmg"
+  -o "AIThing-$version.dmg"
 
 rm AIThing-temp.dmg
 
@@ -87,9 +123,9 @@ codesign -dv --verbose=4 AIThing.app 2>&1 | grep -E 'Authority|TeamIdentifier|Id
 
 codesign --sign "Developer ID Application: Nishant Hada (983LBM5U6B)" \
   --timestamp \
-  AIThing-<version>.dmg
+  AIThing-$version.dmg
 
-xcrun notarytool submit "AIThing-<version>.dmg" --keychain-profile "notary-profile" --wait
-xcrun stapler staple "AIThing-<version>.dmg"
+xcrun notarytool submit "AIThing-$version.dmg" --keychain-profile "notary-profile" --wait
+xcrun stapler staple "AIThing-$version.dmg"
 
-codesign -dv --verbose=4 AIThing-<version>.dmg 2>&1 | grep -E 'Authority|TeamIdentifier|Identifier'
+codesign -dv --verbose=4 AIThing-$version.dmg 2>&1 | grep -E 'Authority|TeamIdentifier|Identifier'
