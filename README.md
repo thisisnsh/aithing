@@ -3,8 +3,6 @@
 ------------------------ 
 
 
-- vertical context 
-
 Sunday 
 - integrate agents 
 - github, google, slack, jira, mac 

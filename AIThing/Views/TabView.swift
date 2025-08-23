@@ -411,81 +411,24 @@ struct TabView: View {
     }
 
     private func contextView() -> some View {
-        ScrollView(.horizontal, showsIndicators: false) {
-            HStack(alignment: .top) {
-                ForEach(Array(modelContext.enumerated()), id: \.offset) { (index, context) in
-                    switch context {
-                    case .image(_, let image, _):
-                        ImageContextView(
-                            image: image,
-                            compact: false,
-                            isZoomed: modelContextZoomed[index],
-                            onTap: {
-                                guard index < modelContextZoomed.count else { return }
-                                modelContextZoomed[index].toggle()
-                            },
-                            onDelete: {
-                                modelContext.remove(at: index)
-                                modelContextZoomed.remove(at: index)
-                                AnalyticsManager.shared.customEventTab(
-                                    action: "tab_file_remove_image"
-                                )
-                            }
-                        )
-                        .onHover { inside in
-                            updatePassthrough(inside: inside)
-                        }
-                    case .pdf(_, _, let images, _):
-                        PDFContextView(
-                            image: images[0],
-                            compact: false,
-                            isZoomed: modelContextZoomed[index],
-                            onTap: {
-                                guard index < modelContextZoomed.count else { return }
-                                modelContextZoomed[index].toggle()
-                            },
-                            onDelete: {
-                                modelContext.remove(at: index)
-                                modelContextZoomed.remove(at: index)
-                                AnalyticsManager.shared.customEventTab(
-                                    action: "tab_file_remove_pdf"
-                                )
-                            }
-                        )
-                        .onHover { inside in
-                            updatePassthrough(inside: inside)
-                        }
-                    case .text(let name, _):
-                        TextContextView(
-                            name: name,
-                            compact: false,
-                            isZoomed: modelContextZoomed[index],
-                            onTap: {
-                                guard index < modelContextZoomed.count else { return }
-                                modelContextZoomed[index].toggle()
-                            },
-                            
-                            
-                            onDelete: {
-                                modelContext.remove(at: index)
-                                modelContextZoomed.remove(at: index)
-                                AnalyticsManager.shared.customEventTab(
-                                    action: "tab_file_remove_text"
-                                )
-                            }
-                        )
-                        .onHover { inside in
-                            updatePassthrough(inside: inside)
-                        }
-                    }
-                }
+        ContextGridView(
+            modelContext: $modelContext,
+            modelContextZoomed: $modelContextZoomed,
+            onTap: { index in
+                guard index < modelContextZoomed.count else { return }
+                modelContextZoomed[index].toggle()
+            },
+            onDelete: { index in
+                modelContext.remove(at: index)
+                modelContextZoomed.remove(at: index)
+                AnalyticsManager.shared.customEventTab(
+                    action: "tab_file_remove"
+                )
+            },
+            updatePassthrough: { inside in
+                updatePassthrough(inside: inside)
             }
-            .padding(.horizontal, 24)
-            .padding(.bottom, 16)
-        }
-        .onAppear {
-            updatePanelSizeFromCurrent(150)
-        }
+        )
     }
 
     private func getResponseHeight() -> CGFloat {

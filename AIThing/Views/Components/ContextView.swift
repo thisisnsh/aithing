@@ -15,11 +15,11 @@ struct ImageContextView: View {
     let onDelete: () -> Void
 
     var body: some View {
-        VStack {
+        ZStack(alignment: .bottom) {
             Image(nsImage: image)
                 .resizable()
                 .aspectRatio(contentMode: .fit)
-                .frame(height: isZoomed ? 200 : 50, alignment: .leading)
+                .frame(maxWidth: .infinity)
                 .clipShape(RoundedRectangle(cornerRadius: isZoomed ? 16 : 8))
                 .overlay {
                     RoundedRectangle(cornerRadius: isZoomed ? 16 : 8).stroke(
@@ -38,6 +38,7 @@ struct ImageContextView: View {
                     Image(systemName: "xmark.circle.fill")
                         .frame(width: 12, height: 12)
                         .foregroundStyle(.red)
+                        .padding(8)
                 }
                 .buttonStyle(PlainButtonStyle())
             }
@@ -53,13 +54,13 @@ struct PDFContextView: View {
     let onDelete: () -> Void
 
     var body: some View {
-        VStack {
+        ZStack(alignment: .bottom) {
             ZStack {
                 if isZoomed {
                     Image(nsImage: image)
                         .resizable()
                         .aspectRatio(contentMode: .fit)
-                        .frame(height: isZoomed ? 200 : 50, alignment: .leading)
+                        .frame(maxWidth: .infinity)
                         .overlay { Color.black.opacity(0.5) }
                         .clipShape(RoundedRectangle(cornerRadius: isZoomed ? 16 : 8))
                         .overlay {
@@ -74,7 +75,7 @@ struct PDFContextView: View {
                     Image(nsImage: image)
                         .resizable()
                         .aspectRatio(contentMode: .fit)
-                        .frame(height: isZoomed ? 200 : 50, alignment: .leading)
+                        .frame(maxWidth: .infinity)
                         .overlay { Color.black.opacity(0.5) }
                         .clipShape(RoundedRectangle(cornerRadius: isZoomed ? 16 : 8))
                         .overlay {
@@ -90,7 +91,7 @@ struct PDFContextView: View {
                 Image(nsImage: image)
                     .resizable()
                     .aspectRatio(contentMode: .fit)
-                    .frame(height: isZoomed ? 200 : 50, alignment: .leading)
+                    .frame(maxWidth: .infinity)
                     .clipShape(RoundedRectangle(cornerRadius: isZoomed ? 16 : 8))
                     .overlay {
                         RoundedRectangle(cornerRadius: isZoomed ? 16 : 8).stroke(
@@ -111,6 +112,7 @@ struct PDFContextView: View {
                     Image(systemName: "xmark.circle.fill")
                         .frame(width: 12, height: 12)
                         .foregroundStyle(.red)
+                        .padding(8)
                 }
                 .buttonStyle(PlainButtonStyle())
             }
@@ -126,11 +128,11 @@ struct TextContextView: View {
     let onDelete: () -> Void
 
     var body: some View {
-        VStack {
+        ZStack(alignment: .bottom) {
             Text(isZoomed ? name : name.components(separatedBy: ".").last ?? name)
                 .font(.system(size: 10, weight: .medium))
                 .lineLimit(isZoomed ? 4 : 2)
-                .frame(width: isZoomed ? 200 : 50, height: isZoomed ? 200 : 50, alignment: .center)
+                .frame(maxWidth: .infinity, minHeight: 90, maxHeight: 180, alignment: .center)
                 .background(.ultraThinMaterial)
                 .clipShape(RoundedRectangle(cornerRadius: isZoomed ? 16 : 8))
                 .overlay {
@@ -151,6 +153,7 @@ struct TextContextView: View {
                     Image(systemName: "xmark.circle.fill")
                         .frame(width: 12, height: 12)
                         .foregroundStyle(.red)
+                        .padding(8)
                 }
                 .buttonStyle(PlainButtonStyle())
             }
