@@ -69,6 +69,7 @@ struct TabView: View {
     @State private var selectedText: String = ""
     @State private var hereContext: Bool = false
     @State private var takingScreenshot: Bool = false
+    @State private var isDropping: Bool = false
 
     var body: some View {
         VStack(alignment: .leading, spacing: 8) {
@@ -124,6 +125,9 @@ struct TabView: View {
                             cornerRadius: getCornerRadius(),
                             lineWidth: 2.5
                         )
+                    } else if isDropping {
+                        RoundedRectangle(cornerRadius: getCornerRadius())
+                            .stroke(Color.blue, lineWidth: 1.5)
                     } else {
                         RoundedRectangle(cornerRadius: getCornerRadius())
                             .stroke(Color.white, lineWidth: 1.5)
@@ -163,11 +167,8 @@ struct TabView: View {
                 }
             }
 
-            if let image = modelInputImage, isFocused {
-                contextView(image: image)
-                    .onHover { inside in
-                        updatePassthrough(inside: inside)
-                    }
+            if isFocused {
+                contextView().onHover { updatePassthrough(inside: $0) }
             }
         }
         .onTapGesture {
@@ -191,53 +192,51 @@ struct TabView: View {
 
             if isFocused {
                 ZStack(alignment: .leading) {
-                    InputTextView(
-                        text: showSettings
-                            ? .constant("Settings") : (showHistory ? .constant("History") : $query),
-                        seenCommands: $seenCommands,
-                        isNotEditable: isViewBlinking || showSettings || showHistory,
-                        onCommit: {
-                            Task {
-                                await handleQuery()
+                    if !isDropping {
+                        InputTextView(
+                            text: showSettings
+                                ? .constant("Settings")
+                                : (showHistory ? .constant("History") : $query),
+                            seenCommands: $seenCommands,
+                            isNotEditable: isViewBlinking || showSettings || showHistory,
+                            onCommit: {
+                                Task {
+                                    await handleQuery()
+                                }
+                            },
+                            onCommandTyped: { command in
+                                Task {
+                                    await handleCommand(type: "add", command: command)
+                                }
+                            },
+                            onCommandRemoved: { command in
+                                Task {
+                                    await handleCommand(type: "remove", command: command)
+                                }
+                            },
+                            onDebouncedTextChange: { _ in
+                                Task {
+                                    await handleCommand(type: "update", command: "")
+                                }
+                            },
+                            onSpillover: { count in
+                                var newHeight: CGFloat = 48
+                                if count == 2 {
+                                    newHeight = 48 + 24
+                                } else if count >= 3 {
+                                    newHeight = 48 + 24 + 24
+                                } else {
+                                    newHeight = 48
+                                }
+                                updatePanelSizeFromCurrent(newHeight - inputHeight)
+                                inputHeight = newHeight
                             }
-                        },
-                        onCommandTyped: { command in
-                            Task {
-                                await handleCommand(type: "add", command: command)
-                            }
-                        },
-                        onCommandRemoved: { command in
-                            Task {
-                                await handleCommand(type: "remove", command: command)
-                            }
-                        },
-                        onDebouncedTextChange: { _ in
-                            Task {
-                                await handleCommand(type: "update", command: "")
-                            }
-                        },
-                        onSpillover: { count in
-                            var newHeight: CGFloat = 48
-                            if count == 2 {
-                                newHeight = 48 + 24
-                            } else if count >= 3 {
-                                newHeight = 48 + 24 + 24
-                            } else {
-                                newHeight = 48
-                            }
-                            updatePanelSizeFromCurrent(newHeight - inputHeight)
-                            inputHeight = newHeight
-                        }
-                    )
-                    .opacity(showSettings || showHistory ? 0.6 : 1)
-                    .frame(width: 526)
-                    .dropDestination(for: String.self) { items, location in
-                        print(items)
-                        print(location)
-                        return true
+                        )
+                        .opacity(showSettings || showHistory ? 0.6 : 1)
+                        .frame(width: 526)
                     }
 
-                    if query.isEmpty && !showSettings && !showHistory {
+                    if query.isEmpty && !showSettings && !showHistory && !isDropping {
                         Text(
                             tabHistory?.history.isEmpty ?? true
                                 ? "Ask anything on this AI Thing..." : "Continue conversation..."
@@ -246,6 +245,15 @@ struct TabView: View {
                         .font(.system(size: 18, weight: .medium))
                         .padding(.leading, 6)
                         .allowsHitTesting(false)
+                    }
+
+                    if isDropping {
+                        Text("Drop files here...")
+                            .foregroundColor(.white.opacity(0.6))
+                            .font(.system(size: 18, weight: .medium))
+                            .padding(.leading, 6)
+                            .allowsHitTesting(false)
+                            .frame(width: 526)
                     }
                 }
 
@@ -281,6 +289,19 @@ struct TabView: View {
         .frame(height: isFocused ? inputHeight - 16 : 48)
         .padding(.horizontal, isFocused ? 24 : 20)
         .padding(.vertical, isFocused ? 8 : 0)
+        .dropDestination(for: URL.self) { urls, location in
+            // Standardize and process with your DragFileManager
+            let results =
+                urls
+                .map { $0.standardizedFileURL }
+                .compactMap { DragFileManager.processFileURL($0) }
+
+            // handle results (images / pdf / ppt thumbs / text)
+            print("Dropped at:", location, "results count:", results.count)
+            return !results.isEmpty
+        } isTargeted: {
+            isDropping = $0
+        }
     }
 
     private func responseView() -> some View {
@@ -348,51 +369,59 @@ struct TabView: View {
         }
     }
 
-    private func contextView(image: NSImage) -> some View {
-        ZStack {
-            Image(nsImage: image)
-                .resizable()
-                .aspectRatio(contentMode: .fit)
-                .frame(
-                    height: isZoomedModelInputImage ? 200 : 50,
-                    alignment: .leading
-                )
-                .background(.ultraThinMaterial)
-                .clipShape(
-                    RoundedRectangle(cornerRadius: isZoomedModelInputImage ? getCornerRadius() : 16)
-                )
-                .overlay {
-                    RoundedRectangle(cornerRadius: isZoomedModelInputImage ? getCornerRadius() : 16)
-                        .stroke(Color.white, lineWidth: 1)
-                }
-                .onTapGesture {
-                    withAnimation(
-                        .spring(response: 0.3, dampingFraction: 0.7, blendDuration: 0.2)
-                    ) {
-                        isZoomedModelInputImage.toggle()
-                        updatePanelSizeFromCurrent(isZoomedModelInputImage ? 150 : -150)
-                    }
-                }
-                .padding(.vertical, 8)
-                .onAppear {
-                    updatePanelSizeFromCurrent(64)
-                }
+    private func contextView() -> some View {
+        Group {
+            if let image = modelInputImage {
+                ZStack {
+                    Image(nsImage: image)
+                        .resizable()
+                        .aspectRatio(contentMode: .fit)
+                        .frame(
+                            height: isZoomedModelInputImage ? 200 : 50,
+                            alignment: .leading
+                        )
+                        .background(.ultraThinMaterial)
+                        .clipShape(
+                            RoundedRectangle(
+                                cornerRadius: isZoomedModelInputImage ? getCornerRadius() : 16
+                            )
+                        )
+                        .overlay {
+                            RoundedRectangle(
+                                cornerRadius: isZoomedModelInputImage ? getCornerRadius() : 16
+                            )
+                            .stroke(Color.white, lineWidth: 1)
+                        }
+                        .onTapGesture {
+                            withAnimation(
+                                .spring(response: 0.3, dampingFraction: 0.7, blendDuration: 0.2)
+                            ) {
+                                isZoomedModelInputImage.toggle()
+                                updatePanelSizeFromCurrent(isZoomedModelInputImage ? 150 : -150)
+                            }
+                        }
+                        .padding(.vertical, 8)
+                        .onAppear {
+                            updatePanelSizeFromCurrent(64)
+                        }
 
-            Button(action: {
-                updatePanelSizeFromCurrent(-64)
-                if isZoomedModelInputImage {
-                    updatePanelSizeFromCurrent(-150)
+                    Button(action: {
+                        updatePanelSizeFromCurrent(-64)
+                        if isZoomedModelInputImage {
+                            updatePanelSizeFromCurrent(-150)
+                        }
+                        isZoomedModelInputImage = false
+                        modelInputImage = nil
+                        modelInputImageBase64 = nil
+                        AnalyticsManager.shared.customEventTab(action: "tab_image_remove")
+                    }) {
+                        Image(systemName: "xmark.circle.fill")
+                            .frame(width: 12, height: 12)
+                            .padding(8)
+                    }
+                    .buttonStyle(PlainButtonStyle())
                 }
-                isZoomedModelInputImage = false
-                modelInputImage = nil
-                modelInputImageBase64 = nil
-                AnalyticsManager.shared.customEventTab(action: "tab_image_remove")
-            }) {
-                Image(systemName: "xmark.circle.fill")
-                    .frame(width: 12, height: 12)
-                    .padding(8)
             }
-            .buttonStyle(PlainButtonStyle())
         }
     }
 

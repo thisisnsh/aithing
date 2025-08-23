@@ -97,13 +97,6 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate {
         ]) { [weak self] _ in
             self?.floatingWindow.ignoresMouseEvents = false
         }
-
-        // Local monitor for mouse up → drag ends
-        NSEvent.addLocalMonitorForEvents(matching: [.leftMouseUp, .rightMouseUp, .otherMouseUp]) {
-            [weak self] event in
-            self?.floatingWindow.ignoresMouseEvents = true
-            return event
-        }
     }
 
     func setupHotKey() {
