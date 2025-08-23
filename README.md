@@ -3,20 +3,8 @@
 ------------------------ 
 
 
+- minimize all tabs on settings open 
 
-Satursday 
-- drop the file into ai thing 
-- text: .doc, .docx, .text, .md, .py, no extension 
-- image: .pdf, .jpeg, .png
-- handle multi page by asking if all pages need to be parsed  
-- Read Files Documents 
-    - sheet, doc, pdf, image, 
-    - CSV
-    - Excel (.xlsx, .xls)
-    - JSON
-    - XML
-    - Images (JPEG, PNG, GIF, WebP)
-    - Text files (.txt, .md, .py, etc)
 
 Sunday 
 - integrate agents 
@@ -27,7 +15,7 @@ Tuesday
 - Make Video / Ad
 
 Not Now
-- Support multiple images in context 
+- Old images from history are not shown 
 
 
 

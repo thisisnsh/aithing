@@ -54,10 +54,9 @@ struct TabView: View {
     @State private var modelInput: [[String: Any]] = []
     @State private var modelOutput: String = ""
 
-    @State private var modelImageCount: Int = 0
-    @State private var modelInputImage: NSImage? = nil
-    @State private var modelInputImageBase64: String? = nil
-    @State private var isZoomedModelInputImage = false
+    @State private var modelContextSubmitted: [DroppedContent] = []
+    @State private var modelContext: [DroppedContent] = []
+    @State private var modelContextZoomed: [Bool] = []
 
     @State private var query: String = ""
     @State private var seenCommands: Set<String> = []
@@ -168,7 +167,7 @@ struct TabView: View {
             }
 
             if isFocused {
-                contextView().onHover { updatePassthrough(inside: $0) }
+                contextView()
             }
         }
         .onTapGesture {
@@ -289,18 +288,24 @@ struct TabView: View {
         .frame(height: isFocused ? inputHeight - 16 : 48)
         .padding(.horizontal, isFocused ? 24 : 20)
         .padding(.vertical, isFocused ? 8 : 0)
-        .dropDestination(for: URL.self) { urls, location in
-            // Standardize and process with your DragFileManager
+        .dropDestination(for: URL.self) { urls, _ in
+            if !isFocused { return false }
+
             let results =
                 urls
                 .map { $0.standardizedFileURL }
                 .compactMap { DragFileManager.processFileURL($0) }
 
-            // handle results (images / pdf / ppt thumbs / text)
-            print("Dropped at:", location, "results count:", results.count)
+            for r in results {
+                modelContext.append(r)
+                modelContextZoomed.append(false)
+            }
+
             return !results.isEmpty
         } isTargeted: {
-            isDropping = $0
+            if isFocused {
+                isDropping = $0
+            }
         }
     }
 
@@ -324,6 +329,42 @@ struct TabView: View {
                                 }
                             }
                     } else {
+                        ScrollView(.horizontal, showsIndicators: false) {
+                            HStack {
+                                ForEach(Array(modelContextSubmitted.enumerated()), id: \.offset) {
+                                    (index, context) in
+                                    switch context {
+                                    case .image(_, let image, _):
+                                        ImageContextView(
+                                            image: image,
+                                            compact: true,
+                                            isZoomed: false,
+                                            onTap: {},
+                                            onDelete: {}
+                                        )
+                                    case .pdf(_, _, let images, _):
+                                        PDFContextView(
+                                            image: images[0],
+                                            compact: true,
+                                            isZoomed: false,
+                                            onTap: {},
+                                            onDelete: {}
+                                        )
+                                    case .text(let name, _):
+                                        TextContextView(
+                                            name: name,
+                                            compact: true,
+                                            isZoomed: false,
+                                            onTap: {},
+                                            onDelete: {}
+                                        )
+                                    }
+                                }
+                            }
+                            .padding(.horizontal, 24)
+                            .padding(.top, 16)
+                        }
+
                         MarkdownText(text: modelOutput)
                             .foregroundColor(.white)
                             .font(.system(size: 14))
@@ -370,58 +411,80 @@ struct TabView: View {
     }
 
     private func contextView() -> some View {
-        Group {
-            if let image = modelInputImage {
-                ZStack {
-                    Image(nsImage: image)
-                        .resizable()
-                        .aspectRatio(contentMode: .fit)
-                        .frame(
-                            height: isZoomedModelInputImage ? 200 : 50,
-                            alignment: .leading
-                        )
-                        .background(.ultraThinMaterial)
-                        .clipShape(
-                            RoundedRectangle(
-                                cornerRadius: isZoomedModelInputImage ? getCornerRadius() : 16
-                            )
-                        )
-                        .overlay {
-                            RoundedRectangle(
-                                cornerRadius: isZoomedModelInputImage ? getCornerRadius() : 16
-                            )
-                            .stroke(Color.white, lineWidth: 1)
-                        }
-                        .onTapGesture {
-                            withAnimation(
-                                .spring(response: 0.3, dampingFraction: 0.7, blendDuration: 0.2)
-                            ) {
-                                isZoomedModelInputImage.toggle()
-                                updatePanelSizeFromCurrent(isZoomedModelInputImage ? 150 : -150)
+        ScrollView(.horizontal, showsIndicators: false) {
+            HStack(alignment: .top) {
+                ForEach(Array(modelContext.enumerated()), id: \.offset) { (index, context) in
+                    switch context {
+                    case .image(_, let image, _):
+                        ImageContextView(
+                            image: image,
+                            compact: false,
+                            isZoomed: modelContextZoomed[index],
+                            onTap: {
+                                guard index < modelContextZoomed.count else { return }
+                                modelContextZoomed[index].toggle()
+                            },
+                            onDelete: {
+                                modelContext.remove(at: index)
+                                modelContextZoomed.remove(at: index)
+                                AnalyticsManager.shared.customEventTab(
+                                    action: "tab_file_remove_image"
+                                )
                             }
+                        )
+                        .onHover { inside in
+                            updatePassthrough(inside: inside)
                         }
-                        .padding(.vertical, 8)
-                        .onAppear {
-                            updatePanelSizeFromCurrent(64)
+                    case .pdf(_, _, let images, _):
+                        PDFContextView(
+                            image: images[0],
+                            compact: false,
+                            isZoomed: modelContextZoomed[index],
+                            onTap: {
+                                guard index < modelContextZoomed.count else { return }
+                                modelContextZoomed[index].toggle()
+                            },
+                            onDelete: {
+                                modelContext.remove(at: index)
+                                modelContextZoomed.remove(at: index)
+                                AnalyticsManager.shared.customEventTab(
+                                    action: "tab_file_remove_pdf"
+                                )
+                            }
+                        )
+                        .onHover { inside in
+                            updatePassthrough(inside: inside)
                         }
-
-                    Button(action: {
-                        updatePanelSizeFromCurrent(-64)
-                        if isZoomedModelInputImage {
-                            updatePanelSizeFromCurrent(-150)
+                    case .text(let name, _):
+                        TextContextView(
+                            name: name,
+                            compact: false,
+                            isZoomed: modelContextZoomed[index],
+                            onTap: {
+                                guard index < modelContextZoomed.count else { return }
+                                modelContextZoomed[index].toggle()
+                            },
+                            
+                            
+                            onDelete: {
+                                modelContext.remove(at: index)
+                                modelContextZoomed.remove(at: index)
+                                AnalyticsManager.shared.customEventTab(
+                                    action: "tab_file_remove_text"
+                                )
+                            }
+                        )
+                        .onHover { inside in
+                            updatePassthrough(inside: inside)
                         }
-                        isZoomedModelInputImage = false
-                        modelInputImage = nil
-                        modelInputImageBase64 = nil
-                        AnalyticsManager.shared.customEventTab(action: "tab_image_remove")
-                    }) {
-                        Image(systemName: "xmark.circle.fill")
-                            .frame(width: 12, height: 12)
-                            .padding(8)
                     }
-                    .buttonStyle(PlainButtonStyle())
                 }
             }
+            .padding(.horizontal, 24)
+            .padding(.bottom, 16)
+        }
+        .onAppear {
+            updatePanelSizeFromCurrent(150)
         }
     }
 
@@ -446,8 +509,8 @@ struct TabView: View {
                 if let (image, base64) =
                     await screenshotManager.captureSelectedScreenUnderMouse()
                 {
-                    modelInputImage = image
-                    modelInputImageBase64 = base64
+                    modelContext.append(.image("screenshot", image, base64))
+                    modelContextZoomed.append(false)
                     AnalyticsManager.shared.customEventTab(action: "tab_image_add_selected")
                 } else {
                     AnalyticsManager.shared.customError(
@@ -470,8 +533,6 @@ struct TabView: View {
         case "remove":
             if command == "@this" {
                 screenshotManager.cancelScreenshot()
-                modelInputImage = nil
-                modelInputImageBase64 = nil
                 AnalyticsManager.shared.customEventTab(action: "tab_context_remove_this")
             } else if command == "@selected" {
                 selectionContext = false
@@ -703,25 +764,55 @@ struct TabView: View {
 
         // query is non-empty only on first parse
         if !query.isEmpty {
-            if let modelInputImageBase64 = modelInputImageBase64 {
-                modelInput.append(
-                    [
-                        "role": "user",
-                        "content": [
+            for i in 0..<modelContext.count {
+                switch modelContext[i] {
+                case .image(_, _, let base64):
+                    modelInput.append(
+                        [
+                            "role": "user",
+                            "content": [
+                                [
+                                    "type": "image",
+                                    "source": [
+                                        "type": "base64",
+                                        "media_type": "image/jpeg",
+                                        "data": base64,
+                                    ],
+                                ]
+                            ],
+                        ]
+                    )
+                case .pdf(_, _, _, let base64s):
+                    for base64 in base64s {
+                        modelInput.append(
                             [
-                                "type": "image",
-                                "source": [
-                                    "type": "base64",
-                                    "media_type": "image/jpeg",
-                                    "data": modelInputImageBase64,
+                                "role": "user",
+                                "content": [
+                                    [
+                                        "type": "image",
+                                        "source": [
+                                            "type": "base64",
+                                            "media_type": "image/jpeg",
+                                            "data": base64,
+                                        ],
+                                    ]
                                 ],
                             ]
-                        ],
-                    ]
-                )
-                modelImageCount = 1
-            } else {
-                modelImageCount = 0
+                        )
+                    }
+                case .text(let name, let text):
+                    modelInput.append(
+                        [
+                            "role": "user",
+                            "content": [
+                                [
+                                    "type": "text",
+                                    "text": "File \(name) content:\n\n\(text)",
+                                ]
+                            ],
+                        ]
+                    )
+                }
             }
 
             if selectionContext {
@@ -849,10 +940,12 @@ struct TabView: View {
                 if !byok {
                     let cost = getModelCost(getModel(), all: managedModels)
                     let costImage = getModelCostImage(getModel(), all: managedModels)
-                    print("cost:", cost + costImage * modelImageCount)
+                    print("cost:", cost + costImage * modelContext.count)
+                    print("cost image:", costImage * modelContext.count)
+                    print("total cost:", cost + costImage * modelContext.count)
                     await firestoreManager.incrementCredits(
                         user: appUser,
-                        by: cost + costImage * modelImageCount
+                        by: cost + costImage * modelContext.count
                     )
                 }
             } else {
@@ -862,6 +955,10 @@ struct TabView: View {
                     location: "tab_view"
                 )
             }
+
+            modelContextSubmitted.append(contentsOf: modelContext)
+            modelContext.removeAll()
+            modelContextZoomed.removeAll()
 
             var finalResponse = ""
             var finalToolUseInputParam = ""
