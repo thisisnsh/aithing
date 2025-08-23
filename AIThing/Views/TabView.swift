@@ -232,6 +232,7 @@ struct TabView: View {
                         .foregroundColor(.white.opacity(0.6))
                         .font(.system(size: 18, weight: .medium))
                         .padding(.leading, 6)
+                        .allowsHitTesting(false)
                     }
                 }
 
@@ -682,7 +683,6 @@ struct TabView: View {
             if selectionContext {
                 selectedText = TypingManager.shared.getSelectedText() ?? ""
                 if !selectedText.isEmpty {
-                    print("selectedText", selectedText)
                     modelInput.append(
                         [
                             "role": "user",

@@ -24,7 +24,6 @@ drag drop files
 
 
 Friday 
-- fix @this issues in the @selected text @here
 - @this gives two mode. app and small select. 
 - support multiple images in context 
 

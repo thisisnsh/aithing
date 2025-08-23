@@ -71,7 +71,6 @@ final class TypingManager {
 
             typingQueue.sync { [weak self] in
                 guard let self = self else { return }
-                print(chunk.replacingOccurrences(of: "\n", with: "\\n"))
                 self.postUnicode(chunk)
             }
 
