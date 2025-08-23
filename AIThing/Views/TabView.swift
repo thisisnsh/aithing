@@ -582,7 +582,7 @@ struct TabView: View {
         }
 
         // Check if tab is alive, else return without processing
-        if !allTabs.contains(where: { $0.id == tabId }) {
+        if isTabClosed() {
             isThinking = false
             print("Exiting callModel for \(tabId) as it was closed")
             AnalyticsManager.shared.customEventTab(action: "query_stop_on_close")
@@ -698,13 +698,11 @@ struct TabView: View {
                     isThinking = false
                     await animateOutput(
                         content: """
-                            No selection detected. 
-                            
-                            Troubleshooting:
-                            - AI Thing may not be enabled in System Settings > Privacy & Security > Accessibility.
-                            - The application may not support selected text.
-                            
-                            This feature is still in development — please report any issues to help@aithing.dev
+                            No selection detected. Please select again. 
+
+                            Another reason could be that the application may not support selected text. Use `@this` to capture the selected text. 
+                                                        
+                            Please report issues to help@aithing.dev
                             """
                     )
                     AnalyticsManager.shared.customError(
@@ -858,6 +856,13 @@ struct TabView: View {
                         }
 
                     case "content_block_delta":
+                        if isTabClosed() {
+                            isThinking = false
+                            print("Exiting text_delta for \(tabId) as it was closed")
+                            AnalyticsManager.shared.customEventTab(action: "query_stop_on_close")
+                            return
+                        }
+
                         guard let delta = json["delta"] as? [String: Any] else { continue }
                         guard let delta_type = delta["type"] as? String else { continue }
 
@@ -865,10 +870,11 @@ struct TabView: View {
                         case "text_delta":
                             guard let text = delta["text"] as? String else { continue }
                             isThinking = false
-                            for char in text {
-                                finalResponse += String(char)
-                                await MainActor.run {
-                                    modelOutput = finalResponse + " " + shimmerPlaceholder()
+                            finalResponse += String(text)
+                            await MainActor.run {
+                                modelOutput = finalResponse + " " + shimmerPlaceholder()
+                                if hereContext {
+                                    TypingManager.shared.typeText(text)
                                 }
                             }
 
@@ -885,12 +891,17 @@ struct TabView: View {
                     case "content_block_stop":
                         await MainActor.run {
                             modelOutput = finalResponse
-                            if selectionContext || hereContext {
-                                TypingManager.shared.typeText(stripCodeBlock(from: finalResponse))
-                            }
+                            TypingManager.shared.endTypeText()
                         }
 
                     case "message_delta":
+                        if isTabClosed() {
+                            isThinking = false
+                            print("Exiting message_delta for \(tabId) as it was closed")
+                            AnalyticsManager.shared.customEventTab(action: "query_stop_on_close")
+                            return
+                        }
+
                         guard let delta = json["delta"] as? [String: Any] else { continue }
                         guard let delta_stop_reason = delta["stop_reason"] as? String else {
                             continue
@@ -1062,16 +1073,20 @@ struct TabView: View {
                 "text":
                     """
                 ## Special Keywords & Behaviors  
-                - **@this** → Use the provided image in context to answer the query.  
+                - **@this** → 
+                  - Use the provided image in context to answer the query.  
 
-                - **@selected** → Query is about replacing a selected item.  
-                  - Output ONLY the replacement text.  
-                  - **No extra output or commentary**.  
-                  - Must be simple, raw text that can be copy-pasted directly.  
+                - **@file** → 
+                  - Use the provided file in context to answer the query.  
 
-                - **@here** → Query will be written directly into a file.  
-                  - Output ONLY the text that goes into the file.  
-                  - **No extra output or commentary**.  
+                - **@selected** → 
+                  - Use the selected text in context to answer the query.  
+                  
+                - **@here** → 
+                  - Response will be written directly into a file.  
+                  - Output ONLY the text that goes into the file with ```text code formatting.  
+                  - No extra output or commentary.
+                  - Do not output @here word.
                 """,
             ],
             [
@@ -1208,8 +1223,8 @@ struct TabView: View {
 
     private func animateOutput(content: String) async {
         var partial = ""
-        for char in content {
-            partial += String(char)
+        for text in content.split(separator: " ") {
+            partial += String(text) + " "
             await MainActor.run {
                 modelOutput = partial + " " + shimmerPlaceholder()
             }
@@ -1226,19 +1241,7 @@ struct TabView: View {
         pasteboard.setString(string, forType: .string)
     }
 
-    func stripCodeBlock(from text: String) -> String {
-        // Regex matches:
-        // - opening ``` + optional word + newline
-        // - newline + closing ```
-        let pattern = #"^```[\w]*\n|\n```$"#
-
-        guard let regex = try? NSRegularExpression(pattern: pattern, options: [.anchorsMatchLines])
-        else {
-            return text
-        }
-
-        let range = NSRange(text.startIndex..<text.endIndex, in: text)
-        return regex.stringByReplacingMatches(in: text, options: [], range: range, withTemplate: "")
+    func isTabClosed() -> Bool {
+        !allTabs.contains(where: { $0.id == tabId })
     }
-
 }

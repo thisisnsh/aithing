@@ -14,17 +14,10 @@ final class TypingManager {
     private init() {}
 
     private let typingQueue = DispatchQueue(label: "TypingManager.TypingQueue")
-    private var typingSession = 0  // allows canceling older runs if a new one starts
-
-    func cancelTyping() {
-        typingQueue.async(flags: .barrier) {
-            self.typingSession += 1
-        }
-    }
 
     func getSelectedText() -> String? {
         requestAXIfNeeded()
-        
+
         guard let frontApp = NSWorkspace.shared.frontmostApplication else {
             return nil
         }
@@ -62,29 +55,36 @@ final class TypingManager {
         _ = AXIsProcessTrustedWithOptions(options)
     }
 
+    private var typingText: String = ""
     func typeText(_ text: String) {
-        typingSession += 1
-        let session = typingSession
+        typingText += text
+        if !typingText.contains("\n") { return }
 
         // Split into lines
-        let lines = text.split(separator: "\n", omittingEmptySubsequences: false)
-
-        var delay: TimeInterval = 0
+        let lines = stripCodeBlock(from: typingText).split(
+            separator: "\n",
+            omittingEmptySubsequences: false
+        )
 
         for (index, line) in lines.enumerated() {
             let chunk = String(line) + (index < lines.count - 1 ? "\n" : "")
 
-            typingQueue.asyncAfter(deadline: .now() + delay) { [weak self] in
-                guard let self = self, self.typingSession == session else { return }
+            typingQueue.sync { [weak self] in
+                guard let self = self else { return }
+                print(chunk.replacingOccurrences(of: "\n", with: "\\n"))
                 self.postUnicode(chunk)
             }
 
-            // fixed pause between lines (you can tweak)
-            delay += 0.2
         }
+
+        typingText = ""
     }
 
-    /// Posts a single “typed” Unicode chunk via CGEvents.
+    func endTypeText() {
+        self.postEnter()
+        typingText = ""
+    }
+
     private func postUnicode(_ s: String) {
         guard let src = CGEventSource(stateID: .hidSystemState) else { return }
         let units = Array(s.utf16)
@@ -104,6 +104,33 @@ final class TypingManager {
                 up.post(tap: .cgAnnotatedSessionEventTap)
             }
         }
+    }
+
+    private func postEnter() {
+        guard let src = CGEventSource(stateID: .hidSystemState) else { return }
+        if let keyDown = CGEvent(keyboardEventSource: src, virtualKey: 36, keyDown: true) {
+            keyDown.flags = []
+            keyDown.post(tap: .cgAnnotatedSessionEventTap)
+        }
+        if let keyUp = CGEvent(keyboardEventSource: src, virtualKey: 36, keyDown: false) {
+            keyUp.flags = []
+            keyUp.post(tap: .cgAnnotatedSessionEventTap)
+        }
+    }
+
+    func stripCodeBlock(from text: String) -> String {
+        // Regex matches:
+        // - opening ``` + optional word + newline
+        // - closing ```
+        let pattern = #"^```[\w]*\n|\n```$"#
+
+        guard let regex = try? NSRegularExpression(pattern: pattern, options: [.anchorsMatchLines])
+        else {
+            return text
+        }
+
+        let range = NSRange(text.startIndex..<text.endIndex, in: text)
+        return regex.stringByReplacingMatches(in: text, options: [], range: range, withTemplate: "")
     }
 
 }
