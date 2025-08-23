@@ -43,13 +43,30 @@ struct MasonryGrid: Layout {
         placements.reserveCapacity(subviews.count)
 
         for subview in subviews {
-            let span = max(1, min(subview[GridSpanKey.self], columns))
+            // Default span from layout value
+            var span = max(1, min(subview[GridSpanKey.self], columns))
 
-            // Choose the contiguous span of columns with the smallest current max height
+            // Measure size first to check height
+            let widthForSpan = CGFloat(span) * columnWidth + CGFloat(max(0, span - 1)) * spacing
+            let size = subview.sizeThatFits(.init(width: widthForSpan, height: nil))
+
+            // 👈 Override span rules if height < 90
+            if size.height < 40 {
+                if subview[GridSpanKey.self] > 1 {  // zoomed
+                    span = min(6, columns)
+                } else {
+                    span = min(3, columns)
+                }
+            }
+
+            let widthForFinalSpan =
+                CGFloat(span) * columnWidth + CGFloat(max(0, span - 1)) * spacing
+            let finalSize = subview.sizeThatFits(.init(width: widthForFinalSpan, height: nil))
+            let itemSize = CGSize(width: widthForFinalSpan, height: finalSize.height)
+
+            // Find best start col
             var bestStart = 0
             var bestY = CGFloat.infinity
-
-            // Try every possible start column for this span
             for start in 0...(columns - span) {
                 let y = colHeights[start..<(start + span)].max() ?? 0
                 if y < bestY {
@@ -58,25 +75,19 @@ struct MasonryGrid: Layout {
                 }
             }
 
-            let widthForSpan = CGFloat(span) * columnWidth + CGFloat(max(0, span - 1)) * spacing
-            // Ask subview for the size it wants at this width (height flexible)
-            let size = subview.sizeThatFits(.init(width: widthForSpan, height: nil))
-            let itemSize = CGSize(width: widthForSpan, height: size.height)
-
             let x = CGFloat(bestStart) * (columnWidth + spacing)
             let y = bestY
             placements.append(
                 .init(origin: CGPoint(x: x, y: y), size: itemSize, span: span, startCol: bestStart)
             )
 
-            // Update the heights of the columns this item occupies
             let newHeight = y + itemSize.height + spacing
             for c in bestStart..<(bestStart + span) {
                 colHeights[c] = newHeight
             }
         }
 
-        let totalHeight = (colHeights.max() ?? 0) - spacing  // remove trailing spacing
+        let totalHeight = (colHeights.max() ?? 0) - spacing
         return (CGSize(width: totalWidth, height: max(0, totalHeight)), placements)
     }
 
