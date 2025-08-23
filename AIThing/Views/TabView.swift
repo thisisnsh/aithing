@@ -68,6 +68,7 @@ struct TabView: View {
     @State private var selectionContext: Bool = false
     @State private var selectedText: String = ""
     @State private var hereContext: Bool = false
+    @State private var takingScreenshot: Bool = false
 
     var body: some View {
         VStack(alignment: .leading, spacing: 8) {
@@ -85,6 +86,13 @@ struct TabView: View {
                             }
                             updatePassthrough(inside: inside)
                         }
+                }
+                if takingScreenshot {
+                    Text(
+                        "Click on the application to capture the entire window\nDrag to select a specific area."
+                    )
+                    .font(.system(size: 10, weight: .medium))
+                    .multilineTextAlignment(.center)
                 }
             }
             .onHover { inside in
@@ -400,6 +408,7 @@ struct TabView: View {
         case "add":
             if command == "@this" {
                 screenshotManager.cancelScreenshot()
+                takingScreenshot = true
                 if let (image, base64) =
                     await screenshotManager.captureSelectedScreenUnderMouse()
                 {
@@ -413,6 +422,7 @@ struct TabView: View {
                         location: "tab_view"
                     )
                 }
+                takingScreenshot = false
                 AnalyticsManager.shared.customEventTab(action: "tab_context_add_this")
             } else if command == "@selected" {
                 selectionContext = true

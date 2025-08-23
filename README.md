@@ -4,10 +4,6 @@
 
 
 
-Thursday
-- Make selected here easy
-    - @this @selected @here from 
-
 Friday / Satursday     
 - Read Files Documents 
     - sheet, doc, pdf, image, 
@@ -19,12 +15,10 @@ Friday / Satursday
     - Text files (.txt, .md, .py, etc)
 
 
-drag drop files 
 
 
 
 Friday 
-- @this gives two mode. app and small select. 
 - support multiple images in context 
 
 Satursday 
@@ -36,8 +30,6 @@ Satursday
 Sunday 
 - integrate agents 
 - github, google, slack, jira, mac 
-
-
 
 Tuesday 
 - Post Reddit 
