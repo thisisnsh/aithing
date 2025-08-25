@@ -2,35 +2,34 @@
 
 ------------------------ 
 
+Monday  
+- Add Some Shadow
+- Integrate Google 
+    - No Ability to Choose Tools 
+- Integrate GitHub
 
-- if below min height take double width 
 
-Sunday 
-- integrate agents 
-- github, google, slack, jira, mac 
-
-Tuesday 
+Vacation
+- Old images from history are not shown 
 - Post Reddit 
 - Make Video / Ad
-
-Not Now
-- Old images from history are not shown 
-
+ 
 
 
 ------------------------
 
 
+
 Missing Features
 - No Audio recording 
-- No Ability to Choose Tools 
 - Understand you and suggest things based on time and this
-- No RAG
 - No Elicitation 
 - No One Click Integrations 
-- No Markdown Select
 - Fix "AttributeGraph: cycle detected through attribute"
 - Fix Flickering Animation
+- Integration Slack, Jira
+- No RAG
+- No Markdown Select
 - Search History
 
 

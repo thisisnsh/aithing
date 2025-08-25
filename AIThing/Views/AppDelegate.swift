@@ -97,6 +97,11 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate {
         ]) { [weak self] _ in
             self?.floatingWindow.ignoresMouseEvents = false
         }
+        dragMonitor = NSEvent.addGlobalMonitorForEvents(matching: [
+            .leftMouseUp, .rightMouseUp, .otherMouseUp,
+        ]) { [weak self] _ in
+            self?.floatingWindow.ignoresMouseEvents = true
+        }
     }
 
     func setupHotKey() {

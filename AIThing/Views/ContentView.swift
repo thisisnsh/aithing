@@ -134,7 +134,6 @@ struct ContentView: View {
         .background(Color.clear)
         .onAppear {
             addTab()
-
             NSEvent.addLocalMonitorForEvents(matching: .keyDown) { event in
                 if event.modifierFlags.contains(.control) {
                     switch event.keyCode {

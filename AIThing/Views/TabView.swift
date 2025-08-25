@@ -331,40 +331,43 @@ struct TabView: View {
                                 }
                             }
                     } else {
-                        ScrollView(.horizontal, showsIndicators: false) {
-                            HStack {
-                                ForEach(Array(modelContextSubmitted.enumerated()), id: \.offset) {
-                                    (index, context) in
-                                    switch context {
-                                    case .image(_, let image, _):
-                                        ImageContextView(
-                                            image: image,
-                                            compact: true,
-                                            isZoomed: false,
-                                            onTap: {},
-                                            onDelete: {}
-                                        )
-                                    case .pdf(_, _, let images, _):
-                                        PDFContextView(
-                                            image: images[0],
-                                            compact: true,
-                                            isZoomed: false,
-                                            onTap: {},
-                                            onDelete: {}
-                                        )
-                                    case .text(let name, _):
-                                        TextContextView(
-                                            name: name,
-                                            compact: true,
-                                            isZoomed: false,
-                                            onTap: {},
-                                            onDelete: {}
-                                        )
+                        if !modelContextSubmitted.isEmpty {
+                            ScrollView(.horizontal, showsIndicators: false) {
+                                HStack {
+                                    ForEach(Array(modelContextSubmitted.enumerated()), id: \.offset)
+                                    {
+                                        (index, context) in
+                                        switch context {
+                                        case .image(_, let image, _):
+                                            ImageContextView(
+                                                image: image,
+                                                compact: true,
+                                                isZoomed: false,
+                                                onTap: {},
+                                                onDelete: {}
+                                            )
+                                        case .pdf(_, _, let images, _):
+                                            PDFContextView(
+                                                image: images[0],
+                                                compact: true,
+                                                isZoomed: false,
+                                                onTap: {},
+                                                onDelete: {}
+                                            )
+                                        case .text(let name, _):
+                                            TextContextView(
+                                                name: name,
+                                                compact: true,
+                                                isZoomed: false,
+                                                onTap: {},
+                                                onDelete: {}
+                                            )
+                                        }
                                     }
                                 }
+                                .padding(.horizontal, 24)
+                                .padding(.top, 16)
                             }
-                            .padding(.horizontal, 24)
-                            .padding(.top, 16)
                         }
 
                         MarkdownText(text: modelOutput)
@@ -980,7 +983,9 @@ struct TabView: View {
                     case "content_block_stop":
                         await MainActor.run {
                             modelOutput = finalResponse
-                            TypingManager.shared.endTypeText()
+                            if hereContext {
+                                TypingManager.shared.endTypeText()
+                            }
                         }
 
                     case "message_delta":
@@ -1049,6 +1054,7 @@ struct TabView: View {
                             print("--------")
                             print("call tool: \(finalToolUseName)")
                             print("tool input: \(finalToolUseInputParam)")
+                            print("tool output: \(result)")
 
                             modelInput.append([
                                 "role": "user",

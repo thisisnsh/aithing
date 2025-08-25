@@ -133,7 +133,9 @@ struct ContextGridView: View {
                 let zoomed = index < modelContextZoomed.count && modelContextZoomed[index]
 
                 cellView(for: context, index: index)
-                    .onHover { inside in updatePassthrough(inside) }
+                    .onHover { inside in
+                        updatePassthrough(inside)
+                    }
                     .layoutValue(key: GridSpanKey.self, value: zoomed ? 2 : 1)
             }
         }
