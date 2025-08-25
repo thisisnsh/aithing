@@ -13,14 +13,15 @@ import SwiftUI
 @MainActor
 class GoogleOAuthManager: ObservableObject {
     @Published var user: GIDGoogleUser?
+    @Published var enabled: Bool = false
 
-    func generateToken() async {
+    func generateToken() async -> GIDGoogleUser? {
         do {
             // Refresh token if user already exists
             if let user = self.user {
                 do {
                     try await user.refreshTokensIfNeeded()
-                    return
+                    return user
                 } catch {}
             }
 
@@ -73,9 +74,11 @@ class GoogleOAuthManager: ObservableObject {
             )
 
             user = result.user
+            return user
         } catch {
             print("Get token: \(error.localizedDescription)")
             user = nil
+            return user
         }
     }
 

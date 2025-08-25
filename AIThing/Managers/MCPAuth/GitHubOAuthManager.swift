@@ -6,3 +6,8 @@
 //
 
 import Foundation
+
+@MainActor
+class GitHubOAuthManager: ObservableObject {
+    @Published var enabled: Bool = false
+}

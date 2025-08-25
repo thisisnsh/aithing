@@ -5,7 +5,9 @@ enum SettingsTab: String { case account, models, agents, preferences }
 struct SettingsView: View {
     @EnvironmentObject var loginManager: LoginManager
     @EnvironmentObject var firestoreManager: FirestoreManager
+
     @EnvironmentObject var googleOAuthManager: GoogleOAuthManager
+    @EnvironmentObject var gitHubOAuthManager: GitHubOAuthManager
 
     @Binding var isPresented: Bool
     var setPanelVisibility: () -> Void
@@ -85,6 +87,7 @@ struct SettingsView: View {
                             deleteAgent: deleteAgent
                         )
                         .environmentObject(googleOAuthManager)
+                        .environmentObject(gitHubOAuthManager)
 
                     case .preferences:
                         SettingsPreferencesTab(

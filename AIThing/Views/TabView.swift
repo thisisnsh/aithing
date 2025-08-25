@@ -659,7 +659,6 @@ struct TabView: View {
         // Load latest tools
         await reconnectManagedAgents()
         let modelTools = allClientTools.values.flatMap { $0 }
-        print(modelTools)
 
         // Fake data // DEBUG_MODE
         // await callModel(query: query + "X")
@@ -828,11 +827,12 @@ struct TabView: View {
 
         ]
 
-        // print("apiKey:", apiKey)
-        // print("model:", model)
-        // print("cost:", getModelCost(getModel()))
-        // print("messages:", body["messages"] as! [[String: Any]])
-        // print("tools:", (body["tools"] as! [[String: Any]]).count)
+        print("--------")
+        print("apiKey:", apiKey)
+        print("model:", model)
+        print("cost:", getModelCost(getModel(), all: managedModels))
+        print("messages:", body["messages"] as! [[String: Any]])
+        print("tools:", (body["tools"] as! [[String: Any]]).count)
 
         request.httpBody = try? JSONSerialization.data(withJSONObject: body)
 

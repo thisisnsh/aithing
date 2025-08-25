@@ -80,7 +80,11 @@ struct ContentView: View {
     }
 
     // Managed Agents
+    // StateObjects not persisted after application quit
+    // This is due to the nature of these servers that require token refresh
+    // Best way is to disable then and enable to fetch new token
     @StateObject private var googleOAuthManager = GoogleOAuthManager()
+    @StateObject private var githubOAuthManager = GitHubOAuthManager()
 
     var body: some View {
         ZStack(alignment: .top) {
@@ -219,6 +223,7 @@ struct ContentView: View {
         .environmentObject(loginManager)
         .environmentObject(firestoreManager)
         .environmentObject(googleOAuthManager)
+        .environmentObject(githubOAuthManager)
     }
 
     func History() -> some View {
@@ -661,7 +666,7 @@ struct ContentView: View {
     }
 
     func reconnectManagedAgents() async {
-        if getGoogleAgentEnabled() {
+        if googleOAuthManager.enabled {
             let clientName = "managed_google_mcp"
             var accessToken: String?
             var refreshedAccessToken: String?
@@ -669,7 +674,7 @@ struct ContentView: View {
             if googleOAuthManager.user != nil {
                 accessToken = googleOAuthManager.user?.accessToken.tokenString
             }
-            await googleOAuthManager.generateToken()
+            _ = await googleOAuthManager.generateToken()
             refreshedAccessToken = googleOAuthManager.user?.accessToken.tokenString
             // If token has been refreshed OR client does not exist
             if accessToken != refreshedAccessToken || !mcp.clientExists(clientName: clientName) {
@@ -683,7 +688,7 @@ struct ContentView: View {
             }
         }
 
-        if getGithubAgentEnabled() {
+        if githubOAuthManager.enabled {
 
         }
     }

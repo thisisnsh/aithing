@@ -15,6 +15,7 @@ struct AgentEntry: Codable, Identifiable, Equatable {
 
 struct SettingsAgentsTab: View {
     @EnvironmentObject var googleOAuthManager: GoogleOAuthManager
+    @EnvironmentObject var gitHubOAuthManager: GitHubOAuthManager
 
     @Binding var agents: [AgentEntry]
     @Binding var showAddAgent: Bool
@@ -34,8 +35,8 @@ struct SettingsAgentsTab: View {
     let deleteAgent: (AgentEntry) -> Void
 
     // Managed Agents
-    @State private var googleAgentEnabled: Bool = getGoogleAgentEnabled()
-    @State private var githubAgentEnabled: Bool = getGithubAgentEnabled()
+    @State private var googleAgentAccount: String = ""
+    @State private var githubAgentAccount: String = ""
 
     var body: some View {
         VStack(alignment: .leading, spacing: 16) {
@@ -60,10 +61,34 @@ struct SettingsAgentsTab: View {
                     ManagedAgentRow(
                         icon: "google",
                         title: "Google Workspace",
-                        isEnabled: $googleAgentEnabled
+                        subheading: googleAgentAccount,
+                        isEnabled: Binding(
+                            get: { googleOAuthManager.enabled },
+                            set: { newValue in
+                                Task {
+                                    if newValue {
+                                        let user = await googleOAuthManager.generateToken()
+                                        googleAgentAccount = user?.profile?.givenName ?? "Unknown"
+                                    } else {
+                                        googleOAuthManager.resetToken()
+                                    }
+                                    googleOAuthManager.enabled = newValue
+                                }
+                            }
+                        ),
                     )
                     Divider()
-                    ManagedAgentRow(icon: "github", title: "GitHub", isEnabled: $githubAgentEnabled)
+                    ManagedAgentRow(
+                        icon: "github",
+                        title: "GitHub",
+                        subheading: githubAgentAccount,
+                        isEnabled: Binding(
+                            get: { gitHubOAuthManager.enabled },
+                            set: { newValue in
+                                gitHubOAuthManager.enabled = newValue
+                            }
+                        )
+                    )
                     Divider()
                     Text("More Agents Coming Soon. Request specifc agents via help@aithing.dev.")
                         .font(.system(size: 10, weight: .medium))
@@ -72,19 +97,13 @@ struct SettingsAgentsTab: View {
                 }
                 .padding(4)
             }
-            .onChange(of: googleAgentEnabled) { newValue in
+            .onAppear {
                 Task {
-                    if newValue {
-                        await googleOAuthManager.generateToken()
-                        setGoogleAgentEnabled(value: newValue)
-                    } else {
-                        googleOAuthManager.resetToken()
-                        setGoogleAgentEnabled(value: newValue)
+                    if googleOAuthManager.enabled {
+                        googleAgentAccount =
+                            googleOAuthManager.user?.profile?.givenName ?? "Unknown"
                     }
                 }
-            }
-            .onChange(of: githubAgentEnabled) { newValue in
-                setGithubAgentEnabled(value: newValue)
             }
 
             GroupBox(
@@ -215,12 +234,18 @@ struct SettingsAgentsTab: View {
 private struct ManagedAgentRow: View {
     let icon: String
     let title: String
+    let subheading: String
     @Binding var isEnabled: Bool
 
     var body: some View {
         HStack {
             Image(icon).resizable().frame(width: 16, height: 16)
-            Text(title).font(.system(size: 14, weight: .medium))
+            VStack(alignment: .leading, spacing: 2) {
+                RowTitle(title)
+                if !subheading.isEmpty {
+                    RowSub(subheading)
+                }
+            }
             Spacer()
             Toggle("", isOn: $isEnabled)
                 .toggleStyle(.switch).tint(.black).scaleEffect(0.7)
@@ -262,13 +287,13 @@ private struct AgentRow: View {
         }
         .padding(4)
     }
+}
 
-    private func RowTitle(_ text: String) -> some View {
-        Text(text).font(.system(size: 14, weight: .medium))
-    }
-    private func RowSub(_ text: String) -> some View {
-        Text(text).font(.system(size: 10, weight: .medium)).opacity(0.5)
-    }
+private func RowTitle(_ text: String) -> some View {
+    Text(text).font(.system(size: 14, weight: .medium))
+}
+private func RowSub(_ text: String) -> some View {
+    Text(text).font(.system(size: 10, weight: .medium)).opacity(0.5)
 }
 
 private struct AddAgentForm: View {
