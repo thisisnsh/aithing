@@ -663,34 +663,23 @@ struct ContentView: View {
     func reconnectManagedAgents() async {
         if getGoogleAgentEnabled() {
             let clientName = "managed_google_mcp"
+            var accessToken: String?
+            var refreshedAccessToken: String?
 
-            // If another tab is reconnecting let it do that
-            if mcp.reconnecting[clientName] ?? false {
-                while mcp.reconnecting[clientName] ?? false {
-                    print("Let other tab reconnect: \(clientName)")
-                    try? await Task.sleep(nanoseconds: 100_000_000)
-                }
-            } else {
-                var accessToken: String?
-                var refreshedAccessToken: String?
-
-                if googleOAuthManager.user != nil {
-                    accessToken = googleOAuthManager.user?.accessToken.tokenString
-                }
-                await googleOAuthManager.generateToken()
-                refreshedAccessToken = googleOAuthManager.user?.accessToken.tokenString
-
-                // If token has been refreshed OR client does not exist
-                if accessToken != refreshedAccessToken || !mcp.clients.keys.contains(clientName) {
-                    _ = await mcp.reconnect(
-                        clientName: clientName,
-                        url: "https://google.mcp.aithing.dev/mcp",
-                        authToken: refreshedAccessToken!
-                    )
-
-                    let tools = await mcp.getTools(clientName: clientName)
-                    allClientTools[clientName] = tools
-                }
+            if googleOAuthManager.user != nil {
+                accessToken = googleOAuthManager.user?.accessToken.tokenString
+            }
+            await googleOAuthManager.generateToken()
+            refreshedAccessToken = googleOAuthManager.user?.accessToken.tokenString
+            // If token has been refreshed OR client does not exist
+            if accessToken != refreshedAccessToken || !mcp.clientExists(clientName: clientName) {
+                _ = await mcp.reconnect(
+                    clientName: clientName,
+                    url: "https://google.mcp.aithing.dev/mcp",
+                    authToken: refreshedAccessToken!
+                )
+                let tools = await mcp.getTools(clientName: clientName)
+                allClientTools[clientName] = tools
             }
         }
 

@@ -14,6 +14,8 @@ struct AgentEntry: Codable, Identifiable, Equatable {
 }
 
 struct SettingsAgentsTab: View {
+    @EnvironmentObject var googleOAuthManager: GoogleOAuthManager
+
     @Binding var agents: [AgentEntry]
     @Binding var showAddAgent: Bool
 
@@ -31,16 +33,19 @@ struct SettingsAgentsTab: View {
     let saveAgents: () -> Void
     let deleteAgent: (AgentEntry) -> Void
 
-    @Binding var googleAgentEnabled: Bool
-    @Binding var githubAgentEnabled: Bool
+    // Managed Agents
+    @State private var googleAgentEnabled: Bool = getGoogleAgentEnabled()
+    @State private var githubAgentEnabled: Bool = getGithubAgentEnabled()
 
     var body: some View {
         VStack(alignment: .leading, spacing: 16) {
             GroupBox {
                 HStack {
-                    Text("Need Help? Check [Agents Documentation](https://aithing.dev/features/multiple-agents)")
-                        .font(.system(size: 10, weight: .medium))
-                        .padding(4)
+                    Text(
+                        "Need Help? Check [Agents Documentation](https://aithing.dev/features/multiple-agents)"
+                    )
+                    .font(.system(size: 10, weight: .medium))
+                    .padding(4)
                     Spacer()
                 }
                 .padding(.bottom, 4)
@@ -66,6 +71,20 @@ struct SettingsAgentsTab: View {
                         .opacity(0.5)
                 }
                 .padding(4)
+            }
+            .onChange(of: googleAgentEnabled) { newValue in
+                Task {
+                    if newValue {
+                        await googleOAuthManager.generateToken()
+                        setGoogleAgentEnabled(value: newValue)
+                    } else {
+                        googleOAuthManager.resetToken()
+                        setGoogleAgentEnabled(value: newValue)
+                    }
+                }
+            }
+            .onChange(of: githubAgentEnabled) { newValue in
+                setGithubAgentEnabled(value: newValue)
             }
 
             GroupBox(

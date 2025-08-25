@@ -41,10 +41,6 @@ struct SettingsView: View {
 
     private func updatePassthrough(inside: Bool) { setPanelPassthrough(!inside) }
 
-    // Managed Agents
-    @State private var googleAgentEnabled: Bool = getGoogleAgentEnabled()
-    @State private var githubAgentEnabled: Bool = getGithubAgentEnabled()
-
     var body: some View {
         HStack(spacing: 0) {
             sidebar
@@ -86,10 +82,9 @@ struct SettingsView: View {
                             toastText: $toastText,
                             addAgentEntry: addAgentEntry,
                             saveAgents: saveAgents,
-                            deleteAgent: deleteAgent,
-                            googleAgentEnabled: $googleAgentEnabled,
-                            githubAgentEnabled: $githubAgentEnabled
+                            deleteAgent: deleteAgent
                         )
+                        .environmentObject(googleOAuthManager)
 
                     case .preferences:
                         SettingsPreferencesTab(
@@ -115,24 +110,6 @@ struct SettingsView: View {
                 screenName: "settings_view",
                 screenClass: "settings_view"
             )
-        }
-        .onChange(of: googleAgentEnabled) { newValue in
-            Task {
-                if newValue {
-                    await googleOAuthManager.generateToken()
-                    setGoogleAgentEnabled(value: newValue)
-                } else {
-                    googleOAuthManager.resetToken()
-                    setGoogleAgentEnabled(value: newValue)
-                }
-            }
-        }
-        .onChange(of: githubAgentEnabled) { newValue in
-            if newValue {
-                setGithubAgentEnabled(value: newValue)
-            } else {
-                setGithubAgentEnabled(value: newValue)
-            }
         }
     }
 

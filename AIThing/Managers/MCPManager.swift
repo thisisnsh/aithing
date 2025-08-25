@@ -11,8 +11,8 @@ import MCP
 import System
 
 class MCPManager: ObservableObject {
-    @Published var reconnecting: [String: Bool] = [:]
-    @Published var clients: [String: Client] = [:]
+    var reconnecting: [String: Bool] = [:]
+    var clients: [String: Client] = [:]
 
     var executableURL: [String: String] = [:]
     var arguments: [String: [String]] = [:]
@@ -34,6 +34,10 @@ class MCPManager: ObservableObject {
         }
 
         logger = Logger(label: "com.thisisnsh.mac.AIThing")
+    }
+
+    func clientExists(clientName: String) -> Bool {
+        return clients.keys.contains(clientName)
     }
 
     func connect(clientName: String, command: String, args: [String]) async -> String {
@@ -146,8 +150,17 @@ class MCPManager: ObservableObject {
     }
 
     func reconnect(clientName: String, url: String, authToken: String) async -> Bool {
+        // If another tab is reconnecting let it do that
+        if reconnecting[clientName] ?? false {
+            while reconnecting[clientName] ?? false {
+                print("Let other tab reconnect: \(clientName)")
+                try? await Task.sleep(nanoseconds: 100_000_000)
+            }
+            return true
+        }
+
         reconnecting[clientName] = true
-        
+
         if let client = clients[clientName] {
             await client.disconnect()
         }
@@ -156,7 +169,7 @@ class MCPManager: ObservableObject {
             itemID: "mcp_reconnected",
             itemName: "mcp_reconnected"
         )
-        
+
         reconnecting[clientName] = false
         return rc.isEmpty
     }

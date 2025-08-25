@@ -16,6 +16,7 @@ class GoogleOAuthManager: ObservableObject {
 
     func generateToken() async {
         do {
+            // Refresh token if user already exists
             if let user = self.user {
                 do {
                     try await user.refreshTokensIfNeeded()
