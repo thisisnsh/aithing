@@ -61,33 +61,14 @@ struct SettingsAgentsTab: View {
                     ManagedAgentRow(
                         icon: "google",
                         title: "Google Workspace",
-                        subheading: googleAgentAccount,
-                        isEnabled: Binding(
-                            get: { googleOAuthManager.enabled },
-                            set: { newValue in
-                                Task {
-                                    if newValue {
-                                        let user = await googleOAuthManager.generateToken()
-                                        googleAgentAccount = user?.profile?.givenName ?? "Unknown"
-                                    } else {
-                                        googleOAuthManager.resetToken()
-                                    }
-                                    googleOAuthManager.enabled = newValue
-                                }
-                            }
-                        ),
+                        subheading: $googleAgentAccount,
                     )
+                    .environmentObject(googleOAuthManager)
                     Divider()
                     ManagedAgentRow(
                         icon: "github",
                         title: "GitHub",
-                        subheading: githubAgentAccount,
-                        isEnabled: Binding(
-                            get: { gitHubOAuthManager.enabled },
-                            set: { newValue in
-                                gitHubOAuthManager.enabled = newValue
-                            }
-                        )
+                        subheading: $githubAgentAccount,
                     )
                     Divider()
                     Text("More Agents Coming Soon. Request specifc agents via help@aithing.dev.")
@@ -99,9 +80,10 @@ struct SettingsAgentsTab: View {
             }
             .onAppear {
                 Task {
-                    if googleOAuthManager.enabled {
-                        googleAgentAccount =
-                            googleOAuthManager.user?.profile?.givenName ?? "Unknown"
+                    if googleOAuthManager.enabled.count > 0 {
+                        if let user = googleOAuthManager.user {
+                            googleAgentAccount = user.profile?.name ?? "Error"
+                        }
                     }
                 }
             }
@@ -232,25 +214,91 @@ struct SettingsAgentsTab: View {
 }
 
 private struct ManagedAgentRow: View {
+    @EnvironmentObject var google: GoogleOAuthManager
+
     let icon: String
     let title: String
-    let subheading: String
-    @Binding var isEnabled: Bool
+    @Binding var subheading: String
+
+    @State private var exapanded = false
 
     var body: some View {
-        HStack {
-            Image(icon).resizable().frame(width: 16, height: 16)
-            VStack(alignment: .leading, spacing: 2) {
-                RowTitle(title)
-                if !subheading.isEmpty {
-                    RowSub(subheading)
+        if title == "Google Workspace" {
+            VStack {
+                Button {
+                    exapanded.toggle()
+                } label: {
+                    HStack {
+                        Image(icon).resizable().frame(width: 16, height: 16)
+                        VStack(alignment: .leading, spacing: 2) {
+                            RowTitle(title)
+                            if !subheading.isEmpty {
+                                RowSub(subheading)
+                            }
+                        }
+                        Spacer()
+                        Image(systemName: "chevron.right")
+                            .frame(width: 10, height: 10)
+                    }
                 }
+                .buttonStyle(.plain)
+
+                if exapanded {
+                    ForEach(
+                        google.toolScopesMap.keys.sorted(by: { $0.rawValue < $1.rawValue }),
+                        id: \.self
+                    ) { tool in
+
+                        VStack {
+                            Divider()
+                            HStack {
+                                Text(tool.rawValue).font(.system(size: 12, weight: .medium))
+                                Spacer()
+                                Toggle(
+                                    "",
+                                    isOn: Binding(
+                                        get: { google.enabled.contains(tool) },
+                                        set: { newValue in
+                                            Task {
+                                                if newValue {
+                                                    google.enabled.insert(tool)
+                                                    if let user = await google.generateToken(refresh: false) {
+                                                        subheading = user.profile?.name ?? "Error"
+                                                    } else {
+                                                        google.enabled.remove(tool)
+                                                    }
+                                                } else {
+                                                    google.enabled.remove(tool)
+                                                }
+                                            }
+                                        }
+                                    )
+                                )
+                                .toggleStyle(.switch).tint(.black).scaleEffect(0.7)
+                            }
+                        }
+                        .padding(.horizontal, 8)
+                    }
+                }
+
             }
-            Spacer()
-            Toggle("", isOn: $isEnabled)
-                .toggleStyle(.switch).tint(.black).scaleEffect(0.7)
+            .padding(4)
+        } else {
+            HStack {
+                Image(icon).resizable().frame(width: 16, height: 16)
+                VStack(alignment: .leading, spacing: 2) {
+                    RowTitle(title)
+                    if !subheading.isEmpty {
+                        RowSub(subheading)
+                    }
+                }
+                Spacer()
+                Toggle("", isOn: .constant(false))
+                    .toggleStyle(.switch).tint(.black).scaleEffect(0.7)
+            }
+            .padding(4)
+            .opacity(0.5)
         }
-        .padding(4)
     }
 }
 

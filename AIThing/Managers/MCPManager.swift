@@ -160,6 +160,7 @@ class MCPManager: ObservableObject {
         }
 
         reconnecting[clientName] = true
+        print("Reconnecting: \(clientName)")
 
         if let client = clients[clientName] {
             await client.disconnect()
@@ -210,7 +211,7 @@ class MCPManager: ObservableObject {
         }
     }
 
-    func getTools(clientName: String) async -> [[String: Any]] {
+    func getTools(clientName: String, filter: [String]) async -> [[String: Any]] {
         let clientName = clientName.lowercased()
         do {
             guard let client = clients[clientName] else {
@@ -218,8 +219,12 @@ class MCPManager: ObservableObject {
             }
 
             let (tools, _) = try await client.listTools()
+            let filteredTools = tools.filter { filter.contains($0.name) || filter.isEmpty }
+            for f in filteredTools {
+                print(f.name)
+            }
             AnalyticsManager.shared.selectItem(itemID: "mcp_get_tools", itemName: "mcp_get_tools")
-            return toolsToDictionaries(tools)
+            return toolsToDictionaries(filteredTools)
         } catch {
             AnalyticsManager.shared.customError(
                 type: "mcp_error_in_getting_tools",

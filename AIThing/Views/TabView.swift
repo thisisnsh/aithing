@@ -659,10 +659,7 @@ struct TabView: View {
         // Load latest tools
         await reconnectManagedAgents()
         let modelTools = allClientTools.values.flatMap { $0 }
-
-        // Fake data // DEBUG_MODE
-        // await callModel(query: query + "X")
-        // return await fakeData(query: query)
+        print(modelTools)
 
         let byok = getByokSelected()
         let model = getModel()

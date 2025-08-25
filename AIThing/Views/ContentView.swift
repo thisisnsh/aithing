@@ -26,7 +26,7 @@ struct TabWidthsKey: PreferenceKey {
 }
 
 struct ContentView: View {
-    @EnvironmentObject var mcp: MCPManager
+    @StateObject private var mcp = MCPManager()
     @StateObject private var loginManager = LoginManager()
     @EnvironmentObject var screenshotManager: ScreenshotManager
     @StateObject private var firestoreManager = FirestoreManager()
@@ -289,13 +289,11 @@ struct ContentView: View {
         if !showSettings && !showHistory {
             addTab(bypass: true)
         }
-        DispatchQueue.main.asyncAfter(deadline: .now() + 0.3) {
-            showSettings.toggle()
-            showHelp = false
-            showHistory = false
-            if !showSettings && !showHistory {
-                closeTab()
-            }
+        showSettings.toggle()
+        showHelp = false
+        showHistory = false
+        if !showSettings && !showHistory {
+            closeTab()
         }
     }
 
@@ -303,13 +301,11 @@ struct ContentView: View {
         if !showSettings && !showHistory {
             addTab(bypass: true)
         }
-        DispatchQueue.main.asyncAfter(deadline: .now() + 0.3) {
-            showHistory.toggle()
-            showHelp = false
-            showSettings = false
-            if !showSettings && !showHistory {
-                closeTab()
-            }
+        showHistory.toggle()
+        showHelp = false
+        showSettings = false
+        if !showSettings && !showHistory {
+            closeTab()
         }
     }
 
@@ -600,7 +596,7 @@ struct ContentView: View {
             }
 
             if connectRc.isEmpty {
-                let tools = await mcp.getTools(clientName: name)
+                let tools = await mcp.getTools(clientName: name, filter: [])
                 allClientTools[name] = tools
             } else {
                 failure += "\n\n\(name): \(connectRc)"
@@ -666,7 +662,7 @@ struct ContentView: View {
     }
 
     func reconnectManagedAgents() async {
-        if googleOAuthManager.enabled {
+        if googleOAuthManager.enabled.count > 0 {
             let clientName = "managed_google_mcp"
             var accessToken: String?
             var refreshedAccessToken: String?
@@ -674,18 +670,23 @@ struct ContentView: View {
             if googleOAuthManager.user != nil {
                 accessToken = googleOAuthManager.user?.accessToken.tokenString
             }
-            _ = await googleOAuthManager.generateToken()
-            refreshedAccessToken = googleOAuthManager.user?.accessToken.tokenString
-            // If token has been refreshed OR client does not exist
-            if accessToken != refreshedAccessToken || !mcp.clientExists(clientName: clientName) {
-                _ = await mcp.reconnect(
-                    clientName: clientName,
-                    url: "https://google.mcp.aithing.dev/mcp",
-                    authToken: refreshedAccessToken!
-                )
-                let tools = await mcp.getTools(clientName: clientName)
-                allClientTools[clientName] = tools
+            if let user = await googleOAuthManager.generateToken(refresh: true) {
+                refreshedAccessToken = user.accessToken.tokenString
+                // If token has been refreshed OR client does not exist
+                if accessToken != refreshedAccessToken || !mcp.clientExists(clientName: clientName)
+                {
+                    _ = await mcp.reconnect(
+                        clientName: clientName,
+                        url: "https://google.mcp.aithing.dev/mcp",
+                        authToken: refreshedAccessToken!
+                    )
+                }
             }
+            let tools = await mcp.getTools(
+                clientName: clientName,
+                filter: googleOAuthManager.enabledCapabilities()
+            )
+            allClientTools[clientName] = tools
         }
 
         if githubOAuthManager.enabled {

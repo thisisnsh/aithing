@@ -126,12 +126,22 @@ struct SettingsModelTab: View {
                                     .opacity(0.5)
                             }
                             Spacer()
-                            if !byokSelected {
+                            if byokSelected {
                                 Text(
                                     """
                                     Cost:
-                                    \(cost) Credit\(cost > 1 ? "s" : "") per Query
-                                    \(costImage) Credit\(costImage > 1 ? "s" : "") per Image                              
+                                    Billed by Anthropic
+                                    Check [Console](https://console.anthropic.com/settings/billing)
+                                    """
+                                )
+                                .font(.system(size: 10, weight: .medium))
+                                .multilineTextAlignment(.trailing)
+                            } else {
+                                Text(
+                                    """
+                                    Cost:
+                                    \(cost) Credit\(cost > 1 ? "s" : "") / Query
+                                    \(costImage) Credit\(costImage > 1 ? "s" : "") / File
                                     """
                                 )
                                 .font(.system(size: 10, weight: .medium))

@@ -3,13 +3,9 @@
 ------------------------ 
 
 Monday  
-- Integrate Google 
-    - No Ability to Choose Tools 
-- Integrate GitHub
+- Agent Credit
+- Video for Google
 
-
-Thursday
-- Agent Pricing 
 
 Vacation
 - Old images from history are not shown 
@@ -21,8 +17,8 @@ Vacation
 ------------------------
 
 
-
 Missing Features
+- Integrate GitHub
 - No Audio recording 
 - Understand you and suggest things based on time and this
 - No Elicitation 

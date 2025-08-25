@@ -24,7 +24,6 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate {
 
     static var allowQuit = false
 
-    @StateObject var mcp = MCPManager()
     let screenshotManager = ScreenshotManager()
 
     func applicationDidFinishLaunching(_ notification: Notification) {
@@ -77,7 +76,6 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate {
             setPanelVisibility: { return self.setPanelVisibility() },
             setPanelPassthrough: { self.setPanelPassthrough($0) }
         )
-        .environmentObject(mcp)
         .environmentObject(screenshotManager)
 
         let hostingView = NSHostingView(rootView: contentView)
