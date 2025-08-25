@@ -85,11 +85,6 @@ class GoogleOAuthManager: ObservableObject {
         static let gmailModify = "https://www.googleapis.com/auth/gmail.modify"
         static let gmailLabels = "https://www.googleapis.com/auth/gmail.labels"
 
-        // Chat
-        static let chatReadonly = "https://www.googleapis.com/auth/chat.messages.readonly"
-        static let chatWrite = "https://www.googleapis.com/auth/chat.messages"
-        static let chatSpaces = "https://www.googleapis.com/auth/chat.spaces"
-
         // Sheets
         static let sheetsReadonly = "https://www.googleapis.com/auth/spreadsheets.readonly"
         static let sheetsWrite = "https://www.googleapis.com/auth/spreadsheets"
@@ -108,8 +103,6 @@ class GoogleOAuthManager: ObservableObject {
         static let tasks = "https://www.googleapis.com/auth/tasks"
         static let tasksReadonly = "https://www.googleapis.com/auth/tasks.readonly"
 
-        // Custom Search
-        static let customSearch = "https://www.googleapis.com/auth/cse"
     }
 
     struct GoogleScopeGroups {
@@ -144,12 +137,6 @@ class GoogleOAuthManager: ObservableObject {
             GoogleOAuthScopes.gmailLabels,
         ]
 
-        static let chat = [
-            GoogleOAuthScopes.chatReadonly,
-            GoogleOAuthScopes.chatWrite,
-            GoogleOAuthScopes.chatSpaces,
-        ]
-
         static let sheets = [
             GoogleOAuthScopes.sheetsReadonly,
             GoogleOAuthScopes.sheetsWrite,
@@ -170,10 +157,6 @@ class GoogleOAuthManager: ObservableObject {
             GoogleOAuthScopes.tasks,
             GoogleOAuthScopes.tasksReadonly,
         ]
-
-        static let customSearch = [
-            GoogleOAuthScopes.customSearch
-        ]
     }
 
     enum GoogleTool: String, CaseIterable, Identifiable {
@@ -182,11 +165,9 @@ class GoogleOAuthManager: ObservableObject {
         case calendar = "Calendar"
         case docs = "Docs"
         case sheets = "Sheets"
-        case chat = "Chat"
         case forms = "Form"
         case slides = "Slides"
         case tasks = "Tasks"
-        // case search = "Search"
 
         var id: String { rawValue }
     }
@@ -197,11 +178,9 @@ class GoogleOAuthManager: ObservableObject {
         .calendar: GoogleScopeGroups.calendar,
         .docs: GoogleScopeGroups.docs,
         .sheets: GoogleScopeGroups.sheets,
-        .chat: GoogleScopeGroups.chat,
         .forms: GoogleScopeGroups.forms,
         .slides: GoogleScopeGroups.slides,
         .tasks: GoogleScopeGroups.tasks,
-        // .search: GoogleScopeGroups.customSearch,
     ]
 
     func additionalScopes() -> [String] {
@@ -278,12 +257,6 @@ class GoogleOAuthManager: ObservableObject {
             "reply_to_spreadsheet_comment",
             "resolve_spreadsheet_comment",
         ],
-        .chat: [
-            "send_message",
-            "get_messages",
-            "search_messages",
-            "list_spaces",
-        ],
         .forms: [
             "create_form",
             "get_form",
@@ -316,11 +289,6 @@ class GoogleOAuthManager: ObservableObject {
             "move_task",
             "clear_completed_tasks",
         ],
-        //        .search: [
-        //            "search_custom",
-        //            "search_custom_siterestrict",
-        //            "get_search_engine_info",
-        //        ],
     ]
 
 }

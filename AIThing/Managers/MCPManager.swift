@@ -220,9 +220,6 @@ class MCPManager: ObservableObject {
 
             let (tools, _) = try await client.listTools()
             let filteredTools = tools.filter { filter.contains($0.name) || filter.isEmpty }
-            for f in filteredTools {
-                print(f.name)
-            }
             AnalyticsManager.shared.selectItem(itemID: "mcp_get_tools", itemName: "mcp_get_tools")
             return toolsToDictionaries(filteredTools)
         } catch {
