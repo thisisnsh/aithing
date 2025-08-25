@@ -2,15 +2,10 @@
 
 ------------------------ 
 
-Monday  
-- Video for Google
-
-
 
 - Post Reddit 
 - Make Video / Ad
  
-
 
 ------------------------
 

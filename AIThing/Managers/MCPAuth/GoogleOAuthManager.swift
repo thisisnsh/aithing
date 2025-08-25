@@ -186,7 +186,7 @@ class GoogleOAuthManager: ObservableObject {
         case forms = "Form"
         case slides = "Slides"
         case tasks = "Tasks"
-        case search = "Search"
+        // case search = "Search"
 
         var id: String { rawValue }
     }
@@ -201,7 +201,7 @@ class GoogleOAuthManager: ObservableObject {
         .forms: GoogleScopeGroups.forms,
         .slides: GoogleScopeGroups.slides,
         .tasks: GoogleScopeGroups.tasks,
-        .search: GoogleScopeGroups.customSearch,
+        // .search: GoogleScopeGroups.customSearch,
     ]
 
     func additionalScopes() -> [String] {
@@ -211,11 +211,11 @@ class GoogleOAuthManager: ObservableObject {
         }
         return Array(s)
     }
-    
+
     func enabledCapabilities() -> [String] {
         enabled.flatMap { toolCapabilities[$0] ?? [] }
     }
-    
+
     let toolCapabilities: [GoogleTool: [String]] = [
         .gmail: [
             "search_gmail_messages",
@@ -316,11 +316,11 @@ class GoogleOAuthManager: ObservableObject {
             "move_task",
             "clear_completed_tasks",
         ],
-        .search: [
-            "search_custom",
-            "search_custom_siterestrict",
-            "get_search_engine_info",
-        ],
+        //        .search: [
+        //            "search_custom",
+        //            "search_custom_siterestrict",
+        //            "get_search_engine_info",
+        //        ],
     ]
 
 }
