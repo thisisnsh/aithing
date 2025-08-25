@@ -206,11 +206,13 @@ struct ContentView: View {
                 .stroke(Color.white, lineWidth: 1.5)
         }
         .cornerRadius(24)
+        .shadow(radius: 4)
         .zIndex(1)
         .frame(width: 600, height: 500)
         .padding(.leading, leftPadding)
         .padding(.trailing, rightPadding)
         .padding(.top, 96)
+        .padding(.bottom, 16)
         .environmentObject(loginManager)
         .environmentObject(firestoreManager)
     }
@@ -227,11 +229,13 @@ struct ContentView: View {
                 .stroke(Color.white, lineWidth: 1.5)
         }
         .cornerRadius(24)
+        .shadow(radius: 4)
         .zIndex(1)
         .frame(width: 600, height: 500)
         .padding(.leading, leftPadding)
         .padding(.trailing, rightPadding)
         .padding(.top, 96)
+        .padding(.bottom, 16)
         .environmentObject(loginManager)
         .environmentObject(firestoreManager)
     }
@@ -245,11 +249,13 @@ struct ContentView: View {
                     .stroke(Color.white, lineWidth: 1.5)
             }
             .cornerRadius(24)
+            .shadow(radius: 4)
             .zIndex(2)
             .frame(minWidth: 600, maxWidth: .infinity, maxHeight: .infinity, alignment: .top)
             .padding(.leading, leftPadding)
             .padding(.trailing, rightPadding)
             .padding(.top, 96)
+            .padding(.bottom, 16)
     }
 
     private func Toast() -> some View {
@@ -261,11 +267,13 @@ struct ContentView: View {
                     .stroke(Color.white, lineWidth: 1.5)
             }
             .cornerRadius(24)
+            .shadow(radius: 4)
             .zIndex(3)
             .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top)
             .padding(.leading, leftPadding)
             .padding(.trailing, rightPadding)
             .padding(.top, 96)
+            .padding(.bottom, 16)
     }
 
     private func onSetting() {

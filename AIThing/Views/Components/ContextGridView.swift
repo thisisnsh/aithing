@@ -137,6 +137,7 @@ struct ContextGridView: View {
                         updatePassthrough(inside)
                     }
                     .layoutValue(key: GridSpanKey.self, value: zoomed ? 2 : 1)
+                    .shadow(radius: 4)
             }
         }
         .padding(.horizontal, 24)

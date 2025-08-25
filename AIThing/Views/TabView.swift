@@ -71,13 +71,14 @@ struct TabView: View {
     @State private var isDropping: Bool = false
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 8) {
+        VStack(alignment: .leading, spacing: 0) {
             Color.clear.frame(height: 32).overlay(alignment: .bottom) {
                 if showDragIcon {
                     Image(systemName: "square.grid.3x2.fill")
                         .resizable()
                         .scaledToFit()
                         .frame(width: 16, height: 16)
+                        .shadow(color: .black, radius: 1)
                         .onHover { inside in
                             if inside {
                                 NSCursor.openHand.set()
@@ -98,6 +99,7 @@ struct TabView: View {
             .onHover { inside in
                 showDragIcon = inside
             }
+            .padding(.bottom, 8)
 
             VStack(alignment: .leading, spacing: 0) {
                 inputView()
@@ -134,6 +136,7 @@ struct TabView: View {
                 }
             )
             .cornerRadius(getCornerRadius())
+            .shadow(radius: 4)
             .animation(.easeInOut(duration: 0.25), value: isFocused)
             .onAppear {
                 DispatchQueue.main.async {
@@ -165,6 +168,7 @@ struct TabView: View {
                     }
                 }
             }
+            .padding(.bottom, 8)
 
             if isFocused {
                 contextView()
