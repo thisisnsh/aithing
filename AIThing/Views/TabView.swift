@@ -26,12 +26,13 @@ struct TabView: View {
     @Binding var showSettings: Bool
     @Binding var showHistory: Bool
 
-    var onClick: (_ tabId: UUID) -> Void
-    var onSetting: () -> Void
-    var onHelp: () -> Void
-    var updatePanelSizeFromDefault: (CGFloat) -> Void
-    var updatePanelSizeFromCurrent: (CGFloat) -> Void
+    let onClick: (_ tabId: UUID) -> Void
+    let onSetting: () -> Void
+    let onHelp: () -> Void
+    let updatePanelSizeFromDefault: (CGFloat) -> Void
+    let updatePanelSizeFromCurrent: (CGFloat) -> Void
     let setPanelPassthrough: (_ enabled: Bool) -> Void
+    let reconnectManagedAgents: () async -> Void
 
     private func updatePassthrough(inside: Bool) {
         setPanelPassthrough(!inside)
@@ -656,7 +657,9 @@ struct TabView: View {
         } catch {}
 
         // Load latest tools
+        await reconnectManagedAgents()
         let modelTools = allClientTools.values.flatMap { $0 }
+        print(modelTools)
 
         // Fake data // DEBUG_MODE
         // await callModel(query: query + "X")

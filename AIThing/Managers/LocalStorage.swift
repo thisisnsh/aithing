@@ -45,6 +45,22 @@ func getByokSelected() -> Bool {
     UserDefaults.standard.bool(forKey: "ByokSelected")
 }
 
+func getGoogleAgentEnabled() -> Bool {
+    UserDefaults.standard.bool(forKey: "GoogleAgentEnabled")
+}
+
+func getGithubAgentEnabled() -> Bool {
+    UserDefaults.standard.bool(forKey: "GithubAgentEnabled")
+}
+
+func setGithubAgentEnabled(value: Bool) {
+    UserDefaults.standard.set(value, forKey: "GithubAgentEnabled")
+}
+
+func setGoogleAgentEnabled(value: Bool) {
+    UserDefaults.standard.set(value, forKey: "GoogleAgentEnabled")
+}
+
 func setByokSelected(value: Bool) {
     UserDefaults.standard.set(
         value,

@@ -31,16 +31,41 @@ struct SettingsAgentsTab: View {
     let saveAgents: () -> Void
     let deleteAgent: (AgentEntry) -> Void
 
+    @Binding var googleAgentEnabled: Bool
+    @Binding var githubAgentEnabled: Bool
+
     var body: some View {
         VStack(alignment: .leading, spacing: 16) {
             GroupBox {
                 HStack {
-                    Text("Need Help? Check http://aithing.dev")
+                    Text("Need Help? Check [Agents Documentation](https://aithing.dev/features/multiple-agents)")
                         .font(.system(size: 10, weight: .medium))
                         .padding(4)
                     Spacer()
                 }
                 .padding(.bottom, 4)
+            }
+
+            GroupBox(
+                label: Text("Managed Agents")
+                    .font(.system(size: 10, weight: .medium))
+                    .padding(.bottom, 4)
+            ) {
+                VStack(alignment: .leading) {
+                    ManagedAgentRow(
+                        icon: "google",
+                        title: "Google Workspace",
+                        isEnabled: $googleAgentEnabled
+                    )
+                    Divider()
+                    ManagedAgentRow(icon: "github", title: "GitHub", isEnabled: $githubAgentEnabled)
+                    Divider()
+                    Text("More Agents Coming Soon. Request specifc agents via help@aithing.dev.")
+                        .font(.system(size: 10, weight: .medium))
+                        .padding(.vertical, 4)
+                        .opacity(0.5)
+                }
+                .padding(4)
             }
 
             GroupBox(
@@ -134,24 +159,6 @@ struct SettingsAgentsTab: View {
             }
 
             GroupBox(
-                label: Text("Managed Agents (Pro Plan Required)")
-                    .font(.system(size: 10, weight: .medium))
-                    .padding(.bottom, 4)
-            ) {
-                VStack(alignment: .leading) {
-                    ManagedAgentRow(icon: "github", title: "GitHub")
-                    Divider()
-                    ManagedAgentRow(icon: "google", title: "Google Workspace")
-                    Divider()
-                    Text("More Agents Coming Soon...")
-                        .font(.system(size: 10, weight: .medium))
-                        .padding(.vertical, 4)
-                }
-                .padding(4)
-                .opacity(0.5)
-            }
-
-            GroupBox(
                 label: Text("Enterprise Agents")
                     .font(.system(size: 10, weight: .medium))
                     .padding(.bottom, 4)
@@ -189,12 +196,14 @@ struct SettingsAgentsTab: View {
 private struct ManagedAgentRow: View {
     let icon: String
     let title: String
+    @Binding var isEnabled: Bool
+
     var body: some View {
         HStack {
             Image(icon).resizable().frame(width: 16, height: 16)
             Text(title).font(.system(size: 14, weight: .medium))
             Spacer()
-            Toggle("", isOn: .constant(false))
+            Toggle("", isOn: $isEnabled)
                 .toggleStyle(.switch).tint(.black).scaleEffect(0.7)
         }
         .padding(4)

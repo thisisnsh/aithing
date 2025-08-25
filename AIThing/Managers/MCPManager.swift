@@ -11,7 +11,8 @@ import MCP
 import System
 
 class MCPManager: ObservableObject {
-    var clients: [String: Client] = [:]
+    @Published var reconnecting: [String: Bool] = [:]
+    @Published var clients: [String: Client] = [:]
 
     var executableURL: [String: String] = [:]
     var arguments: [String: [String]] = [:]
@@ -142,6 +143,22 @@ class MCPManager: ObservableObject {
             print("Error in connecting: \(error.localizedDescription)")
             return error.localizedDescription
         }
+    }
+
+    func reconnect(clientName: String, url: String, authToken: String) async -> Bool {
+        reconnecting[clientName] = true
+        
+        if let client = clients[clientName] {
+            await client.disconnect()
+        }
+        let rc = await connect(clientName: clientName, url: url, authToken: authToken)
+        AnalyticsManager.shared.selectItem(
+            itemID: "mcp_reconnected",
+            itemName: "mcp_reconnected"
+        )
+        
+        reconnecting[clientName] = false
+        return rc.isEmpty
     }
 
     func disconnect() async -> String {

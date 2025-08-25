@@ -3,11 +3,13 @@
 ------------------------ 
 
 Monday  
-- Add Some Shadow
 - Integrate Google 
     - No Ability to Choose Tools 
 - Integrate GitHub
 
+
+Thursday
+- Agent Pricing 
 
 Vacation
 - Old images from history are not shown 

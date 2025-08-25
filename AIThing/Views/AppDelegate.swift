@@ -24,7 +24,7 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate {
 
     static var allowQuit = false
 
-    let mcp = MCPManager()
+    @StateObject var mcp = MCPManager()
     let screenshotManager = ScreenshotManager()
 
     func applicationDidFinishLaunching(_ notification: Notification) {

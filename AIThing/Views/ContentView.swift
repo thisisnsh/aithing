@@ -75,9 +75,12 @@ struct ContentView: View {
             | ` Control (⌃) + S `     | Show/Hide Settings | | ` Control (⌃) + H ` | Show/Hide History |
             | ` Control (⌃) + > `     | Move to Right Tab  | | ` Control (⌃) + < ` | Move to Left Tab  |
 
-            Still Stuck? Check http://aithing.dev 
+            Still Stuck? Check https://aithing.dev 
             """
     }
+
+    // Managed Agents
+    @StateObject private var googleOAuthManager = GoogleOAuthManager()
 
     var body: some View {
         ZStack(alignment: .top) {
@@ -132,6 +135,24 @@ struct ContentView: View {
             edgePadding(for: focusedIndex)
         }
         .background(Color.clear)
+        .onChange(of: showSettings) { newValue in
+            updatePanelSizeFromCurrent(showSettings ? 500 : -500)
+            Task {
+                managedModels = await firestoreManager.getModelInfos()
+                await loadAllClientTools()
+            }
+        }
+        .task {
+            switch loginManager.authState {
+            case .signedIn(let user):
+                AnalyticsManager.shared.setUserId(user.uid)
+            default:
+                AnalyticsManager.shared.setUserId(nil)
+            }
+
+            managedModels = await firestoreManager.getModelInfos()
+            await loadAllClientTools()
+        }
         .onAppear {
             addTab()
             NSEvent.addLocalMonitorForEvents(matching: .keyDown) { event in
@@ -173,24 +194,6 @@ struct ContentView: View {
                 return event
             }
         }
-        .onChange(of: showSettings) { newValue in
-            updatePanelSizeFromCurrent(showSettings ? 500 : -500)
-            Task {
-                managedModels = await firestoreManager.getModelInfos()
-                await loadAllClientTools()
-            }
-        }
-        .task {
-            switch loginManager.authState {
-            case .signedIn(let user):
-                AnalyticsManager.shared.setUserId(user.uid)
-            default:
-                AnalyticsManager.shared.setUserId(nil)
-            }
-
-            managedModels = await firestoreManager.getModelInfos()
-            await loadAllClientTools()
-        }
     }
 
     func Settings() -> some View {
@@ -215,6 +218,7 @@ struct ContentView: View {
         .padding(.bottom, 16)
         .environmentObject(loginManager)
         .environmentObject(firestoreManager)
+        .environmentObject(googleOAuthManager)
     }
 
     func History() -> some View {
@@ -514,7 +518,8 @@ struct ContentView: View {
             updatePanelSizeFromCurrent: { height in
                 updatePanelSizeFromCurrent(height)
             },
-            setPanelPassthrough: { self.setPanelPassthrough($0) }
+            setPanelPassthrough: { self.setPanelPassthrough($0) },
+            reconnectManagedAgents: { await self.reconnectManagedAgents() }
         )
         .environmentObject(mcp)
         .environmentObject(loginManager)
@@ -653,5 +658,44 @@ struct ContentView: View {
                 order: 3,
             )
         )
+    }
+
+    func reconnectManagedAgents() async {
+        if getGoogleAgentEnabled() {
+            let clientName = "managed_google_mcp"
+
+            // If another tab is reconnecting let it do that
+            if mcp.reconnecting[clientName] ?? false {
+                while mcp.reconnecting[clientName] ?? false {
+                    print("Let other tab reconnect: \(clientName)")
+                    try? await Task.sleep(nanoseconds: 100_000_000)
+                }
+            } else {
+                var accessToken: String?
+                var refreshedAccessToken: String?
+
+                if googleOAuthManager.user != nil {
+                    accessToken = googleOAuthManager.user?.accessToken.tokenString
+                }
+                await googleOAuthManager.generateToken()
+                refreshedAccessToken = googleOAuthManager.user?.accessToken.tokenString
+
+                // If token has been refreshed OR client does not exist
+                if accessToken != refreshedAccessToken || !mcp.clients.keys.contains(clientName) {
+                    _ = await mcp.reconnect(
+                        clientName: clientName,
+                        url: "https://google.mcp.aithing.dev/mcp",
+                        authToken: refreshedAccessToken!
+                    )
+
+                    let tools = await mcp.getTools(clientName: clientName)
+                    allClientTools[clientName] = tools
+                }
+            }
+        }
+
+        if getGithubAgentEnabled() {
+
+        }
     }
 }

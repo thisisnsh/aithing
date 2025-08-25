@@ -5,6 +5,7 @@ enum SettingsTab: String { case account, models, agents, preferences }
 struct SettingsView: View {
     @EnvironmentObject var loginManager: LoginManager
     @EnvironmentObject var firestoreManager: FirestoreManager
+    @EnvironmentObject var googleOAuthManager: GoogleOAuthManager
 
     @Binding var isPresented: Bool
     var setPanelVisibility: () -> Void
@@ -39,6 +40,10 @@ struct SettingsView: View {
     @State private var creditsUsed = 0
 
     private func updatePassthrough(inside: Bool) { setPanelPassthrough(!inside) }
+
+    // Managed Agents
+    @State private var googleAgentEnabled: Bool = getGoogleAgentEnabled()
+    @State private var githubAgentEnabled: Bool = getGithubAgentEnabled()
 
     var body: some View {
         HStack(spacing: 0) {
@@ -81,7 +86,9 @@ struct SettingsView: View {
                             toastText: $toastText,
                             addAgentEntry: addAgentEntry,
                             saveAgents: saveAgents,
-                            deleteAgent: deleteAgent
+                            deleteAgent: deleteAgent,
+                            googleAgentEnabled: $googleAgentEnabled,
+                            githubAgentEnabled: $githubAgentEnabled
                         )
 
                     case .preferences:
@@ -108,6 +115,24 @@ struct SettingsView: View {
                 screenName: "settings_view",
                 screenClass: "settings_view"
             )
+        }
+        .onChange(of: googleAgentEnabled) { newValue in
+            Task {
+                if newValue {
+                    await googleOAuthManager.generateToken()
+                    setGoogleAgentEnabled(value: newValue)
+                } else {
+                    googleOAuthManager.resetToken()
+                    setGoogleAgentEnabled(value: newValue)
+                }
+            }
+        }
+        .onChange(of: githubAgentEnabled) { newValue in
+            if newValue {
+                setGithubAgentEnabled(value: newValue)
+            } else {
+                setGithubAgentEnabled(value: newValue)
+            }
         }
     }
 
@@ -174,7 +199,7 @@ struct SettingsView: View {
             }
             .buttonStyle(.plain)
 
-            Text("Version 1.4.2")
+            Text("Version 1.5")
                 .font(.system(size: 10, weight: .medium))
                 .padding(.top, 8)
                 .padding(.horizontal, 16)
@@ -233,14 +258,14 @@ struct SettingsView: View {
 
     func signIn() async {
         await loginManager.signInWithGoogle()
-        
+
         switch loginManager.authState {
         case .signedIn(let user):
             AnalyticsManager.shared.setUserId(user.uid)
         default:
             AnalyticsManager.shared.setUserId(nil)
         }
-        
+
         await getCredits()
         AnalyticsManager.shared.login(method: "google")
     }
