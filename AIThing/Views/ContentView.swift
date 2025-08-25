@@ -205,7 +205,8 @@ struct ContentView: View {
             isPresented: $showSettings,
             setPanelVisibility: { self.setPanelVisibility() },
             setPanelPassthrough: { self.setPanelPassthrough($0) },
-            managedModels: $managedModels
+            managedModels: $managedModels,
+            onHistory: { self.onHistory() }
         )
         .background(.ultraThinMaterial)
         .overlay {
@@ -286,26 +287,32 @@ struct ContentView: View {
     }
 
     private func onSetting() {
-        if !showSettings && !showHistory {
+        let shouldCreateTab = !showSettings && !showHistory
+        if shouldCreateTab {
             addTab(bypass: true)
         }
-        showSettings.toggle()
-        showHelp = false
-        showHistory = false
-        if !showSettings && !showHistory {
-            closeTab()
+        DispatchQueue.main.asyncAfter(deadline: .now() + (shouldCreateTab ? 0.5 : 0)) {
+            showSettings.toggle()
+            showHelp = false
+            showHistory = false
+            if !showSettings && !showHistory {
+                closeTab()
+            }
         }
     }
 
     private func onHistory() {
-        if !showSettings && !showHistory {
+        let shouldCreateTab = !showSettings && !showHistory
+        if shouldCreateTab {
             addTab(bypass: true)
         }
-        showHistory.toggle()
-        showHelp = false
-        showSettings = false
-        if !showSettings && !showHistory {
-            closeTab()
+        DispatchQueue.main.asyncAfter(deadline: .now() + (shouldCreateTab ? 0.5 : 0)) {
+            showHistory.toggle()
+            showHelp = false
+            showSettings = false
+            if !showSettings && !showHistory {
+                closeTab()
+            }
         }
     }
 

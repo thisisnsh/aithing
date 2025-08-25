@@ -13,6 +13,7 @@ struct SettingsAccountTab: View {
     let signOut: () async -> Void
     let creditsUsed: Int
     let creditsTotal: Int
+    let onHistory: () -> Void
 
     var body: some View {
         VStack(alignment: .leading, spacing: 16) {
@@ -95,6 +96,22 @@ struct SettingsAccountTab: View {
                 }
                 .padding(4)
             }
+
+            GroupBox {
+                Button {
+                    onHistory()
+                } label: {
+                    HStack {
+                        Text("Per-Conversation Usage").font(.system(size: 14, weight: .medium))
+                        Spacer()
+                        Image(systemName: "chevron.right")
+                            .frame(width: 10, height: 10)
+                    }
+                }
+                .buttonStyle(.plain)
+                .padding(4)
+            }
+            .padding(.top, -8)
 
         }
         .frame(maxWidth: .infinity, alignment: .leading)

@@ -178,7 +178,7 @@ struct TabView: View {
             }
         }
         .onTapGesture {
-            if !isFocused {
+            if !isFocused && !showSettings && !showHistory {
                 onClick(tabId)
             }
         }
@@ -373,6 +373,7 @@ struct TabView: View {
                                 .padding(.horizontal, 24)
                                 .padding(.top, 16)
                             }
+                            .frame(height: 100)
                         }
 
                         MarkdownText(text: modelOutput)
@@ -658,8 +659,8 @@ struct TabView: View {
 
         // Load latest tools
         await reconnectManagedAgents()
+        let modelAgentCount = allClientTools.keys.count
         let modelTools = allClientTools.values.flatMap { $0 }
-        print(modelTools)
 
         let byok = getByokSelected()
         let model = getModel()
@@ -818,7 +819,7 @@ struct TabView: View {
             "stream": true,
             "max_tokens": 1024,
             "temperature": 0.7,
-            "messages": addCacheBlock(input: modelInput, isMessage: true),
+            "messages": addCacheBlock(input: nonUsageMessages(from: modelInput), isMessage: true),
             "tools": addCacheBlock(input: modelTools),
             "system": addCacheBlock(input: buildSystemMessages()),
 
@@ -894,14 +895,30 @@ struct TabView: View {
             if let appUser {
                 if !byok {
                     let cost = getModelCost(getModel(), all: managedModels)
-                    let costImage = getModelCostImage(getModel(), all: managedModels)
-                    print("cost:", cost + costImage * modelContext.count)
-                    print("cost image:", costImage * modelContext.count)
-                    print("total cost:", cost + costImage * modelContext.count)
-                    await firestoreManager.incrementCredits(
-                        user: appUser,
-                        by: cost + costImage * modelContext.count
-                    )
+                    let costImage =
+                        getModelCostImage(getModel(), all: managedModels) * modelContext.count
+                    let costAgent = cost * modelAgentCount
+                    let total = cost + costAgent + costImage
+
+                    print("cost query:", cost)
+                    print("cost file:", costImage)
+                    print("cost agent:", costAgent)
+                    print("cost total:", total)
+                    await firestoreManager.incrementCredits(user: appUser, by: total)
+                    modelInput.append([
+                        "role": "usage",
+                        "content": [
+                            [
+                                "type": "text",
+                                "text": """
+                                Total Usage: \(total) Credits
+                                1 \(query.isEmpty ? "Agent Use" : "Query"): \(cost) Credit\(cost > 1 ? "s" : "")
+                                \(modelContext.count) Attached Files: \(costImage) Credit\(costImage > 1 ? "s" : "")
+                                \(modelAgentCount) Agents Enabled: \(costAgent) Credit\(costAgent > 1 ? "s" : "")
+                                """,
+                            ]
+                        ],
+                    ])
                 }
             } else {
                 AnalyticsManager.shared.customError(

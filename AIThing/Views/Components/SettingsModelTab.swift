@@ -129,9 +129,8 @@ struct SettingsModelTab: View {
                             if byokSelected {
                                 Text(
                                     """
-                                    Cost:
-                                    Billed by Anthropic
-                                    Check [Console](https://console.anthropic.com/settings/billing)
+                                    Billed by [Anthropic](https://console.anthropic.com/settings/billing) 
+                                    Not by AI Thing
                                     """
                                 )
                                 .font(.system(size: 10, weight: .medium))
@@ -139,9 +138,9 @@ struct SettingsModelTab: View {
                             } else {
                                 Text(
                                     """
-                                    Cost:
-                                    \(cost) Credit\(cost > 1 ? "s" : "") / Query
-                                    \(costImage) Credit\(costImage > 1 ? "s" : "") / File
+                                    Base Cost:
+                                    \(cost) Credit\(cost > 1 ? "s" : "") per Query
+                                    [Read More](https://aithing.dev/billing/usage)
                                     """
                                 )
                                 .font(.system(size: 10, weight: .medium))
@@ -196,7 +195,7 @@ struct SettingsModelTab: View {
                         }
 
                         Text(
-                            "You will need to purchase credits at https://console.anthropic.com/settings/billing. Using own key will not deduct credits from your AI Thing account."
+                            "You will need to purchase credits at [Anthropic](https://console.anthropic.com/settings/billing). Using own key will not deduct credits from your AI Thing account."
                         )
                         .font(.system(size: 10, weight: .medium))
                         .padding(4)

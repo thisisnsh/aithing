@@ -11,6 +11,7 @@ import SwiftUI
 enum ChatRole {
     case user
     case assistant
+    case usage
 }
 
 enum ChatPayload: Equatable {
@@ -42,7 +43,7 @@ func assistantMessages(from history: [[String: Any]]) -> String {
         switch last!.payload {
         case .text(let text):
             messages += "\(text)\n\n"
-        case .image(let _):
+        case .image(_):
             ()
         case .toolUse(let name):
             messages += "`Called tool: \(name)`\n\n"
@@ -50,6 +51,20 @@ func assistantMessages(from history: [[String: Any]]) -> String {
     }
 
     return messages
+}
+
+func nonUsageMessages(from history: [[String: Any]]) -> [[String: Any]] {
+    var nonUsageMessages: [[String: Any]] = []
+    for entry in history {
+        guard let roleStr = entry["role"] as? String
+        else { continue }
+
+        if roleStr.lowercased() == "usage" {
+            continue
+        }
+        nonUsageMessages.append(entry)
+    }
+    return nonUsageMessages
 }
 
 func parseHistory(_ history: [[String: Any]]) -> [ChatItem] {
@@ -64,6 +79,7 @@ func parseHistory(_ history: [[String: Any]]) -> [ChatItem] {
             switch roleStr.lowercased() {
             case "user": return .user
             case "assistant": return .assistant
+            case "usage": return .usage
             default: return nil
             }
         }()
@@ -72,7 +88,16 @@ func parseHistory(_ history: [[String: Any]]) -> [ChatItem] {
         for content in contents {
             guard let type = content["type"] as? String else { continue }
 
-            if roleUnwrapped == .user {
+            if roleUnwrapped == .usage {
+                switch type {
+                case "text":
+                    if let text = content["text"] as? String {
+                        items.append(ChatItem(role: .usage, payload: .text(text)))
+                    }
+                default:
+                    break
+                }
+            } else if roleUnwrapped == .user {
                 switch type {
                 case "text":
                     if let text = content["text"] as? String {
@@ -204,11 +229,17 @@ struct ChatBubble: View {
     var body: some View {
         HStack {
             if item.role == .assistant { Spacer().frame(width: 0) }
+            if item.role == .usage { Spacer().frame(width: 0) }
 
             switch item.payload {
             case .text(let text):
-                TextBubble(text: text, isUser: item.role == .user)
-                    .frame(maxWidth: 500, alignment: item.role == .user ? .trailing : .leading)
+                if item.role == .usage {
+                    UsageBubble(text: text)
+                        .frame(maxWidth: 500, alignment: .leading)
+                } else {
+                    TextBubble(text: text, isUser: item.role == .user)
+                        .frame(maxWidth: 500, alignment: item.role == .user ? .trailing : .leading)
+                }
             case .image(let image):
                 ImageBubble(image: image, isUser: item.role == .user)
                     .frame(maxWidth: 320, alignment: item.role == .user ? .trailing : .leading)
@@ -223,6 +254,25 @@ struct ChatBubble: View {
     }
 }
 
+struct UsageBubble: View {
+    let text: String
+
+    var body: some View {
+        Text(text)
+            .font(.system(size: 10, weight: .medium, design: .monospaced))
+            .textSelection(.enabled)
+            .padding(8)
+            .background(
+                RoundedRectangle(cornerRadius: 8, style: .continuous)
+                    .fill(Color.gray.opacity(0.1))
+            )
+            .overlay(
+                RoundedRectangle(cornerRadius: 8, style: .continuous)
+                    .stroke(Color.gray.opacity(0.5), lineWidth: 1)
+            )
+    }
+}
+
 struct TextBubble: View {
     let text: String
     let isUser: Bool
@@ -234,10 +284,7 @@ struct TextBubble: View {
             .padding(8)
             .background(
                 RoundedRectangle(cornerRadius: 8, style: .continuous)
-                    .fill(
-                        isUser
-                            ? Color.gray.opacity(0.1) : Color.clear
-                    )
+                    .fill(isUser ? Color.gray.opacity(0.1) : Color.clear)
             )
             .overlay(
                 RoundedRectangle(cornerRadius: 8, style: .continuous)

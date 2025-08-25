@@ -58,7 +58,7 @@ struct SettingsAgentsTab: View {
                     .padding(.bottom, 4)
             ) {
                 VStack(alignment: .leading) {
-                    ManagedAgentRow(
+                    GoogleManagedAgentRow(
                         icon: "google",
                         title: "Google Workspace",
                         subheading: $googleAgentAccount,
@@ -68,10 +68,19 @@ struct SettingsAgentsTab: View {
                     ManagedAgentRow(
                         icon: "github",
                         title: "GitHub",
-                        subheading: $githubAgentAccount,
                     )
                     Divider()
-                    Text("More Agents Coming Soon. Request specifc agents via help@aithing.dev.")
+                    ManagedAgentRow(
+                        icon: "atlassian",
+                        title: "Atlassian",
+                    )
+                    Divider()
+                    ManagedAgentRow(
+                        icon: "slack",
+                        title: "Slack",
+                    )
+                    Divider()
+                    Text("More Agents Coming Soon.\nRequest specifc agents via help@aithing.dev.")
                         .font(.system(size: 10, weight: .medium))
                         .padding(.vertical, 4)
                         .opacity(0.5)
@@ -213,92 +222,91 @@ struct SettingsAgentsTab: View {
     }
 }
 
-private struct ManagedAgentRow: View {
+private struct GoogleManagedAgentRow: View {
     @EnvironmentObject var google: GoogleOAuthManager
-
     let icon: String
     let title: String
     @Binding var subheading: String
-
     @State private var exapanded = false
 
     var body: some View {
-        if title == "Google Workspace" {
-            VStack {
-                Button {
-                    exapanded.toggle()
-                } label: {
-                    HStack {
-                        Image(icon).resizable().frame(width: 16, height: 16)
-                        VStack(alignment: .leading, spacing: 2) {
-                            RowTitle(title)
-                            if !subheading.isEmpty {
-                                RowSub(subheading)
-                            }
+        VStack {
+            Button {
+                exapanded.toggle()
+            } label: {
+                HStack {
+                    Image(icon).resizable().frame(width: 16, height: 16)
+                    VStack(alignment: .leading, spacing: 2) {
+                        RowTitle(title)
+                        if !subheading.isEmpty {
+                            RowSub(subheading)
                         }
-                        Spacer()
-                        Image(systemName: "chevron.right")
-                            .frame(width: 10, height: 10)
                     }
+                    Spacer()
+                    Image(systemName: "chevron.right")
+                        .frame(width: 10, height: 10)
                 }
-                .buttonStyle(.plain)
+            }
+            .buttonStyle(.plain)
 
-                if exapanded {
-                    ForEach(
-                        google.toolScopesMap.keys.sorted(by: { $0.rawValue < $1.rawValue }),
-                        id: \.self
-                    ) { tool in
+            if exapanded {
+                ForEach(
+                    google.toolScopesMap.keys.sorted(by: { $0.rawValue < $1.rawValue }),
+                    id: \.self
+                ) { tool in
 
-                        VStack {
-                            Divider()
-                            HStack {
-                                Text(tool.rawValue).font(.system(size: 12, weight: .medium))
-                                Spacer()
-                                Toggle(
-                                    "",
-                                    isOn: Binding(
-                                        get: { google.enabled.contains(tool) },
-                                        set: { newValue in
-                                            Task {
-                                                if newValue {
-                                                    google.enabled.insert(tool)
-                                                    if let user = await google.generateToken(refresh: false) {
-                                                        subheading = user.profile?.name ?? "Error"
-                                                    } else {
-                                                        google.enabled.remove(tool)
-                                                    }
+                    VStack {
+                        Divider()
+                        HStack {
+                            Text(tool.rawValue).font(.system(size: 12, weight: .medium))
+                            Spacer()
+                            Toggle(
+                                "",
+                                isOn: Binding(
+                                    get: { google.enabled.contains(tool) },
+                                    set: { newValue in
+                                        Task {
+                                            if newValue {
+                                                google.enabled.insert(tool)
+                                                if let user = await google.generateToken(
+                                                    refresh: false
+                                                ) {
+                                                    subheading = user.profile?.name ?? "Error"
                                                 } else {
                                                     google.enabled.remove(tool)
                                                 }
+                                            } else {
+                                                google.enabled.remove(tool)
                                             }
                                         }
-                                    )
+                                    }
                                 )
-                                .toggleStyle(.switch).tint(.black).scaleEffect(0.7)
-                            }
+                            )
+                            .toggleStyle(.switch).tint(.black).scaleEffect(0.7)
                         }
-                        .padding(.horizontal, 8)
                     }
+                    .padding(.horizontal, 8)
                 }
+            }
 
-            }
-            .padding(4)
-        } else {
-            HStack {
-                Image(icon).resizable().frame(width: 16, height: 16)
-                VStack(alignment: .leading, spacing: 2) {
-                    RowTitle(title)
-                    if !subheading.isEmpty {
-                        RowSub(subheading)
-                    }
-                }
-                Spacer()
-                Toggle("", isOn: .constant(false))
-                    .toggleStyle(.switch).tint(.black).scaleEffect(0.7)
-            }
-            .padding(4)
-            .opacity(0.5)
         }
+        .padding(4)
+    }
+}
+
+private struct ManagedAgentRow: View {
+    let icon: String
+    let title: String
+
+    var body: some View {
+        HStack {
+            Image(icon).resizable().frame(width: 16, height: 16)
+            RowTitle(title)
+            Spacer()
+            RowSub("Coming Soon")
+        }
+        .padding(4)
+        .opacity(0.5)
     }
 }
 

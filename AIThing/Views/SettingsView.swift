@@ -13,6 +13,7 @@ struct SettingsView: View {
     var setPanelVisibility: () -> Void
     let setPanelPassthrough: (_ enabled: Bool) -> Void
     @Binding var managedModels: [ModelInfo]
+    let onHistory: () -> Void
     @State private var selectedTab: SettingsTab = getSelectedTab()
 
     // Models
@@ -56,7 +57,8 @@ struct SettingsView: View {
                             signIn: { await signIn() },
                             signOut: { await signOut() },
                             creditsUsed: creditsUsed,
-                            creditsTotal: creditsTotal
+                            creditsTotal: creditsTotal,
+                            onHistory: { self.onHistory() }
                         )
 
                     case .models:

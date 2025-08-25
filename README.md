@@ -3,12 +3,10 @@
 ------------------------ 
 
 Monday  
-- Agent Credit
 - Video for Google
 
 
-Vacation
-- Old images from history are not shown 
+
 - Post Reddit 
 - Make Video / Ad
  
@@ -18,6 +16,8 @@ Vacation
 
 
 Missing Features
+- Tool based Agent Credit
+- Get max agent from firebase 
 - Integrate GitHub
 - No Audio recording 
 - Understand you and suggest things based on time and this
@@ -29,6 +29,7 @@ Missing Features
 - No RAG
 - No Markdown Select
 - Search History
+- Old images from history are not shown 
 
 
 ------------------------
