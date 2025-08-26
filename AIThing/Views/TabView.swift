@@ -717,11 +717,13 @@ struct TabView: View {
         request.setValue("\(apiKey)", forHTTPHeaderField: "x-api-key")
         request.setValue("extended-cache-ttl-2025-04-11", forHTTPHeaderField: "anthropic-beta")
 
+        var fileCount = 0
         // query is non-empty only on first parse
         if !query.isEmpty {
             for i in 0..<modelContext.count {
                 switch modelContext[i] {
                 case .image(_, _, let base64):
+                    fileCount += 1
                     modelInput.append(
                         [
                             "role": "user",
@@ -739,6 +741,7 @@ struct TabView: View {
                     )
                 case .pdf(_, _, _, let base64s):
                     for base64 in base64s {
+                        fileCount += 1
                         modelInput.append(
                             [
                                 "role": "user",
@@ -756,6 +759,7 @@ struct TabView: View {
                         )
                     }
                 case .text(let name, let text):
+                    fileCount += 1
                     modelInput.append(
                         [
                             "role": "user",
@@ -893,17 +897,18 @@ struct TabView: View {
             }
 
             if let appUser {
-                if !byok {
-                    let cost = getModelCost(getModel(), all: managedModels)
-                    let costImage =
-                        getModelCostImage(getModel(), all: managedModels) * modelContext.count
-                    let costAgent = cost * modelAgentCount
-                    let total = cost + costAgent + costImage
+                let cost = getModelCost(getModel(), all: managedModels)
+                let costFile =
+                    getModelCostImage(getModel(), all: managedModels) * fileCount
+                let costAgent = cost * modelAgentCount
+                let total = cost + costAgent + costFile
 
-                    print("cost query:", cost)
-                    print("cost file:", costImage)
-                    print("cost agent:", costAgent)
-                    print("cost total:", total)
+                print("cost query:", cost)
+                print("cost file:", costFile)
+                print("cost agent:", costAgent)
+                print("cost total:", total)
+
+                if !byok {
                     await firestoreManager.incrementCredits(user: appUser, by: total)
                     modelInput.append([
                         "role": "usage",
@@ -913,13 +918,23 @@ struct TabView: View {
                                 "text": """
                                 Total Usage: \(total) Credits
                                 1 \(query.isEmpty ? "Agent Use" : "Query"): \(cost) Credit\(cost > 1 ? "s" : "")
-                                \(modelContext.count) Attached Files: \(costImage) Credit\(costImage > 1 ? "s" : "")
-                                \(modelAgentCount) Agents Enabled: \(costAgent) Credit\(costAgent > 1 ? "s" : "")
+                                \(fileCount) Attached Files: \(costFile) Credit\(costFile > 1 ? "s" : "")
+                                \(modelAgentCount) Agent\(modelAgentCount > 1 ? "s" : "") Enabled: \(costAgent) Credit\(costAgent > 1 ? "s" : "")
                                 """,
                             ]
                         ],
                     ])
                 }
+
+                AnalyticsManager.shared.customEventCost(
+                    type: (query.isEmpty ? "Agent Use" : "Query"),
+                    value: cost
+                )
+                AnalyticsManager.shared.customEventCost(type: "Attached Files", value: costFile)
+                AnalyticsManager.shared.customEventCost(
+                    type: "Agents Enabled",
+                    value: costAgent
+                )
             } else {
                 AnalyticsManager.shared.customError(
                     type: "cost_not_calculated",

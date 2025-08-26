@@ -153,6 +153,19 @@ final class AnalyticsManager {
         )
     }
 
+    /// custom_event_cost
+    /// - Parameter type: e.g., "query", "file", "agent"
+    /// - Parameter value: 1, 2, ...
+    func customEventCost(type: String, value: Int) {
+        log(
+            "custom_event_cost",
+            params: [
+                "type": type,
+                "value": value,
+            ]
+        )
+    }
+
     /// custom_error
     /// - Parameters:
     ///   - type: e.g., "network", "api", "validation"
@@ -168,7 +181,7 @@ final class AnalyticsManager {
             ]
         )
     }
-    
+
     /// custom_firestore
     /// - Parameters:
     ///   - action: e.g., getProfile
@@ -178,7 +191,7 @@ final class AnalyticsManager {
             "custom_firestore",
             params: [
                 "action": action,
-                "status": status
+                "status": status,
             ]
         )
     }

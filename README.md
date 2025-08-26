@@ -2,10 +2,9 @@
 
 ------------------------ 
 
-
+Wednesday
 - Post Reddit 
-- Make Video / Ad
-
+- Make Ad
 
 ------------------------
 
@@ -94,3 +93,11 @@ xcrun notarytool submit "AIThing-$version.dmg" --keychain-profile "notary-profil
 xcrun stapler staple "AIThing-$version.dmg"
 
 codesign -dv --verbose=4 AIThing-$version.dmg 2>&1 | grep -E 'Authority|TeamIdentifier|Identifier'
+
+
+
+------------------------
+
+
+
+
