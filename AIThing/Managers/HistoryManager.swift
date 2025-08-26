@@ -107,7 +107,12 @@ final class HistoryStore: ObservableObject {
             (Double(lhs.lastUpdated) ?? 0) > (Double(rhs.lastUpdated) ?? 0)
         }
         if let limit, results.count > limit {
-            return Array(results.prefix(limit))
+            let keep = Array(results.prefix(limit))  // newest N
+            let toDelete = results.dropFirst(limit)  // the older rest
+            for h in toDelete {
+                _ = await delete(id: h.id)  // best-effort delete
+            }
+            return keep
         }
         return results
     }
@@ -141,6 +146,7 @@ final class HistoryStore: ObservableObject {
     /// Remove a single id (deletes its SQLite file).
     @discardableResult
     func delete(id: String) async -> Bool {
+        print("Delete history id:", id)
         guard let container = containers[id] else {
             // Not loaded yet, just delete files
             Self.deleteStoreFiles(for: id)

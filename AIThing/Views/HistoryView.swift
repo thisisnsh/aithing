@@ -29,7 +29,7 @@ struct HistoryView: View {
         }
         .onAppear {
             Task {
-                histories = await HistoryStore.shared.getAll()
+                histories = await HistoryStore.shared.getAll(limit: 100)
                 if let first = histories.first {
                     chatController.setHistory(first)
                 }
@@ -47,6 +47,12 @@ struct HistoryView: View {
             LazyVStack(alignment: .leading, spacing: 0) {
                 Color.clear.frame(height: 16)
 
+                Text("Maximum 100")
+                    .font(.system(size: 10, weight: .medium))
+                    .opacity(0.5)
+                    .padding(.horizontal, 16)
+                    .padding(.bottom, 8)
+
                 ForEach(Array(histories.enumerated()), id: \.offset) { (i, h) in
                     HoverableTabButton(
                         title: h.title ?? title(for: h.history, fallback: "Session #\(i + 1)"),
@@ -63,7 +69,7 @@ struct HistoryView: View {
                             Task {
                                 let isActive = i == index
                                 await HistoryStore.shared.delete(id: h.id)
-                                histories = await HistoryStore.shared.getAll()
+                                histories = await HistoryStore.shared.getAll(limit: 100)
                                 if isActive {
                                     if index >= histories.count {
                                         index = max(0, histories.count - 1)
