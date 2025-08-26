@@ -208,7 +208,6 @@ class GoogleOAuthManager: ObservableObject {
             "draft_gmail_message",
             "get_gmail_threads_content_batch",
             "batch_modify_gmail_message_labels",
-            "start_google_auth",
         ],
         .drive: [
             "search_drive_files",

@@ -676,12 +676,15 @@ struct ContentView: View {
 
             if googleOAuthManager.user != nil {
                 accessToken = googleOAuthManager.user?.accessToken.tokenString
+                print("accessToken", accessToken)
             }
             if let user = await googleOAuthManager.generateToken(refresh: true) {
                 refreshedAccessToken = user.accessToken.tokenString
                 // If token has been refreshed OR client does not exist
+                print("refreshedAccessToken", refreshedAccessToken)
                 if accessToken != refreshedAccessToken || !mcp.clientExists(clientName: clientName)
                 {
+                    print("refreshing")
                     _ = await mcp.reconnect(
                         clientName: clientName,
                         url: "https://google.mcp.aithing.dev/mcp",
