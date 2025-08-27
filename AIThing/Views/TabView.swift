@@ -588,6 +588,7 @@ struct TabView: View {
 
         var apiKeyManaged = ""
         var appUser: AppUser?
+        let byok = getByokSelected()
 
         switch loginManager.authState {
         case .signedIn(let user):
@@ -608,7 +609,7 @@ struct TabView: View {
                     return
                 }
 
-                if profile.creditsUsed >= creditsTotal {
+                if !byok && profile.creditsUsed >= creditsTotal {
                     isThinking = false
                     await animateOutput(content: creditErrorMessage)
                     AnalyticsManager.shared.customError(
@@ -662,7 +663,6 @@ struct TabView: View {
         let modelAgentCount = allClientTools.keys.count
         let modelTools = allClientTools.values.flatMap { $0 }
 
-        let byok = getByokSelected()
         let model = getModel()
 
         AnalyticsManager.shared.customEventModel(
