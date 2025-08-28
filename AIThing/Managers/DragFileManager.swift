@@ -8,15 +8,16 @@
 import AppKit
 import Foundation
 import PDFKit
+import QuickLookThumbnailing
 import UniformTypeIdentifiers
 
 enum DroppedContent: Hashable {
-    // name, doc, image, base64
+    // name, image, base64
     case image(String, NSImage, String)
     // name, doc, image[], base64[]
     case pdf(String, PDFDocument, [NSImage], [String])
-    // name, text
-    case text(String, String)
+    // name, text, image
+    case text(String, String, NSImage?)
 }
 
 extension PDFDocument {
@@ -39,21 +40,62 @@ extension PDFDocument {
     }
 }
 
-class DragFileManager {
-
-    // Entry point if you receive Strings from dropDestination
-    static func processPaths(_ items: [String]) -> [DroppedContent] {
-        items.compactMap { str in
-            if let url = urlFromDroppedString(str) {
-                return processFileURL(url)
-            }
-            return nil
-        }
+extension NSImage {
+    /// Returns JPEG-encoded data for this image.
+    func jpegData(compression: CGFloat = 0.9) -> Data? {
+        guard let tiff = tiffRepresentation,
+            let rep = NSBitmapImageRep(data: tiff)
+        else { return nil }
+        return rep.representation(using: .jpeg, properties: [.compressionFactor: compression])
     }
+
+    /// Resizes the image so the longest side equals `maxDimension` (keeping aspect ratio).
+    func resized(maxDimension: CGFloat) -> NSImage {
+        let target: NSSize
+        if size.width >= size.height {
+            let h = size.height * (maxDimension / size.width)
+            target = .init(width: maxDimension, height: h)
+        } else {
+            let w = size.width * (maxDimension / size.height)
+            target = .init(width: w, height: maxDimension)
+        }
+
+        let img = NSImage(size: target)
+        img.lockFocus()
+        draw(
+            in: NSRect(origin: .zero, size: target),
+            from: .zero,
+            operation: .sourceOver,
+            fraction: 1
+        )
+        img.unlockFocus()
+        return img
+    }
+}
+
+class DragFileManager {
 
     // MARK: - Core logic
 
-    static func processFileURL(_ url: URL) -> DroppedContent? {
+    static func processPaths(_ urls: [URL]) async -> [DroppedContent] {
+        await withTaskGroup(of: DroppedContent?.self) { group in
+            for url in urls {
+                group.addTask {
+                    await processFileURL(url.standardizedFileURL)
+                }
+            }
+
+            var results: [DroppedContent] = []
+            for await result in group {
+                if let value = result {
+                    results.append(value)
+                }
+            }
+            return results
+        }
+    }
+
+    static func processFileURL(_ url: URL) async -> DroppedContent? {
         let fileURL = url.isFileURL ? url.standardizedFileURL : url
         guard fileURL.isFileURL else { return nil }
 
@@ -63,7 +105,8 @@ class DragFileManager {
         // 1) IMAGES
         if type?.conforms(to: .image) == true {
             guard let nsimg = NSImage(contentsOf: fileURL) else { return nil }
-            guard let data = nsimg.jpegData() else { return nil }
+            let thumb = nsimg.resized(maxDimension: 1024)
+            guard let data = thumb.jpegData() else { return nil }
             return .image(fileURL.pathComponents.last ?? "", nsimg, data.base64EncodedString())
         }
 
@@ -88,44 +131,22 @@ class DragFileManager {
             return .pdf(fileURL.pathComponents.last ?? "", doc, thumbnails, thumbnailsBase64)
         }
 
-        // 3) EVERYTHING ELSE → text
-        if let txt = readPlainText(fileURL) {
-            return .text(fileURL.pathComponents.last ?? "", txt)
+        // 3) TEXT
+        if type?.conforms(to: .text) == true {
+            if let txt = readPlainText(fileURL) {
+                var thumbnail: NSImage?
+                if let thumb = await quickLookThumbnail(for: fileURL, maxDimension: 1024) {
+                    thumbnail = thumb
+                }
+
+                return .text(fileURL.pathComponents.last ?? "", txt, thumbnail)
+            }
         }
+                
         return nil
     }
 
     // MARK: - Helpers
-
-    private static func urlFromDroppedString(_ s: String) -> URL? {
-        if s.hasPrefix("file://") {
-            return URL(string: s)?.standardizedFileURL
-        }
-        return URL(fileURLWithPath: s).standardizedFileURL
-    }
-
-    private static func renderFirstPage(of pdf: PDFDocument, maxDimension: CGFloat) -> NSImage? {
-        guard let page = pdf.page(at: 0) else { return nil }
-        let bounds = page.bounds(for: .mediaBox)
-        let scale = maxDimension / max(bounds.width, bounds.height)
-        let size = NSSize(width: bounds.width * scale, height: bounds.height * scale)
-
-        let img = NSImage(size: size)
-        img.lockFocus()
-        NSColor.clear.set()
-        NSRect(origin: .zero, size: size).fill()
-
-        let ctx = NSGraphicsContext.current!.cgContext
-        ctx.saveGState()
-        ctx.scaleBy(x: scale, y: scale)
-        ctx.translateBy(x: 0, y: bounds.height)
-        ctx.scaleBy(x: 1, y: -1)
-        page.draw(with: .mediaBox, to: ctx)
-        ctx.restoreGState()
-
-        img.unlockFocus()
-        return img
-    }
 
     private static func readPlainText(_ url: URL) -> String? {
         if let data = try? Data(contentsOf: url), !data.isEmpty {
@@ -137,4 +158,43 @@ class DragFileManager {
         return nil
     }
 
+    // MARK: - Generic thumbnails via Quick Look
+
+    /// Creates a thumbnail image for an arbitrary document using Quick Look.
+    /// Works well for Word/PowerPoint/Pages/Keynote and many other formats.
+    /// - Parameters:
+    /// - url: The file URL.
+    /// - maxDimension: Max width/height for the returned image in points.
+    /// - Returns: NSImage thumbnail if available.
+    static func quickLookThumbnail(
+        for url: URL,
+        maxDimension: CGFloat = 512
+    ) async -> NSImage? {
+        let scale = NSScreen.main?.backingScaleFactor ?? 2.0
+        let request = QLThumbnailGenerator.Request(
+            fileAt: url,
+            size: CGSize(width: maxDimension, height: maxDimension),
+            scale: scale,
+            representationTypes: .all
+        )
+
+        return await withCheckedContinuation { continuation in
+            QLThumbnailGenerator.shared.generateBestRepresentation(for: request) { rep, _ in
+                if let cg = rep?.cgImage {
+                    let img = NSImage(cgImage: cg, size: .zero).resized(maxDimension: maxDimension)
+                    continuation.resume(returning: img)
+                } else {
+                    continuation.resume(
+                        returning: fallbackIcon(for: url, maxDimension: maxDimension)
+                    )
+                }
+            }
+        }
+    }
+
+    /// Fallback to the system file icon when Quick Look can’t provide a thumbnail.
+    private static func fallbackIcon(for url: URL, maxDimension: CGFloat) -> NSImage? {
+        let icon = NSWorkspace.shared.icon(forFile: url.path)
+        return icon.resized(maxDimension: maxDimension)
+    }
 }

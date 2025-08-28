@@ -172,14 +172,24 @@ struct ContextGridView: View {
                 Color.clear.frame(height: 1)
             }
 
-        case .text(let name, _):
-            TextContextView(
-                name: name,
-                compact: false,
-                isZoomed: safeZoomed(at: index),
-                onTap: { onTap(index) },
-                onDelete: { onDelete(index) }
-            )
+        case .text(let name, _, let image):
+            if let image {
+                ImageContextView(
+                    image: image,
+                    compact: false,
+                    isZoomed: safeZoomed(at: index),
+                    onTap: { onTap(index) },
+                    onDelete: { onDelete(index) }
+                )
+            } else {
+                TextContextView(
+                    name: name,
+                    compact: false,
+                    isZoomed: safeZoomed(at: index),
+                    onTap: { onTap(index) },
+                    onDelete: { onDelete(index) }
+                )
+            }
         }
     }
 

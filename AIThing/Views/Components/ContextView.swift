@@ -22,6 +22,7 @@ struct ImageContextView: View {
                 .resizable()
                 .aspectRatio(contentMode: .fit)
                 .frame(maxWidth: .infinity)
+                .background(.white)
                 .clipShape(RoundedRectangle(cornerRadius: isZoomed ? 16 : 8))
                 .overlay {
                     RoundedRectangle(cornerRadius: isZoomed ? 16 : 8).stroke(

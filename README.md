@@ -2,8 +2,6 @@
 
 ------------------------ 
 
-thumbnail for doc
-
 Thursday
 - GitHub mcp 
 - Notion mcp

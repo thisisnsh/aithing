@@ -296,17 +296,16 @@ struct TabView: View {
         .dropDestination(for: URL.self) { urls, _ in
             if !isFocused { return false }
 
-            let results =
-                urls
-                .map { $0.standardizedFileURL }
-                .compactMap { DragFileManager.processFileURL($0) }
-
-            for r in results {
-                modelContext.append(r)
-                modelContextZoomed.append(false)
+            Task {
+                let results = await DragFileManager.processPaths(urls)
+                for r in results {
+                    modelContext.append(r)
+                    modelContextZoomed.append(false)
+                }
             }
 
-            return !results.isEmpty
+            // You can’t know yet, so just return true to accept the drop.
+            return true
         } isTargeted: {
             if isFocused {
                 isDropping = $0
@@ -357,14 +356,24 @@ struct TabView: View {
                                                 onTap: {},
                                                 onDelete: {}
                                             )
-                                        case .text(let name, _):
-                                            TextContextView(
-                                                name: name,
-                                                compact: true,
-                                                isZoomed: false,
-                                                onTap: {},
-                                                onDelete: {}
-                                            )
+                                        case .text(let name, _, let image):
+                                            if let image {
+                                                ImageContextView(
+                                                    image: image,
+                                                    compact: true,
+                                                    isZoomed: false,
+                                                    onTap: {},
+                                                    onDelete: {}
+                                                )
+                                            } else {
+                                                TextContextView(
+                                                    name: name,
+                                                    compact: true,
+                                                    isZoomed: false,
+                                                    onTap: {},
+                                                    onDelete: {}
+                                                )
+                                            }
                                         }
                                     }
                                 }
@@ -761,7 +770,7 @@ struct TabView: View {
                             ]
                         )
                     }
-                case .text(let name, let text):
+                case .text(let name, let text, _):
                     fileCount += 1
                     AnalyticsManager.shared.customEventTab(action: "file_upload_text")
                     modelInput.append(

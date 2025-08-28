@@ -302,21 +302,6 @@ final class FrameCaptureHandler: NSObject, SCStreamOutput {
     }
 }
 
-extension NSImage {
-    /// Encodes the image to JPEG with the given compression factor.
-    func jpegData(compression: CGFloat = 0.9) -> Data? {
-        guard
-            let tiff = tiffRepresentation,
-            let rep = NSBitmapImageRep(data: tiff),
-            let jpg = rep.representation(
-                using: .jpeg,
-                properties: [.compressionFactor: compression]
-            )
-        else { return nil }
-        return jpg
-    }
-}
-
 private enum SelectionOutcome {
     case region(CGRect)
     case click(CGPoint)
