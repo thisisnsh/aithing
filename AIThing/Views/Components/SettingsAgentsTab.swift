@@ -280,6 +280,9 @@ private struct GoogleManagedAgentRow: View {
                                                 }
                                             } else {
                                                 google.enabled.remove(tool)
+                                                if google.enabled.count == 0 {
+                                                    google.resetToken()
+                                                }
                                             }
                                         }
                                     }
