@@ -49,7 +49,7 @@ class GoogleOAuthManager: ObservableObject {
             user = result.user
             return user
         } catch {
-            print("Get token: \(error.localizedDescription)")
+            logger.error("Get token: \(error.localizedDescription)")
             user = nil
             return user
         }

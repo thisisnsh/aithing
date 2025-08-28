@@ -7,6 +7,7 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
+		AA45F8FF2E6114F2001DAE39 /* OAuthSwift in Frameworks */ = {isa = PBXBuildFile; productRef = AA45F8FE2E6114F2001DAE39 /* OAuthSwift */; };
 		AA476E432E4D4813006F62F8 /* FirebaseFirestore in Frameworks */ = {isa = PBXBuildFile; productRef = AA476E422E4D4813006F62F8 /* FirebaseFirestore */; };
 		AAEFEA6E2E46B42400C47995 /* FirebaseAnalytics in Frameworks */ = {isa = PBXBuildFile; productRef = AAEFEA6D2E46B42400C47995 /* FirebaseAnalytics */; };
 		AAEFEA702E46B42400C47995 /* FirebaseAuth in Frameworks */ = {isa = PBXBuildFile; productRef = AAEFEA6F2E46B42400C47995 /* FirebaseAuth */; };
@@ -64,6 +65,7 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				AA45F8FF2E6114F2001DAE39 /* OAuthSwift in Frameworks */,
 				AAF11D652E241EDA00E2743E /* MCP in Frameworks */,
 				AAEFEA702E46B42400C47995 /* FirebaseAuth in Frameworks */,
 				AAF11D042E22DE9100E2743E /* HotKey in Frameworks */,
@@ -139,6 +141,7 @@
 				AAEFEA6F2E46B42400C47995 /* FirebaseAuth */,
 				AAEFEA782E46C3E600C47995 /* GoogleSignIn */,
 				AA476E422E4D4813006F62F8 /* FirebaseFirestore */,
+				AA45F8FE2E6114F2001DAE39 /* OAuthSwift */,
 			);
 			productName = AIThing;
 			productReference = AAF11CCB2E22DE1500E2743E /* AIThing.app */;
@@ -228,6 +231,7 @@
 				AAF11D632E241EDA00E2743E /* XCRemoteSwiftPackageReference "swift-sdk" */,
 				AAEFEA6C2E46B42400C47995 /* XCRemoteSwiftPackageReference "firebase-ios-sdk" */,
 				AAEFEA772E46C3E600C47995 /* XCRemoteSwiftPackageReference "GoogleSignIn-iOS" */,
+				AA45F8FD2E6114F2001DAE39 /* XCRemoteSwiftPackageReference "OAuthSwift" */,
 			);
 			preferredProjectObjectVersion = 77;
 			productRefGroup = AAF11CCC2E22DE1500E2743E /* Products */;
@@ -434,7 +438,7 @@
 				CODE_SIGN_IDENTITY = "Apple Development";
 				CODE_SIGN_STYLE = Automatic;
 				COMBINE_HIDPI_IMAGES = YES;
-				CURRENT_PROJECT_VERSION = 6;
+				CURRENT_PROJECT_VERSION = 1;
 				DEVELOPMENT_TEAM = 983LBM5U6B;
 				ENABLE_HARDENED_RUNTIME = YES;
 				ENABLE_PREVIEWS = YES;
@@ -451,7 +455,7 @@
 					"@executable_path/../Frameworks",
 				);
 				MACOSX_DEPLOYMENT_TARGET = 13.0;
-				MARKETING_VERSION = 1.5;
+				MARKETING_VERSION = 1.6;
 				PRODUCT_BUNDLE_IDENTIFIER = com.thisisnsh.mac.AIThing;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				PROVISIONING_PROFILE_SPECIFIER = "";
@@ -471,7 +475,7 @@
 				CODE_SIGN_IDENTITY = "Apple Development";
 				CODE_SIGN_STYLE = Automatic;
 				COMBINE_HIDPI_IMAGES = YES;
-				CURRENT_PROJECT_VERSION = 6;
+				CURRENT_PROJECT_VERSION = 1;
 				DEVELOPMENT_TEAM = 983LBM5U6B;
 				ENABLE_HARDENED_RUNTIME = YES;
 				ENABLE_PREVIEWS = YES;
@@ -488,7 +492,7 @@
 					"@executable_path/../Frameworks",
 				);
 				MACOSX_DEPLOYMENT_TARGET = 13.0;
-				MARKETING_VERSION = 1.5;
+				MARKETING_VERSION = 1.6;
 				PRODUCT_BUNDLE_IDENTIFIER = com.thisisnsh.mac.AIThing;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				PROVISIONING_PROFILE_SPECIFIER = "";
@@ -608,6 +612,14 @@
 /* End XCConfigurationList section */
 
 /* Begin XCRemoteSwiftPackageReference section */
+		AA45F8FD2E6114F2001DAE39 /* XCRemoteSwiftPackageReference "OAuthSwift" */ = {
+			isa = XCRemoteSwiftPackageReference;
+			repositoryURL = "https://github.com/OAuthSwift/OAuthSwift.git";
+			requirement = {
+				kind = upToNextMajorVersion;
+				minimumVersion = 2.2.0;
+			};
+		};
 		AAEFEA6C2E46B42400C47995 /* XCRemoteSwiftPackageReference "firebase-ios-sdk" */ = {
 			isa = XCRemoteSwiftPackageReference;
 			repositoryURL = "https://github.com/firebase/firebase-ios-sdk";
@@ -651,6 +663,11 @@
 /* End XCRemoteSwiftPackageReference section */
 
 /* Begin XCSwiftPackageProductDependency section */
+		AA45F8FE2E6114F2001DAE39 /* OAuthSwift */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = AA45F8FD2E6114F2001DAE39 /* XCRemoteSwiftPackageReference "OAuthSwift" */;
+			productName = OAuthSwift;
+		};
 		AA476E422E4D4813006F62F8 /* FirebaseFirestore */ = {
 			isa = XCSwiftPackageProductDependency;
 			package = AAEFEA6C2E46B42400C47995 /* XCRemoteSwiftPackageReference "firebase-ios-sdk" */;

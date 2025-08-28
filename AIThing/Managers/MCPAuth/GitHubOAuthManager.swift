@@ -6,8 +6,10 @@
 //
 
 import Foundation
+import OAuthSwift
 
 @MainActor
 class GitHubOAuthManager: ObservableObject {
     @Published var enabled: Bool = false
+
 }

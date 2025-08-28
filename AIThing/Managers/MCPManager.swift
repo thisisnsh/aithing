@@ -20,21 +20,11 @@ class MCPManager: ObservableObject {
     var httpURL: [String: String] = [:]
     var headers: [String: [String: String]] = [:]
 
-    var logger: Logger?
-
     var serverInputPipe: [String: Pipe] = [:]
     var serverOutputPipe: [String: Pipe] = [:]
     var process: [String: Process] = [:]
 
-    init() {
-        LoggingSystem.bootstrap { label in
-            var handler = StreamLogHandler.standardOutput(label: label)
-            handler.logLevel = .info
-            return handler
-        }
-
-        logger = Logger(label: "com.thisisnsh.mac.AIThing")
-    }
+    init() {}
 
     func clientExists(clientName: String) -> Bool {
         return clients.keys.contains(clientName)
@@ -63,8 +53,6 @@ class MCPManager: ObservableObject {
             }
             guard let process = process[clientName] else { return "Process not found" }
 
-            guard let logger = logger else { return "Logger not found" }
-
             let serverInput: FileDescriptor = FileDescriptor(
                 rawValue: serverInputPipe.fileHandleForWriting.fileDescriptor
             )
@@ -86,7 +74,7 @@ class MCPManager: ObservableObject {
             try process.run()
 
             try await client.connect(transport: transport)
-            print("Connected to MCP server for \(clientName)")
+            logger.info("Connected to MCP server for \(clientName)")
             AnalyticsManager.shared.selectItem(
                 itemID: "mcp_connected_stdio",
                 itemName: "mcp_connected_stdio"
@@ -98,7 +86,7 @@ class MCPManager: ObservableObject {
                 severity: "high",
                 location: "mcp_manager"
             )
-            print("Error in connecting: \(error.localizedDescription)")
+            logger.error("Error in connecting: \(error.localizedDescription)")
             return error.localizedDescription
         }
     }
@@ -118,8 +106,6 @@ class MCPManager: ObservableObject {
             guard let httpURL = httpURL[clientName] else { return "URL not found" }
             guard let headers = headers[clientName] else { return "Header not found" }
 
-            guard let logger = logger else { return "Logger not found" }
-
             let configuration = URLSessionConfiguration.default
             configuration.httpAdditionalHeaders = headers
 
@@ -132,7 +118,7 @@ class MCPManager: ObservableObject {
             )
 
             try await client.connect(transport: transport)
-            print("Connected to MCP server for \(clientName)")
+            logger.info("Connected to MCP server for \(clientName)")
             AnalyticsManager.shared.selectItem(
                 itemID: "mcp_connected_http",
                 itemName: "mcp_connected_http"
@@ -144,7 +130,7 @@ class MCPManager: ObservableObject {
                 severity: "high",
                 location: "mcp_manager"
             )
-            print("Error in connecting: \(error.localizedDescription)")
+            logger.error("Error in connecting: \(error.localizedDescription)")
             return error.localizedDescription
         }
     }
@@ -153,14 +139,14 @@ class MCPManager: ObservableObject {
         // If another tab is reconnecting let it do that
         if reconnecting[clientName] ?? false {
             while reconnecting[clientName] ?? false {
-                print("Let other tab reconnect: \(clientName)")
+                logger.info("Let other tab reconnect: \(clientName)")
                 try? await Task.sleep(nanoseconds: 100_000_000)
             }
             return true
         }
 
         reconnecting[clientName] = true
-        print("Reconnecting: \(clientName)")
+        logger.info("Reconnecting: \(clientName)")
 
         if let client = clients[clientName] {
             await client.disconnect()
@@ -206,7 +192,7 @@ class MCPManager: ObservableObject {
                 severity: "high",
                 location: "mcp_manager"
             )
-            print("Error in disconnecting: \(error.localizedDescription)")
+            logger.error("Error in disconnecting: \(error.localizedDescription)")
             return error.localizedDescription
         }
     }
@@ -228,7 +214,7 @@ class MCPManager: ObservableObject {
                 severity: "high",
                 location: "mcp_manager"
             )
-            print("Error in getting tools: \(error.localizedDescription)")
+            logger.error("Error in getting tools: \(error.localizedDescription)")
             return []
         }
     }
@@ -250,7 +236,7 @@ class MCPManager: ObservableObject {
                     severity: "high",
                     location: "mcp_manager"
                 )
-                print("Error in calling tools")
+                logger.error("Error in calling tools")
                 return []
             }
 
@@ -273,7 +259,7 @@ class MCPManager: ObservableObject {
                 severity: "high",
                 location: "mcp_manager"
             )
-            print("Error in calling tools: \(error.localizedDescription)")
+            logger.error("Error in calling tools: \(error.localizedDescription)")
             return []
         }
     }

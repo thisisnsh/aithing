@@ -9,7 +9,6 @@ import AppKit
 import MCP
 import MarkdownUI
 import SwiftUI
-import os
 
 struct TabView: View {
     @EnvironmentObject var mcp: MCPManager
@@ -71,8 +70,6 @@ struct TabView: View {
     @State private var hereContext: Bool = false
     @State private var takingScreenshot: Bool = false
     @State private var isDropping: Bool = false
-
-    let logger = Logger(subsystem: "com.thisisnsh.mac.AIThing", category: "api")
 
     var body: some View {
         VStack(alignment: .leading, spacing: 0) {
@@ -662,7 +659,7 @@ struct TabView: View {
         // Check if tab is alive, else return without processing
         if isTabClosed() {
             isThinking = false
-            print("Exiting callModel for \(tabId) as it was closed")
+            logger.info("Exiting callModel for \(tabId) as it was closed")
             AnalyticsManager.shared.customEventTab(action: "query_stop_on_close")
             return
         }
@@ -853,14 +850,14 @@ struct TabView: View {
         let costAgent = costPerQuery * modelAgentCount
         let total = costPerQuery + costAgent + costFile
 
-        logger.debug("apiKey: \(apiKey)")
-        logger.debug("model: \(model)")
-        logger.debug("messages: \(String(describing: body["messages"]))")
-        logger.debug("tools count: \((body["tools"] as? [[String: Any]])?.count ?? 0)")
-        logger.debug("cost query: \(costPerQuery)")
-        logger.debug("cost file: \(costFile)")
-        logger.debug("cost agent: \(costAgent)")
-        logger.debug("cost total: \(total)")
+        logger.info("apiKey: \(apiKey)")
+        logger.info("model: \(model)")
+        logger.info("messages: \(String(describing: body["messages"]))")
+        logger.info("tools count: \((body["tools"] as? [[String: Any]])?.count ?? 0)")
+        logger.info("cost query: \(costPerQuery)")
+        logger.info("cost file: \(costFile)")
+        logger.info("cost agent: \(costAgent)")
+        logger.info("cost total: \(total)")
 
         // Check enough credits if not BYOK
         if !byok {
@@ -1029,7 +1026,7 @@ struct TabView: View {
                     case "content_block_delta":
                         if isTabClosed() {
                             isThinking = false
-                            print("Exiting text_delta for \(tabId) as it was closed")
+                            logger.info("Exiting text_delta for \(tabId) as it was closed")
                             AnalyticsManager.shared.customEventTab(action: "query_stop_on_close")
                             return
                         }
@@ -1070,7 +1067,7 @@ struct TabView: View {
                     case "message_delta":
                         if isTabClosed() {
                             isThinking = false
-                            print("Exiting message_delta for \(tabId) as it was closed")
+                            logger.info("Exiting message_delta for \(tabId) as it was closed")
                             AnalyticsManager.shared.customEventTab(action: "query_stop_on_close")
                             return
                         }
@@ -1130,10 +1127,9 @@ struct TabView: View {
 
                             AnalyticsManager.shared.customEventTab(action: "query_tool_called")
 
-                            print("--------")
-                            print("call tool: \(finalToolUseName)")
-                            print("tool input: \(finalToolUseInputParam)")
-                            print("tool output: \(result)")
+                            logger.info("call tool: \(finalToolUseName)")
+                            logger.info("tool input: \(finalToolUseInputParam)")
+                            logger.info("tool output: \(result)")
 
                             modelInput.append([
                                 "role": "user",
@@ -1329,7 +1325,7 @@ struct TabView: View {
         if let cheapestModel = getCheapestModel(in: managedModels), !byok {
             bestModel = cheapestModel.id
         }
-        // print("title model:", bestModel)
+        
         let body: [String: Any] = [
             "model": bestModel,
             "stream": false,
@@ -1348,7 +1344,7 @@ struct TabView: View {
             guard let httpResponse = response as? HTTPURLResponse,
                 (200..<300).contains(httpResponse.statusCode)
             else {
-                print("Bad HTTP response")
+                logger.error("Bad HTTP response")
                 return
             }
 

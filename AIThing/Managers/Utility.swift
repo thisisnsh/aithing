@@ -7,7 +7,9 @@
 
 import AppKit
 import Foundation
+import Logging
 import MCP
+import os
 
 struct Env {
     static func get(_ key: String) -> String? {
@@ -58,7 +60,7 @@ func parseJSONStringToDictObject(_ json: String) -> [String: Any] {
         let value = Value(fromDecoded: jsonObject)
 
         guard case let .object(dict) = value else {
-            print("JSON root is not an object.")
+            logger.error("JSON root is not an object.")
             return [:]
         }
 
@@ -66,7 +68,7 @@ func parseJSONStringToDictObject(_ json: String) -> [String: Any] {
 
         return jsonSafeDict.compactMapValues { $0 }  // removes nils safely
     } catch {
-        print("Failed to parse JSON: \(error)")
+        logger.error("Failed to parse JSON: \(error)")
         return [:]
     }
 }
@@ -131,3 +133,8 @@ extension Value {
         self.stringified()
     }
 }
+
+
+
+let logger = Logger(label: "com.thisisnsh.mac.AIThing")
+// let logger = Logger(subsystem: "com.thisisnsh.mac.AIThing", category: "api")

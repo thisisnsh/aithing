@@ -42,7 +42,7 @@ class FirestoreManager: ObservableObject {
             return breakglass
         } catch {
             AnalyticsManager.shared.customFirestore(action: "get_breakglass", status: "failure")
-            print(
+            logger.error(
                 "[FirestoreManager] Error fetching breakglass: \(error.localizedDescription)"
             )
             return false
@@ -58,7 +58,7 @@ class FirestoreManager: ObservableObject {
             return expired
         } catch {
             AnalyticsManager.shared.customFirestore(action: "get_expired", status: "failure")
-            print(
+            logger.error(
                 "[FirestoreManager] Error fetching expired: \(error.localizedDescription)"
             )
             return false
@@ -80,7 +80,7 @@ class FirestoreManager: ObservableObject {
                 action: "get_anthropic_api_key",
                 status: "failure"
             )
-            print(
+            logger.error(
                 "[FirestoreManager] Error fetching apiKeyAnthropic: \(error.localizedDescription)"
             )
             return ""
@@ -102,7 +102,7 @@ class FirestoreManager: ObservableObject {
                 action: "get_default_credits",
                 status: "failure"
             )
-            print(
+            logger.error(
                 "[FirestoreManager] Error fetching defaultCredits: \(error.localizedDescription)"
             )
             return nil
@@ -122,7 +122,7 @@ class FirestoreManager: ObservableObject {
             return nil
         } catch {
             AnalyticsManager.shared.customFirestore(action: "get_profile", status: "failure")
-            print(
+            logger.error(
                 "[FirestoreManager] Error fetching profile for ID \(id): \(error.localizedDescription)"
             )
             return nil
@@ -156,7 +156,7 @@ class FirestoreManager: ObservableObject {
             return profile
         } catch {
             AnalyticsManager.shared.customFirestore(action: "create_profile", status: "failure")
-            print(
+            logger.error(
                 "[FirestoreManager] Error creating profile for ID \(id): \(error.localizedDescription)"
             )
             return nil
@@ -173,7 +173,7 @@ class FirestoreManager: ObservableObject {
             AnalyticsManager.shared.customFirestore(action: "increment_credit", status: "success")
         } catch {
             AnalyticsManager.shared.customFirestore(action: "increment_credit", status: "failure")
-            print(
+            logger.error(
                 "[FirestoreManager] Error incrementing creditsUsed by \(amount) for ID \(id): \(error.localizedDescription)"
             )
         }
@@ -201,7 +201,7 @@ class FirestoreManager: ObservableObject {
             }
         } catch {
             AnalyticsManager.shared.customFirestore(action: "get_model_info", status: "failure")
-            print("[FirestoreManager] Error fetching models: \(error.localizedDescription)")
+            logger.error("[FirestoreManager] Error fetching models: \(error.localizedDescription)")
             return []
         }
     }
@@ -209,9 +209,9 @@ class FirestoreManager: ObservableObject {
     func createModel(model: ModelInfo) async {
         do {
             try db.collection("Models").document(model.id).setData(from: model)
-            print("[FirestoreManager] Created/updated model with id \(model.id)")
+            logger.error("[FirestoreManager] Created/updated model with id \(model.id)")
         } catch {
-            print(
+            logger.error(
                 "[FirestoreManager] Error creating model \(model.id): \(error.localizedDescription)"
             )
         }
@@ -240,7 +240,7 @@ extension FirestoreManager {
                     action: "fetch_credits_missing_plan_details",
                     status: "failure"
                 )
-                print("[FirestoreManager] Missing PlanDetails for planId \(order.planId)")
+                logger.error("[FirestoreManager] Missing PlanDetails for planId \(order.planId)")
             }
         }
         return total
@@ -267,7 +267,7 @@ extension FirestoreManager {
                 action: "fetch_credits_error_plan_details",
                 status: "failure"
             )
-            print("[FirestoreManager] Error fetching PlanDetails: \(error.localizedDescription)")
+            logger.error("[FirestoreManager] Error fetching PlanDetails: \(error.localizedDescription)")
         }
         return result
     }
@@ -341,7 +341,7 @@ extension FirestoreManager {
                                 action: "fetch_credits_error_reading_orders",
                                 status: "failure"
                             )
-                            print(
+                            logger.error(
                                 "[FirestoreManager] Error reading /Plans/\(email)/\(planId): \(error.localizedDescription)"
                             )
                             return []
@@ -455,7 +455,7 @@ extension FirestoreManager {
             return d
         }
 
-        print("[FirestoreManager] Failed to parse endDate string: \(raw)")
+        logger.error("[FirestoreManager] Failed to parse endDate string: \(raw)")
         return nil
     }
 }

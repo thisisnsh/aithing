@@ -96,7 +96,7 @@ class LoginManager: ObservableObject {
             )
             // Sign in to Firebase
             let authResult = try await Auth.auth().signIn(with: credential)
-            print("Successfully signed in user: \(authResult.user.email ?? "No email")")
+            logger.info("Successfully signed in user: \(authResult.user.email ?? "No email")")
 
         } catch let error as LoginError {
             authState = .error(error.localizedDescription)
