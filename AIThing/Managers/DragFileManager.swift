@@ -51,14 +51,17 @@ extension NSImage {
 
     /// Resizes the image so the longest side equals `maxDimension` (keeping aspect ratio).
     func resized(maxDimension: CGFloat) -> NSImage {
-        let target: NSSize
-        if size.width >= size.height {
-            let h = size.height * (maxDimension / size.width)
-            target = .init(width: maxDimension, height: h)
-        } else {
-            let w = size.width * (maxDimension / size.height)
-            target = .init(width: w, height: maxDimension)
+        // Find the longest side of the image
+        let longestSide = max(size.width, size.height)
+
+        // If it's already within bounds, just return self (no upscaling)
+        if longestSide <= maxDimension {
+            return self
         }
+
+        // Otherwise, scale down proportionally
+        let scale = maxDimension / longestSide
+        let target = NSSize(width: size.width * scale, height: size.height * scale)
 
         let img = NSImage(size: target)
         img.lockFocus()
@@ -71,6 +74,7 @@ extension NSImage {
         img.unlockFocus()
         return img
     }
+
 }
 
 class DragFileManager {
