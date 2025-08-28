@@ -190,11 +190,6 @@ struct TabView: View {
                 .fill(isFocused && !showSettings && !showHistory ? .white : .white.opacity(0.5))
                 .scaledToFit()
                 .frame(width: isFocused ? 32 : 24)
-                .onTapGesture {
-                    if isFocused {
-                        onSetting()
-                    }
-                }
 
             if isFocused {
                 ZStack(alignment: .leading) {
