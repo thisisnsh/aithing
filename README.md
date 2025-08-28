@@ -2,9 +2,14 @@
 
 ------------------------ 
 
+Screenhot
+- Multi File Photo
+- Agents Page
+
 Thursday
 - GitHub mcp 
 - Notion mcp
+
 
 
 
