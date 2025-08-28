@@ -47,7 +47,7 @@ struct ContentView: View {
     @State private var lastFocusedIndex: Int = 0
 
     @State private var tabs: [TabItem] = []
-    @State private var maxTabs: Int = 3
+    @State private var maxTabs: Int = 5
 
     @State private var zStackWidth: CGFloat? = nil
     @State private var measuredTabWidths: [UUID: CGFloat] = [:]

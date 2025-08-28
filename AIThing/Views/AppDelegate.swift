@@ -19,7 +19,7 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate {
     var hotKey: HotKey?
     private var dragMonitor: Any?
 
-    let width: CGFloat = 1400
+    let width: CGFloat = 1500
     let height: CGFloat = 96
 
     static var allowQuit = false
