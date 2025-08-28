@@ -131,18 +131,16 @@ class DragFileManager {
             return .pdf(fileURL.pathComponents.last ?? "", doc, thumbnails, thumbnailsBase64)
         }
 
-        // 3) TEXT
-        if type?.conforms(to: .text) == true {
-            if let txt = readPlainText(fileURL) {
-                var thumbnail: NSImage?
-                if let thumb = await quickLookThumbnail(for: fileURL, maxDimension: 1024) {
-                    thumbnail = thumb
-                }
-
-                return .text(fileURL.pathComponents.last ?? "", txt, thumbnail)
+        // 3) EVERYTHING ELSE
+        if let txt = readPlainText(fileURL) {
+            var thumbnail: NSImage?
+            if let thumb = await quickLookThumbnail(for: fileURL, maxDimension: 1024) {
+                thumbnail = thumb
             }
+
+            return .text(fileURL.pathComponents.last ?? "", txt, thumbnail)
         }
-                
+
         return nil
     }
 

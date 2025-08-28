@@ -50,15 +50,6 @@ struct MasonryGrid: Layout {
             let widthForSpan = CGFloat(span) * columnWidth + CGFloat(max(0, span - 1)) * spacing
             let size = subview.sizeThatFits(.init(width: widthForSpan, height: nil))
 
-            // 👈 Override span rules if height < 90
-            if size.height < 40 {
-                if subview[GridSpanKey.self] > 1 {  // zoomed
-                    span = min(6, columns)
-                } else {
-                    span = min(3, columns)
-                }
-            }
-
             let widthForFinalSpan =
                 CGFloat(span) * columnWidth + CGFloat(max(0, span - 1)) * spacing
             let finalSize = subview.sizeThatFits(.init(width: widthForFinalSpan, height: nil))
@@ -148,8 +139,9 @@ struct ContextGridView: View {
     @ViewBuilder
     private func cellView(for context: DroppedContent, index: Int) -> some View {
         switch context {
-        case .image(_, let image, _):
+        case .image(let name, let image, _):
             ImageContextView(
+                name: name,
                 image: image,
                 compact: false,
                 isZoomed: safeZoomed(at: index),
@@ -157,10 +149,11 @@ struct ContextGridView: View {
                 onDelete: { onDelete(index) }
             )
 
-        case .pdf(_, _, let images, _):
+        case .pdf(let name, _, let images, _):
             // Defensive: ensure images array isn’t empty
             if let first = images.first {
                 PDFContextView(
+                    name: name,
                     image: first,
                     compact: false,
                     isZoomed: safeZoomed(at: index),
@@ -175,6 +168,7 @@ struct ContextGridView: View {
         case .text(let name, _, let image):
             if let image {
                 ImageContextView(
+                    name: name,
                     image: image,
                     compact: false,
                     isZoomed: safeZoomed(at: index),

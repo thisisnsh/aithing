@@ -98,6 +98,7 @@ struct TabView: View {
                     )
                     .font(.system(size: 10, weight: .medium))
                     .multilineTextAlignment(.center)
+                    .shadow(color: .black, radius: 1)
                 }
             }
             .onHover { inside in
@@ -340,16 +341,18 @@ struct TabView: View {
                                     {
                                         (index, context) in
                                         switch context {
-                                        case .image(_, let image, _):
+                                        case .image(let name, let image, _):
                                             ImageContextView(
+                                                name: name,
                                                 image: image,
                                                 compact: true,
                                                 isZoomed: false,
                                                 onTap: {},
                                                 onDelete: {}
                                             )
-                                        case .pdf(_, _, let images, _):
+                                        case .pdf(let name, _, let images, _):
                                             PDFContextView(
+                                                name: name,
                                                 image: images[0],
                                                 compact: true,
                                                 isZoomed: false,
@@ -359,6 +362,7 @@ struct TabView: View {
                                         case .text(let name, _, let image):
                                             if let image {
                                                 ImageContextView(
+                                                    name: name,
                                                     image: image,
                                                     compact: true,
                                                     isZoomed: false,

@@ -181,7 +181,7 @@ struct SettingsView: View {
             }
             .buttonStyle(.plain)
 
-            Text("Version 1.5.5")
+            Text("Version 1.5.6")
                 .font(.system(size: 10, weight: .medium))
                 .padding(.top, 8)
                 .padding(.horizontal, 16)
