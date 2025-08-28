@@ -43,13 +43,16 @@ struct SettingsAgentsTab: View {
             GroupBox {
                 HStack {
                     Text(
-                        "Need Help? Check [Agents Documentation](https://aithing.dev/features/multiple-agents)"
+                        """
+                        Learn more about [Managed Agents](https://aithing.dev/features/multiple-agents#managed-agents) and what they can do. 
+                        Need help? Visit [Troubleshooting](https://aithing.dev/errors/agent-troubleshooting).
+                        """
                     )
                     .font(.system(size: 10, weight: .medium))
                     .padding(4)
                     Spacer()
                 }
-                .padding(.bottom, 4)
+                .padding(.vertical, 4)
             }
 
             GroupBox(
@@ -71,8 +74,8 @@ struct SettingsAgentsTab: View {
                     )
                     Divider()
                     ManagedAgentRow(
-                        icon: "atlassian",
-                        title: "Atlassian",
+                        icon: "notion",
+                        title: "Notion",
                     )
                     Divider()
                     ManagedAgentRow(

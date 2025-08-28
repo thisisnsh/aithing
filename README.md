@@ -3,10 +3,6 @@
 ------------------------ 
 
 
-Wednesday 
-- Put troubleshoot and about mcp link in app 
-
-
 
 
 Thursday
