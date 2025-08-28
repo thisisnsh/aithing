@@ -2,15 +2,11 @@
 
 ------------------------ 
 
-
-
+thumbnail for doc
 
 Thursday
 - GitHub mcp 
 - Notion mcp
-- File size limit 
-
-- Every time app is shown show a firebase markdown text 
 
 
 

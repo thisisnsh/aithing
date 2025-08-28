@@ -9,6 +9,7 @@ import AppKit
 import MCP
 import MarkdownUI
 import SwiftUI
+import os
 
 struct TabView: View {
     @EnvironmentObject var mcp: MCPManager
@@ -70,6 +71,8 @@ struct TabView: View {
     @State private var hereContext: Bool = false
     @State private var takingScreenshot: Bool = false
     @State private var isDropping: Bool = false
+
+    let logger = Logger(subsystem: "com.thisisnsh.mac.AIThing", category: "api")
 
     var body: some View {
         VStack(alignment: .leading, spacing: 0) {
@@ -584,6 +587,8 @@ struct TabView: View {
         var apiKeyManaged = ""
         var appUser: AppUser?
         let byok = getByokSelected()
+        var creditsTotal = 0
+        var creditsUsed = 0
 
         switch loginManager.authState {
         case .signedIn(let user):
@@ -591,7 +596,7 @@ struct TabView: View {
                 let creditsPlans = await firestoreManager.fetchCreditsPlans(
                     email: profile.email
                 )
-                let creditsTotal = profile.creditsTotal + creditsPlans
+                creditsTotal = profile.creditsTotal + creditsPlans
 
                 if profile.blocked {
                     isThinking = false
@@ -604,11 +609,12 @@ struct TabView: View {
                     return
                 }
 
-                if !byok && profile.creditsUsed >= creditsTotal {
+                creditsUsed = profile.creditsUsed
+                if !byok && creditsUsed >= creditsTotal {
                     isThinking = false
                     await animateOutput(content: creditErrorMessage)
                     AnalyticsManager.shared.customError(
-                        type: "credits_not_enough",
+                        type: "credits_consumed",
                         severity: "high",
                         location: "tab_view"
                     )
@@ -827,12 +833,49 @@ struct TabView: View {
 
         ]
 
-        print("--------")
-        print("apiKey:", apiKey)
-        print("model:", model)
-        print("cost:", getModelCost(getModel(), all: managedModels))
-        print("messages:", body["messages"] as! [[String: Any]])
-        print("tools:", (body["tools"] as! [[String: Any]]).count)
+        // Cost Calculation
+        let costPerQuery = getModelCost(getModel(), all: managedModels)
+        let costPerFile = getModelCostImage(getModel(), all: managedModels)
+        let costFile = costPerFile * fileCount
+        let costAgent = costPerQuery * modelAgentCount
+        let total = costPerQuery + costAgent + costFile
+
+        logger.debug("apiKey: \(apiKey)")
+        logger.debug("model: \(model)")
+        logger.debug("messages: \(String(describing: body["messages"]))")
+        logger.debug("tools count: \((body["tools"] as? [[String: Any]])?.count ?? 0)")
+        logger.debug("cost query: \(costPerQuery)")
+        logger.debug("cost file: \(costFile)")
+        logger.debug("cost agent: \(costAgent)")
+        logger.debug("cost total: \(total)")
+
+        // Check enough credits if not BYOK
+        if !byok {
+            let remainingCredits = creditsTotal - creditsUsed
+            if creditsUsed + total > creditsTotal {
+                isThinking = false
+                let creditErrorMessage = """
+                    You don’t have enough credits for this query. Please [purchase more credits](https://get.aithing.dev) to continue.
+
+                    Remaining: \(remainingCredits) Credit\(remainingCredits > 1 ? "s" : "")
+
+                    Required: \(total) Credit\(total > 1 ? "s" : "")
+                    - 1 \(query.isEmpty ? "Agent Use" : "Query"): \(costPerQuery) Credit\(costPerQuery > 1 ? "s" : "")
+                    - \(fileCount) Attached Files/Pages: \(costFile) Credit\(costFile > 1 ? "s" : "")
+                    - \(modelAgentCount) Agent\(modelAgentCount > 1 ? "s" : "") Enabled: \(costAgent) Credit\(costAgent > 1 ? "s" : "")
+
+                    Learn more about [usage and credits](https://aithing.dev/billing/usage).
+                    """
+
+                await animateOutput(content: creditErrorMessage)
+                AnalyticsManager.shared.customError(
+                    type: "credits_not_enough",
+                    severity: "high",
+                    location: "tab_view"
+                )
+                return
+            }
+        }
 
         request.httpBody = try? JSONSerialization.data(withJSONObject: body)
 
@@ -895,17 +938,6 @@ struct TabView: View {
             }
 
             if let appUser {
-                let cost = getModelCost(getModel(), all: managedModels)
-                let costFile =
-                    getModelCostImage(getModel(), all: managedModels) * fileCount
-                let costAgent = cost * modelAgentCount
-                let total = cost + costAgent + costFile
-
-                print("cost query:", cost)
-                print("cost file:", costFile)
-                print("cost agent:", costAgent)
-                print("cost total:", total)
-
                 if !byok {
                     await firestoreManager.incrementCredits(user: appUser, by: total)
                     modelInput.append([
@@ -915,7 +947,7 @@ struct TabView: View {
                                 "type": "text",
                                 "text": """
                                 Total Usage: \(total) Credits
-                                1 \(query.isEmpty ? "Agent Use" : "Query"): \(cost) Credit\(cost > 1 ? "s" : "")
+                                1 \(query.isEmpty ? "Agent Use" : "Query"): \(costPerQuery) Credit\(costPerQuery > 1 ? "s" : "")
                                 \(fileCount) Attached Files: \(costFile) Credit\(costFile > 1 ? "s" : "")
                                 \(modelAgentCount) Agent\(modelAgentCount > 1 ? "s" : "") Enabled: \(costAgent) Credit\(costAgent > 1 ? "s" : "")
                                 """,
@@ -926,7 +958,7 @@ struct TabView: View {
 
                 AnalyticsManager.shared.customEventCost(
                     type: (query.isEmpty ? "Agent Use" : "Query"),
-                    value: cost
+                    value: costPerQuery
                 )
                 AnalyticsManager.shared.customEventCost(type: "Attached Files", value: costFile)
                 AnalyticsManager.shared.customEventCost(
