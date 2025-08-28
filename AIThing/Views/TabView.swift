@@ -719,6 +719,7 @@ struct TabView: View {
                 switch modelContext[i] {
                 case .image(_, _, let base64):
                     fileCount += 1
+                    AnalyticsManager.shared.customEventTab(action: "file_upload_image")
                     modelInput.append(
                         [
                             "role": "user",
@@ -737,6 +738,7 @@ struct TabView: View {
                 case .pdf(_, _, _, let base64s):
                     for base64 in base64s {
                         fileCount += 1
+                        AnalyticsManager.shared.customEventTab(action: "file_upload_pdf_page")
                         modelInput.append(
                             [
                                 "role": "user",
@@ -755,6 +757,7 @@ struct TabView: View {
                     }
                 case .text(let name, let text):
                     fileCount += 1
+                    AnalyticsManager.shared.customEventTab(action: "file_upload_text")
                     modelInput.append(
                         [
                             "role": "user",

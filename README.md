@@ -9,7 +9,7 @@ Thursday
 - GitHub mcp 
 - Notion mcp
 - File size limit 
-- File upload analytics 
+
 - Every time app is shown show a firebase markdown text 
 
 
