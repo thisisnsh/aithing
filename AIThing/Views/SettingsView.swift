@@ -30,7 +30,7 @@ struct SettingsView: View {
     @State private var agentPrimary = ""
     @State private var agentSecondary = ""
     private let agentTypes: [String] = ["Global", "Local"]
-    @State private var agentMaxCount = 3
+    @State private var agentMaxCount = 5
     @State private var showToast = false
     @State private var toastText: String = ""
 

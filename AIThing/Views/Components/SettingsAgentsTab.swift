@@ -98,7 +98,7 @@ struct SettingsAgentsTab: View {
             }
 
             GroupBox(
-                label: Text("Own Agents (Max \(agentMaxCount) with current plan)")
+                label: Text("Own Agents (Max \(agentMaxCount))")
                     .font(.system(size: 10, weight: .medium))
                     .padding(.bottom, 4)
             ) {

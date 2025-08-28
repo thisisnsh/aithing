@@ -2,9 +2,27 @@
 
 ------------------------ 
 
-Wednesday
+
+Wednesday 
+- Put troubleshoot and about mcp link in app 
+
+
+
+
+Thursday
+- GitHub mcp 
+- Notion mcp
+- File size limit 
+- File upload analytics 
+- Every time app is shown show a firebase markdown text 
+
+
+
+Later
+- Release 1.6
+- Get Google Review
+- Make Ads
 - Post Reddit 
-- Make Ad
 
 ------------------------
 
