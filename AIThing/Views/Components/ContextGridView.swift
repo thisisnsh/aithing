@@ -44,11 +44,11 @@ struct MasonryGrid: Layout {
 
         for subview in subviews {
             // Default span from layout value
-            var span = max(1, min(subview[GridSpanKey.self], columns))
+            let span = max(1, min(subview[GridSpanKey.self], columns))
 
             // Measure size first to check height
             let widthForSpan = CGFloat(span) * columnWidth + CGFloat(max(0, span - 1)) * spacing
-            let size = subview.sizeThatFits(.init(width: widthForSpan, height: nil))
+            let _ = subview.sizeThatFits(.init(width: widthForSpan, height: nil))
 
             let widthForFinalSpan =
                 CGFloat(span) * columnWidth + CGFloat(max(0, span - 1)) * spacing

@@ -7,6 +7,7 @@
 
 import Firebase
 import SwiftUI
+import os
 
 struct TabItem: Identifiable, Equatable {
     let id: UUID
@@ -30,6 +31,8 @@ struct ContentView: View {
     @StateObject private var loginManager = LoginManager()
     @EnvironmentObject var screenshotManager: ScreenshotManager
     @StateObject private var firestoreManager = FirestoreManager()
+
+    let logger = Logger(subsystem: "com.thisisnsh.mac.AIThing", category: "ContentView")
 
     var onClose: () -> Void
     var updatePanelSizeFromDefault: (CGFloat) -> Void
@@ -84,7 +87,7 @@ struct ContentView: View {
     // This is due to the nature of these servers that require token refresh
     // Best way is to disable then and enable to fetch new token
     @StateObject private var googleOAuthManager = GoogleOAuthManager()
-    @StateObject private var githubOAuthManager = GitHubOAuthManager()
+    @StateObject private var githubOAuthManager = GithubOAuthManager()
 
     var body: some View {
         ZStack(alignment: .top) {
@@ -676,15 +679,15 @@ struct ContentView: View {
 
             if googleOAuthManager.user != nil {
                 accessToken = googleOAuthManager.user?.accessToken.tokenString
-                logger.debug("accessToken", accessToken)
+                logger.debug("AccessToken \(String(describing: accessToken))")
             }
             if let user = await googleOAuthManager.generateToken(refresh: true) {
                 refreshedAccessToken = user.accessToken.tokenString
                 // If token has been refreshed OR client does not exist
-                logger.debug("refreshedAccessToken", refreshedAccessToken)
+                logger.debug("RefreshedAccessToken \(String(describing: refreshedAccessToken))")
                 if accessToken != refreshedAccessToken || !mcp.clientExists(clientName: clientName)
                 {
-                    logger.debug("refreshing")
+                    logger.debug("Reconnecting Google Agent")
                     _ = await mcp.reconnect(
                         clientName: clientName,
                         url: "https://google.mcp.aithing.dev/mcp",
@@ -697,10 +700,38 @@ struct ContentView: View {
                 filter: googleOAuthManager.enabledCapabilities()
             )
             allClientTools[clientName] = tools
+            logger.debug("Google Enabled Capabilities: \(tools)")
         }
 
-        if githubOAuthManager.enabled {
+        if githubOAuthManager.enabled.count > 0 {
+            let clientName = "managed_github_mcp"
+            var accessToken: String?
+            var refreshedAccessToken: String?
 
+            if githubOAuthManager.user != nil {
+                accessToken = githubOAuthManager.user?.accessToken
+                logger.debug("AccessToken \(String(describing: accessToken))")
+            }
+            if let user = await githubOAuthManager.generateToken(refresh: true) {
+                refreshedAccessToken = user.accessToken
+                // If token has been refreshed OR client does not exist
+                logger.debug("RefreshedAccessToken \(String(describing: refreshedAccessToken))")
+                if accessToken != refreshedAccessToken || !mcp.clientExists(clientName: clientName)
+                {
+                    logger.debug("Reconnecting Github Agent")
+                    _ = await mcp.reconnect(
+                        clientName: clientName,
+                        url: "https://api.githubcopilot.com/mcp",
+                        authToken: refreshedAccessToken!
+                    )
+                }
+            }
+            let tools = await mcp.getTools(
+                clientName: clientName,
+                filter: githubOAuthManager.enabledCapabilities()
+            )
+            allClientTools[clientName] = tools
+            logger.debug("Github Enabled Capabilities: \(tools)")
         }
     }
 }

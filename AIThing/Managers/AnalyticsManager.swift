@@ -152,6 +152,17 @@ final class AnalyticsManager {
             ]
         )
     }
+    
+    /// custom_event_tool
+    /// - Parameter name
+    func customEventTool(name: String) {
+        log(
+            "custom_event_tool",
+            params: [
+                "name": name
+            ]
+        )
+    }
 
     /// custom_event_cost
     /// - Parameter type: e.g., "query", "file", "agent"

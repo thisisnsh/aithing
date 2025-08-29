@@ -7,9 +7,10 @@
 
 import AppKit
 import Foundation
-import Logging
 import MCP
 import os
+
+let logger = Logger(subsystem: "com.thisisnsh.mac.AIThing", category: "Utility")
 
 struct Env {
     static func get(_ key: String) -> String? {
@@ -47,6 +48,10 @@ func toolsToDictionaries(_ tools: [Tool]) -> [[String: Any]] {
 }
 
 func parseJSONStringToValueObject(_ json: String) throws -> Value {
+    if json.isEmpty {
+        return [:]
+    }
+    
     let data = Data(json.utf8)
     let jsonObject = try JSONSerialization.jsonObject(with: data, options: [])
     return Value(fromDecoded: jsonObject)
@@ -54,6 +59,10 @@ func parseJSONStringToValueObject(_ json: String) throws -> Value {
 
 func parseJSONStringToDictObject(_ json: String) -> [String: Any] {
     do {
+        if json.isEmpty {
+            return [:]
+        }
+        
         let data = Data(json.utf8)
         let jsonObject = try JSONSerialization.jsonObject(with: data, options: [])
 
@@ -133,8 +142,3 @@ extension Value {
         self.stringified()
     }
 }
-
-
-
-let logger = Logger(label: "com.thisisnsh.mac.AIThing")
-// let logger = Logger(subsystem: "com.thisisnsh.mac.AIThing", category: "api")

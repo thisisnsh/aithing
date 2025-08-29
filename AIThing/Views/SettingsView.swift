@@ -7,7 +7,7 @@ struct SettingsView: View {
     @EnvironmentObject var firestoreManager: FirestoreManager
 
     @EnvironmentObject var googleOAuthManager: GoogleOAuthManager
-    @EnvironmentObject var gitHubOAuthManager: GitHubOAuthManager
+    @EnvironmentObject var gitHubOAuthManager: GithubOAuthManager
 
     @Binding var isPresented: Bool
     var setPanelVisibility: () -> Void

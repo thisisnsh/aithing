@@ -3,11 +3,11 @@
 ------------------------ 
 
 Thursday
-- GitHub mcp 
 - Notion mcp
 
 Later
 - Release 1.6
+- Github Agent Scopes & Secret Fetch
 - Get Google Review
 - Make Ads
 - Post Reddit 

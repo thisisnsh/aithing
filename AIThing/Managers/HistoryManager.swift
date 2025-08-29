@@ -8,6 +8,7 @@
 import AppKit
 import CoreData
 import Foundation
+import os
 
 struct History: Identifiable, Equatable {
     let id: String
@@ -29,6 +30,7 @@ final class HistoryDocMO: NSManagedObject {
 @MainActor
 final class HistoryStore: ObservableObject {
     static let shared = HistoryStore()
+    let logger = Logger(subsystem: "com.thisisnsh.mac.AIThing", category: "HistoryStore")
 
     private init() {}
 
@@ -146,7 +148,7 @@ final class HistoryStore: ObservableObject {
     /// Remove a single id (deletes its SQLite file).
     @discardableResult
     func delete(id: String) async -> Bool {
-        logger.info("Delete history id:", id)
+        logger.info("Delete history id: \(id)")
         guard let container = containers[id] else {
             // Not loaded yet, just delete files
             Self.deleteStoreFiles(for: id)

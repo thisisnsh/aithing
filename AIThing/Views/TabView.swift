@@ -9,12 +9,15 @@ import AppKit
 import MCP
 import MarkdownUI
 import SwiftUI
+import os
 
 struct TabView: View {
     @EnvironmentObject var mcp: MCPManager
     @EnvironmentObject var loginManager: LoginManager
     @EnvironmentObject var screenshotManager: ScreenshotManager
     @EnvironmentObject var firestoreManager: FirestoreManager
+
+    let logger = Logger(subsystem: "com.thisisnsh.mac.AIThing", category: "TabView")
 
     @Binding var isFocused: Bool
     var tabId: UUID
@@ -850,14 +853,14 @@ struct TabView: View {
         let costAgent = costPerQuery * modelAgentCount
         let total = costPerQuery + costAgent + costFile
 
-        logger.info("apiKey: \(apiKey)")
-        logger.info("model: \(model)")
-        logger.info("messages: \(String(describing: body["messages"]))")
-        logger.info("tools count: \((body["tools"] as? [[String: Any]])?.count ?? 0)")
-        logger.info("cost query: \(costPerQuery)")
-        logger.info("cost file: \(costFile)")
-        logger.info("cost agent: \(costAgent)")
-        logger.info("cost total: \(total)")
+        logger.debug("apiKey: \(apiKey)")
+        logger.debug("model: \(model)")
+        logger.debug("messages: \(String(describing: body["messages"]))")
+        logger.debug("tools count: \((body["tools"] as? [[String: Any]])?.count ?? 0)")
+        logger.debug("cost query: \(costPerQuery)")
+        logger.debug("cost file: \(costFile)")
+        logger.debug("cost agent: \(costAgent)")
+        logger.debug("cost total: \(total)")
 
         // Check enough credits if not BYOK
         if !byok {
@@ -1126,10 +1129,11 @@ struct TabView: View {
                             )
 
                             AnalyticsManager.shared.customEventTab(action: "query_tool_called")
+                            AnalyticsManager.shared.customEventTool(name: finalToolUseName)
 
-                            logger.info("call tool: \(finalToolUseName)")
-                            logger.info("tool input: \(finalToolUseInputParam)")
-                            logger.info("tool output: \(result)")
+                            logger.debug("Call tool: \(finalToolUseName)")
+                            logger.debug("Tool input: \(finalToolUseInputParam)")
+                            logger.debug("Tool output: \(result)")
 
                             modelInput.append([
                                 "role": "user",
@@ -1325,7 +1329,7 @@ struct TabView: View {
         if let cheapestModel = getCheapestModel(in: managedModels), !byok {
             bestModel = cheapestModel.id
         }
-        
+
         let body: [String: Any] = [
             "model": bestModel,
             "stream": false,

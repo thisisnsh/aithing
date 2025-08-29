@@ -6,6 +6,7 @@
 //
 
 import SwiftUI
+import os
 
 struct AgentEntry: Codable, Identifiable, Equatable {
     let id: UUID
@@ -15,7 +16,7 @@ struct AgentEntry: Codable, Identifiable, Equatable {
 
 struct SettingsAgentsTab: View {
     @EnvironmentObject var googleOAuthManager: GoogleOAuthManager
-    @EnvironmentObject var gitHubOAuthManager: GitHubOAuthManager
+    @EnvironmentObject var gitHubOAuthManager: GithubOAuthManager
 
     @Binding var agents: [AgentEntry]
     @Binding var showAddAgent: Bool
@@ -37,6 +38,8 @@ struct SettingsAgentsTab: View {
     // Managed Agents
     @State private var googleAgentAccount: String = ""
     @State private var githubAgentAccount: String = ""
+
+    let logger = Logger(subsystem: "com.thisisnsh.mac.AIThing", category: "SettingsAgentsTab")
 
     var body: some View {
         VStack(alignment: .leading, spacing: 16) {
@@ -68,10 +71,12 @@ struct SettingsAgentsTab: View {
                     )
                     .environmentObject(googleOAuthManager)
                     Divider()
-                    ManagedAgentRow(
+                    GithubManagedAgentRow(
                         icon: "github",
                         title: "GitHub",
+                        subheading: $githubAgentAccount,
                     )
+                    .environmentObject(gitHubOAuthManager)
                     Divider()
                     ManagedAgentRow(
                         icon: "notion",
@@ -95,6 +100,11 @@ struct SettingsAgentsTab: View {
                     if googleOAuthManager.enabled.count > 0 {
                         if let user = googleOAuthManager.user {
                             googleAgentAccount = user.profile?.name ?? "Error"
+                        }
+                    }
+                    if gitHubOAuthManager.enabled.count > 0 {
+                        if let user = gitHubOAuthManager.user {
+                            githubAgentAccount = user.name ?? "Error"
                         }
                     }
                 }
@@ -223,139 +233,6 @@ struct SettingsAgentsTab: View {
         }
         .frame(maxWidth: .infinity, alignment: .leading)
     }
-}
-
-private struct GoogleManagedAgentRow: View {
-    @EnvironmentObject var google: GoogleOAuthManager
-    let icon: String
-    let title: String
-    @Binding var subheading: String
-    @State private var exapanded = false
-
-    var body: some View {
-        VStack {
-            Button {
-                exapanded.toggle()
-            } label: {
-                HStack {
-                    Image(icon).resizable().frame(width: 16, height: 16)
-                    VStack(alignment: .leading, spacing: 2) {
-                        RowTitle(title)
-                        if !subheading.isEmpty {
-                            RowSub(subheading)
-                        }
-                    }
-                    Spacer()
-                    Image(systemName: "chevron.right")
-                        .frame(width: 10, height: 10)
-                }
-            }
-            .buttonStyle(.plain)
-
-            if exapanded {
-                ForEach(
-                    google.toolScopesMap.keys.sorted(by: { $0.rawValue < $1.rawValue }),
-                    id: \.self
-                ) { tool in
-
-                    VStack {
-                        Divider()
-                        HStack {
-                            Text(tool.rawValue).font(.system(size: 12, weight: .medium))
-                            Spacer()
-                            Toggle(
-                                "",
-                                isOn: Binding(
-                                    get: { google.enabled.contains(tool) },
-                                    set: { newValue in
-                                        Task {
-                                            if newValue {
-                                                google.enabled.insert(tool)
-                                                if let user = await google.generateToken(
-                                                    refresh: false
-                                                ) {
-                                                    subheading = user.profile?.name ?? "Error"
-                                                } else {
-                                                    google.enabled.remove(tool)
-                                                }
-                                            } else {
-                                                google.enabled.remove(tool)
-                                                if google.enabled.count == 0 {
-                                                    google.resetToken()
-                                                }
-                                            }
-                                        }
-                                    }
-                                )
-                            )
-                            .toggleStyle(.switch).tint(.black).scaleEffect(0.7)
-                        }
-                    }
-                    .padding(.horizontal, 8)
-                }
-            }
-
-        }
-        .padding(4)
-    }
-}
-
-private struct ManagedAgentRow: View {
-    let icon: String
-    let title: String
-
-    var body: some View {
-        HStack {
-            Image(icon).resizable().frame(width: 16, height: 16)
-            RowTitle(title)
-            Spacer()
-            RowSub("Coming Soon")
-        }
-        .padding(4)
-        .opacity(0.5)
-    }
-}
-
-private struct AgentRow: View {
-    let agent: AgentEntry
-    let toggle: (Bool) -> Void
-    let delete: () -> Void
-
-    var body: some View {
-        HStack(alignment: .top) {
-            VStack(alignment: .leading, spacing: 2) {
-                switch agent.entry {
-                case let .url(name, url):
-                    RowTitle(name)
-                    RowSub("URL: \(url)")
-                case let .urlWithToken(name, url, token):
-                    RowTitle(name)
-                    RowSub("URL: \(url)\nToken: \(token.prefix(4))...\(token.suffix(4))")
-                case let .command(name, command, arguments):
-                    RowTitle(name)
-                    RowSub("Command: \(command)\nArguments: [\(arguments.joined(separator: " "))]")
-                }
-            }
-
-            Spacer()
-
-            Toggle("", isOn: .init(get: { agent.isEnabled }, set: toggle))
-                .toggleStyle(.switch)
-                .tint(.black)
-                .scaleEffect(0.7)
-
-            Button(action: delete) { Image(systemName: "trash") }
-                .buttonStyle(.borderless)
-        }
-        .padding(4)
-    }
-}
-
-private func RowTitle(_ text: String) -> some View {
-    Text(text).font(.system(size: 14, weight: .medium))
-}
-private func RowSub(_ text: String) -> some View {
-    Text(text).font(.system(size: 10, weight: .medium)).opacity(0.5)
 }
 
 private struct AddAgentForm: View {

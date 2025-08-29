@@ -8,6 +8,7 @@
 import FirebaseAuth
 import FirebaseFirestore
 import Foundation
+import os
 
 struct Profile: Codable {
     var id: String
@@ -32,6 +33,7 @@ struct PlanOrder: Codable {
 
 class FirestoreManager: ObservableObject {
     let db = Firestore.firestore()
+    let logger = Logger(subsystem: "com.thisisnsh.mac.AIThing", category: "FirestoreManager")
 
     func getBreakglass() async -> Bool {
         do {
@@ -267,7 +269,9 @@ extension FirestoreManager {
                 action: "fetch_credits_error_plan_details",
                 status: "failure"
             )
-            logger.error("[FirestoreManager] Error fetching PlanDetails: \(error.localizedDescription)")
+            logger.error(
+                "[FirestoreManager] Error fetching PlanDetails: \(error.localizedDescription)"
+            )
         }
         return result
     }

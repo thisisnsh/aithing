@@ -15,6 +15,7 @@ import Logging
 import OAuthSwift
 import ServiceManagement
 import SwiftUI
+import os
 
 class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate {
     var floatingWindow: NonActivatingPanel!
@@ -38,13 +39,6 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate {
             object: nil
         )
 
-        NSAppleEventManager.shared().setEventHandler(
-            self,
-            andSelector: #selector(handleGetURL(event:withReplyEvent:)),
-            forEventClass: AEEventClass(kInternetEventClass),
-            andEventID: AEEventID(kAEGetURL)
-        )
-
         LoggingSystem.bootstrap { label in
             var handler = StreamLogHandler.standardOutput(label: label)
             handler.logLevel = .info
@@ -60,15 +54,8 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate {
 
     }
 
-    @objc func handleGetURL(event: NSAppleEventDescriptor!, withReplyEvent: NSAppleEventDescriptor!)
-    {
-        if let urlString = event.paramDescriptor(forKeyword: AEKeyword(keyDirectObject))?
-            .stringValue, let url = URL(string: urlString)
-        {
-            if url.host() == "aithing-oauth-callback" {
-                OAuthSwift.handle(url: url)
-            }
-        }
+    func application(_ application: NSApplication, open urls: [URL]) {
+        for url in urls { OAuthSwift.handle(url: url) }
     }
 
     func applicationShouldTerminate(_ sender: NSApplication) -> NSApplication.TerminateReply {

@@ -1,5 +1,5 @@
 import Foundation
 
 func foo() {
-    var bar: Bool = true
+    var _: Bool = true
 }

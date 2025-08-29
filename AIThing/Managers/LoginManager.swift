@@ -9,6 +9,7 @@ import FirebaseAuth
 import FirebaseCore
 import GoogleSignIn
 import SwiftUI
+import os
 
 struct AppUser {
     let uid: String
@@ -37,6 +38,7 @@ class LoginManager: ObservableObject {
     @Published var isLoading = false
 
     private var authStateListener: AuthStateDidChangeListenerHandle?
+    let logger = Logger(subsystem: "com.thisisnsh.mac.AIThing", category: "LoginManager")
 
     init() {
         setupAuthStateListener()

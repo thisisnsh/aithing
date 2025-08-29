@@ -9,11 +9,14 @@ import Firebase
 import Foundation
 import GoogleSignIn
 import SwiftUI
+import os
 
 @MainActor
 class GoogleOAuthManager: ObservableObject {
     @Published var user: GIDGoogleUser?
     @Published var enabled: Set<GoogleTool> = []
+
+    let logger = Logger(subsystem: "com.thisisnsh.mac.AIThing", category: "GoogleOAuthManager")
 
     func generateToken(refresh: Bool) async -> GIDGoogleUser? {
         do {

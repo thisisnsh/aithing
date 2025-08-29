@@ -9,6 +9,7 @@ import Foundation
 import Logging
 import MCP
 import System
+import os
 
 class MCPManager: ObservableObject {
     var reconnecting: [String: Bool] = [:]
@@ -23,6 +24,9 @@ class MCPManager: ObservableObject {
     var serverInputPipe: [String: Pipe] = [:]
     var serverOutputPipe: [String: Pipe] = [:]
     var process: [String: Process] = [:]
+
+    var logger = os.Logger(subsystem: "com.thisisnsh.mac.AIThing", category: "MCPManager")
+    var loggingLogger = Logging.Logger(label: "com.thisisnsh.mac.AIThing")
 
     init() {}
 
@@ -68,7 +72,7 @@ class MCPManager: ObservableObject {
             let transport = StdioTransport(
                 input: serverOutput,
                 output: serverInput,
-                logger: logger
+                logger: loggingLogger
             )
 
             try process.run()
@@ -114,7 +118,7 @@ class MCPManager: ObservableObject {
                 configuration: configuration,
                 streaming: httpURL.hasSuffix("/sse/") || httpURL.hasSuffix("/sse"),
                 sseInitializationTimeout: 10,
-                logger: logger
+                logger: loggingLogger
             )
 
             try await client.connect(transport: transport)
