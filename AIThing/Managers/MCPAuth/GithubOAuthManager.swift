@@ -103,20 +103,20 @@ class GithubOAuthManager: ObservableObject {
 
     enum GithubTool: String, CaseIterable, Identifiable {
         // default case context = "User and org context"
-        case actions = "CI/CD workflows"
-        case codeSecurity = "Code scanning alerts"
-        case dependabot = "Dependabot alerts"
-        case discussions = "Repo discussions"
+        case actions = "CI/CD Workflows"
+        case codeSecurity = "Code Scanning Alerts"
+        case dependabot = "Dependabot Alerts"
+        case discussions = "Discussions"
         // case experiments = "Experimental features"
-        case gists = "Gist operations"
-        case issues = "Issue tracking"
-        case notifications = "User notifications"
-        case orgs = "Organization search"
-        case pullRequests = "Pull requests"
-        case repos = "Repository operations"
-        case secretProtection = "Secret scanning"
-        case securityAdvisories = "Security advisories"
-        case users = "User search"
+        case gists = "Gist"
+        case issues = "Issues"
+        case notifications = "Notifications"
+        case orgs = "Organization"
+        case pullRequests = "Pull Requests"
+        case repos = "Repository"
+        case secretProtection = "Secret Scanning"
+        case securityAdvisories = "Security Advisories"
+        case users = "User Search"
 
         var id: String { rawValue }
     }
