@@ -17,6 +17,7 @@ struct AgentEntry: Codable, Identifiable, Equatable {
 struct SettingsAgentsTab: View {
     @EnvironmentObject var googleOAuthManager: GoogleOAuthManager
     @EnvironmentObject var gitHubOAuthManager: GithubOAuthManager
+    @EnvironmentObject var notionOAuthManager: NotionOAuthManager
 
     @Binding var agents: [AgentEntry]
     @Binding var showAddAgent: Bool
@@ -38,26 +39,12 @@ struct SettingsAgentsTab: View {
     // Managed Agents
     @State private var googleAgentAccount: String = ""
     @State private var githubAgentAccount: String = ""
+    @State private var notionAgentAccount: String = ""
 
     let logger = Logger(subsystem: "com.thisisnsh.mac.AIThing", category: "SettingsAgentsTab")
 
     var body: some View {
         VStack(alignment: .leading, spacing: 16) {
-            GroupBox {
-                HStack {
-                    Text(
-                        """
-                        Learn more about [Managed Agents](https://aithing.dev/features/multiple-agents#managed-agents) and what they can do. 
-                        Need help? Visit [Troubleshooting](https://aithing.dev/errors/agent-troubleshooting).
-                        """
-                    )
-                    .font(.system(size: 10, weight: .medium))
-                    .padding(4)
-                    Spacer()
-                }
-                .padding(.vertical, 4)
-            }
-
             GroupBox(
                 label: Text("Managed Agents")
                     .font(.system(size: 10, weight: .medium))
@@ -78,20 +65,26 @@ struct SettingsAgentsTab: View {
                     )
                     .environmentObject(gitHubOAuthManager)
                     Divider()
-                    ManagedAgentRow(
+                    NotionManagedAgentRow(
                         icon: "notion",
                         title: "Notion",
+                        subheading: $notionAgentAccount,
                     )
+                    .environmentObject(notionOAuthManager)
                     Divider()
                     ManagedAgentRow(
                         icon: "slack",
                         title: "Slack",
                     )
                     Divider()
-                    Text("More Agents Coming Soon.\nRequest specifc agents via help@aithing.dev.")
-                        .font(.system(size: 10, weight: .medium))
-                        .padding(.vertical, 4)
-                        .opacity(0.5)
+                    Text(
+                        """
+                        Learn what you can do using these [Managed Agents](https://aithing.dev/features/multiple-agents#managed-agents).
+                        Need help? Visit the [Troubleshooting](https://aithing.dev/errors/agent-troubleshooting) page.
+                        """
+                    )
+                    .font(.system(size: 10, weight: .medium))
+                    .padding(.vertical, 4)
                 }
                 .padding(4)
             }
@@ -99,12 +92,17 @@ struct SettingsAgentsTab: View {
                 Task {
                     if googleOAuthManager.enabled.count > 0 {
                         if let user = googleOAuthManager.user {
-                            googleAgentAccount = user.profile?.name ?? "Error"
+                            googleAgentAccount = user.profile?.name ?? ""
                         }
                     }
                     if gitHubOAuthManager.enabled.count > 0 {
                         if let user = gitHubOAuthManager.user {
-                            githubAgentAccount = user.name ?? "Error"
+                            githubAgentAccount = user.name ?? ""
+                        }
+                    }
+                    if notionOAuthManager.enabled.count > 0 {
+                        if let user = notionOAuthManager.user {
+                            notionAgentAccount = user.name ?? ""
                         }
                     }
                 }

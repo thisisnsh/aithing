@@ -88,6 +88,7 @@ struct ContentView: View {
     // Best way is to disable then and enable to fetch new token
     @StateObject private var googleOAuthManager = GoogleOAuthManager()
     @StateObject private var githubOAuthManager = GithubOAuthManager()
+    @StateObject private var notionOAuthManager = NotionOAuthManager()
 
     var body: some View {
         ZStack(alignment: .top) {
@@ -228,6 +229,7 @@ struct ContentView: View {
         .environmentObject(firestoreManager)
         .environmentObject(googleOAuthManager)
         .environmentObject(githubOAuthManager)
+        .environmentObject(notionOAuthManager)
     }
 
     func History() -> some View {
@@ -732,6 +734,37 @@ struct ContentView: View {
             )
             allClientTools[clientName] = tools
             logger.debug("Github Enabled Capabilities: \(tools)")
+        }
+        
+        if notionOAuthManager.enabled.count > 0 {
+            let clientName = "managed_notion_mcp"
+            var accessToken: String?
+            var refreshedAccessToken: String?
+
+            if notionOAuthManager.user != nil {
+                accessToken = notionOAuthManager.user?.accessToken
+                logger.debug("AccessToken \(String(describing: accessToken))")
+            }
+            if let user = await notionOAuthManager.generateToken(refresh: true) {
+                refreshedAccessToken = user.accessToken
+                // If token has been refreshed OR client does not exist
+                logger.debug("RefreshedAccessToken \(String(describing: refreshedAccessToken))")
+                if accessToken != refreshedAccessToken || !mcp.clientExists(clientName: clientName)
+                {
+                    logger.debug("Reconnecting Notion Agent")
+                    _ = await mcp.reconnect(
+                        clientName: clientName,
+                        url: "https://mcp.notion.com/mcp",
+                        authToken: refreshedAccessToken!
+                    )
+                }
+            }
+            let tools = await mcp.getTools(
+                clientName: clientName,
+                filter: notionOAuthManager.enabledCapabilities()
+            )
+            allClientTools[clientName] = tools
+            logger.debug("Notion Enabled Capabilities: \(tools)")
         }
     }
 }

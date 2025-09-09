@@ -2,12 +2,20 @@
 
 ------------------------ 
 
-Thursday
+Tuesday
 - Notion mcp
+- Notion mcp doc update based on tool classes
+- Remove credits
+- Firebase notification bar based on config 
+- Github Config fetch from firebase
+
+Wednesday
+- Allow openai models 
+
+Thursday
+- Release 1.6
 
 Later
-- Release 1.6
-- Github Agent Scopes & Secret Fetch
 - Get Google Review
 - Make Ads
 - Post Reddit 
@@ -18,7 +26,6 @@ Later
 Missing Features
 - Tool based Agent Credit
 - Get max agent from firebase 
-- Integrate GitHub
 - No Audio recording 
 - Understand you and suggest things based on time and this
 - No Elicitation 

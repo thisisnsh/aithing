@@ -8,6 +8,7 @@ struct SettingsView: View {
 
     @EnvironmentObject var googleOAuthManager: GoogleOAuthManager
     @EnvironmentObject var gitHubOAuthManager: GithubOAuthManager
+    @EnvironmentObject var notionOAuthManager: NotionOAuthManager
 
     @Binding var isPresented: Bool
     var setPanelVisibility: () -> Void
@@ -90,6 +91,7 @@ struct SettingsView: View {
                         )
                         .environmentObject(googleOAuthManager)
                         .environmentObject(gitHubOAuthManager)
+                        .environmentObject(notionOAuthManager)
 
                     case .preferences:
                         SettingsPreferencesTab(
