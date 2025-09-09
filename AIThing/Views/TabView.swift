@@ -160,6 +160,13 @@ struct TabView: View {
                     screenClass: "tab_view"
                 )
             }
+            .task {
+                let notification = await firestoreManager.getNotification() ?? ""
+                if !notification.isEmpty {
+                    modelOutput = notification
+                    showResponseArea = true
+                }
+            }
             .onChange(of: isFocused) { newValue in
                 // Delay size change when in focus so that other
                 // views not in focus adjust height first

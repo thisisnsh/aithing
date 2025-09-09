@@ -4,9 +4,8 @@
 
 Tuesday
 
-- Update doc bout credit and free
+- Update doc about credit and free
 
-- Firebase notification bar based on config 
 - Github Config fetch from firebase
 
 

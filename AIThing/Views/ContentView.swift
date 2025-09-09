@@ -157,7 +157,6 @@ struct ContentView: View {
             default:
                 AnalyticsManager.shared.setUserId(nil)
             }
-
             managedModels = await firestoreManager.getModelInfos()
             await loadAllClientTools()
         }
