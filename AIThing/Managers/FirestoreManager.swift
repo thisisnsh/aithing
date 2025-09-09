@@ -10,6 +10,12 @@ import FirebaseFirestore
 import Foundation
 import os
 
+struct Usage: Codable {
+    var query: Int = 0
+    var agentUse: Int = 0
+    var filesAttached: Int = 0
+}
+
 struct Profile: Codable {
     var id: String
     var name: String?
@@ -19,6 +25,7 @@ struct Profile: Codable {
     var blocked: Bool
     var apiKeyAnthropic: String
     var apiKeyOpenAI: String
+    var usageData: Usage?
 }
 
 struct PlanDetail: Codable {
@@ -37,7 +44,7 @@ class FirestoreManager: ObservableObject {
 
     func getBreakglass() async -> Bool {
         do {
-            let snapshot = try await db.collection("System").document("Configs-1.4").getDocument()
+            let snapshot = try await db.collection("System").document("Configs-1.6").getDocument()
             guard let data = snapshot.data() else { return false }
             guard let breakglass = data["breakglass"] as? Bool else { return false }
             AnalyticsManager.shared.customFirestore(action: "get_breakglass", status: "success")
@@ -53,7 +60,7 @@ class FirestoreManager: ObservableObject {
 
     func getExpired() async -> Bool {
         do {
-            let snapshot = try await db.collection("System").document("Configs-1.4").getDocument()
+            let snapshot = try await db.collection("System").document("Configs-1.6").getDocument()
             guard let data = snapshot.data() else { return false }
             guard let expired = data["expired"] as? Bool else { return false }
             AnalyticsManager.shared.customFirestore(action: "get_expired", status: "success")
@@ -69,7 +76,7 @@ class FirestoreManager: ObservableObject {
 
     func getApiKeyAnthropic() async -> String {
         do {
-            let snapshot = try await db.collection("System").document("Configs-1.4").getDocument()
+            let snapshot = try await db.collection("System").document("Configs-1.6").getDocument()
             guard let data = snapshot.data() else { return "" }
             guard let apiKeyAnthropic = data["apiKeyAnthropic"] as? String else { return "" }
             AnalyticsManager.shared.customFirestore(
@@ -91,7 +98,7 @@ class FirestoreManager: ObservableObject {
 
     func getDefaultCredits() async -> Int? {
         do {
-            let snapshot = try await db.collection("System").document("Configs-1.4").getDocument()
+            let snapshot = try await db.collection("System").document("Configs-1.6").getDocument()
             guard let data = snapshot.data() else { return nil }
             guard let defaultCredits = data["defaultCredits"] as? Int else { return nil }
             AnalyticsManager.shared.customFirestore(
@@ -106,6 +113,28 @@ class FirestoreManager: ObservableObject {
             )
             logger.error(
                 "[FirestoreManager] Error fetching defaultCredits: \(error.localizedDescription)"
+            )
+            return nil
+        }
+    }
+
+    func getNotification() async -> String? {
+        do {
+            let snapshot = try await db.collection("System").document("Configs-1.6").getDocument()
+            guard let data = snapshot.data() else { return nil }
+            guard let notification = data["notification"] as? String else { return nil }
+            AnalyticsManager.shared.customFirestore(
+                action: "get_notification",
+                status: "success"
+            )
+            return notification
+        } catch {
+            AnalyticsManager.shared.customFirestore(
+                action: "get_notification",
+                status: "failure"
+            )
+            logger.error(
+                "[FirestoreManager] Error fetching notification: \(error.localizedDescription)"
             )
             return nil
         }
@@ -149,9 +178,9 @@ class FirestoreManager: ObservableObject {
             creditsUsed: 0,
             blocked: false,
             apiKeyAnthropic: apiKeyAnthropic,
-            apiKeyOpenAI: ""
+            apiKeyOpenAI: "",
+            usageData: Usage()
         )
-
         do {
             try db.collection("Profiles").document(id).setData(from: profile)
             AnalyticsManager.shared.customFirestore(action: "create_profile", status: "success")
@@ -177,6 +206,24 @@ class FirestoreManager: ObservableObject {
             AnalyticsManager.shared.customFirestore(action: "increment_credit", status: "failure")
             logger.error(
                 "[FirestoreManager] Error incrementing creditsUsed by \(amount) for ID \(id): \(error.localizedDescription)"
+            )
+        }
+    }
+    
+    func incrementUsage(user: AppUser, usage: Usage) async {
+        let id = user.uid
+        
+        do {
+            try await db.collection("Profiles").document(id).updateData([
+                "usageData.query": FieldValue.increment(Int64(usage.query)),
+                "usageData.agentUse": FieldValue.increment(Int64(usage.agentUse)),
+                "usageData.filesAttached": FieldValue.increment(Int64(usage.filesAttached))
+            ])
+            AnalyticsManager.shared.customFirestore(action: "increment_usage", status: "success")
+        } catch {
+            AnalyticsManager.shared.customFirestore(action: "increment_usage", status: "failure")
+            logger.error(
+                "[FirestoreManager] Error incrementing usage for ID \(id): \(error.localizedDescription)"
             )
         }
     }

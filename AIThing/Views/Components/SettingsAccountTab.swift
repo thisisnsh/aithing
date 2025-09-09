@@ -11,8 +11,7 @@ struct SettingsAccountTab: View {
     let authState: AuthState
     let signIn: () async -> Void
     let signOut: () async -> Void
-    let creditsUsed: Int
-    let creditsTotal: Int
+    let usageData: Usage
     let onHistory: () -> Void
 
     var body: some View {
@@ -49,50 +48,45 @@ struct SettingsAccountTab: View {
                     .padding(4)
 
                     Divider()
-
                     dimmedRow(icon: "apple", text: "Apple", trailing: "Coming Soon")
                     Divider()
-                    dimmedRow(
-                        systemIcon: "key.fill",
-                        text: "Custom SSO",
-                        trailing: "Enterprise Plan Required"
-                    )
+                    dimmedRow(icon: "github", text: "GitHub", trailing: "Coming Soon")
+
                 }
                 .padding(4)
             }
 
             GroupBox(label: title("Usage")) {
-                VStack(alignment: .leading) {
-                    HStack {
-                        Text("Credits").font(.system(size: 14, weight: .medium))
-                        Text("used / total")
+                HStack(alignment: .bottom) {
+                    HStack(alignment: .bottom) {
+                        Text("\(usageData.query)")
+                            .font(.system(size: 14, weight: .medium))
+                        Text(usageData.query > 1 ? "Queries" : "Query")
                             .font(.system(size: 10, weight: .medium))
                             .opacity(0.5)
-                            .frame(maxHeight: .infinity, alignment: .bottom)
-                        Spacer()
-                        Text("\(creditsUsed) / \(creditsTotal)")
-                            .font(.system(size: 10, weight: .medium))
                     }
                     .padding(4)
-
-                    Link(
-                        "Get More Credits",
-                        destination: URL(string: "https://get.aithing.dev")!
-                    )
-                    .foregroundStyle(.white)
-                    .font(.system(size: 12, weight: .medium))
-                    .padding(.vertical, 4)
-                    .padding(.horizontal, 8)
-                    .background(Color.black.opacity(0.2))
-                    .clipShape(RoundedRectangle(cornerRadius: 4))
-                    .onHover { perform in
-                        if perform {
-                            AnalyticsManager.shared.selectItem(
-                                itemID: "get_more_credits_hover",
-                                itemName: "get_more_credits_hover"
-                            )
-                        }
+                    Spacer()
+                    Divider()
+                    HStack(alignment: .bottom) {
+                        Text("\(usageData.agentUse)")
+                            .font(.system(size: 14, weight: .medium))
+                        Text(usageData.agentUse > 1 ? "Agent Uses" : "Agent Use")
+                            .font(.system(size: 10, weight: .medium))
+                            .opacity(0.5)
                     }
+                    .padding(4)
+                    Spacer()
+                    Divider()
+                    HStack(alignment: .bottom) {
+                        Text("\(usageData.filesAttached)")
+                            .font(.system(size: 14, weight: .medium))
+                        Text(usageData.filesAttached > 1 ? "Attached Files" : "Attached File")
+                            .font(.system(size: 10, weight: .medium))
+                            .opacity(0.5)
+                    }
+                    .padding(4)
+                    Spacer()
                 }
                 .padding(4)
             }
@@ -102,7 +96,7 @@ struct SettingsAccountTab: View {
                     onHistory()
                 } label: {
                     HStack {
-                        Text("Per-Conversation Usage").font(.system(size: 14, weight: .medium))
+                        Text("See Conversations").font(.system(size: 14, weight: .medium))
                         Spacer()
                         Image(systemName: "chevron.right")
                             .frame(width: 10, height: 10)

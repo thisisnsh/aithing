@@ -72,7 +72,6 @@ final class NotionOAuthManager: ObservableObject {
 
             // Full OAuth authorization
             let cred = try await authorizeInteractively(oauth: oauth)
-            print(cred.oauthToken)
             let profile = try await fetchProfile(accessToken: cred.oauthToken)
             let merged = merge(profile: profile, credential: cred)
             self.user = merged
@@ -292,8 +291,6 @@ extension NotionOAuthManager {
         req.setValue("2022-06-28", forHTTPHeaderField: "Notion-Version")
 
         let (data, resp) = try await URLSession.shared.data(for: req)
-        print(data)
-        print(resp)
         guard let http = resp as? HTTPURLResponse, (200..<300).contains(http.statusCode) else {
             throw NotionOAuthError.invalidHTTPResponse
         }

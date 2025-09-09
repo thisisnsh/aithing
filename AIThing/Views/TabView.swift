@@ -755,8 +755,8 @@ struct TabView: View {
                         ]
                     )
                 case .pdf(_, _, _, let base64s):
+                    fileCount += 1
                     for base64 in base64s {
-                        fileCount += 1
                         AnalyticsManager.shared.customEventTab(action: "file_upload_pdf_page")
                         modelInput.append(
                             [
@@ -874,7 +874,7 @@ struct TabView: View {
 
                     Required: \(total) Credit\(total > 1 ? "s" : "")
                     - 1 \(query.isEmpty ? "Agent Use" : "Query"): \(costPerQuery) Credit\(costPerQuery > 1 ? "s" : "")
-                    - \(fileCount) Attached Files/Pages: \(costFile) Credit\(costFile > 1 ? "s" : "")
+                    - \(fileCount) Attached Files: \(costFile) Credit\(costFile > 1 ? "s" : "")
                     - \(modelAgentCount) Agent\(modelAgentCount > 1 ? "s" : "") Enabled: \(costAgent) Credit\(costAgent > 1 ? "s" : "")
 
                     Learn more about [usage and credits](https://aithing.dev/billing/usage).
@@ -951,7 +951,28 @@ struct TabView: View {
             }
 
             if let appUser {
-                if !byok {
+                let usage = Usage(
+                    query: (query.isEmpty ? 0 : 1),
+                    agentUse: (query.isEmpty ? 1 : 0),
+                    filesAttached: fileCount
+                )
+                await firestoreManager.incrementUsage(user: appUser, usage: usage)
+
+                if byok {
+                    modelInput.append([
+                        "role": "usage",
+                        "content": [
+                            [
+                                "type": "text",
+                                "text": """
+                                Total Usage:
+                                1 \(query.isEmpty ? "Agent Use" : "Query")
+                                \(fileCount) Attached Files                                
+                                """,
+                            ]
+                        ],
+                    ])
+                } else {
                     await firestoreManager.incrementCredits(user: appUser, by: total)
                     modelInput.append([
                         "role": "usage",

@@ -42,12 +42,15 @@ func getSelectedTab() -> SettingsTab {
 }
 
 func getByokSelected() -> Bool {
-    UserDefaults.standard.bool(forKey: "ByokSelected")
+    return true
+    // Default true.
+    // Previously
+    // UserDefaults.standard.bool(forKey: "ByokSelected")
 }
 
 func setByokSelected(value: Bool) {
     UserDefaults.standard.set(
-        value,
+        true, // Default true. Previously: value,
         forKey: "ByokSelected"
     )
 }

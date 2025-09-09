@@ -130,8 +130,8 @@ struct SettingsModelTab: View {
                                 Text(
                                     """
                                     Billed by [Anthropic](https://console.anthropic.com/settings/billing) 
-                                    Not by AI Thing
                                     """
+                                    // Not by AI Thing
                                 )
                                 .font(.system(size: 10, weight: .medium))
                                 .multilineTextAlignment(.trailing)
@@ -173,11 +173,6 @@ struct SettingsModelTab: View {
                                 .frame(width: 16, height: 16)
                             Text("Use Your Own Key").font(.system(size: 14, weight: .medium))
                             Spacer()
-                            Toggle("", isOn: $byokSelected)
-                                .toggleStyle(.switch)
-                                .tint(.black)
-                                .scaleEffect(0.7)
-
                         }
                         .padding(4)
                         .contentShape(Rectangle())
@@ -195,42 +190,14 @@ struct SettingsModelTab: View {
                         }
 
                         Text(
-                            "You will need to purchase credits at [Anthropic](https://console.anthropic.com/settings/billing). Using own key will not deduct credits from your AI Thing account."
+                            "You will need to purchase credits at [Anthropic](https://console.anthropic.com/settings/billing)."
+                            // Using own key will not deduct credits from your AI Thing account.
                         )
                         .font(.system(size: 10, weight: .medium))
                         .padding(4)
                         .lineLimit(nil)
                         .fixedSize(horizontal: false, vertical: true)
                         .opacity(byokSelected ? 1 : 0.5)
-                    }
-                    .padding(4)
-                }
-
-                GroupBox(
-                    label: title("Enterprise Models")
-                ) {
-                    HStack {
-                        Text("Enterprise Plan Required").font(.system(size: 14, weight: .medium))
-                            .opacity(0.5)
-                        Spacer()
-                        Link(
-                            "Join Waitlist",
-                            destination: URL(string: "https://get.aithing.dev/join")!
-                        )
-                        .foregroundStyle(.white)
-                        .font(.system(size: 12, weight: .medium))
-                        .padding(.vertical, 4)
-                        .padding(.horizontal, 8)
-                        .background(Color.black.opacity(0.2))
-                        .clipShape(RoundedRectangle(cornerRadius: 4))
-                        .onHover { perform in
-                            if perform {
-                                AnalyticsManager.shared.selectItem(
-                                    itemID: "join_waitlist_model_hover",
-                                    itemName: "join_waitlist_model_hover"
-                                )
-                            }
-                        }
                     }
                     .padding(4)
                 }

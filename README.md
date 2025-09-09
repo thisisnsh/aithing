@@ -3,11 +3,16 @@
 ------------------------ 
 
 Tuesday
-- Notion mcp
-- Notion mcp doc update based on tool classes
-- Remove credits
+
+- Update doc bout credit and free
+- history and settings same width 
+
 - Firebase notification bar based on config 
 - Github Config fetch from firebase
+
+
+
+
 
 Wednesday
 - Allow openai models 

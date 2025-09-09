@@ -21,7 +21,7 @@ struct SettingsView: View {
     @State private var apiKey: String = getAnthropicAPIKey() ?? ""
     @FocusState private var apiKeyFieldFocused: Bool
     @State private var modelSelected: String = getModel()
-    @State private var byokSelected: Bool = getByokSelected()
+    @State private var byokSelected: Bool = true // Always true. Previously: getByokSelected()
 
     // Agents
     @State private var agents: [AgentEntry] = getAgentEntries()
@@ -39,9 +39,8 @@ struct SettingsView: View {
     @State private var preferencesShowInScreenshot = getPreferencesShowInScreenshot()
     @State private var preferencesCaptureFullScreen = getPreferencesCaptureFullScreen()
 
-    // Account/Credits
-    @State private var creditsTotal = 0
-    @State private var creditsUsed = 0
+    // Usage
+    @State private var usageData: Usage = Usage()
 
     private func updatePassthrough(inside: Bool) { setPanelPassthrough(!inside) }
 
@@ -57,8 +56,7 @@ struct SettingsView: View {
                             authState: loginManager.authState,
                             signIn: { await signIn() },
                             signOut: { await signOut() },
-                            creditsUsed: creditsUsed,
-                            creditsTotal: creditsTotal,
+                            usageData: usageData,
                             onHistory: { self.onHistory() }
                         )
 
@@ -112,7 +110,7 @@ struct SettingsView: View {
         }
         .onHover(perform: updatePassthrough)
         .task {
-            await getCredits()
+            await getUsageData()
             AnalyticsManager.shared.screenView(
                 screenName: "settings_view",
                 screenClass: "settings_view"
@@ -250,34 +248,26 @@ struct SettingsView: View {
             AnalyticsManager.shared.setUserId(nil)
         }
 
-        await getCredits()
+        await getUsageData()
         AnalyticsManager.shared.login(method: "google")
     }
 
     func signOut() async {
         loginManager.signOut()
-        creditsTotal = 0
-        creditsUsed = 0
+        usageData = Usage()
         AnalyticsManager.shared.setUserId(nil)
     }
 
-    func getCredits() async {
+    func getUsageData() async {
         switch loginManager.authState {
         case .signedIn(let user):
             guard let profile = await firestoreManager.getProfile(user: user) else {
-                creditsTotal = 0
-                creditsUsed = 0
+                usageData = Usage()
                 return
             }
-            creditsUsed = profile.creditsUsed
-
-            let creditsPlans = await firestoreManager.fetchCreditsPlans(
-                email: profile.email
-            )
-            creditsTotal = profile.creditsTotal + creditsPlans
+            usageData = profile.usageData ?? Usage()
         default:
-            creditsTotal = 0
-            creditsUsed = 0
+            usageData = Usage()
         }
     }
 

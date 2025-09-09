@@ -51,6 +51,15 @@ struct SettingsAgentsTab: View {
                     .padding(.bottom, 4)
             ) {
                 VStack(alignment: .leading) {
+                    Text(
+                        """
+                        Learn what you can do with [Managed Agents](https://aithing.dev/features/multiple-agents#managed-agents).
+                        """
+                    )
+                    .font(.system(size: 10, weight: .medium))
+                    .padding(.vertical, 4)
+                    .foregroundStyle(.secondary)
+                    Divider()
                     GoogleManagedAgentRow(
                         icon: "google",
                         title: "Google Workspace",
@@ -79,12 +88,13 @@ struct SettingsAgentsTab: View {
                     Divider()
                     Text(
                         """
-                        Learn what you can do using these [Managed Agents](https://aithing.dev/features/multiple-agents#managed-agents).
                         Need help? Visit the [Troubleshooting](https://aithing.dev/errors/agent-troubleshooting) page.
+                        Request more Managed Agents via help@aithing.dev.
                         """
                     )
                     .font(.system(size: 10, weight: .medium))
                     .padding(.vertical, 4)
+                    .foregroundStyle(.secondary)
                 }
                 .padding(4)
             }
@@ -195,38 +205,17 @@ struct SettingsAgentsTab: View {
                         Spacer()
                     }
                     .padding(4)
-                }
-            }
-
-            GroupBox(
-                label: Text("Enterprise Agents")
-                    .font(.system(size: 10, weight: .medium))
-                    .padding(.bottom, 4)
-            ) {
-                HStack {
-                    Text("Enterprise Plan Required").font(.system(size: 14, weight: .medium))
-                        .opacity(0.5)
-                    Spacer()
-                    Link(
-                        "Join Waitlist",
-                        destination: URL(string: "https://get.aithing.dev/join")!
+                    
+                    Divider()
+                    Text(
+                        """
+                        Learn more about adding your [own agents](https://aithing.dev/features/multiple-agents#add-your-own-agents).
+                        """
                     )
-                    .foregroundStyle(.white)
-                    .font(.system(size: 12, weight: .medium))
-                    .padding(.vertical, 4)
-                    .padding(.horizontal, 8)
-                    .background(Color.black.opacity(0.2))
-                    .clipShape(RoundedRectangle(cornerRadius: 4))
-                    .onHover { perform in
-                        if perform {
-                            AnalyticsManager.shared.selectItem(
-                                itemID: "join_waitlist_agent_hover",
-                                itemName: "join_waitlist_agent_hover"
-                            )
-                        }
-                    }
+                    .font(.system(size: 10, weight: .medium))
+                    .padding(4)
+                    .foregroundStyle(.secondary)
                 }
-                .padding(4)
             }
         }
         .frame(maxWidth: .infinity, alignment: .leading)
