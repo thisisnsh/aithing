@@ -5,7 +5,6 @@
 Tuesday
 
 - Update doc bout credit and free
-- history and settings same width 
 
 - Firebase notification bar based on config 
 - Github Config fetch from firebase
