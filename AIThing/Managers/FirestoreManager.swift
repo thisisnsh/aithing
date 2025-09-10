@@ -42,6 +42,8 @@ class FirestoreManager: ObservableObject {
     let db = Firestore.firestore()
     let logger = Logger(subsystem: "com.thisisnsh.mac.AIThing", category: "FirestoreManager")
 
+    // MARK: Configs
+    
     func getBreakglass() async -> Bool {
         do {
             let snapshot = try await db.collection("System").document("Configs-1.6").getDocument()
@@ -140,6 +142,40 @@ class FirestoreManager: ObservableObject {
         }
     }
 
+    // MARK: Agents
+
+    struct ManagedGitHubAgent: Codable {
+        var clientId: String
+        var clientSecret: String
+    }
+
+    func getManagedGitHubAgent() async -> ManagedGitHubAgent? {
+        do {
+            let snapshot = try await db.collection("Agents").document("managed_github_agent")
+                .getDocument()
+            if let agent = try? snapshot.data(as: ManagedGitHubAgent.self) {
+                AnalyticsManager.shared.customFirestore(
+                    action: "get_managed_github_agent",
+                    status: "success"
+                )
+                return agent
+            }
+
+            return nil
+        } catch {
+            AnalyticsManager.shared.customFirestore(
+                action: "get_managed_github_agent",
+                status: "failure"
+            )
+            logger.error(
+                "[FirestoreManager] Error fetching get_managed_github_agent: \(error.localizedDescription)"
+            )
+            return nil
+        }
+    }
+
+    // MARK: Others
+
     private func _getProfile(user: AppUser) async -> Profile? {
         let id = user.uid
 
@@ -209,15 +245,15 @@ class FirestoreManager: ObservableObject {
             )
         }
     }
-    
+
     func incrementUsage(user: AppUser, usage: Usage) async {
         let id = user.uid
-        
+
         do {
             try await db.collection("Profiles").document(id).updateData([
                 "usageData.query": FieldValue.increment(Int64(usage.query)),
                 "usageData.agentUse": FieldValue.increment(Int64(usage.agentUse)),
-                "usageData.filesAttached": FieldValue.increment(Int64(usage.filesAttached))
+                "usageData.filesAttached": FieldValue.increment(Int64(usage.filesAttached)),
             ])
             AnalyticsManager.shared.customFirestore(action: "increment_usage", status: "success")
         } catch {

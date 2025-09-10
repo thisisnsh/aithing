@@ -19,16 +19,24 @@ class GithubOAuthManager: ObservableObject {
 
     let logger = Logger(subsystem: "com.thisisnsh.mac.AIThing", category: "GithubOAuthManager")
 
-    private let clientID = ""
-    private let clientSecret = ""
     private let callbackScheme = "oauth-aithing"
     private let callbackURLString = "oauth-aithing://oauth-callback-github"
 
-    // OAuth engine
-    private lazy var oauth: OAuth2Swift = {
+    private(set) var oauth: OAuth2Swift?
+
+    init() {
+        // Kick off async config after init finishes.
+        Task { [weak self] in
+            await self?.configureOAuth()
+        }
+    }
+
+    /// Build `oauth` after fetching the agent.
+    func configureOAuth() async {
+        let agent = await FirestoreManager().getManagedGitHubAgent()
         let oauth = OAuth2Swift(
-            consumerKey: clientID,
-            consumerSecret: clientSecret,
+            consumerKey: agent?.clientId ?? "",
+            consumerSecret: agent?.clientSecret ?? "",
             authorizeUrl: "https://github.com/login/oauth/authorize",
             accessTokenUrl: "https://github.com/login/oauth/access_token",
             responseType: "code"
@@ -37,8 +45,8 @@ class GithubOAuthManager: ObservableObject {
         oauth.accessTokenBasicAuthentification = true
         // macOS handler
         oauth.authorizeURLHandler = MyASWebAuthURLHandler(callbackScheme: callbackScheme)
-        return oauth
-    }()
+        self.oauth = oauth
+    }
 
     // MARK: Public API
 
@@ -330,6 +338,8 @@ extension GithubOAuthManager {
     // MARK: - Interactive auth
 
     private func authorizeInteractively() async throws -> OAuthSwiftCredential {
+        guard let oauth = self.oauth else { throw GithubOAuthError.noClient }
+
         guard let callbackURL = URL(string: callbackURLString) else {
             throw GithubOAuthError.notConfigured
         }
@@ -359,6 +369,11 @@ extension GithubOAuthManager {
 
     private func renewAccessToken(refreshToken: String) async throws -> OAuthSwift.TokenSuccess? {
         try await withCheckedThrowingContinuation { continuation in
+            guard let oauth = oauth else {
+                continuation.resume(throwing: GithubOAuthError.noClient)
+                return
+            }
+
             let _ = oauth.renewAccessToken(withRefreshToken: refreshToken) { result in
                 switch result {
                 case .success(let success):
@@ -401,6 +416,11 @@ extension GithubOAuthManager {
 
     private func githubGET<T: Decodable>(path: String, accessToken: String) async throws -> T {
         try await withCheckedThrowingContinuation { continuation in
+            guard let oauth = oauth else {
+                continuation.resume(throwing: GithubOAuthError.getFailed)
+                return
+            }
+
             let client = oauth.client
             let url = "https://api.github.com/\(path)"
             let headers = ["Accept": "application/vnd.github+json"]
@@ -465,6 +485,9 @@ enum GithubOAuthError: LocalizedError {
     case cancelled
     case invalidHTTPResponse
     case decodeFailed
+    case noClient
+    case refreshFailed
+    case getFailed
 
     var errorDescription: String? {
         switch self {
@@ -473,6 +496,9 @@ enum GithubOAuthError: LocalizedError {
         case .cancelled: return "User cancelled."
         case .invalidHTTPResponse: return "Invalid response from GitHub."
         case .decodeFailed: return "Failed to decode GitHub response."
+        case .noClient: return "Failed to get GitHub client."
+        case .refreshFailed: return "Failed to refresh the GitHub token."
+        case .getFailed: return "Failed to fetch GitHub profile."
         }
     }
 }

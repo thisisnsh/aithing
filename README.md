@@ -6,7 +6,6 @@ Tuesday
 
 - Update doc about credit and free
 
-- Github Config fetch from firebase
 
 
 
