@@ -15,8 +15,99 @@ struct SettingsPreferencesTab: View {
     let setPreferencesCaptureFullScreen: (Bool) -> Void
     let setPanelVisibility: () -> Void
 
+    @State private var outputToken = getOutputToken()
+    @State private var cacheMessage = getCacheMessages()
+
     var body: some View {
         VStack(alignment: .leading, spacing: 16) {
+            GroupBox(label: title("Performance")) {
+                VStack(alignment: .leading) {
+
+                    HStack {
+                        VStack(alignment: .leading) {
+                            Text("5-Minute Prompt Cache")
+                                .font(.system(size: 14, weight: .medium))
+                            Text(
+                                "Reduces processing time and costs for\nfollow-up tasks. Learn More."
+                            )
+                            .font(.system(size: 10, weight: .medium))
+                            .foregroundStyle(.secondary)
+                        }
+
+                        Spacer()
+                        Toggle(
+                            "",
+                            isOn: Binding(
+                                get: { cacheMessage },
+                                set: { value in
+                                    print(value)
+                                    cacheMessage = value
+                                    setCacheMessages(value: value)
+                                }
+                            )
+                        )
+                        .toggleStyle(.switch)
+                        .tint(.black)
+                        .scaleEffect(0.7)
+                    }
+                    .padding(4)
+
+                    Divider()
+
+                    HStack {
+                        VStack(alignment: .leading) {
+                            Text("Maximum Output Tokens")
+                                .font(.system(size: 14, weight: .medium))
+                            Text("Max number of [tokens](https://docs.anthropic.com/en/docs/about-claude/glossary#tokens) a model can generate\nin a single response.")
+                                .font(.system(size: 10, weight: .medium))
+                                .foregroundStyle(.secondary)
+                        }
+
+                        Spacer()
+
+                        Button(action: {
+                            outputToken -= 1024
+                            if outputToken <= 1024 {
+                                outputToken = 1024
+                            }
+                            setOutputToken(value: outputToken)
+                        }) {
+                            Image(systemName: "minus")
+                                .frame(width: 16, height: 16)
+                                .padding(4)
+                                .background(.black.opacity(0.2))
+                                .clipShape(RoundedRectangle(cornerRadius: 4))
+                        }
+                        .buttonStyle(.plain)
+                        .padding(4)
+
+                        Text("\(outputToken)")
+                            .font(.system(size: 14, weight: .medium))
+                            .padding(4)
+
+                        Button(action: {
+                            outputToken += 1024
+                            if outputToken >= 102400 {
+                                outputToken = 102400
+                            }
+                            setOutputToken(value: outputToken)
+                        }) {
+                            Image(systemName: "plus")
+                                .frame(width: 16, height: 16)
+                                .padding(4)
+                                .background(.black.opacity(0.2))
+                                .clipShape(RoundedRectangle(cornerRadius: 4))
+                        }
+                        .buttonStyle(.plain)
+                        .padding(4)
+
+                    }
+                    .padding(4)
+
+                }
+                .padding(4)
+            }
+
             GroupBox(label: title("Look & Feel")) {
                 VStack(alignment: .leading) {
                     PreferenceToggleRow(
@@ -41,7 +132,6 @@ struct SettingsPreferencesTab: View {
                             }
                         }
                     )
-
                     Divider()
 
                     HStack {

@@ -2,20 +2,16 @@
 
 ------------------------ 
 
-Tuesday
-
-- Update doc about credit and free
-
-
-
-
-
-
 Wednesday
-- Allow openai models 
+- Allow OpenAI Models 
+- Detect API key in BYOK b/w Anthropic and OpenAI
+- Change Models based on API Key 
 
 Thursday
 - Release 1.6
+- Update Doc BYOK Free
+- Update Doc for Model Selection 
+- Update Doc for Prompt Cache & Output Token
 
 Later
 - Get Google Review
@@ -26,17 +22,14 @@ Later
 
 
 Missing Features
-- Tool based Agent Credit
 - Get max agent from firebase 
 - No Audio recording 
 - Understand you and suggest things based on time and this
 - No Elicitation 
-- No One Click Integrations 
 - Fix "AttributeGraph: cycle detected through attribute"
 - Fix Flickering Animation
 - Integration Slack, Jira
-- No RAG
-- No Markdown Select
+- No Markdown Select
 - Search History
 - Old images from history are not shown 
 

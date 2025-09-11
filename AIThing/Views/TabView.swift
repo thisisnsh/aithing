@@ -845,7 +845,7 @@ struct TabView: View {
         let body: [String: Any] = [
             "model": model,
             "stream": true,
-            "max_tokens": 1024,
+            "max_tokens": getOutputToken(),
             "temperature": 0.7,
             "messages": addCacheBlock(input: nonUsageMessages(from: modelInput), isMessage: true),
             "tools": addCacheBlock(input: modelTools),
@@ -860,14 +860,12 @@ struct TabView: View {
         let costAgent = costPerQuery * modelAgentCount
         let total = costPerQuery + costAgent + costFile
 
-        logger.debug("apiKey: \(apiKey)")
+        logger.debug("api key: \(apiKey)")
         logger.debug("model: \(model)")
+        logger.debug("tokens: \(getOutputToken())")
         logger.debug("messages: \(String(describing: body["messages"]))")
         logger.debug("tools count: \((body["tools"] as? [[String: Any]])?.count ?? 0)")
-        logger.debug("cost query: \(costPerQuery)")
-        logger.debug("cost file: \(costFile)")
-        logger.debug("cost agent: \(costAgent)")
-        logger.debug("cost total: \(total)")
+        logger.debug("cost query: \(costPerQuery) file: \(costFile) agent: \(costAgent) total: \(total)")
 
         // Check enough credits if not BYOK
         if !byok {
@@ -1214,6 +1212,10 @@ struct TabView: View {
     }
 
     private func addCacheBlock(input: [[String: Any]], isMessage: Bool = false) -> [[String: Any]] {
+        if !getCacheMessages() {
+            return input
+        }
+
         var updated = input
 
         if isMessage {
