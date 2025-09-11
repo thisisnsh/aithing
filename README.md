@@ -2,22 +2,32 @@
 
 ------------------------ 
 
+Thursday
+- Update Doc BYOK Free
+- Update Doc for Model Selection 
+- Update Doc for Prompt Cache & Output Token
+- Store Selected Tools in Local Storage
+
+Friday
+- Create OAuth Workflow for MCP 
+- Asana & Atlassian MCP 
+- Redesgin Own Agent UI
+- Update Doc for Asana & Atlassian Tools  
+
+Weekend
 - Allow OpenAI Models 
 - Detect API key in BYOK b/w Anthropic and OpenAI
 - Change Models based on API Key 
 
-Thursday
-- Get Google Review
-- Update Doc BYOK Free
-- Update Doc for Model Selection 
-- Update Doc for Prompt Cache & Output Token
-
 Later
+- Get Google Review
+ 
+September 19
 - Release 1.6
+
+September 20
 - Make Ads
-- Post Reddit 
-
-
+- Post Reddit
 
 ------------------------
 
