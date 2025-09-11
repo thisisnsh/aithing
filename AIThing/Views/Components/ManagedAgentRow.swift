@@ -271,7 +271,7 @@ struct AgentRow: View {
     let delete: () -> Void
 
     var body: some View {
-        HStack(alignment: .top) {
+        HStack(alignment: .center) {
             VStack(alignment: .leading, spacing: 2) {
                 switch agent.entry {
                 case let .url(name, url):

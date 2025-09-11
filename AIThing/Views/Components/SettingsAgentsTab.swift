@@ -125,27 +125,30 @@ struct SettingsAgentsTab: View {
             ) {
 
                 VStack(alignment: .leading) {
-                    if agents.isEmpty {
-                        HStack {
-                            Text("No Agents Available").font(.system(size: 14, weight: .medium))
-                            Spacer()
-                        }
-                        .padding(4)
-                        .opacity(0.5)
-                    } else {
-                        ForEach(agents) { agent in
-                            AgentRow(
-                                agent: agent,
-                                toggle: { newValue in
-                                    if let idx = agents.firstIndex(of: agent) {
-                                        agents[idx].isEnabled = newValue
-                                        saveAgents()
-                                    }
-                                },
-                                delete: { deleteAgent(agent) }
-                            )
-                            Divider()
-                        }
+                    Text(
+                        """
+                        Learn more about adding your [own agents](https://aithing.dev/features/multiple-agents#add-your-own-agents).
+                        """
+                    )
+                    .font(.system(size: 10, weight: .medium))
+                    .padding(4)
+                    .padding(.top, 4)
+                    .foregroundStyle(.secondary)
+
+                    Divider()
+
+                    ForEach(agents) { agent in
+                        AgentRow(
+                            agent: agent,
+                            toggle: { newValue in
+                                if let idx = agents.firstIndex(of: agent) {
+                                    agents[idx].isEnabled = newValue
+                                    saveAgents()
+                                }
+                            },
+                            delete: { deleteAgent(agent) }
+                        )
+                        Divider()
                     }
 
                     if showAddAgent {
@@ -189,10 +192,10 @@ struct SettingsAgentsTab: View {
                         } label: {
                             Text("+ Add Agent")
                                 .font(.system(size: 12, weight: .medium))
-                                .padding(.vertical, 4)
-                                .padding(.horizontal, 8)
+                                .padding(.vertical, 8)
+                                .padding(.horizontal, 12)
                                 .background(Color.black.opacity(0.2))
-                                .clipShape(RoundedRectangle(cornerRadius: 4))
+                                .clipShape(RoundedRectangle(cornerRadius: 8))
                         }
                         .buttonStyle(.plain)
 
@@ -205,16 +208,6 @@ struct SettingsAgentsTab: View {
                         Spacer()
                     }
                     .padding(4)
-                    
-                    Divider()
-                    Text(
-                        """
-                        Learn more about adding your [own agents](https://aithing.dev/features/multiple-agents#add-your-own-agents).
-                        """
-                    )
-                    .font(.system(size: 10, weight: .medium))
-                    .padding(4)
-                    .foregroundStyle(.secondary)
                 }
             }
         }

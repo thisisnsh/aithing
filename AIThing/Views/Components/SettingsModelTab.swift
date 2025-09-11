@@ -171,7 +171,7 @@ struct SettingsModelTab: View {
                                 .resizable()
                                 .aspectRatio(contentMode: .fit)
                                 .frame(width: 16, height: 16)
-                            Text("Use Your Own Key").font(.system(size: 14, weight: .medium))
+                            Text("API Key").font(.system(size: 14, weight: .medium))
                             Spacer()
                         }
                         .padding(4)

@@ -2,21 +2,21 @@
 
 ------------------------ 
 
-Wednesday
 - Allow OpenAI Models 
 - Detect API key in BYOK b/w Anthropic and OpenAI
 - Change Models based on API Key 
 
 Thursday
+- Get Google Review
 - Update Doc BYOK Free
 - Update Doc for Model Selection 
 - Update Doc for Prompt Cache & Output Token
 
 Later
-- Get Google Review
+- Release 1.6
 - Make Ads
 - Post Reddit 
-- Release 1.6
+
 
 
 ------------------------
