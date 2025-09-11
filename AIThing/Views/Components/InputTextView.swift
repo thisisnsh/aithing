@@ -11,6 +11,7 @@ import SwiftUI
 struct InputTextView: NSViewRepresentable {
     @Binding var text: String
     @Binding var seenCommands: Set<String>
+    @Binding var size: CGFloat
     var isNotEditable: Bool
 
     var onCommit: () -> Void
@@ -130,7 +131,7 @@ struct InputTextView: NSViewRepresentable {
 
         func applyCommandHighlighting(to textView: NSTextView) {
             let fullText = textView.string
-            let baseFont = NSFont.systemFont(ofSize: 18, weight: .medium)
+            let baseFont = NSFont.systemFont(ofSize: parent.size, weight: .medium)
 
             let attributedText = NSMutableAttributedString(
                 string: fullText,
@@ -148,7 +149,7 @@ struct InputTextView: NSViewRepresentable {
                 // Find all matches of the pattern in the text
                 for match in regex.matches(in: fullText, range: nsrange) {
                     // Use monospaced font for matched text
-                    let monoFont = NSFont.monospacedSystemFont(ofSize: 16, weight: .medium)
+                    let monoFont = NSFont.monospacedSystemFont(ofSize: parent.size - 2, weight: .medium)
 
                     // Calculate baseline shift to visually center it with the base font
                     let baselineShift = (baseFont.capHeight - monoFont.capHeight) / 2
@@ -198,7 +199,7 @@ struct InputTextView: NSViewRepresentable {
         textView.drawsBackground = false
         textView.backgroundColor = .clear
         textView.textColor = .white
-        textView.font = NSFont.systemFont(ofSize: 18, weight: .medium)
+        textView.font = NSFont.systemFont(ofSize: size, weight: .medium)
         textView.textContainerInset = NSSize(width: 0, height: 5)
 
         if let container = textView.textContainer {

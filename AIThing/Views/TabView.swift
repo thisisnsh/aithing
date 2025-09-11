@@ -74,6 +74,8 @@ struct TabView: View {
     @State private var takingScreenshot: Bool = false
     @State private var isDropping: Bool = false
 
+    @State private var textSize: CGFloat = 18
+
     var body: some View {
         VStack(alignment: .leading, spacing: 0) {
             Color.clear.frame(height: 32).overlay(alignment: .bottom) {
@@ -210,6 +212,7 @@ struct TabView: View {
                                 ? .constant("Settings")
                                 : (showHistory ? .constant("History") : $query),
                             seenCommands: $seenCommands,
+                            size: $textSize,
                             isNotEditable: isViewBlinking || showSettings || showHistory,
                             onCommit: {
                                 Task {
@@ -233,17 +236,28 @@ struct TabView: View {
                             },
                             onSpillover: { count in
                                 var newHeight: CGFloat = 48
-                                if count == 2 {
-                                    newHeight = 48 + 24
-                                } else if count >= 3 {
-                                    newHeight = 48 + 24 + 24
+
+                                if count >= 2 && count <= 8 {
+                                    newHeight = 48 + CGFloat(count - 1) * 24
+                                } else if count > 8 {
+                                    newHeight = 48 + 8 * 24
                                 } else {
                                     newHeight = 48
                                 }
+
                                 updatePanelSizeFromCurrent(newHeight - inputHeight)
                                 inputHeight = newHeight
                             }
                         )
+                        .onChange(of: query) { newValue in
+                            if query.count > 400 {
+                                textSize = 14
+                            } else if query.count > 200 {
+                                textSize = 16
+                            } else {
+                                textSize = 18
+                            }
+                        }
                         .opacity(showSettings || showHistory ? 0.6 : 1)
                         .frame(width: 526)
                     }
@@ -271,22 +285,14 @@ struct TabView: View {
 
                 Button(
                     action: {
-                        if modelOutput.isEmpty {
-                            onHelp()
-                            AnalyticsManager.shared.customEventTab(action: "tab_click_help")
-                        } else {
-                            copyToClipboard(string: modelOutput)
-                            AnalyticsManager.shared.customEventTab(action: "tab_click_copy")
-                        }
+                        onHelp()
+                        AnalyticsManager.shared.customEventTab(action: "tab_click_help")
                     }
                 ) {
-                    Image(
-                        systemName: modelOutput.isEmpty || showSettings || showHistory
-                            ? "questionmark.circle.fill" : "document.on.document.fill"
-                    )
-                    .resizable()
-                    .scaledToFit()
-                    .foregroundColor(.white.opacity(0.5))
+                    Image(systemName: "questionmark.circle.fill")
+                        .resizable()
+                        .scaledToFit()
+                        .foregroundColor(.white.opacity(0.5))
                 }
                 .buttonStyle(PlainButtonStyle())
                 .frame(width: 18, height: 18)
@@ -394,12 +400,30 @@ struct TabView: View {
                             .frame(height: 100)
                         }
 
-                        MarkdownText(text: modelOutput)
-                            .foregroundColor(.white)
-                            .font(.system(size: 14))
-                            .frame(maxWidth: .infinity, alignment: .leading)
+                        ZStack(alignment: .topTrailing) {
+                            Button(
+                                action: {
+                                    copyToClipboard(string: modelOutput)
+                                    AnalyticsManager.shared.customEventTab(action: "tab_click_copy")
+                                }
+                            ) {
+                                Image(systemName: "document.on.document.fill")
+                                    .resizable()
+                                    .scaledToFit()
+                                    .foregroundColor(.white.opacity(0.5))
+                            }
+                            .buttonStyle(PlainButtonStyle())
+                            .frame(width: 18, height: 18)
                             .padding(.horizontal, 24)
                             .padding(.vertical, 16)
+
+                            MarkdownText(text: modelOutput)
+                                .foregroundColor(.white)
+                                .font(.system(size: 14))
+                                .frame(maxWidth: .infinity, alignment: .leading)
+                                .padding(.horizontal, 24)
+                                .padding(.vertical, 16)
+                        }
                     }
 
                     Color.clear
@@ -865,7 +889,9 @@ struct TabView: View {
         logger.debug("tokens: \(getOutputToken())")
         logger.debug("messages: \(String(describing: body["messages"]))")
         logger.debug("tools count: \((body["tools"] as? [[String: Any]])?.count ?? 0)")
-        logger.debug("cost query: \(costPerQuery) file: \(costFile) agent: \(costAgent) total: \(total)")
+        logger.debug(
+            "cost query: \(costPerQuery) file: \(costFile) agent: \(costAgent) total: \(total)"
+        )
 
         // Check enough credits if not BYOK
         if !byok {
