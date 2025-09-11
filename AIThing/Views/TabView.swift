@@ -1287,9 +1287,8 @@ struct TabView: View {
                   - Use the selected text in context to answer the query.  
                   
                 - **@here** → 
-                  - Response will be written directly into a file.  
                   - Output ONLY the text that goes into the file with ```text code formatting.  
-                  - No extra output or commentary.
+                  - No extra output or commentary. Just OUTPUT text that replaces @selected text.
                   - Do not output @here word.
                 """,
             ],

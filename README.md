@@ -8,7 +8,6 @@ Wednesday
 - Change Models based on API Key 
 
 Thursday
-- Release 1.6
 - Update Doc BYOK Free
 - Update Doc for Model Selection 
 - Update Doc for Prompt Cache & Output Token
@@ -17,6 +16,8 @@ Later
 - Get Google Review
 - Make Ads
 - Post Reddit 
+- Release 1.6
+
 
 ------------------------
 

@@ -23,7 +23,7 @@ struct MarkdownText: View {
                     configuration.label
                         .markdownTextStyle {
                             FontFamilyVariant(.monospaced)
-                            FontSize(.em(0.85))
+                            FontSize(.em(1))
                         }
                         .relativePadding(.horizontal, length: .em(1))
                 }
@@ -36,7 +36,7 @@ struct MarkdownText: View {
                         .relativeLineSpacing(.em(0.225))
                         .markdownTextStyle {
                             FontFamilyVariant(.monospaced)
-                            FontSize(.em(0.85))
+                            FontSize(.em(1))
                         }
                         .padding(16)
                 }
@@ -46,8 +46,11 @@ struct MarkdownText: View {
             }
             .markdownTextStyle(\.code) {
                 FontFamilyVariant(.monospaced)
-                FontSize(.em(0.85))
+                FontSize(.em(1))
                 BackgroundColor(.gray.opacity(0.25))
+            }
+            .markdownTextStyle(\.text) {
+                FontSize(.em(1))
             }
     }
 }
