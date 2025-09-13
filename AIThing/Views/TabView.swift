@@ -31,7 +31,6 @@ struct TabView: View {
 
     let onClick: (_ tabId: UUID) -> Void
     let onSetting: () -> Void
-    let onHelp: () -> Void
     let updatePanelSizeFromDefault: (CGFloat) -> Void
     let updatePanelSizeFromCurrent: (CGFloat) -> Void
     let setPanelPassthrough: (_ enabled: Bool) -> Void
@@ -323,11 +322,11 @@ struct TabView: View {
 
                 Button(
                     action: {
-                        onHelp()
-                        AnalyticsManager.shared.customEventTab(action: "tab_click_help")
+                        onSetting()
+                        AnalyticsManager.shared.customEventTab(action: "tab_click_settings")
                     }
                 ) {
-                    Image(systemName: "questionmark.circle.fill")
+                    Image(systemName: "gearshape.circle.fill")
                         .resizable()
                         .scaledToFit()
                         .foregroundColor(.white.opacity(0.5))

@@ -14,6 +14,16 @@ struct SettingsAccountTab: View {
     let usageData: Usage
     let onHistory: () -> Void
 
+    private let help: [(String, String)] = [
+        ("Show / Hide AI Thing", "Control (⌃) + Space"),
+        ("Show / Hide Settings", "Control (⌃) + S"),
+        ("Show / Hide History", "Control (⌃) + H"),
+        ("Open New Tab", "Control (⌃) + N"),
+        ("Close Current Tab", "Control (⌃) + W"),
+        ("Move to Right Tab", "Control (⌃) + (Right Angular Bracket) >"),
+        ("Move to Left Tab", "Control (⌃) + (Left Angular Bracket) <"),
+    ]
+
     var body: some View {
         VStack(alignment: .leading, spacing: 16) {
             GroupBox(label: title("Login")) {
@@ -107,6 +117,26 @@ struct SettingsAccountTab: View {
             }
             .padding(.top, -8)
 
+            GroupBox(label: title("Help")) {
+                VStack(alignment: .leading) {
+                    ForEach(help, id: \.0) { h in
+                        HStack {
+                            Text(h.0)
+                                .font(.system(size: 14, weight: .medium))
+                            Spacer()
+                            Text(h.1)
+                                .font(.system(size: 10, weight: .medium))
+                                .opacity(0.5)
+                        }
+                        .padding(4)
+                        Divider()
+                    }
+                    Text("Still Stuck? Check https://aithing.dev")
+                        .font(.system(size: 10, weight: .medium))
+                        .padding(4)
+                }
+                .padding(4)
+            }
         }
         .frame(maxWidth: .infinity, alignment: .leading)
     }
@@ -125,10 +155,8 @@ struct SettingsAccountTab: View {
         HStack {
             if let icon { Image(icon).resizable().frame(width: 16, height: 16) }
             if let systemIcon {
-                Image(systemName: systemIcon).resizable().aspectRatio(contentMode: .fit).frame(
-                    width: 16,
-                    height: 16
-                )
+                Image(systemName: systemIcon).resizable().aspectRatio(contentMode: .fit)
+                    .frame(width: 16, height: 16)
             }
             Text(text).font(.system(size: 14, weight: .medium))
             Spacer()

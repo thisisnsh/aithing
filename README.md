@@ -5,7 +5,6 @@
 
 - Divide server into group like vscode
 - Redesgin Own Agent UI
-- Remove help and move to settings 
 
 Weekend 
 - Update Doc BYOK Free

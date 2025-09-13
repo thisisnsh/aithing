@@ -66,22 +66,6 @@ struct ContentView: View {
     @State private var toastText: String = ""
     @State private var toastColor: Color = .white
 
-    @State private var showHelp = false
-    private var helpText: String {
-        return """
-            ## Help
-
-            | Command | Description |   | Command | Description | 
-            | ------- | ----------- | - | ------- | ----------- | 
-            | ` Control (⌃) + Space ` | Show/Hide AI Thing | | ` Control (⌃) + ? ` | Show/Hide Help    | 
-            | ` Control (⌃) + N `     | New Tab            | | ` Control (⌃) + W ` | Close Tab         |
-            | ` Control (⌃) + S `     | Show/Hide Settings | | ` Control (⌃) + H ` | Show/Hide History |
-            | ` Control (⌃) + > `     | Move to Right Tab  | | ` Control (⌃) + < ` | Move to Left Tab  |
-
-            Still Stuck? Check https://aithing.dev 
-            """
-    }
-
     // Managed Agents
     // StateObjects not persisted after application quit
     // This is due to the nature of these servers that require token refresh
@@ -123,9 +107,6 @@ struct ContentView: View {
             }
             if showHistory {
                 History()
-            }
-            if showHelp {
-                Help()
             }
             if showToast {
                 Toast()
@@ -192,9 +173,6 @@ struct ContentView: View {
                             moveFocus(1)
                         }
                         return nil
-                    case 44:  // ?
-                        onHelp()
-                        return nil
                     default:
                         break
                     }
@@ -255,24 +233,6 @@ struct ContentView: View {
         .environmentObject(firestoreManager)
     }
 
-    private func Help() -> some View {
-        MarkdownText(text: helpText)
-            .padding()
-            .background(.ultraThinMaterial)
-            .overlay {
-                RoundedRectangle(cornerRadius: 24)
-                    .stroke(Color.white, lineWidth: 1.5)
-            }
-            .cornerRadius(24)
-            .shadow(radius: 4)
-            .zIndex(2)
-            .frame(minWidth: 600, maxWidth: .infinity, maxHeight: .infinity, alignment: .top)
-            .padding(.leading, leftPadding)
-            .padding(.trailing, rightPadding)
-            .padding(.top, 96)
-            .padding(.bottom, 16)
-    }
-
     private func Toast() -> some View {
         MarkdownText(text: toastText)
             .padding()
@@ -298,7 +258,6 @@ struct ContentView: View {
         }
         DispatchQueue.main.asyncAfter(deadline: .now() + (shouldCreateTab ? 0.5 : 0)) {
             showSettings.toggle()
-            showHelp = false
             showHistory = false
             if !showSettings && !showHistory {
                 closeTab()
@@ -313,16 +272,11 @@ struct ContentView: View {
         }
         DispatchQueue.main.asyncAfter(deadline: .now() + (shouldCreateTab ? 0.5 : 0)) {
             showHistory.toggle()
-            showHelp = false
             showSettings = false
             if !showSettings && !showHistory {
                 closeTab()
             }
         }
-    }
-
-    private func onHelp() {
-        showHelp.toggle()
     }
 
     private func continueConversation(_ history: History) {
@@ -523,8 +477,7 @@ struct ContentView: View {
             showSettings: $showSettings,
             showHistory: $showHistory,
             onClick: { tabId in onClick(tabId: tabId) },
-            onSetting: { self.onSetting() },
-            onHelp: { self.onHelp() },
+            onSetting: { self.onSetting() },            
             updatePanelSizeFromDefault: { extraHeight in
                 updatePanelSizeFromDefault(extraHeight)
             },
