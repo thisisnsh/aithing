@@ -477,7 +477,7 @@ struct ContentView: View {
             showSettings: $showSettings,
             showHistory: $showHistory,
             onClick: { tabId in onClick(tabId: tabId) },
-            onSetting: { self.onSetting() },            
+            onSetting: { self.onSetting() },
             updatePanelSizeFromDefault: { extraHeight in
                 updatePanelSizeFromDefault(extraHeight)
             },

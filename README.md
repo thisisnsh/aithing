@@ -2,8 +2,6 @@
 
 ------------------------ 
 
-
-- Divide server into group like vscode
 - Redesgin Own Agent UI
 
 Weekend 

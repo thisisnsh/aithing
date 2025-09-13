@@ -113,6 +113,8 @@ struct SettingsView: View {
             let managedAgents = await firestoreManager.getManagedAgents()
             var allServerIds: [String] = []
             for server in managedAgents {
+                if server.enabled ?? true == false { continue }
+                
                 if let id = server.id {
                     allServerIds.append(id)
 
@@ -124,7 +126,6 @@ struct SettingsView: View {
                         if manager.server.version != server.version {
                             mcpOAuthManagers.managers[id] = McpOAuthManager(server: server)
                         }
-
                     }
 
                     // Always update image

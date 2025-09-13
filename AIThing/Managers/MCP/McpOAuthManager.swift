@@ -74,6 +74,7 @@ struct McpServer: Codable {
     let name: String
     let url: String
     let version: Int?
+    let enabled: Bool?
 }
 
 @MainActor

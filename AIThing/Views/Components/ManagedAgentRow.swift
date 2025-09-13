@@ -22,11 +22,16 @@ struct ManagedAgentRow: View {
                             .resizable()
                             .scaledToFit()
                     } placeholder: {
-                        Image(systemName: "server.rack").resizable()
+                        Image(systemName: "circle.hexagongrid")
+                            .resizable()
+                            .scaledToFit()
                     }
                     .frame(width: 16, height: 16)
                 } else {
-                    Image(systemName: "server.rack").resizable().frame(width: 16, height: 16)
+                    Image(systemName: "circle.hexagongrid")
+                        .resizable()
+                        .scaledToFit()
+                        .frame(width: 16, height: 16)
                 }
                 VStack(alignment: .leading, spacing: 2) {
                     RowTitle(title)
@@ -41,9 +46,9 @@ struct ManagedAgentRow: View {
                                 if newValue {
                                     manager.enabled = true
                                     print("\(title): Enabling")
-                                    if let _ = await manager.generateToken(
+                                    if await manager.generateToken(
                                         refresh: false
-                                    ) {
+                                    ) != nil {
                                     } else {
                                         manager.enabled = false
                                     }

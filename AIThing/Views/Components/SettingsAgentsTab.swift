@@ -58,35 +58,48 @@ struct SettingsAgentsTab: View {
                     .font(.system(size: 10, weight: .medium))
                     .padding(.vertical, 4)
                     .foregroundStyle(.secondary)
-                    Divider()
-                    GoogleManagedAgentRow(
-                        icon: "google",
-                        title: "Google Workspace",
-                        subheading: $googleAgentAccount,
-                    )
-                    .environmentObject(googleOAuthManager)
-                    Divider()
-                    GithubManagedAgentRow(
-                        icon: "github",
-                        title: "GitHub",
-                        subheading: $githubAgentAccount,
-                    )
-                    .environmentObject(gitHubOAuthManager)
-                    Divider()
 
-                    ForEach(
-                        mcpOAuthManagers.managers.keys.sorted(by: { $0 < $1 }),
-                        id: \.self
-                    ) { manager in
-                        if let agent = mcpOAuthManagers.managers[manager] {
-                            ManagedAgentRow(
-                                icon: agent.server.image,
-                                title: agent.server.name
+                    GroupBox {
+                        GoogleManagedAgentRow(
+                            icon: "google",
+                            title: "Google Workspace",
+                            subheading: $googleAgentAccount,
+                        )
+                        .environmentObject(googleOAuthManager)
+                        Divider()
+                        GithubManagedAgentRow(
+                            icon: "github",
+                            title: "GitHub",
+                            subheading: $githubAgentAccount,
+                        )
+                        .environmentObject(gitHubOAuthManager)
+                    }.padding(4)
+
+                    GroupBox {
+                        VStack(alignment: .leading) {
+                            ForEach(
+                                mcpOAuthManagers.managers.keys.sorted(by: { $0 < $1 }),
+                                id: \.self
+                            ) { manager in
+                                if let agent = mcpOAuthManagers.managers[manager] {
+                                    ManagedAgentRow(
+                                        icon: agent.server.image,
+                                        title: agent.server.name
+                                    )
+                                    .environmentObject(agent)
+                                    Divider()
+                                }
+                            }
+
+                            Text(
+                                "Request more managed agents via help@aithing.dev."
                             )
-                            .environmentObject(agent)
-                            Divider()
+                            .font(.system(size: 10, weight: .medium))
+                            .padding(4)
+                            .foregroundStyle(.secondary)
                         }
-                    }
+
+                    }.padding(4)
 
                     Text(
                         """
