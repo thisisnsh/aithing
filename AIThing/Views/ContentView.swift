@@ -89,6 +89,8 @@ struct ContentView: View {
     @StateObject private var googleOAuthManager = GoogleOAuthManager()
     @StateObject private var githubOAuthManager = GithubOAuthManager()
     @StateObject private var notionOAuthManager = NotionOAuthManager()
+    @StateObject private var asanaOAuthManager = AsanaOAuthManager()
+    @StateObject private var atlassianOAuthManager = AtlassianOAuthManager()
 
     var body: some View {
         ZStack(alignment: .top) {
@@ -151,6 +153,16 @@ struct ContentView: View {
             }
         }
         .task {
+            if let user = await asanaOAuthManager.generateToken(refresh: false) {
+                print("asanaOAuthManager.accessToken", user.accessToken)
+            } else {
+                print("asanaOAuthManager.accessToken", "nil")
+            }
+            
+//            if let user = await atlassianOAuthManager.generateToken(refresh: true) {
+//                print(user.accessToken)
+//            }
+            
             switch loginManager.authState {
             case .signedIn(let user):
                 AnalyticsManager.shared.setUserId(user.uid)
@@ -229,6 +241,8 @@ struct ContentView: View {
         .environmentObject(googleOAuthManager)
         .environmentObject(githubOAuthManager)
         .environmentObject(notionOAuthManager)
+        .environmentObject(asanaOAuthManager)
+        .environmentObject(atlassianOAuthManager)
     }
 
     func History() -> some View {
@@ -764,6 +778,68 @@ struct ContentView: View {
             )
             allClientTools[clientName] = tools
             logger.debug("Notion Enabled Capabilities: \(tools)")
+        }
+        
+        if asanaOAuthManager.enabled.count > 0 {
+            let clientName = "managed_asana_mcp"
+            var accessToken: String?
+            var refreshedAccessToken: String?
+
+            if asanaOAuthManager.user != nil {
+                accessToken = asanaOAuthManager.user?.accessToken
+                logger.debug("AccessToken \(String(describing: accessToken))")
+            }
+            if let user = await asanaOAuthManager.generateToken(refresh: true) {
+                refreshedAccessToken = user.accessToken
+                // If token has been refreshed OR client does not exist
+                logger.debug("RefreshedAccessToken \(String(describing: refreshedAccessToken))")
+                if accessToken != refreshedAccessToken || !mcp.clientExists(clientName: clientName)
+                {
+                    logger.debug("Reconnecting Asana Agent")
+                    _ = await mcp.reconnect(
+                        clientName: clientName,
+                        url: "https://mcp.asana.com/sse",
+                        authToken: refreshedAccessToken!
+                    )
+                }
+            }
+            let tools = await mcp.getTools(
+                clientName: clientName,
+                filter: asanaOAuthManager.enabledCapabilities()
+            )
+            allClientTools[clientName] = tools
+            logger.debug("Asana Enabled Capabilities: \(tools)")
+        }
+        
+        if atlassianOAuthManager.enabled.count > 0 {
+            let clientName = "managed_atlassian_mcp"
+            var accessToken: String?
+            var refreshedAccessToken: String?
+
+            if atlassianOAuthManager.user != nil {
+                accessToken = atlassianOAuthManager.user?.accessToken
+                logger.debug("AccessToken \(String(describing: accessToken))")
+            }
+            if let user = await atlassianOAuthManager.generateToken(refresh: true) {
+                refreshedAccessToken = user.accessToken
+                // If token has been refreshed OR client does not exist
+                logger.debug("RefreshedAccessToken \(String(describing: refreshedAccessToken))")
+                if accessToken != refreshedAccessToken || !mcp.clientExists(clientName: clientName)
+                {
+                    logger.debug("Reconnecting Atlassian Agent")
+                    _ = await mcp.reconnect(
+                        clientName: clientName,
+                        url: "https://mcp.atlassian.com/v1/sse",
+                        authToken: refreshedAccessToken!
+                    )
+                }
+            }
+            let tools = await mcp.getTools(
+                clientName: clientName,
+                filter: atlassianOAuthManager.enabledCapabilities()
+            )
+            allClientTools[clientName] = tools
+            logger.debug("Atlassian Enabled Capabilities: \(tools)")
         }
     }
 }

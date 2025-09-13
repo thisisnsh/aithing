@@ -1,5 +1,5 @@
 //
-//  NotionOAuthManager.swift
+//  AtlassianOAuthManager.swift
 //  AIThing
 //
 //  Created by Nishant Singh Hada on 9/9/25.
@@ -12,38 +12,41 @@ import OAuthSwift
 import os
 
 @MainActor
-final class NotionOAuthManager: ObservableObject {
-    @Published var user: NotionUser?
-    @Published var enabled: Set<NotionTool> = []
+final class AtlassianOAuthManager: ObservableObject {
+    @Published var user: AtlassianUser?
+    @Published var enabled: Set<AtlassianTool> = []
 
     private let logger = Logger(
         subsystem: "com.thisisnsh.mac.AIThing",
-        category: "NotionOAuthManager"
+        category: "AtlassianOAuthManager"
     )
 
     // MARK: - OAuth endpoints (MCP)
-    private let issuer = URL(string: "https://mcp.notion.com")!
-    private var authorizationEndpoint: URL { issuer.appending(path: "authorize") }
-    private var tokenEndpoint: URL { issuer.appending(path: "token") }
-    private var registrationEndpoint: URL { issuer.appending(path: "register") }
+    private let issuer = URL(
+        string:
+            "https://atlassian-remote-mcp-production.atlassian-remote-mcp-server-production.workers.dev"
+    )!
+    private var authorizationEndpoint = URL(string: "https://mcp.atlassian.com/v1/authorize")!
+    private var tokenEndpoint: URL { issuer.appending(path: "v1/token") }
+    private var registrationEndpoint: URL { issuer.appending(path: "v1/register") }
 
     // MARK: - Redirect / callback
     private let callbackScheme = "oauth-aithing"
-    private let callbackURLString = "oauth-aithing://oauth-callback-notion"
+    private let callbackURLString = "oauth-aithing://oauth-callback-atlassian"
 
     // MARK: - Client cache (Keychain)
-    private let kc = Keychain(service: "com.thisisnsh.mac.AIThing.notion.oauth")
-    private let kcClientIDKey = "notion.client_id"
-    private let kcClientSecretKey = "notion.client_secret"
+    private let kc = Keychain(service: "com.thisisnsh.mac.AIThing.atlassian.oauth")
+    private let kcClientIDKey = "atlassian.client_id"
+    private let kcClientSecretKey = "atlassian.client_secret"
 
     // MARK: - OAuth engine (created lazily after registration)
     private var oauth: OAuth2Swift?
 
     // MARK: - Public API
 
-    /// Generates (or refreshes) a Bearer token and returns a hydrated `NotionUser?`.
+    /// Generates (or refreshes) a Bearer token and returns a hydrated `AtlassianUser?`.
     /// - Parameter refresh: when true, tries to refresh first if a refresh token is available.
-    func generateToken(refresh: Bool) async -> NotionUser? {
+    func generateToken(refresh: Bool) async -> AtlassianUser? {
         do {
             // Ensure we have a registered client (cached or newly registered)
             let creds = try await ensureClientRegistered()
@@ -77,7 +80,7 @@ final class NotionOAuthManager: ObservableObject {
             self.user = merged
             return self.user
         } catch {
-            logger.error("Notion generateToken error: \(error.localizedDescription)")
+            logger.error("Atlassian generateToken error: \(error.localizedDescription)")
             self.user = nil
             return nil
         }
@@ -87,7 +90,7 @@ final class NotionOAuthManager: ObservableObject {
         user = nil
     }
 
-    enum NotionTool: String, CaseIterable, Identifiable {
+    enum AtlassianTool: String, CaseIterable, Identifiable {
         case search = "Search"
         case pages = "Pages"
         case databases = "Databases"
@@ -96,14 +99,14 @@ final class NotionOAuthManager: ObservableObject {
         var id: String { rawValue }
     }
 
-    let toolScopesMap: [NotionTool: [String]] = [
+    let toolScopesMap: [AtlassianTool: [String]] = [
         .search: [],
         .pages: [],
         .databases: [],
         .comments: [],
     ]
 
-    let toolCapabilities: [NotionTool: [String]] = [
+    let toolCapabilities: [AtlassianTool: [String]] = [
         .search: [
             "search",
             "fetch",
@@ -138,14 +141,14 @@ final class NotionOAuthManager: ObservableObject {
 }
 
 // MARK: - Helpers
-extension NotionOAuthManager {
-    private func tokenIsValid(_ user: NotionUser) -> Bool {
+extension AtlassianOAuthManager {
+    private func tokenIsValid(_ user: AtlassianUser) -> Bool {
         guard let exp = user.expiresAt else { return !user.accessToken.isEmpty }
         // Renew 60 seconds early
         return Date() < exp.addingTimeInterval(-60)
     }
 
-    private func merge(profile: NotionUser, credential: OAuthSwiftCredential) -> NotionUser {
+    private func merge(profile: AtlassianUser, credential: OAuthSwiftCredential) -> AtlassianUser {
         var merged = profile
         merged.accessToken = credential.oauthToken
         if !credential.oauthRefreshToken.isEmpty {
@@ -157,7 +160,7 @@ extension NotionOAuthManager {
 }
 
 // MARK: - Dynamic Client Registration
-extension NotionOAuthManager {
+extension AtlassianOAuthManager {
     struct RegisteredClient: Codable {
         let client_id: String
         let client_secret: String?
@@ -190,7 +193,7 @@ extension NotionOAuthManager {
 
         let (data, resp) = try await URLSession.shared.data(for: req)
         guard let http = resp as? HTTPURLResponse, (200..<300).contains(http.statusCode) else {
-            throw NotionOAuthError.registrationFailed
+            throw AtlassianOAuthError.registrationFailed
         }
         let registered = try JSONDecoder().decode(RegisteredClient.self, from: data)
 
@@ -205,7 +208,7 @@ extension NotionOAuthManager {
 }
 
 // MARK: - Interactive auth + Refresh
-extension NotionOAuthManager {
+extension AtlassianOAuthManager {
     private func makeOAuth(creds: RegisteredClient) -> OAuth2Swift {
         let oauth = OAuth2Swift(
             consumerKey: creds.client_id,
@@ -225,10 +228,10 @@ extension NotionOAuthManager {
 
     private func authorizeInteractively(oauth: OAuth2Swift) async throws -> OAuthSwiftCredential {
         guard let callbackURL = URL(string: callbackURLString) else {
-            throw NotionOAuthError.notConfigured
+            throw AtlassianOAuthError.notConfigured
         }
 
-        // Notion doesn't use granular scopes the same way as GitHub;
+        // Atlassian doesn't use granular scopes the same way as GitHub;
         // send an empty scope (or customize if MCP adds scopes later)
         let scope = ""
 
@@ -244,10 +247,10 @@ extension NotionOAuthManager {
                     continuation.resume(returning: cred)
                 case .failure(let err):
                     if err.errorCode == OAuthSwiftError.cancelled.errorCode {
-                        continuation.resume(throwing: NotionOAuthError.cancelled)
+                        continuation.resume(throwing: AtlassianOAuthError.cancelled)
                     } else {
-                        self.logger.error("Notion authorize failed: \(err.localizedDescription)")
-                        continuation.resume(throwing: NotionOAuthError.authorizationFailed)
+                        self.logger.error("Atlassian authorize failed: \(err.localizedDescription)")
+                        continuation.resume(throwing: AtlassianOAuthError.authorizationFailed)
                     }
                 }
             }
@@ -262,7 +265,7 @@ extension NotionOAuthManager {
                 case .success(let success):
                     continuation.resume(returning: success)
                 case .failure(let err):
-                    self.logger.error("Notion refresh failed: \(err.localizedDescription)")
+                    self.logger.error("Atlassian refresh failed: \(err.localizedDescription)")
                     continuation.resume(returning: nil)  // fall back to full auth
                 }
             }
@@ -270,11 +273,11 @@ extension NotionOAuthManager {
     }
 }
 
-// MARK: - Profile fetch (Notion Public API)
-extension NotionOAuthManager {
-    private func fetchProfile(accessToken: String) async throws -> NotionUser {
+// MARK: - Profile fetch (Atlassian Public API)
+extension AtlassianOAuthManager {
+    private func fetchProfile(accessToken: String) async throws -> AtlassianUser {
         // Exit early. No profile fetching
-        return NotionUser(
+        return AtlassianUser(
             accessToken: accessToken,
             refreshToken: nil,
             expiresAt: nil,
@@ -283,43 +286,11 @@ extension NotionOAuthManager {
             email: nil,
             avatarURL: nil
         )
-
-        var req = URLRequest(url: URL(string: "https://api.notion.com/v1/users/me")!)
-        req.httpMethod = "GET"
-        req.setValue("Bearer \(accessToken)", forHTTPHeaderField: "Authorization")
-        // Use a modern Notion-Version; adjust as needed
-        req.setValue("2022-06-28", forHTTPHeaderField: "Notion-Version")
-
-        let (data, resp) = try await URLSession.shared.data(for: req)
-        guard let http = resp as? HTTPURLResponse, (200..<300).contains(http.statusCode) else {
-            throw NotionOAuthError.invalidHTTPResponse
-        }
-        struct MeEnvelope: Decodable {
-            let id: String
-            let name: String?
-            let person: Person?
-            let bot: Bot?
-            struct Person: Decodable { let email: String? }
-            struct Bot: Decodable {
-                let owner: Owner?
-                struct Owner: Decodable { let type: String? }
-            }
-        }
-        let me = try JSONDecoder().decode(MeEnvelope.self, from: data)
-        return NotionUser(
-            accessToken: accessToken,
-            refreshToken: nil,
-            expiresAt: nil,
-            id: me.id,
-            name: me.name,
-            email: me.person?.email,
-            avatarURL: nil  // Notion /v1/users returns avatar_url for some types; extend if needed
-        )
     }
 }
 
 // MARK: - Public model
-public struct NotionUser: Codable, Equatable {
+public struct AtlassianUser: Codable, Equatable {
     // Tokens
     public var accessToken: String
     public var refreshToken: String?
@@ -333,7 +304,7 @@ public struct NotionUser: Codable, Equatable {
 }
 
 // MARK: - Errors
-enum NotionOAuthError: LocalizedError {
+enum AtlassianOAuthError: LocalizedError {
     case notConfigured
     case registrationFailed
     case authorizationFailed
@@ -343,12 +314,12 @@ enum NotionOAuthError: LocalizedError {
 
     var errorDescription: String? {
         switch self {
-        case .notConfigured: return "Notion OAuth not configured."
+        case .notConfigured: return "Atlassian OAuth not configured."
         case .registrationFailed: return "Client registration failed."
         case .authorizationFailed: return "Authorization failed."
         case .cancelled: return "User cancelled."
-        case .invalidHTTPResponse: return "Invalid response from Notion."
-        case .decodeFailed: return "Failed to decode Notion response."
+        case .invalidHTTPResponse: return "Invalid response from Atlassian."
+        case .decodeFailed: return "Failed to decode Atlassian response."
         }
     }
 }

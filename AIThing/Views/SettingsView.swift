@@ -9,6 +9,8 @@ struct SettingsView: View {
     @EnvironmentObject var googleOAuthManager: GoogleOAuthManager
     @EnvironmentObject var gitHubOAuthManager: GithubOAuthManager
     @EnvironmentObject var notionOAuthManager: NotionOAuthManager
+    @EnvironmentObject var asanaOAuthManager: AsanaOAuthManager
+    @EnvironmentObject var atlassianOAuthManager: AtlassianOAuthManager
 
     @Binding var isPresented: Bool
     var setPanelVisibility: () -> Void
@@ -90,6 +92,8 @@ struct SettingsView: View {
                         .environmentObject(googleOAuthManager)
                         .environmentObject(gitHubOAuthManager)
                         .environmentObject(notionOAuthManager)
+                        .environmentObject(asanaOAuthManager)
+                        .environmentObject(atlassianOAuthManager)
 
                     case .preferences:
                         SettingsPreferencesTab(

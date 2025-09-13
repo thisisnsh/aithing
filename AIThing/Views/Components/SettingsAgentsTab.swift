@@ -18,6 +18,8 @@ struct SettingsAgentsTab: View {
     @EnvironmentObject var googleOAuthManager: GoogleOAuthManager
     @EnvironmentObject var gitHubOAuthManager: GithubOAuthManager
     @EnvironmentObject var notionOAuthManager: NotionOAuthManager
+    @EnvironmentObject var asanaOAuthManager: AsanaOAuthManager
+    @EnvironmentObject var atlassianOAuthManager: AtlassianOAuthManager
 
     @Binding var agents: [AgentEntry]
     @Binding var showAddAgent: Bool
@@ -108,11 +110,6 @@ struct SettingsAgentsTab: View {
                     if gitHubOAuthManager.enabled.count > 0 {
                         if let user = gitHubOAuthManager.user {
                             githubAgentAccount = user.name ?? ""
-                        }
-                    }
-                    if notionOAuthManager.enabled.count > 0 {
-                        if let user = notionOAuthManager.user {
-                            notionAgentAccount = user.name ?? ""
                         }
                     }
                 }

@@ -2,22 +2,17 @@
 
 ------------------------ 
 
-Thursday
+
+Friday
+- Asana & Atlassian MCP 
+- Redesgin Own Agent UI
+
+Weekend
+- Store Selected Tools in Local Storage
 - Update Doc BYOK Free
 - Update Doc for Model Selection 
 - Update Doc for Prompt Cache & Output Token
-- Store Selected Tools in Local Storage
-
-Friday
-- Create OAuth Workflow for MCP 
-- Asana & Atlassian MCP 
-- Redesgin Own Agent UI
 - Update Doc for Asana & Atlassian Tools  
-
-Weekend
-- Allow OpenAI Models 
-- Detect API key in BYOK b/w Anthropic and OpenAI
-- Change Models based on API Key 
 
 Later
 - Get Google Review
@@ -28,6 +23,11 @@ September 19
 September 20
 - Make Ads
 - Post Reddit
+
+Very Late
+- Allow OpenAI Models 
+- Detect API key in BYOK b/w Anthropic and OpenAI
+- Change Models based on API Key 
 
 ------------------------
 
