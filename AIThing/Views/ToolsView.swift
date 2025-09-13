@@ -26,11 +26,11 @@ struct ToolsView: View {
         .onAppear {
             Task {
                 tools = await mcpManager.getAllTools()
+
                 currentClient = tools.keys.first ?? ""
             }
         }
         .onHover(perform: updatePassthrough)
-        .frame(maxWidth: .infinity, alignment: .leading)
     }
 
     private var sidebar: some View {
@@ -73,10 +73,20 @@ struct ToolsView: View {
                             )
                         )
                     }
+                } else {
+                    if tools.isEmpty {
+                        Text("Enable agents in Settings")
+                            .foregroundColor(.secondary)
+                            .font(.system(size: 10))
+                            .padding(.horizontal, 16)
+                            .padding(.vertical, 8)
+                    }
                 }
             }
             .padding(16)
         }
+        .frame(width: 480)
+        .background(Color.black.opacity(0.2))
     }
 
 }

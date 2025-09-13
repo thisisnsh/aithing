@@ -14,6 +14,7 @@ import os
 class MCPManager: ObservableObject {
     var reconnecting: [String: Bool] = [:]
     var clients: [String: Client] = [:]
+    var filters: [String: [String]] = [:]
 
     var executableURL: [String: String] = [:]
     var arguments: [String: [String]] = [:]
@@ -246,8 +247,10 @@ class MCPManager: ObservableObject {
         do {
             for (clientName, client) in clients {
                 let (t, _) = try await client.listTools()
-                if !t.isEmpty {
-                    tools[formatManagedString(clientName)] = t
+                let filter = filters[clientName] ?? []
+                let filteredTools = t.filter { filter.contains($0.name) || filter.isEmpty }
+                if !filteredTools.isEmpty {
+                    tools[formatManagedString(clientName)] = filteredTools
                 }
             }
         } catch {}
@@ -260,7 +263,7 @@ class MCPManager: ObservableObject {
             guard let client = clients[clientName] else {
                 return []
             }
-
+            filters[clientName] = filter
             let (tools, _) = try await client.listTools()
             let filteredTools = tools.filter { filter.contains($0.name) || filter.isEmpty }
             AnalyticsManager.shared.selectItem(itemID: "mcp_get_tools", itemName: "mcp_get_tools")
@@ -328,12 +331,11 @@ class MCPManager: ObservableObject {
         }
 
         if trimmed == "managed_github_mcp" {
-            trimmed = "managed_github_mcp"
+            trimmed = "managed_github"
+        } else if trimmed == "managed_google_mcp" {
+            trimmed = "managed_google"
         }
-        else if trimmed == "managed_google_mcp" {
-            trimmed = "managed_google_mcp"
-        }
-        
+
         // 1. Remove the "managed_" prefix if it exists
         trimmed.removeFirst("managed_".count)
 
