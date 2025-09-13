@@ -4,7 +4,6 @@
 
 - Divide server into group like vscode
 - Find better way to show tools 
-- Redirect to oauth scheme from loopback
 - Redesgin Own Agent UI
 
 Weekend

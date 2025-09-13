@@ -27,6 +27,7 @@ enum McpOAuthError: LocalizedError {
     case invalidRegistrationEndpoint
     case registrationFailed
     case invalidCallbackUrl
+    case authorizationFailed
 
     var errorDescription: String? {
         switch self {
@@ -48,6 +49,8 @@ enum McpOAuthError: LocalizedError {
             return "Dynamic client registration failed."
         case .invalidCallbackUrl:
             return "The callback URL is invalid."
+        case .authorizationFailed:
+            return "Authorization failed."
         }
     }
 }
@@ -84,20 +87,26 @@ final class McpOAuthManager: ObservableObject, Identifiable {
     @Published var user: McpToken?
     @Published var enabled: Bool = false
 
-    var server: McpServer
-    init(server: McpServer) {
-        self.server = server
-    }
-
     private let logger = Logger(
         subsystem: "com.thisisnsh.mac.AIThing",
         category: "McpOAuthManager"
     )
 
     private var wellKnownUrls: WellKnownUrls?
-    private let callbackScheme = "http"
     private var callbackURLString = ""
     private var oauth: OAuth2Swift?
+
+    var server: McpServer
+    private let forwardCallbackScheme: String
+    private let forwardCallbackURL: String
+
+    init(server: McpServer) {
+        self.server = server
+        self.forwardCallbackScheme = "oauth-aithing"
+        self.forwardCallbackURL =
+            "\(forwardCallbackScheme)://oauth-callback-\(server.name.lowercased().replacingOccurrences(of: " ", with: "-"))"
+
+    }
 
     func generateToken(refresh: Bool) async -> McpToken? {
         do {
@@ -120,23 +129,19 @@ final class McpOAuthManager: ObservableObject, Identifiable {
                 }
             }
 
-            let loopback = OAuthLoopback()
-            let redirectURL = try await loopback.start { code, state in
-                Task {
-                    if let cred = try await self.getAccessToken(code: code) {
-                        self.user = self.userFromCreds(credential: cred.credential)
-                    } else {
-                        throw McpOAuthError.cancelled
-                    }
-                }
-            }
+            let loopback = OAuthLoopback(forwardCallbackURL: forwardCallbackURL)
+            let redirectURL = try await loopback.start { _, _ in }
 
             callbackURLString = redirectURL.absoluteString
             let client = try await registerClient()
-            let oauth = try makeOAuth(client: client)
+            let oauth = try makeOAuth(
+                client: client,
+                forwardCallbackScheme: forwardCallbackScheme
+            )
             self.oauth = oauth
 
-            let _ = try await authorizeInteractively()
+            let cred = try await authorizeInteractively()
+            self.user = userFromCreds(credential: cred)
             return self.user
         } catch {
             logger.error("Mcp generateToken error: \(error.localizedDescription)")
@@ -208,7 +213,12 @@ extension McpOAuthManager {
         return registered
     }
 
-    private func makeOAuth(client: RegisteredClient) throws -> OAuth2Swift {
+    private func makeOAuth(
+        client: RegisteredClient,
+        forwardCallbackScheme: String
+    ) throws
+        -> OAuth2Swift
+    {
         guard let wellKnownUrls = wellKnownUrls else { throw McpOAuthError.missingWellKnownUrls }
 
         let oauth = OAuth2Swift(
@@ -219,11 +229,13 @@ extension McpOAuthManager {
             responseType: "code"
         )
         oauth.accessTokenBasicAuthentification = false
-        oauth.authorizeURLHandler = MyASWebAuthURLHandler(callbackScheme: callbackScheme)
+        oauth.authorizeURLHandler = MyASWebAuthURLHandler(
+            callbackScheme: forwardCallbackScheme
+        )
         return oauth
     }
 
-    private func authorizeInteractively() async throws -> Bool {
+    private func authorizeInteractively() async throws -> OAuthSwiftCredential {
         guard let wellKnownUrls = wellKnownUrls else { throw McpOAuthError.missingWellKnownUrls }
 
         guard let callbackURL = URL(string: callbackURLString) else {
@@ -242,7 +254,17 @@ extension McpOAuthManager {
                 state: UUID().uuidString,
                 parameters: [:]
             ) { result in
-                continuation.resume(returning: true)
+                switch result {
+                case .success(let (cred, _, _)):
+                    continuation.resume(returning: cred)
+                case .failure(let err):
+                    self.logger.error("Auth failed: \(err.localizedDescription)")
+                    if err.errorCode == OAuthSwiftError.cancelled.errorCode {
+                        continuation.resume(throwing: McpOAuthError.cancelled)
+                    } else {
+                        continuation.resume(throwing: McpOAuthError.authorizationFailed)
+                    }
+                }
             }
         }
     }

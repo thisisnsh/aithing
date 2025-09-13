@@ -10,6 +10,11 @@ import Foundation
 import Network
 
 final class OAuthLoopback {
+    let forwardCallbackURL: String
+    init(forwardCallbackURL: String) {
+        self.forwardCallbackURL = forwardCallbackURL
+    }
+
     private var listener: NWListener?
     private var handled = false
     private let queue = DispatchQueue(label: "oauth.loopback")
@@ -113,50 +118,13 @@ final class OAuthLoopback {
         let code = comps.queryItems?.first(where: { $0.name == "code" })?.value
         let state = comps.queryItems?.first(where: { $0.name == "state" })?.value
 
-        let html = """
-            <!doctype html>
-            <html lang="en">
-            <head>
-              <meta charset="utf-8">
-              <title>Login complete</title>
-              <style>
-                body {
-                  font: 16px -apple-system, BlinkMacSystemFont, Segoe UI, Roboto, Helvetica, Arial;
-                  display: flex;
-                  flex-direction: column;
-                  justify-content: center;
-                  align-items: center;
-                  min-height: 100vh;
-                  margin: 0;
-                  text-align: center;
-                }
-                img {
-                  max-width: 100px;
-                  margin-bottom: 20px;
-                }
-                h2 {
-                  margin: 10px 0;
-                }
-                p {
-                  margin: 5px 0;
-                }
-              </style>
-            </head>
-            <body>
-              <img src="https://firebasestorage.googleapis.com/v0/b/weareaithing.firebasestorage.app/o/Assets%2Flogo-os.png?alt=media&token=220ca6ab-811b-475a-8012-e91204af97b4" alt="AI Thing Logo">
-              <h2>AI Thing Agent Authentication</h2>
-              <p>You can close this window</p>
-            </body>
-            </html>
-            """
         let response =
             """
-            HTTP/1.1 200 OK\r
-            Content-Type: text/html; charset=utf-8\r
-            Content-Length: \(html.utf8.count)\r
+            HTTP/1.1 301 Moved Permanently\r
+            Location: \(forwardCallbackURL)\(path)\r
+            Content-Length: 0\r
             Connection: close\r
             \r
-            \(html)
             """
         conn.send(
             content: Data(response.utf8),
