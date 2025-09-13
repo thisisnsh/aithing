@@ -8,9 +8,7 @@ struct SettingsView: View {
 
     @EnvironmentObject var googleOAuthManager: GoogleOAuthManager
     @EnvironmentObject var gitHubOAuthManager: GithubOAuthManager
-    @EnvironmentObject var notionOAuthManager: NotionOAuthManager
-    @EnvironmentObject var asanaOAuthManager: AsanaOAuthManager
-    @EnvironmentObject var atlassianOAuthManager: AtlassianOAuthManager
+    @EnvironmentObject var mcpOAuthManagers: McpOAuthManagers
 
     @Binding var isPresented: Bool
     var setPanelVisibility: () -> Void
@@ -23,7 +21,7 @@ struct SettingsView: View {
     @State private var apiKey: String = getAnthropicAPIKey() ?? ""
     @FocusState private var apiKeyFieldFocused: Bool
     @State private var modelSelected: String = getModel()
-    @State private var byokSelected: Bool = true // Always true. Previously: getByokSelected()
+    @State private var byokSelected: Bool = true  // Always true. Previously: getByokSelected()
 
     // Agents
     @State private var agents: [AgentEntry] = getAgentEntries()
@@ -91,9 +89,7 @@ struct SettingsView: View {
                         )
                         .environmentObject(googleOAuthManager)
                         .environmentObject(gitHubOAuthManager)
-                        .environmentObject(notionOAuthManager)
-                        .environmentObject(asanaOAuthManager)
-                        .environmentObject(atlassianOAuthManager)
+                        .environmentObject(mcpOAuthManagers)
 
                     case .preferences:
                         SettingsPreferencesTab(

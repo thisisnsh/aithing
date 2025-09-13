@@ -8,93 +8,12 @@
 import SwiftUI
 import os
 
-struct NotionManagedAgentRow: View {
-    @EnvironmentObject var manager: NotionOAuthManager
-    let icon: String
-    let title: String
-    @Binding var subheading: String
-    @State private var exapanded = false
-
-    var body: some View {
-        VStack {
-            Button {
-                exapanded.toggle()
-            } label: {
-                HStack {
-                    Image(icon).resizable().frame(width: 16, height: 16)
-                    VStack(alignment: .leading, spacing: 2) {
-                        RowTitle(title)
-                        if !subheading.isEmpty {
-                            RowSub(subheading)
-                        }
-                    }
-                    Spacer()
-                    Image(systemName: "chevron.right")
-                        .frame(width: 10, height: 10)
-                }
-            }
-            .buttonStyle(.plain)
-
-            if exapanded {
-                ForEach(
-                    manager.toolScopesMap.keys.sorted(by: { $0.rawValue < $1.rawValue }),
-                    id: \.self
-                ) { tool in
-
-                    VStack {
-                        Divider()
-                        HStack {
-                            Text(tool.rawValue).font(.system(size: 12, weight: .medium))
-                            Spacer()
-                            Toggle(
-                                "",
-                                isOn: Binding(
-                                    get: { manager.enabled.contains(tool) },
-                                    set: { newValue in
-                                        Task {
-                                            if newValue {
-                                                manager.enabled.insert(tool)
-                                                print("Notion: Enabling \(tool)")
-                                                print("Notion: Tools: \(manager.enabled)")
-                                                if let user = await manager.generateToken(
-                                                    refresh: false
-                                                ) {
-                                                    subheading = user.name ?? ""
-                                                } else {
-                                                    manager.enabled.remove(tool)
-                                                }
-                                            } else {
-                                                manager.enabled.remove(tool)
-                                                print("Notion: Disabling \(tool)")
-                                                print("Notion: Tools: \(manager.enabled)")
-                                                if manager.enabled.count == 0 {
-                                                    print("Notion: Resetting token")
-                                                    manager.resetToken()
-                                                }
-                                            }
-                                        }
-                                    }
-                                )
-                            )
-                            .toggleStyle(.switch).tint(.black).scaleEffect(0.7)
-                        }
-                    }
-                    .padding(.horizontal, 8)
-                }
-            }
-        }
-        .padding(4)
-    }
-}
-
 struct GithubManagedAgentRow: View {
     @EnvironmentObject var manager: GithubOAuthManager
     let icon: String
     let title: String
     @Binding var subheading: String
     @State private var exapanded = false
-
-    // private static let logger = Logger(subsystem: "com.thisisnsh.mac.AIThing", category: "GoogleManagedAgentRow")
 
     var body: some View {
         VStack {
@@ -174,8 +93,6 @@ struct GoogleManagedAgentRow: View {
     let title: String
     @Binding var subheading: String
     @State private var exapanded = false
-
-    // private static let logger = Logger(subsystem: "com.thisisnsh.mac.AIThing", category: "GoogleManagedAgentRow")
 
     var body: some View {
         VStack {

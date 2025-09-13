@@ -17,9 +17,7 @@ struct AgentEntry: Codable, Identifiable, Equatable {
 struct SettingsAgentsTab: View {
     @EnvironmentObject var googleOAuthManager: GoogleOAuthManager
     @EnvironmentObject var gitHubOAuthManager: GithubOAuthManager
-    @EnvironmentObject var notionOAuthManager: NotionOAuthManager
-    @EnvironmentObject var asanaOAuthManager: AsanaOAuthManager
-    @EnvironmentObject var atlassianOAuthManager: AtlassianOAuthManager
+    @EnvironmentObject var mcpOAuthManagers: McpOAuthManagers
 
     @Binding var agents: [AgentEntry]
     @Binding var showAddAgent: Bool
@@ -41,7 +39,6 @@ struct SettingsAgentsTab: View {
     // Managed Agents
     @State private var googleAgentAccount: String = ""
     @State private var githubAgentAccount: String = ""
-    @State private var notionAgentAccount: String = ""
 
     let logger = Logger(subsystem: "com.thisisnsh.mac.AIThing", category: "SettingsAgentsTab")
 
@@ -75,18 +72,6 @@ struct SettingsAgentsTab: View {
                         subheading: $githubAgentAccount,
                     )
                     .environmentObject(gitHubOAuthManager)
-                    Divider()
-                    NotionManagedAgentRow(
-                        icon: "notion",
-                        title: "Notion",
-                        subheading: $notionAgentAccount,
-                    )
-                    .environmentObject(notionOAuthManager)
-                    Divider()
-                    ManagedAgentRow(
-                        icon: "slack",
-                        title: "Slack",
-                    )
                     Divider()
                     Text(
                         """
