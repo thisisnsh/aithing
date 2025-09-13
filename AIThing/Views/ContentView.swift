@@ -151,13 +151,15 @@ struct ContentView: View {
             }
         }
         .task {
+            await firestoreManager.runServers()
+            
             switch loginManager.authState {
             case .signedIn(let user):
                 AnalyticsManager.shared.setUserId(user.uid)
             default:
                 AnalyticsManager.shared.setUserId(nil)
             }
-            managedModels = await firestoreManager.getModelInfos()
+            managedModels = await firestoreManager.getModelInfos()        
             await loadAllClientTools()
         }
         .onAppear {

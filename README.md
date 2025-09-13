@@ -4,7 +4,6 @@
 
 
 Friday
-- Asana & Atlassian MCP 
 - Redesgin Own Agent UI
 
 Weekend
@@ -12,7 +11,7 @@ Weekend
 - Update Doc BYOK Free
 - Update Doc for Model Selection 
 - Update Doc for Prompt Cache & Output Token
-- Update Doc for Asana & Atlassian Tools  
+- Update Doc for Adding Global Agents   
 
 Later
 - Get Google Review
