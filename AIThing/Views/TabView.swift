@@ -401,6 +401,13 @@ struct TabView: View {
                         }
 
                         ZStack(alignment: .topTrailing) {
+                            MarkdownText(text: modelOutput)
+                                .foregroundColor(.white)
+                                .font(.system(size: 14))
+                                .frame(maxWidth: .infinity, alignment: .leading)
+                                .padding(.horizontal, 24)
+                                .padding(.vertical, 16)
+
                             Button(
                                 action: {
                                     copyToClipboard(string: modelOutput)
@@ -416,13 +423,6 @@ struct TabView: View {
                             .frame(width: 18, height: 18)
                             .padding(.horizontal, 24)
                             .padding(.vertical, 16)
-
-                            MarkdownText(text: modelOutput)
-                                .foregroundColor(.white)
-                                .font(.system(size: 14))
-                                .frame(maxWidth: .infinity, alignment: .leading)
-                                .padding(.horizontal, 24)
-                                .padding(.vertical, 16)
                         }
                     }
 
@@ -1328,7 +1328,6 @@ struct TabView: View {
                     """
                 ## Behavior Rules  
                 - Act as an **agent**: perceive instructions, reason, and invoke tools when needed.  
-                - Do **NOT** describe tools unless explicitly asked.  
                 - Be **precise, context-aware**, and never guess if info is missing.  
                 """,
             ],
@@ -1425,7 +1424,7 @@ struct TabView: View {
         } catch {
             return
         }
-    }    
+    }
 
     private func animateOutput(content: String) async {
         var partial = ""

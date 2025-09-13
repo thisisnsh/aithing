@@ -65,19 +65,28 @@ struct WellKnownUrls: Codable {
     let scopes_supported: [String]?
 }
 
+struct McpServer: Codable {
+    let id: String?
+    var image: String?
+    let name: String
+    let url: String
+    let version: Int?
+}
+
 @MainActor
 final class McpOAuthManagers: ObservableObject {
-    @Published var managers: [McpOAuthManager] = []
+    @Published var managers: [String: McpOAuthManager] = [:]
 }
 
 @MainActor
 final class McpOAuthManager: ObservableObject, Identifiable {
     let id = UUID()
     @Published var user: McpToken?
+    @Published var enabled: Bool = false
 
-    let mcpUrl: String
-    init(mcpUrl: String) {
-        self.mcpUrl = mcpUrl
+    var server: McpServer
+    init(server: McpServer) {
+        self.server = server
     }
 
     private let logger = Logger(
@@ -143,7 +152,7 @@ final class McpOAuthManager: ObservableObject, Identifiable {
 
 extension McpOAuthManager {
     private func getWellKnownUrls() async throws {
-        guard let mcpUrl = URL(string: self.mcpUrl) else {
+        guard let mcpUrl = URL(string: self.server.url) else {
             throw McpOAuthError.invalidMcpUrl
         }
         guard var comps = URLComponents(url: mcpUrl, resolvingAgainstBaseURL: false),

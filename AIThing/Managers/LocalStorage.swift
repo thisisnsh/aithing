@@ -95,3 +95,15 @@ func getByokSelected() -> Bool {
 func setByokSelected(value: Bool) {
     // No-op
 }
+
+func getManagedAgents() -> [String] {
+    if let data = UserDefaults.standard.string(forKey: "ManagedAgents") {
+        return data.split(separator: " ").map(String.init)
+    }
+    return []
+}
+
+func setManagedAgents(value: [String]) {
+    let agents = value.joined(separator: " ")
+    UserDefaults.standard.set(agents, forKey: "ManagedAgents")
+}

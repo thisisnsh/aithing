@@ -2,12 +2,12 @@
 
 ------------------------ 
 
-
-Friday
+- Divide server into group like vscode
+- Find better way to show tools 
+- Redirect to oauth scheme from loopback
 - Redesgin Own Agent UI
 
 Weekend
-- Store Selected Tools in Local Storage
 - Update Doc BYOK Free
 - Update Doc for Model Selection 
 - Update Doc for Prompt Cache & Output Token

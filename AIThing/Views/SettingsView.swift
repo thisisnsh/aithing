@@ -110,6 +110,35 @@ struct SettingsView: View {
         }
         .onHover(perform: updatePassthrough)
         .task {
+            let managedAgents = await firestoreManager.getManagedAgents()
+            var allServerIds: [String] = []
+            for server in managedAgents {
+                if let id = server.id {
+                    allServerIds.append(id)
+
+                    if !mcpOAuthManagers.managers.keys.contains(id) {
+                        mcpOAuthManagers.managers[id] = McpOAuthManager(server: server)
+                    }
+
+                    if let manager = mcpOAuthManagers.managers[id] {
+                        if manager.server.version != server.version {
+                            mcpOAuthManagers.managers[id] = McpOAuthManager(server: server)
+                        }
+
+                    }
+
+                    // Always update image
+                    if let image = server.image {
+                        mcpOAuthManagers.managers[id]?.server.image = image
+                    }
+                }
+            }
+            for key in mcpOAuthManagers.managers.keys {
+                if !allServerIds.contains(key) {
+                    mcpOAuthManagers.managers.removeValue(forKey: key)
+                }
+            }
+
             await getUsageData()
             AnalyticsManager.shared.screenView(
                 screenName: "settings_view",

@@ -8,6 +8,61 @@
 import SwiftUI
 import os
 
+struct ManagedAgentRow: View {
+    @EnvironmentObject var manager: McpOAuthManager
+    let icon: String?
+    let title: String
+
+    var body: some View {
+        VStack {
+            HStack {
+                if let icon = icon {
+                    AsyncImage(url: URL(string: icon)) { image in
+                        image
+                            .resizable()
+                            .scaledToFit()
+                    } placeholder: {
+                        Image(systemName: "server.rack").resizable()
+                    }
+                    .frame(width: 16, height: 16)
+                } else {
+                    Image(systemName: "server.rack").resizable().frame(width: 16, height: 16)
+                }
+                VStack(alignment: .leading, spacing: 2) {
+                    RowTitle(title)
+                }
+                Spacer()
+                Toggle(
+                    "",
+                    isOn: Binding(
+                        get: { manager.enabled },
+                        set: { newValue in
+                            Task {
+                                if newValue {
+                                    manager.enabled = true
+                                    print("\(title): Enabling")
+                                    if let _ = await manager.generateToken(
+                                        refresh: false
+                                    ) {
+                                    } else {
+                                        manager.enabled = false
+                                    }
+                                } else {
+                                    manager.enabled = false
+                                    print("\(title): Disabling")
+                                    manager.resetToken()
+                                }
+                            }
+                        }
+                    )
+                )
+                .toggleStyle(.switch).tint(.black).scaleEffect(0.7)
+            }
+        }
+        .padding(4)
+    }
+}
+
 struct GithubManagedAgentRow: View {
     @EnvironmentObject var manager: GithubOAuthManager
     let icon: String
@@ -40,7 +95,6 @@ struct GithubManagedAgentRow: View {
                     manager.toolScopesMap.keys.sorted(by: { $0.rawValue < $1.rawValue }),
                     id: \.self
                 ) { tool in
-
                     VStack {
                         Divider()
                         HStack {
@@ -119,7 +173,6 @@ struct GoogleManagedAgentRow: View {
                     manager.toolScopesMap.keys.sorted(by: { $0.rawValue < $1.rawValue }),
                     id: \.self
                 ) { tool in
-
                     VStack {
                         Divider()
                         HStack {
@@ -163,22 +216,6 @@ struct GoogleManagedAgentRow: View {
             }
         }
         .padding(4)
-    }
-}
-
-struct ManagedAgentRow: View {
-    let icon: String
-    let title: String
-
-    var body: some View {
-        HStack {
-            Image(icon).resizable().frame(width: 16, height: 16)
-            RowTitle(title)
-            Spacer()
-            RowSub("Coming Soon")
-        }
-        .padding(4)
-        .opacity(0.5)
     }
 }
 

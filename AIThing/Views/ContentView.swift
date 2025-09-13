@@ -151,15 +151,13 @@ struct ContentView: View {
             }
         }
         .task {
-            await firestoreManager.runServers()
-            
             switch loginManager.authState {
             case .signedIn(let user):
                 AnalyticsManager.shared.setUserId(user.uid)
             default:
                 AnalyticsManager.shared.setUserId(nil)
             }
-            managedModels = await firestoreManager.getModelInfos()        
+            managedModels = await firestoreManager.getModelInfos()
             await loadAllClientTools()
         }
         .onAppear {
@@ -675,6 +673,8 @@ struct ContentView: View {
     }
 
     func reconnectManagedAgents() async {
+        var enabledClients: [String] = []
+
         if googleOAuthManager.enabled.count > 0 {
             let clientName = "managed_google_mcp"
             var accessToken: String?
@@ -690,7 +690,6 @@ struct ContentView: View {
                 logger.debug("RefreshedAccessToken \(String(describing: refreshedAccessToken))")
                 if accessToken != refreshedAccessToken || !mcp.clientExists(clientName: clientName)
                 {
-                    logger.debug("Reconnecting Google Agent")
                     _ = await mcp.reconnect(
                         clientName: clientName,
                         url: "https://google.mcp.aithing.dev/mcp",
@@ -704,6 +703,9 @@ struct ContentView: View {
             )
             allClientTools[clientName] = tools
             logger.debug("Google Enabled Capabilities: \(tools)")
+            enabledClients.append(clientName)
+        } else {
+            allClientTools.removeValue(forKey: "managed_google_mcp")
         }
 
         if githubOAuthManager.enabled.count > 0 {
@@ -721,7 +723,6 @@ struct ContentView: View {
                 logger.debug("RefreshedAccessToken \(String(describing: refreshedAccessToken))")
                 if accessToken != refreshedAccessToken || !mcp.clientExists(clientName: clientName)
                 {
-                    logger.debug("Reconnecting Github Agent")
                     _ = await mcp.reconnect(
                         clientName: clientName,
                         url: "https://api.githubcopilot.com/mcp",
@@ -735,6 +736,40 @@ struct ContentView: View {
             )
             allClientTools[clientName] = tools
             logger.debug("Github Enabled Capabilities: \(tools)")
+            enabledClients.append(clientName)
+        } else {
+            allClientTools.removeValue(forKey: "managed_github_mcp")
+        }
+
+        for (clientName, agentOAuthManager) in mcpOAuthManagers.managers {
+            if agentOAuthManager.enabled {
+                var accessToken: String?
+                var refreshedAccessToken: String?
+
+                if agentOAuthManager.user != nil {
+                    accessToken = agentOAuthManager.user?.accessToken
+                    logger.debug("AccessToken \(String(describing: accessToken))")
+                }
+                if let user = await agentOAuthManager.generateToken(refresh: true) {
+                    refreshedAccessToken = user.accessToken
+                    // If token has been refreshed OR client does not exist
+                    logger.debug("RefreshedAccessToken \(String(describing: refreshedAccessToken))")
+                    if accessToken != refreshedAccessToken
+                        || !mcp.clientExists(clientName: clientName)
+                    {
+                        _ = await mcp.reconnect(
+                            clientName: clientName,
+                            url: agentOAuthManager.server.url,
+                            authToken: refreshedAccessToken!
+                        )
+                    }
+                }
+                let tools = await mcp.getTools(clientName: clientName, filter: [])
+                allClientTools[clientName] = tools
+                enabledClients.append(clientName)
+            } else {
+                allClientTools.removeValue(forKey: clientName)
+            }
         }
     }
 }

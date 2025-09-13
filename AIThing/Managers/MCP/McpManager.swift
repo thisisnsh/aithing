@@ -91,6 +91,23 @@ class MCPManager: ObservableObject {
                 location: "mcp_manager"
             )
             logger.error("Error in connecting: \(error.localizedDescription)")
+            clients.removeValue(forKey: clientName)
+            executableURL.removeValue(forKey: clientName)
+            arguments.removeValue(forKey: clientName)
+
+            do {
+                if serverInputPipe[clientName] != nil, serverOutputPipe[clientName] != nil {
+                    try serverInputPipe[clientName]!.fileHandleForReading.close()
+                    try serverOutputPipe[clientName]!.fileHandleForReading.close()
+                }
+                serverInputPipe.removeValue(forKey: clientName)
+                serverOutputPipe.removeValue(forKey: clientName)
+            } catch {}
+
+            if process[clientName] != nil, process[clientName]!.isRunning {
+                process[clientName]!.terminate()
+            }
+            process.removeValue(forKey: clientName)
             return error.localizedDescription
         }
     }
@@ -113,15 +130,26 @@ class MCPManager: ObservableObject {
             let configuration = URLSessionConfiguration.default
             configuration.httpAdditionalHeaders = headers
 
-            let transport = HTTPClientTransport(
-                endpoint: URL(string: httpURL)!,
-                configuration: configuration,
-                streaming: httpURL.hasSuffix("/sse/") || httpURL.hasSuffix("/sse"),
-                sseInitializationTimeout: 10,
-                logger: loggingLogger
-            )
+            let legacySse = httpURL.hasSuffix("/sse/") || httpURL.hasSuffix("/sse")
+            if legacySse {
+                let transport = SSEClientTransport(
+                    endpoint: URL(string: httpURL)!,
+                    token: authToken,
+                    configuration: configuration,
+                    logger: loggingLogger
+                )
+                try await client.connect(transport: transport)
+            } else {
+                let transport = HTTPClientTransport(
+                    endpoint: URL(string: httpURL)!,
+                    configuration: configuration,
+                    streaming: true,
+                    sseInitializationTimeout: 60,
+                    logger: loggingLogger
+                )
+                try await client.connect(transport: transport)
+            }
 
-            try await client.connect(transport: transport)
             logger.info("Connected to MCP server for \(clientName)")
             AnalyticsManager.shared.selectItem(
                 itemID: "mcp_connected_http",
@@ -135,6 +163,9 @@ class MCPManager: ObservableObject {
                 location: "mcp_manager"
             )
             logger.error("Error in connecting: \(error.localizedDescription)")
+            clients.removeValue(forKey: clientName)
+            httpURL.removeValue(forKey: clientName)
+            headers.removeValue(forKey: clientName)
             return error.localizedDescription
         }
     }
@@ -170,13 +201,19 @@ class MCPManager: ObservableObject {
             for client in clients.values {
                 await client.disconnect()
             }
+            clients.removeAll()
+            httpURL.removeAll()
+            headers.removeAll()
+
             for (_, process) in process {
                 if process.isRunning {
                     process.terminate()
                 }
             }
+            process.removeAll()
             executableURL.removeAll()
             arguments.removeAll()
+
             for pipe in serverInputPipe.values {
                 try pipe.fileHandleForReading.close()
                 try pipe.fileHandleForWriting.close()
@@ -185,6 +222,9 @@ class MCPManager: ObservableObject {
                 try pipe.fileHandleForReading.close()
                 try pipe.fileHandleForWriting.close()
             }
+            serverInputPipe.removeAll()
+            serverOutputPipe.removeAll()
+
             AnalyticsManager.shared.selectItem(
                 itemID: "mcp_disconnected",
                 itemName: "mcp_disconnected"

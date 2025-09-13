@@ -73,6 +73,21 @@ struct SettingsAgentsTab: View {
                     )
                     .environmentObject(gitHubOAuthManager)
                     Divider()
+
+                    ForEach(
+                        mcpOAuthManagers.managers.keys.sorted(by: { $0 < $1 }),
+                        id: \.self
+                    ) { manager in
+                        if let agent = mcpOAuthManagers.managers[manager] {
+                            ManagedAgentRow(
+                                icon: agent.server.image,
+                                title: agent.server.name
+                            )
+                            .environmentObject(agent)
+                            Divider()
+                        }
+                    }
+
                     Text(
                         """
                         Need help? Visit the [Troubleshooting](https://aithing.dev/errors/agent-troubleshooting) page.
