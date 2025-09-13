@@ -2,11 +2,12 @@
 
 ------------------------ 
 
+
 - Divide server into group like vscode
-- Find better way to show tools 
 - Redesgin Own Agent UI
 
-Weekend
+
+Weekend 
 - Update Doc BYOK Free
 - Update Doc for Model Selection 
 - Update Doc for Prompt Cache & Output Token

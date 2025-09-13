@@ -278,7 +278,7 @@ struct TextBubble: View {
     let isUser: Bool
 
     var body: some View {
-        Text(text)
+        Text(text)            
             .font(.system(size: 12, weight: .medium))
             .textSelection(.enabled)
             .padding(8)

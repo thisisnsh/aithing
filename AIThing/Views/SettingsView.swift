@@ -308,6 +308,25 @@ struct SettingsView: View {
 
     func addAgentEntry() -> String {
         let entry: Entry
+
+        let allAgents = getAgentEntries()
+        for agent in allAgents {
+            switch agent.entry {
+            case let .url(name, _):
+                if name == agentName {
+                    return "Agent name should be unique"
+                }
+            case let .urlWithToken(name, _, _):
+                if name == agentName {
+                    return "Agent name should be unique"
+                }
+            case let .command(name, _, _):
+                if name == agentName {
+                    return "Agent name should be unique"
+                }
+            }
+        }
+
         if agentType == "Global" {
             entry =
                 agentSecondary.isEmpty

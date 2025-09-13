@@ -75,6 +75,7 @@ struct TabView: View {
     @State private var isDropping: Bool = false
 
     @State private var textSize: CGFloat = 18
+    @State private var showTools: Bool = false
 
     var body: some View {
         VStack(alignment: .leading, spacing: 0) {
@@ -170,6 +171,7 @@ struct TabView: View {
                 }
             }
             .onChange(of: isFocused) { newValue in
+                showTools = false
                 // Delay size change when in focus so that other
                 // views not in focus adjust height first
                 if isFocused {
@@ -183,6 +185,27 @@ struct TabView: View {
                 }
             }
             .padding(.bottom, 8)
+
+            if isFocused, showTools {
+                ToolsView(setPanelPassthrough: setPanelPassthrough)
+                    .background(.ultraThinMaterial)
+                    .overlay {
+                        RoundedRectangle(cornerRadius: 24)
+                            .stroke(Color.white, lineWidth: 1.5)
+                    }
+                    .cornerRadius(24)
+                    .shadow(radius: 4)
+                    .frame(minWidth: 640, maxWidth: 640, minHeight: 200, maxHeight: 200)
+                    .environmentObject(mcp)
+                    .onHover { inside in
+                        updatePassthrough(inside: inside)
+                    }
+                    .onAppear {
+                        updatePanelSizeFromCurrent(200)
+                    }
+                    .transition(.identity)
+                    .animation(nil, value: isFocused)
+            }
 
             if isFocused {
                 contextView()
@@ -259,7 +282,7 @@ struct TabView: View {
                             }
                         }
                         .opacity(showSettings || showHistory ? 0.6 : 1)
-                        .frame(width: 526)
+                        .frame(width: 500)
                     }
 
                     if query.isEmpty && !showSettings && !showHistory && !isDropping {
@@ -279,9 +302,24 @@ struct TabView: View {
                             .font(.system(size: 18, weight: .medium))
                             .padding(.leading, 6)
                             .allowsHitTesting(false)
-                            .frame(width: 526)
+                            .frame(width: 500)
                     }
                 }
+
+                Button(
+                    action: {
+                        showTools.toggle()
+                        AnalyticsManager.shared.customEventTab(action: "tab_click_tools")
+                    }
+                ) {
+                    Image(systemName: "hammer.fill")
+                        .resizable()
+                        .scaledToFit()
+                        .foregroundColor(.white.opacity(0.5))
+                }
+                .buttonStyle(PlainButtonStyle())
+                .frame(width: 18, height: 18)
+                .opacity(isFocused && !showSettings && !showHistory ? 1 : 0)
 
                 Button(
                     action: {

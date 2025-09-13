@@ -241,6 +241,19 @@ class MCPManager: ObservableObject {
         }
     }
 
+    func getAllTools() async -> [String: [Tool]] {
+        var tools: [String: [Tool]] = [:]
+        do {
+            for (clientName, client) in clients {
+                let (t, _) = try await client.listTools()
+                if !t.isEmpty {
+                    tools[formatManagedString(clientName)] = t
+                }
+            }
+        } catch {}
+        return tools
+    }
+
     func getTools(clientName: String, filter: [String]) async -> [[String: Any]] {
         let clientName = clientName.lowercased()
         do {
@@ -307,4 +320,33 @@ class MCPManager: ObservableObject {
             return []
         }
     }
+
+    func formatManagedString(_ input: String) -> String {
+        var trimmed = input
+        if !trimmed.hasPrefix("managed_") {
+            return input
+        }
+
+        if trimmed == "managed_github_mcp" {
+            trimmed = "managed_github_mcp"
+        }
+        else if trimmed == "managed_google_mcp" {
+            trimmed = "managed_google_mcp"
+        }
+        
+        // 1. Remove the "managed_" prefix if it exists
+        trimmed.removeFirst("managed_".count)
+
+        // 2. Split by underscore
+        let parts = trimmed.split(separator: "_")
+
+        // 3. Capitalize each word
+        let capitalizedParts = parts.map { part in
+            part.prefix(1).uppercased() + part.dropFirst()
+        }
+
+        // 4. Join with spaces
+        return capitalizedParts.joined(separator: " ")
+    }
+
 }

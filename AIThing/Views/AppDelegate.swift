@@ -169,8 +169,10 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate {
 
         frame.origin.y += (frame.size.height - targetSize.height)  // keep top aligned
         frame.size = targetSize
-
-        floatingWindow.setFrame(frame, display: true, animate: false)
+        
+        if frame.origin.y > 0 {
+            floatingWindow.setFrame(frame, display: true, animate: false)
+        }        
     }
 
     /// Returns the extra panel height by calculating the difference between the floating window's current height and the base height

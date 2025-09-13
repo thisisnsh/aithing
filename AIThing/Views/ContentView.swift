@@ -148,6 +148,7 @@ struct ContentView: View {
             Task {
                 managedModels = await firestoreManager.getModelInfos()
                 await loadAllClientTools()
+                await reconnectManagedAgents()
             }
         }
         .task {
