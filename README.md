@@ -2,9 +2,7 @@
 
 ------------------------ 
 
-- Redesgin Own Agent UI
-
-Weekend 
+- Review MCP Servers
 - Update Doc BYOK Free
 - Update Doc for Model Selection 
 - Update Doc for Prompt Cache & Output Token

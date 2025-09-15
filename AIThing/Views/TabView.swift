@@ -311,7 +311,7 @@ struct TabView: View {
                         AnalyticsManager.shared.customEventTab(action: "tab_click_tools")
                     }
                 ) {
-                    Image(systemName: "hammer.fill")
+                    Image(systemName: "hammer.circle.fill")
                         .resizable()
                         .scaledToFit()
                         .foregroundColor(.white.opacity(0.5))

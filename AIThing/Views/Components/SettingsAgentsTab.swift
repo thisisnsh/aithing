@@ -20,19 +20,24 @@ struct SettingsAgentsTab: View {
     @EnvironmentObject var mcpOAuthManagers: McpOAuthManagers
 
     @Binding var agents: [AgentEntry]
-    @Binding var showAddAgent: Bool
 
-    let agentTypes: [String]
-    @Binding var agentType: String
-    @Binding var agentName: String
-    @Binding var agentPrimary: String
-    @Binding var agentSecondary: String
-    @Binding var agentMaxCount: Int
+    @State private var agentMaxCount: Int = 10
 
-    @Binding var showToast: Bool
-    @Binding var toastText: String
+    @State private var agentType: String = "global"
+    @State private var agentName: String = ""
+    @State private var agentPrimary: String = ""
+    @State private var agentSecondary: String = ""
 
-    let addAgentEntry: () -> String
+    @State private var showToast: Bool = false
+    @State private var toastText: String = ""
+
+    let addAgentEntry:
+        (
+            _ type: String,
+            _ name: String,
+            _ primary: String,
+            _ secondary: String
+        ) -> String
     let saveAgents: () -> Void
     let deleteAgent: (AgentEntry) -> Void
 
@@ -73,7 +78,7 @@ struct SettingsAgentsTab: View {
                             subheading: $githubAgentAccount,
                         )
                         .environmentObject(gitHubOAuthManager)
-                    }.padding(4)
+                    }
 
                     GroupBox {
                         VStack(alignment: .leading) {
@@ -98,8 +103,7 @@ struct SettingsAgentsTab: View {
                             .padding(4)
                             .foregroundStyle(.secondary)
                         }
-
-                    }.padding(4)
+                    }
 
                     Text(
                         """
@@ -133,92 +137,92 @@ struct SettingsAgentsTab: View {
                     .font(.system(size: 10, weight: .medium))
                     .padding(.bottom, 4)
             ) {
-
                 VStack(alignment: .leading) {
-                    Text(
-                        """
-                        Learn more about adding your [own agents](https://aithing.dev/features/multiple-agents#add-your-own-agents).
-                        """
-                    )
-                    .font(.system(size: 10, weight: .medium))
-                    .padding(4)
-                    .padding(.top, 4)
-                    .foregroundStyle(.secondary)
+                    GroupBox {
+                        ForEach(agents) { agent in
+                            AgentRow(
+                                agent: agent,
+                                toggle: { newValue in
+                                    if let idx = agents.firstIndex(of: agent) {
+                                        agents[idx].isEnabled = newValue
+                                        saveAgents()
+                                    }
+                                },
+                                delete: { deleteAgent(agent) }
+                            )
+                            Divider()
+                        }
 
-                    Divider()
-
-                    ForEach(agents) { agent in
-                        AgentRow(
-                            agent: agent,
-                            toggle: { newValue in
-                                if let idx = agents.firstIndex(of: agent) {
-                                    agents[idx].isEnabled = newValue
-                                    saveAgents()
-                                }
-                            },
-                            delete: { deleteAgent(agent) }
+                        Text(
+                            """
+                            Learn more about adding your [own agents](https://aithing.dev/features/multiple-agents#add-your-own-agents).
+                            """
                         )
-                        Divider()
-                    }
-
-                    if showAddAgent {
-                        AddAgentForm(
-                            agentType: $agentType,
-                            agentTypes: agentTypes,
-                            agentName: $agentName,
-                            agentPrimary: $agentPrimary,
-                            agentSecondary: $agentSecondary
-                        )
+                        .font(.system(size: 10, weight: .medium))
+                        .frame(maxWidth: .infinity, alignment: .leading)
+                        .foregroundStyle(.secondary)
                         .padding(4)
                     }
 
-                    HStack {
-                        Button {
-                            if showAddAgent {
-                                showToast = false
-                                if agents.count < agentMaxCount {
-                                    let error = addAgentEntry()
-                                    if !error.isEmpty {
-                                        toastText = error
+                    if agents.count < agentMaxCount {
+                        GroupBox {
+                            VStack(alignment: .leading, spacing: 0) {
+                                AddAgentForm(
+                                    agentType: $agentType,
+                                    agentName: $agentName,
+                                    agentPrimary: $agentPrimary,
+                                    agentSecondary: $agentSecondary
+                                )
+
+                                Button {
+                                    showToast = false
+                                    if agents.count < agentMaxCount {
+                                        let error = addAgentEntry(
+                                            agentType,
+                                            agentName,
+                                            agentPrimary,
+                                            agentSecondary
+                                        )
+                                        if !error.isEmpty {
+                                            toastText = error
+                                            showToast = true
+                                            DispatchQueue.main.asyncAfter(deadline: .now() + 5) {
+                                                showToast = false
+                                                toastText = ""
+                                            }
+                                        }
+                                    } else {
+                                        toastText =
+                                            "Maximum of \(agentMaxCount) agents allowed."
                                         showToast = true
                                         DispatchQueue.main.asyncAfter(deadline: .now() + 5) {
                                             showToast = false
                                             toastText = ""
                                         }
-                                    } else {
-                                        showAddAgent = false
                                     }
-                                } else {
-                                    toastText = "Maximum of \(agentMaxCount) agents allowed."
-                                    showToast = true
-                                    DispatchQueue.main.asyncAfter(deadline: .now() + 5) {
-                                        showToast = false
-                                        toastText = ""
-                                    }
+                                } label: {
+                                    Text("+ Add Agent")
+                                        .font(.system(size: 12, weight: .medium))
+                                        .frame(maxWidth: .infinity)
+                                        .frame(height: 24)
+                                        .padding(.horizontal, 12)
+                                        .background(Color.black.opacity(0.2))
+                                        .clipShape(RoundedRectangle(cornerRadius: 4))
                                 }
-                            } else {
-                                showAddAgent = true
+                                .buttonStyle(.plain)
+                                .padding(4)
+
+                                if showToast {
+                                    Text(toastText)
+                                        .foregroundStyle(.red)
+                                        .font(.system(size: 10, weight: .medium))
+                                        .padding(4)
+                                }
                             }
-                        } label: {
-                            Text("+ Add Agent")
-                                .font(.system(size: 12, weight: .medium))
-                                .padding(.vertical, 8)
-                                .padding(.horizontal, 12)
-                                .background(Color.black.opacity(0.2))
-                                .clipShape(RoundedRectangle(cornerRadius: 8))
                         }
-                        .buttonStyle(.plain)
-
-                        if showToast {
-                            Text(toastText)
-                                .font(.system(size: 10, weight: .medium))
-                                .padding(.vertical, 4)
-                        }
-
-                        Spacer()
                     }
-                    .padding(4)
                 }
+                .padding(4)
             }
         }
         .frame(maxWidth: .infinity, alignment: .leading)
@@ -227,72 +231,124 @@ struct SettingsAgentsTab: View {
 
 private struct AddAgentForm: View {
     @Binding var agentType: String
-    let agentTypes: [String]
     @Binding var agentName: String
     @Binding var agentPrimary: String
     @Binding var agentSecondary: String
 
     var body: some View {
-        GroupBox {
-            VStack(alignment: .leading) {
-                HStack {
-                    Text("Name")
-                        .font(.system(size: 10, weight: .medium))
-                        .frame(width: 50, alignment: .leading)
-                    TextField("GitHub", text: $agentName)
-                        .padding(.horizontal, 8)
+
+        VStack(alignment: .leading) {
+            HStack(spacing: 0) {
+                Button {
+                    agentType = "global"
+                } label: {
+                    Text("Global")
+                        .font(.system(size: 12, weight: .medium))
                         .frame(height: 24)
-                        .background(Color.black.opacity(0.2))
-                        .clipShape(RoundedRectangle(cornerRadius: 4))
-                        .font(.system(size: 14, weight: .medium))
-                        .textFieldStyle(.plain)
-
-                    Picker("", selection: $agentType) {
-                        ForEach(agentTypes, id: \.self) { at in Text(at).tag(at) }
-                    }
-                    .pickerStyle(.radioGroup)
-                    .horizontalRadioGroupLayout()
-                    .font(.system(size: 10, weight: .medium))
-                    .buttonStyle(.borderless)
+                        .frame(maxWidth: .infinity)
+                        .background(
+                            agentType == "global"
+                                ? Color.black
+                                    .opacity(0.4)
+                                : Color.black
+                                    .opacity(0.2)
+                        )
                 }
-                .padding(.bottom, 4)
+                .buttonStyle(.plain)
+                .frame(maxWidth: .infinity)
 
-                HStack {
-                    Text(agentType == "Global" ? "URL" : "Command")
-                        .font(.system(size: 10, weight: .medium))
-                        .frame(width: 50, alignment: .leading)
-                    TextField(
-                        agentType == "Global"
-                            ? "https://api.githubcopilot.com/mcp/" : "/opt/homebrew/bin/docker",
-                        text: $agentPrimary
-                    )
+                Divider()
+
+                Button {
+                    agentType = "local"
+                } label: {
+                    Text("Local")
+                        .font(.system(size: 12, weight: .medium))
+                        .frame(height: 24)
+                        .frame(maxWidth: .infinity)
+                        .background(
+                            agentType == "local"
+                                ? Color.black
+                                    .opacity(0.4)
+                                : Color.black
+                                    .opacity(0.2)
+                        )
+                }
+                .buttonStyle(.plain)
+                .frame(maxWidth: .infinity)
+            }
+            .clipShape(RoundedRectangle(cornerRadius: 4))
+            .padding(.bottom, 8)
+
+            HStack {
+                Text("Name")
+                    .font(.system(size: 10, weight: .medium))
+                    .frame(width: 100, alignment: .leading)
+                TextField("Agent Name", text: $agentName)
                     .padding(.horizontal, 8)
                     .frame(height: 24)
                     .background(Color.black.opacity(0.2))
                     .clipShape(RoundedRectangle(cornerRadius: 4))
-                    .font(.system(size: 14, weight: .medium))
+                    .font(.system(size: 12, weight: .medium))
                     .textFieldStyle(.plain)
-                }
-                .padding(.bottom, 4)
+            }
+            .padding(.bottom, 8)
 
-                Text(agentType == "Global" ? "Auth Token (Optional)" : "Arguments (Optional)")
+            HStack {
+                Text(agentType == "local" ? "Command" : "URL")
                     .font(.system(size: 10, weight: .medium))
-
+                    .frame(width: 100, alignment: .leading)
                 TextField(
-                    agentType == "Global"
-                        ? "ghp_xYz...."
-                        : "run -i --rm -e ghp_xYz.... ghcr.io/github/github-mcp-server",
-                    text: $agentSecondary
+                    agentType == "local"
+                        ? "/full/path/to/your/command" : "https://example.com/mcp",
+                    text: $agentPrimary
                 )
                 .padding(.horizontal, 8)
                 .frame(height: 24)
                 .background(Color.black.opacity(0.2))
                 .clipShape(RoundedRectangle(cornerRadius: 4))
-                .font(.system(size: 14, weight: .medium))
+                .font(.system(size: 12, weight: .medium))
                 .textFieldStyle(.plain)
-                .padding(.bottom, 4)
             }
-            .padding(4)
+            .padding(.bottom, 8)
+
+            if agentType == "local" {
+                HStack {
+                    Text("Arguments (Optional)")
+                        .font(.system(size: 10, weight: .medium))
+                        .frame(width: 100, alignment: .leading)
+                    TextField(
+                        "some --arguments \"go here\"",
+                        text: $agentSecondary
+                    )
+                    .padding(.horizontal, 8)
+                    .frame(height: 24)
+                    .background(Color.black.opacity(0.2))
+                    .clipShape(RoundedRectangle(cornerRadius: 4))
+                    .font(.system(size: 12, weight: .medium))
+                    .textFieldStyle(.plain)
+                }
+                .padding(.bottom, 8)
+            } else {
+                HStack {
+                    Text("Auth Token (Optional)")
+                        .font(.system(size: 10, weight: .medium))
+                        .frame(width: 100, alignment: .leading)
+                    TextField(
+                        "ghp_xYz....",
+                        text: $agentSecondary
+                    )
+                    .padding(.horizontal, 8)
+                    .frame(height: 24)
+                    .background(Color.black.opacity(0.2))
+                    .clipShape(RoundedRectangle(cornerRadius: 4))
+                    .font(.system(size: 12, weight: .medium))
+                    .textFieldStyle(.plain)
+                }
+                .padding(.bottom, 8)
+            }
+
         }
+        .padding(4)
     }
 }

@@ -25,15 +25,6 @@ struct SettingsView: View {
 
     // Agents
     @State private var agents: [AgentEntry] = getAgentEntries()
-    @State private var showAddAgent = false
-    @State private var agentType = "Global"
-    @State private var agentName = ""
-    @State private var agentPrimary = ""
-    @State private var agentSecondary = ""
-    private let agentTypes: [String] = ["Global", "Local"]
-    @State private var agentMaxCount = 10
-    @State private var showToast = false
-    @State private var toastText: String = ""
 
     // Preferences
     @State private var preferencesShowInScreenshot = getPreferencesShowInScreenshot()
@@ -74,15 +65,6 @@ struct SettingsView: View {
                     case .agents:
                         SettingsAgentsTab(
                             agents: $agents,
-                            showAddAgent: $showAddAgent,
-                            agentTypes: agentTypes,
-                            agentType: $agentType,
-                            agentName: $agentName,
-                            agentPrimary: $agentPrimary,
-                            agentSecondary: $agentSecondary,
-                            agentMaxCount: $agentMaxCount,
-                            showToast: $showToast,
-                            toastText: $toastText,
                             addAgentEntry: addAgentEntry,
                             saveAgents: saveAgents,
                             deleteAgent: deleteAgent
@@ -114,7 +96,7 @@ struct SettingsView: View {
             var allServerIds: [String] = []
             for server in managedAgents {
                 if server.enabled ?? true == false { continue }
-                
+
                 if let id = server.id {
                     allServerIds.append(id)
 
@@ -307,49 +289,62 @@ struct SettingsView: View {
         setAnthropicAPIKey(value: apiKey)
     }
 
-    func addAgentEntry() -> String {
+    func addAgentEntry(
+        _ type: String,
+        _ name: String,
+        _ primary: String,
+        _ secondary: String
+    ) -> String {
         let entry: Entry
+
+        if type.isEmpty {
+            return "Agent type can not be empty"
+        }
+        if name.isEmpty {
+            return "Agent name can not be empty"
+        }
 
         let allAgents = getAgentEntries()
         for agent in allAgents {
             switch agent.entry {
-            case let .url(name, _):
-                if name == agentName {
-                    return "Agent name should be unique"
+            case let .url(n, _):
+                if n == name {
+                    return "Agent name \(name) should be unique"
                 }
-            case let .urlWithToken(name, _, _):
-                if name == agentName {
-                    return "Agent name should be unique"
+            case let .urlWithToken(n, _, _):
+                if n == name {
+                    return "Agent name \(name) should be unique"
                 }
-            case let .command(name, _, _):
-                if name == agentName {
-                    return "Agent name should be unique"
+            case let .command(n, _, _):
+                if n == name {
+                    return "Agent name \(name) should be unique"
                 }
             }
         }
 
-        if agentType == "Global" {
+        if type == "global" {
+            if primary.isEmpty {
+                return "Agent URL can not be empty"
+            }
             entry =
-                agentSecondary.isEmpty
-                ? .url(name: agentName, url: agentPrimary)
-                : .urlWithToken(name: agentName, url: agentPrimary, token: agentSecondary)
+                secondary.isEmpty
+                ? .url(name: name, url: primary)
+                : .urlWithToken(name: name, url: primary, token: secondary)
         } else {
+            if primary.isEmpty {
+                return "Agent command can not be empty"
+            }
             entry = .command(
-                name: agentName,
-                command: agentPrimary,
-                arguments: agentSecondary.split(separator: " ").map(String.init)
+                name: name,
+                command: primary,
+                arguments: secondary.split(separator: " ").map(String.init)
             )
         }
 
         let newAgent = AgentEntry(id: UUID(), entry: entry, isEnabled: true)
         agents.append(newAgent)
 
-        AnalyticsManager.shared.customEventAgent(agent: agentName)
-
-        agentType = "Global"
-        agentName = ""
-        agentPrimary = ""
-        agentSecondary = ""
+        AnalyticsManager.shared.customEventAgent(agent: name)
         saveAgents()
         return ""
     }

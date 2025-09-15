@@ -177,7 +177,7 @@ class FirestoreManager: ObservableObject {
         let profile = Profile(
             id: id,
             name: user.displayName,
-            email: user.email ?? "",  // todo: handle properly
+            email: user.email ?? "",
             creditsTotal: defaultCredits ?? 50,
             creditsUsed: 0,
             blocked: false,

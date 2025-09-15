@@ -545,10 +545,12 @@ struct ContentView: View {
 
             let name: String
             let connectRc: String
+            var oauth: Bool = false
 
             switch agent.entry {
             case let .url(n, url):
                 name = n
+                // todo url is oauth ready and set oauth variable
                 connectRc = await mcp.connect(clientName: name, url: url, authToken: nil)
 
             case let .urlWithToken(n, url, token):
@@ -560,12 +562,15 @@ struct ContentView: View {
                 connectRc = await mcp.connect(clientName: name, command: command, args: arguments)
             }
 
-            if connectRc.isEmpty {
-                let tools = await mcp.getTools(clientName: name, filter: [])
-                allClientTools[name] = tools
-            } else {
-                failure += "\n\n\(name): \(connectRc)"
+            if !oauth {
+                if connectRc.isEmpty {
+                    let tools = await mcp.getTools(clientName: name, filter: [])
+                    allClientTools[name] = tools
+                } else {
+                    failure += "\n\n\(name): \(connectRc)"
+                }
             }
+
         }
 
         if !failure.isEmpty {
