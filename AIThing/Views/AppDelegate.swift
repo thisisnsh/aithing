@@ -102,13 +102,6 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate {
         floatingWindow.center()
         floatingWindow.orderFrontRegardless()  // no app activation
         setPanelVisibility()
-
-        // Monitor for drag begin / update
-        dragMonitor = NSEvent.addGlobalMonitorForEvents(matching: [
-            .leftMouseDragged, .rightMouseDragged, .otherMouseDragged,
-        ]) { [weak self] _ in
-            self?.floatingWindow.ignoresMouseEvents = false
-        }
     }
 
     func setupHotKey() {
@@ -169,10 +162,10 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate {
 
         frame.origin.y += (frame.size.height - targetSize.height)  // keep top aligned
         frame.size = targetSize
-        
+
         if frame.origin.y > 0 {
             floatingWindow.setFrame(frame, display: true, animate: false)
-        }        
+        }
     }
 
     /// Returns the extra panel height by calculating the difference between the floating window's current height and the base height

@@ -133,6 +133,7 @@ struct ContextGridView: View {
         }
         .padding(.horizontal, 24)
         .padding(.bottom, 16)
+        .padding(.top, -8)
     }
 
     // MARK: - Small helper to simplify the type the compiler must infer

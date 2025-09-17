@@ -71,10 +71,11 @@ struct TabView: View {
     @State private var selectedText: String = ""
     @State private var hereContext: Bool = false
     @State private var takingScreenshot: Bool = false
-    @State private var isDropping: Bool = false
 
     @State private var textSize: CGFloat = 18
     @State private var showTools: Bool = false
+
+    @State private var selectedFileUrls: [URL] = []
 
     var body: some View {
         VStack(alignment: .leading, spacing: 0) {
@@ -103,9 +104,6 @@ struct TabView: View {
                     .shadow(color: .black, radius: 1)
                 }
             }
-            .onHover { inside in
-                showDragIcon = inside
-            }
             .padding(.bottom, 8)
 
             VStack(alignment: .leading, spacing: 0) {
@@ -133,9 +131,6 @@ struct TabView: View {
                             cornerRadius: getCornerRadius(),
                             lineWidth: 2.5
                         )
-                    } else if isDropping {
-                        RoundedRectangle(cornerRadius: getCornerRadius())
-                            .stroke(Color.blue, lineWidth: 1.5)
                     } else {
                         RoundedRectangle(cornerRadius: getCornerRadius())
                             .stroke(Color.white, lineWidth: 1.5)
@@ -194,7 +189,7 @@ struct TabView: View {
                     }
                     .cornerRadius(24)
                     .shadow(radius: 4)
-                    .frame(minWidth: 640, maxWidth: 640, minHeight: 200, maxHeight: 200)
+                    .frame(minWidth: 740, maxWidth: 740, minHeight: 200, maxHeight: 200)
                     .environmentObject(mcp)
                     .onHover { inside in
                         updatePassthrough(inside: inside)
@@ -204,6 +199,7 @@ struct TabView: View {
                     }
                     .transition(.identity)
                     .animation(nil, value: isFocused)
+                    .padding(.bottom, 8)
             }
 
             if isFocused {
@@ -217,6 +213,9 @@ struct TabView: View {
                 onClick(tabId)
             }
         }
+        .onHover { inside in
+            showDragIcon = inside
+        }
     }
 
     private func inputView() -> some View {
@@ -228,63 +227,62 @@ struct TabView: View {
 
             if isFocused {
                 ZStack(alignment: .leading) {
-                    if !isDropping {
-                        InputTextView(
-                            text: showSettings
-                                ? .constant("Settings")
-                                : (showHistory ? .constant("History") : $query),
-                            seenCommands: $seenCommands,
-                            size: $textSize,
-                            isNotEditable: isViewBlinking || showSettings || showHistory,
-                            onCommit: {
-                                Task {
-                                    await handleQuery()
-                                }
-                            },
-                            onCommandTyped: { command in
-                                Task {
-                                    await handleCommand(type: "add", command: command)
-                                }
-                            },
-                            onCommandRemoved: { command in
-                                Task {
-                                    await handleCommand(type: "remove", command: command)
-                                }
-                            },
-                            onDebouncedTextChange: { _ in
-                                Task {
-                                    await handleCommand(type: "update", command: "")
-                                }
-                            },
-                            onSpillover: { count in
-                                var newHeight: CGFloat = 48
 
-                                if count >= 2 && count <= 8 {
-                                    newHeight = 48 + CGFloat(count - 1) * 24
-                                } else if count > 8 {
-                                    newHeight = 48 + 8 * 24
-                                } else {
-                                    newHeight = 48
-                                }
-
-                                updatePanelSizeFromCurrent(newHeight - inputHeight)
-                                inputHeight = newHeight
+                    InputTextView(
+                        text: showSettings
+                            ? .constant("Settings")
+                            : (showHistory ? .constant("History") : $query),
+                        seenCommands: $seenCommands,
+                        size: $textSize,
+                        isNotEditable: isViewBlinking || showSettings || showHistory,
+                        onCommit: {
+                            Task {
+                                await handleQuery()
                             }
-                        )
-                        .onChange(of: query) { newValue in
-                            if query.count > 400 {
-                                textSize = 14
-                            } else if query.count > 200 {
-                                textSize = 16
+                        },
+                        onCommandTyped: { command in
+                            Task {
+                                await handleCommand(type: "add", command: command)
+                            }
+                        },
+                        onCommandRemoved: { command in
+                            Task {
+                                await handleCommand(type: "remove", command: command)
+                            }
+                        },
+                        onDebouncedTextChange: { _ in
+                            Task {
+                                await handleCommand(type: "update", command: "")
+                            }
+                        },
+                        onSpillover: { count in
+                            var newHeight: CGFloat = 48
+
+                            if count >= 2 && count <= 8 {
+                                newHeight = 48 + CGFloat(count - 1) * 24
+                            } else if count > 8 {
+                                newHeight = 48 + 8 * 24
                             } else {
-                                textSize = 18
+                                newHeight = 48
                             }
-                        }
-                        .opacity(showSettings || showHistory ? 0.6 : 1)
-                        .frame(width: 500)
-                    }
 
-                    if query.isEmpty && !showSettings && !showHistory && !isDropping {
+                            updatePanelSizeFromCurrent(newHeight - inputHeight)
+                            inputHeight = newHeight
+                        }
+                    )
+                    .onChange(of: query) { newValue in
+                        if query.count > 400 {
+                            textSize = 14
+                        } else if query.count > 200 {
+                            textSize = 16
+                        } else {
+                            textSize = 18
+                        }
+                    }
+                    .opacity(showSettings || showHistory ? 0.6 : 1)
+                    .frame(width: 574)
+
+                    if query.isEmpty && !showSettings && !showHistory {
                         Text(
                             tabHistory?.history.isEmpty ?? true
                                 ? "Ask anything on this AI Thing..." : "Continue conversation..."
@@ -294,16 +292,29 @@ struct TabView: View {
                         .padding(.leading, 6)
                         .allowsHitTesting(false)
                     }
-
-                    if isDropping {
-                        Text("Drop files here...")
-                            .foregroundColor(.white.opacity(0.6))
-                            .font(.system(size: 18, weight: .medium))
-                            .padding(.leading, 6)
-                            .allowsHitTesting(false)
-                            .frame(width: 500)
-                    }
                 }
+
+                Button(
+                    action: {
+                        openFilePanel { url in
+                            Task {
+                                let results = await DragFileManager.processPaths(url)
+                                for r in results {
+                                    modelContext.append(r)
+                                    modelContextZoomed.append(false)
+                                }
+                                AnalyticsManager.shared.customEventTab(action: "tab_click_upload")
+                            }
+                        }
+                    }
+                ) {
+                    Image(systemName: "square.and.arrow.up.circle.fill")
+                        .resizable()
+                        .scaledToFit()
+                }
+                .buttonStyle(PlainButtonStyle())
+                .frame(width: 18, height: 18)
+                .opacity(isFocused && !showSettings && !showHistory ? 1 : 0)
 
                 Button(
                     action: {
@@ -314,7 +325,6 @@ struct TabView: View {
                     Image(systemName: "hammer.circle.fill")
                         .resizable()
                         .scaledToFit()
-                        .foregroundColor(.white.opacity(0.5))
                 }
                 .buttonStyle(PlainButtonStyle())
                 .frame(width: 18, height: 18)
@@ -329,7 +339,11 @@ struct TabView: View {
                     Image(systemName: "gearshape.circle.fill")
                         .resizable()
                         .scaledToFit()
-                        .foregroundColor(.white.opacity(0.5))
+                        .foregroundStyle(
+                            isFocused && !showSettings && !showHistory
+                                ? .white
+                                : .white.opacity(0.5)
+                        )
                 }
                 .buttonStyle(PlainButtonStyle())
                 .frame(width: 18, height: 18)
@@ -344,24 +358,6 @@ struct TabView: View {
         .frame(height: isFocused ? inputHeight - 16 : 48)
         .padding(.horizontal, isFocused ? 24 : 20)
         .padding(.vertical, isFocused ? 8 : 0)
-        .dropDestination(for: URL.self) { urls, _ in
-            if !isFocused { return false }
-
-            Task {
-                let results = await DragFileManager.processPaths(urls)
-                for r in results {
-                    modelContext.append(r)
-                    modelContextZoomed.append(false)
-                }
-            }
-
-            // You can’t know yet, so just return true to accept the drop.
-            return true
-        } isTargeted: {
-            if isFocused {
-                isDropping = $0
-            }
-        }
     }
 
     private func responseView() -> some View {
@@ -474,7 +470,7 @@ struct TabView: View {
                     }
                 )
             }
-            .frame(width: 24 + 32 + 8 + 526 + 8 + 18 + 24, height: getResponseHeight())
+            .frame(width: 24 + 32 + 8 + 626 + 8 + 18 + 24, height: getResponseHeight())
             .background(Color.black.opacity(0.3))
             .onPreferenceChange(ViewHeightKey.self) { height in
                 let checkedHeight = min(max(responseHeightMin, height), responseHeightMax)
@@ -1483,7 +1479,17 @@ struct TabView: View {
         pasteboard.setString(string, forType: .string)
     }
 
-    func isTabClosed() -> Bool {
+    private func isTabClosed() -> Bool {
         !allTabs.contains(where: { $0.id == tabId })
+    }
+
+    private func openFilePanel(completion: @escaping ([URL]) -> Void) {
+        let panel = NSOpenPanel()
+        panel.allowsMultipleSelection = true
+        panel.canChooseDirectories = false
+        panel.canChooseFiles = true
+
+        let response = panel.runModal()
+        completion(response == .OK ? panel.urls : [])
     }
 }

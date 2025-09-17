@@ -2,26 +2,30 @@
 
 ------------------------ 
 
-- Review MCP Servers
+
+- Move enabled server up 
+- Improve selected this here 
+
+- Screenrecord and audiorecordasdas
+
 - Update Doc BYOK Free
 - Update Doc for Model Selection 
 - Update Doc for Prompt Cache & Output Token
 - Update Doc for Adding Global Agents   
 
+- Check Analytics
+- Perform QA
+
+
+
 Later
-- Get Google Review
- 
-September 19
+- Wait for Google
 - Release 1.6
+- Create Ads
+- Create Post Reddit
+- Post Ads
+- Post Posts
 
-September 20
-- Make Ads
-- Post Reddit
-
-Very Late
-- Allow OpenAI Models 
-- Detect API key in BYOK b/w Anthropic and OpenAI
-- Change Models based on API Key 
 
 ------------------------
 
@@ -33,10 +37,12 @@ Missing Features
 - No Elicitation 
 - Fix "AttributeGraph: cycle detected through attribute"
 - Fix Flickering Animation
-- Integration Slack, Jira
 - No Markdown Select
 - Search History
 - Old images from history are not shown 
+- Allow OpenAI Models 
+- Detect API key in BYOK b/w Anthropic and OpenAI
+- Change Models based on API Key 
 
 
 ------------------------

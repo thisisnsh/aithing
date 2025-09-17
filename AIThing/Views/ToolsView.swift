@@ -57,7 +57,7 @@ struct ToolsView: View {
                 Color.clear.frame(height: 16)
             }
         }
-        .frame(width: 160)
+        .frame(width: 200)
         .background(Color.gray.opacity(0.08))
     }
 
@@ -85,7 +85,7 @@ struct ToolsView: View {
             }
             .padding(16)
         }
-        .frame(width: 480)
+        .frame(width: 540)
         .background(Color.black.opacity(0.2))
     }
 

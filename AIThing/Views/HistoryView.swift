@@ -97,7 +97,7 @@ struct HistoryView: View {
                 Color.clear.frame(height: 16)
             }
         }
-        .frame(width: 160)
+        .frame(width: 200)
         .background(Color.gray.opacity(0.08))
     }
 
