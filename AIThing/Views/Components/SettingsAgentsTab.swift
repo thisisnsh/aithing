@@ -83,7 +83,19 @@ struct SettingsAgentsTab: View {
                     GroupBox {
                         VStack(alignment: .leading) {
                             ForEach(
-                                mcpOAuthManagers.managers.keys.sorted(by: { $0 < $1 }),
+                                mcpOAuthManagers.managers.keys.sorted { lhs, rhs in
+                                    let lhsEnabled =
+                                        mcpOAuthManagers.managers[lhs]?.enabled ?? false
+                                    let rhsEnabled =
+                                        mcpOAuthManagers.managers[rhs]?.enabled ?? false
+                                    if lhsEnabled != rhsEnabled {
+                                        // enabled managers come first
+                                        return lhsEnabled && !rhsEnabled
+                                    } else {
+                                        // if both are enabled or both disabled, sort by key
+                                        return lhs < rhs
+                                    }
+                                },
                                 id: \.self
                             ) { manager in
                                 if let agent = mcpOAuthManagers.managers[manager] {

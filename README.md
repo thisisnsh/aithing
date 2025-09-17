@@ -3,7 +3,6 @@
 ------------------------ 
 
 
-- Move enabled server up 
 - Improve selected this here 
 
 - Screenrecord and audiorecordasdas
