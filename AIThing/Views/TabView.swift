@@ -95,9 +95,9 @@ struct TabView: View {
                             updatePassthrough(inside: inside)
                         }
                 }
-                if takingScreenshot {
+                if takingScreenshot && !getPreferencesCaptureFullScreen() {
                     Text(
-                        "Click on the application to capture the entire window\nDrag to select a specific area."
+                        "Click on the application to capture that window\nDrag to select a specific area."
                     )
                     .font(.system(size: 10, weight: .medium))
                     .multilineTextAlignment(.center)
@@ -538,19 +538,36 @@ struct TabView: View {
             if command == "@this" {
                 screenshotManager.cancelScreenshot()
                 takingScreenshot = true
-                if let (image, base64) =
-                    await screenshotManager.captureSelectedScreenUnderMouse()
-                {
-                    modelContext.append(.image("screenshot", image, base64))
-                    modelContextZoomed.append(false)
-                    AnalyticsManager.shared.customEventTab(action: "tab_image_add_selected")
+                if getPreferencesCaptureFullScreen() {
+                    if let (image, base64) =
+                        await screenshotManager.captureScreenUnderMouse()
+                    {
+                        modelContext.append(.image("Screen", image, base64))
+                        modelContextZoomed.append(false)
+                        AnalyticsManager.shared.customEventTab(action: "tab_image_add_entire")
+                    } else {
+                        AnalyticsManager.shared.customError(
+                            type: "failure_tab_image_add_entire",
+                            severity: "high",
+                            location: "tab_view"
+                        )
+                    }
                 } else {
-                    AnalyticsManager.shared.customError(
-                        type: "failure_tab_image_add_selected",
-                        severity: "high",
-                        location: "tab_view"
-                    )
+                    if let (image, base64) =
+                        await screenshotManager.captureSelectedScreenUnderMouse()
+                    {
+                        modelContext.append(.image("Window", image, base64))
+                        modelContextZoomed.append(false)
+                        AnalyticsManager.shared.customEventTab(action: "tab_image_add_selected")
+                    } else {
+                        AnalyticsManager.shared.customError(
+                            type: "failure_tab_image_add_selected",
+                            severity: "high",
+                            location: "tab_view"
+                        )
+                    }
                 }
+
                 takingScreenshot = false
                 AnalyticsManager.shared.customEventTab(action: "tab_context_add_this")
             } else if command == "@selected" {

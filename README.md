@@ -3,9 +3,9 @@
 ------------------------ 
 
 
-- Improve selected this here 
-
-- Screenrecord and audiorecordasdas
+- Audio commands 
+- Listen computer audio 
+- Live transcribe and send to AI 
 
 - Update Doc BYOK Free
 - Update Doc for Model Selection 
@@ -14,7 +14,6 @@
 
 - Check Analytics
 - Perform QA
-
 
 
 Later

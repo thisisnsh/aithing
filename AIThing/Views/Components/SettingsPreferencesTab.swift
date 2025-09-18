@@ -58,9 +58,11 @@ struct SettingsPreferencesTab: View {
                         VStack(alignment: .leading) {
                             Text("Maximum Output Tokens")
                                 .font(.system(size: 14, weight: .medium))
-                            Text("Max number of [tokens](https://docs.anthropic.com/en/docs/about-claude/glossary#tokens) a model can generate\nin a single response.")
-                                .font(.system(size: 10, weight: .medium))
-                                .foregroundStyle(.secondary)
+                            Text(
+                                "Max number of [tokens](https://docs.anthropic.com/en/docs/about-claude/glossary#tokens) a model can generate\nin a single response."
+                            )
+                            .font(.system(size: 10, weight: .medium))
+                            .foregroundStyle(.secondary)
                         }
 
                         Spacer()
@@ -128,6 +130,29 @@ struct SettingsPreferencesTab: View {
                                 AnalyticsManager.shared.selectItem(
                                     itemID: "preference_show_in_screenshot_false",
                                     itemName: "preference_show_in_screenshot_false"
+                                )
+                            }
+                        }
+                    )
+                    Divider()
+
+                    PreferenceToggleRow(
+                        isOn: $preferencesCaptureFullScreen,
+                        iconOn: "camera.metering.matrix",
+                        iconOff: "camera.metering.spot",
+                        title: "Capture Entire Screen on @this",
+                        onChange: { newValue in
+                            setPreferencesCaptureFullScreen(newValue)
+
+                            if newValue {
+                                AnalyticsManager.shared.selectItem(
+                                    itemID: "preference_capture_full_screen_true",
+                                    itemName: "preference_capture_full_screen_true"
+                                )
+                            } else {
+                                AnalyticsManager.shared.selectItem(
+                                    itemID: "preference_capture_full_screen_false",
+                                    itemName: "preference_capture_full_screen_false"
                                 )
                             }
                         }

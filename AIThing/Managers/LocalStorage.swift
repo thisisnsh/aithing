@@ -62,11 +62,14 @@ func setPreferencesShowInScreenshot(value: Bool) {
 }
 
 func getPreferencesCaptureFullScreen() -> Bool {
-    return false
+    return UserDefaults.standard.bool(forKey: "PreferencesCaptureFullScreen")
 }
 
 func setPreferencesCaptureFullScreen(value: Bool) {
-    // No-op
+    UserDefaults.standard.set(
+        value,
+        forKey: "PreferencesCaptureFullScreen"
+    )
 }
 
 func getModel() -> String {
