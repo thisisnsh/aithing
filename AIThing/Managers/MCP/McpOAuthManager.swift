@@ -80,6 +80,7 @@ struct McpServer: Codable {
 @MainActor
 final class McpOAuthManagers: ObservableObject {
     @Published var managers: [String: McpOAuthManager] = [:]
+    @Published var selfManagers: [String: McpOAuthManager] = [:]
 }
 
 @MainActor
@@ -319,4 +320,38 @@ extension McpOAuthManager {
         user.expiresAt = credential.oauthTokenExpiresAt
         return user
     }
+
+    static func hasWellKnownUrls(url: String) async -> Bool {
+        do {
+            guard let mcpUrl = URL(string: url) else {
+                return false
+            }
+            guard var comps = URLComponents(url: mcpUrl, resolvingAgainstBaseURL: false),
+                comps.scheme != nil,
+                comps.host != nil
+            else {
+                return false
+            }
+            comps.path = ""  // strip path
+            comps.query = nil  // strip query
+            comps.fragment = nil  // strip fragment
+            guard let baseUrl = comps.url else {
+                return false
+            }
+
+            var req = URLRequest(
+                url: baseUrl.appending(path: ".well-known/oauth-authorization-server")
+            )
+            req.httpMethod = "GET"
+
+            let (data, resp) = try await URLSession.shared.data(for: req)
+            guard let http = resp as? HTTPURLResponse, (200..<300).contains(http.statusCode) else {
+                return false
+            }
+            return true
+        } catch {
+            return false
+        }
+    }
+
 }

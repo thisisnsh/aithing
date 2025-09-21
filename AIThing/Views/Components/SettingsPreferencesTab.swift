@@ -40,7 +40,6 @@ struct SettingsPreferencesTab: View {
                             isOn: Binding(
                                 get: { cacheMessage },
                                 set: { value in
-                                    print(value)
                                     cacheMessage = value
                                     setCacheMessages(value: value)
                                 }

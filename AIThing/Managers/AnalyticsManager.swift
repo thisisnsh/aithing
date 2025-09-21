@@ -101,7 +101,7 @@ final class AnalyticsManager {
             params: [
                 "type": type.rawValue,
                 "primary": primary,
-                "secondary": secondary,
+                "secondary": secondary.rawValue,
             ]
         )
     }

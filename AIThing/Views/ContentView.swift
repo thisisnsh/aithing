@@ -141,6 +141,7 @@ struct ContentView: View {
             }
             managedModels = await firestoreManager.getModelInfos()
             await loadAllClientTools()
+            await reconnectManagedAgents()
         }
         .onAppear {
             addTab()
@@ -537,6 +538,7 @@ struct ContentView: View {
         }
 
         allClientTools.removeAll()
+        mcpOAuthManagers.selfManagers.removeAll()
 
         for agent in agents {
             if !agent.isEnabled {
@@ -545,7 +547,7 @@ struct ContentView: View {
 
             let name: String
             let primary: String
-            let connectRc: String
+            var connectRc: String = ""
             var oauth: Bool = false
 
             switch agent.entry {
@@ -553,8 +555,25 @@ struct ContentView: View {
                 name = n
                 primary = url
 
-                // todo url is oauth ready and set oauth variable
-                connectRc = await mcp.connect(clientName: name, url: url, authToken: nil)
+                // URL is oauth ready if it has well known URLs
+                oauth = await McpOAuthManager.hasWellKnownUrls(url: url)
+
+                // Skip connecting to oauth servers now, they will be connected during query
+                if oauth {
+                    mcpOAuthManagers.selfManagers[name] = McpOAuthManager(
+                        server: McpServer(
+                            id: name,
+                            image: nil,
+                            name: name,
+                            url: url,
+                            version: nil,
+                            enabled: true
+                        )
+                    )
+                    mcpOAuthManagers.selfManagers[name]?.enabled = true
+                } else {
+                    connectRc = await mcp.connect(clientName: name, url: url, authToken: nil)
+                }
 
             case let .urlWithToken(n, url, token):
                 name = n
@@ -574,6 +593,9 @@ struct ContentView: View {
                 primary: primary,
                 secondary: .status_success
             )
+
+            logger.info("Agent Name: \(name)")
+            logger.info("OAuth Ready: \(oauth)")
 
             if !oauth {
                 if connectRc.isEmpty {
@@ -738,8 +760,13 @@ struct ContentView: View {
             allClientTools.removeValue(forKey: "managed_github_mcp")
         }
 
-        for (clientName, agentOAuthManager) in mcpOAuthManagers.managers {
+        let keepingCurrent = mcpOAuthManagers.managers.merging(mcpOAuthManagers.selfManagers) {
+            (current, _) in current
+        }
+        print(keepingCurrent)
+        for (clientName, agentOAuthManager) in keepingCurrent {
             if agentOAuthManager.enabled {
+                print("Reconnect \(clientName)")
                 var accessToken: String?
                 var refreshedAccessToken: String?
 
