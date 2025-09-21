@@ -60,9 +60,9 @@ struct HistoryView: View {
                         action: {
                             index = i
                             chatController.setHistory(h)
-                            AnalyticsManager.shared.selectItem(
-                                itemID: "history_read",
-                                itemName: "history_read"
+                            AnalyticsManager.shared.customEvent(
+                                type: .action,
+                                primary: "history_read"
                             )
                         },
                         deleteAction: {
@@ -78,9 +78,9 @@ struct HistoryView: View {
                                     chatController.setHistory(history)
                                 }
                             }
-                            AnalyticsManager.shared.selectItem(
-                                itemID: "history_remove",
-                                itemName: "history_remove"
+                            AnalyticsManager.shared.customEvent(
+                                type: .action,
+                                primary: "history_remove"
                             )
                         }
                     )

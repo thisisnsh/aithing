@@ -46,10 +46,10 @@ enum Entry: Codable, Identifiable, Equatable {
         {
             self = .command(name: name, command: command, arguments: arguments)
         } else {
-            AnalyticsManager.shared.customError(
-                type: "unrecognized_json_structure",
-                severity: "high",
-                location: "settings_manager"
+            AnalyticsManager.shared.customEvent(
+                type: .error,
+                primary: "unrecognized_json_structure",
+                secondary: .status_failure_high,
             )
             throw DecodingError.dataCorrupted(
                 .init(codingPath: [], debugDescription: "Unrecognized JSON structure")
@@ -144,17 +144,18 @@ class MCPManager: ObservableObject {
 
             try await client.connect(transport: transport)
             logger.info("Connected to MCP server for \(clientName)")
-            AnalyticsManager.shared.selectItem(
-                itemID: "mcp_connected_stdio",
-                itemName: "mcp_connected_stdio"
+            AnalyticsManager.shared.customEvent(
+                type: .agent,
+                primary: "mcp_connected_stdio"
             )
             return ""
         } catch {
-            AnalyticsManager.shared.customError(
-                type: "mcp_error_in_connecting_stdio",
-                severity: "high",
-                location: "mcp_manager"
+            AnalyticsManager.shared.customEvent(
+                type: .error,
+                primary: "mcp_connected_stdio",
+                secondary: .status_failure_high
             )
+
             logger.error("Error in connecting: \(error.localizedDescription)")
             clients.removeValue(forKey: clientName)
             executableURL.removeValue(forKey: clientName)
@@ -216,17 +217,18 @@ class MCPManager: ObservableObject {
             }
 
             logger.info("Connected to MCP server for \(clientName)")
-            AnalyticsManager.shared.selectItem(
-                itemID: "mcp_connected_http",
-                itemName: "mcp_connected_http"
+            AnalyticsManager.shared.customEvent(
+                type: .agent,
+                primary: "mcp_connected_http"
             )
             return ""
         } catch {
-            AnalyticsManager.shared.customError(
-                type: "mcp_error_in_connecting_http",
-                severity: "high",
-                location: "mcp_manager"
+            AnalyticsManager.shared.customEvent(
+                type: .error,
+                primary: "mcp_connected_http",
+                secondary: .status_failure_high
             )
+
             logger.error("Error in connecting: \(error.localizedDescription)")
             clients.removeValue(forKey: clientName)
             httpURL.removeValue(forKey: clientName)
@@ -252,9 +254,9 @@ class MCPManager: ObservableObject {
             await client.disconnect()
         }
         let rc = await connect(clientName: clientName, url: url, authToken: authToken)
-        AnalyticsManager.shared.selectItem(
-            itemID: "mcp_reconnected",
-            itemName: "mcp_reconnected"
+        AnalyticsManager.shared.customEvent(
+            type: .agent,
+            primary: "mcp_reconnected"
         )
 
         reconnecting[clientName] = false
@@ -290,16 +292,16 @@ class MCPManager: ObservableObject {
             serverInputPipe.removeAll()
             serverOutputPipe.removeAll()
 
-            AnalyticsManager.shared.selectItem(
-                itemID: "mcp_disconnected",
-                itemName: "mcp_disconnected"
+            AnalyticsManager.shared.customEvent(
+                type: .agent,
+                primary: "mcp_disconnected"
             )
             return ""
         } catch {
-            AnalyticsManager.shared.customError(
-                type: "mcp_error_in_disconnecting",
-                severity: "high",
-                location: "mcp_manager"
+            AnalyticsManager.shared.customEvent(
+                type: .error,
+                primary: "mcp_disconnected",
+                secondary: .status_failure_high
             )
             logger.error("Error in disconnecting: \(error.localizedDescription)")
             return error.localizedDescription
@@ -330,13 +332,16 @@ class MCPManager: ObservableObject {
             filters[clientName] = filter
             let (tools, _) = try await client.listTools()
             let filteredTools = tools.filter { filter.contains($0.name) || filter.isEmpty }
-            AnalyticsManager.shared.selectItem(itemID: "mcp_get_tools", itemName: "mcp_get_tools")
+            AnalyticsManager.shared.customEvent(
+                type: .agent,
+                primary: "mcp_get_tools"
+            )
             return toolsToDictionaries(filteredTools)
         } catch {
-            AnalyticsManager.shared.customError(
-                type: "mcp_error_in_getting_tools",
-                severity: "high",
-                location: "mcp_manager"
+            AnalyticsManager.shared.customEvent(
+                type: .error,
+                primary: "mcp_get_tools",
+                secondary: .status_failure_high
             )
             logger.error("Error in getting tools: \(error.localizedDescription)")
             return []
@@ -355,10 +360,10 @@ class MCPManager: ObservableObject {
 
             let (content, isError) = try await client.callTool(name: name, arguments: dict)
             if isError ?? false {
-                AnalyticsManager.shared.customError(
-                    type: "mcp_call_tools_error",
-                    severity: "high",
-                    location: "mcp_manager"
+                AnalyticsManager.shared.customEvent(
+                    type: .error,
+                    primary: "mcp_call_tools_is_error",
+                    secondary: .status_failure_high
                 )
                 logger.error("Error in calling tools")
                 return []
@@ -375,13 +380,16 @@ class MCPManager: ObservableObject {
                 }
             }
 
-            AnalyticsManager.shared.selectItem(itemID: "mcp_call_tools", itemName: "mcp_call_tools")
+            AnalyticsManager.shared.customEvent(
+                type: .agent,
+                primary: "mcp_call_tools"
+            )
             return response
         } catch {
-            AnalyticsManager.shared.customError(
-                type: "mcp_error_in_calling_tools",
-                severity: "high",
-                location: "mcp_manager"
+            AnalyticsManager.shared.customEvent(
+                type: .error,
+                primary: "mcp_call_tools",
+                secondary: .status_failure_high
             )
             logger.error("Error in calling tools: \(error.localizedDescription)")
             return []

@@ -44,57 +44,6 @@ final class AnalyticsManager {
         Analytics.logEvent(name, parameters: baseParams(params))
     }
 
-    /// select_item (GA4)
-    /// - Parameters:
-    ///   - itemID: your internal ID
-    ///   - itemName: human readable name
-    ///   - itemCategory: optional category
-    ///   - listName: optional list context (e.g., "Search Results")
-    func selectItem(
-        itemID: String,
-        itemName: String,
-        itemCategory: String? = nil,
-        listName: String? = nil
-    ) {
-        var params: [String: Any] = [
-            AnalyticsParameterItemID: itemID,
-            AnalyticsParameterItemName: itemName,
-        ]
-        if let cat = itemCategory { params[AnalyticsParameterItemCategory] = cat }
-        if let listName { params[AnalyticsParameterItemListName] = listName }
-        log(AnalyticsEventSelectItem, params: params)
-    }
-
-    /// select_content (legacy but still accepted by GA4 backends)
-    /// - Parameters:
-    ///   - contentType: e.g., "article", "video"
-    ///   - itemID: ID of the content
-    func selectContent(contentType: String, itemID: String) {
-        log(
-            AnalyticsEventSelectContent,
-            params: [
-                AnalyticsParameterContentType: contentType,
-                AnalyticsParameterItemID: itemID,
-            ]
-        )
-    }
-
-    /// login
-    /// - Parameter method: e.g., "email", "apple", "google"
-    func login(method: String) {
-        log(
-            AnalyticsEventLogin,
-            params: [
-                AnalyticsParameterMethod: method
-            ]
-        )
-    }
-
-    /// app_open
-    func appOpen() {
-        log(AnalyticsEventAppOpen, params: nil)
-    }
-
     /// screen_view (manual)
     /// - Parameters:
     ///   - screenName: Name you want to appear in GA4
@@ -109,101 +58,75 @@ final class AnalyticsManager {
         )
     }
 
+    enum CustomEventType: String {
+        case model
+        case agent
+        case tab
+        case tool
+        case cost
+        case firebase
+        case error
+        case action
+    }
+
+    enum CustomEventSecondary: String {
+        case status_failure_high
+        case status_failure_med
+        case status_failure_low
+        case status_success
+        
+        case value_true
+        case value_false
+        
+        case reconnect_attempt
+        case reconnect_success
+        
+        case byok_model
+        case managed_model
+    }
+
+    /// custom_event
+    /// - Parameters:
+    ///   - primary: primary value
+    ///   - secondary: secondary value
+    ///   - type: type [ model, agent, tab, tool, cost, firebase, error]
+    ///
+    func customEvent(
+        type: CustomEventType,
+        primary: String,
+        secondary: CustomEventSecondary = .status_success
+    ) {
+        log(
+            "custom_event",
+            params: [
+                "type": type.rawValue,
+                "primary": primary,
+                "secondary": secondary,
+            ]
+        )
+    }
+
+    /// app_open
+    func appOpen() {
+        log(AnalyticsEventAppOpen, params: nil)
+    }
+
+    /// login
+    /// - Parameter method: e.g., "email", "apple", "google"
+    func login(method: String) {
+        log(
+            AnalyticsEventLogin,
+            params: [
+                AnalyticsParameterMethod: method
+            ]
+        )
+    }
+
     /// custom_app_quit
     func customAppQuit() {
         log(
             "custom_app_quit",
             params: [:]
-        )
-    }
-
-    /// custom_event_model
-    /// - Parameters:
-    ///   - name: model name
-    ///   - type: model type
-    func customEventModel(name: String, type: String) {
-        log(
-            "custom_event_model",
-            params: [
-                "model_name": name,
-                "model_type": type,
-            ]
-        )
-    }
-
-    /// custom_event_agent
-    /// - Parameter agent: agent name
-    func customEventAgent(agent: String) {
-        log(
-            "custom_event_agent",
-            params: [
-                "agent_name": agent
-            ]
-        )
-    }
-
-    /// custom_event_tab
-    /// - Parameter action: e.g., "open", "close", "switch"
-    func customEventTab(action: String) {
-        log(
-            "custom_event_tab",
-            params: [
-                "action": action
-            ]
-        )
-    }
-    
-    /// custom_event_tool
-    /// - Parameter name
-    func customEventTool(name: String) {
-        log(
-            "custom_event_tool",
-            params: [
-                "name": name
-            ]
-        )
-    }
-
-    /// custom_event_cost
-    /// - Parameter type: e.g., "query", "file", "agent"
-    /// - Parameter value: 1, 2, ...
-    func customEventCost(type: String, value: Int) {
-        log(
-            "custom_event_cost",
-            params: [
-                "type": type,
-                "value": value,
-            ]
-        )
-    }
-
-    /// custom_error
-    /// - Parameters:
-    ///   - type: e.g., "network", "api", "validation"
-    ///   - severity: e.g., "info", "warning", "error", "critical"
-    ///   - location: where in the app it happened, e.g., "LoginView"
-    func customError(type: String, severity: String, location: String) {
-        log(
-            "custom_error",
-            params: [
-                "type": type,
-                "severity": severity,
-                "location": location,
-            ]
-        )
-    }
-
-    /// custom_firestore
-    /// - Parameters:
-    ///   - action: e.g., getProfile
-    ///   - status: success, failure
-    func customFirestore(action: String, status: String) {
-        log(
-            "custom_firestore",
-            params: [
-                "action": action,
-                "status": status,
-            ]
         )
     }
 }

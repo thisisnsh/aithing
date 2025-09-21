@@ -210,10 +210,8 @@ struct SettingsView: View {
             .padding(.horizontal, 16)
             .onHover { perform in
                 if perform {
-                    AnalyticsManager.shared.selectItem(
-                        itemID: "report_bug_hover",
-                        itemName: "report_bug_hover"
-                    )
+                    AnalyticsManager.shared
+                        .customEvent(type: .action, primary: "report_bug_hover")
                 }
             }
 
@@ -344,7 +342,7 @@ struct SettingsView: View {
         let newAgent = AgentEntry(id: UUID(), entry: entry, isEnabled: true)
         agents.append(newAgent)
 
-        AnalyticsManager.shared.customEventAgent(agent: name)
+        AnalyticsManager.shared.customEvent(type: .agent, primary: name, secondary: .status_success)
         saveAgents()
         return ""
     }

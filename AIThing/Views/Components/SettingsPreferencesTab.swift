@@ -122,14 +122,16 @@ struct SettingsPreferencesTab: View {
                             setPanelVisibility()
 
                             if newValue {
-                                AnalyticsManager.shared.selectItem(
-                                    itemID: "preference_show_in_screenshot_true",
-                                    itemName: "preference_show_in_screenshot_true"
+                                AnalyticsManager.shared.customEvent(
+                                    type: .action,
+                                    primary: "preference_show_in_screenshot",
+                                    secondary: .value_true
                                 )
                             } else {
-                                AnalyticsManager.shared.selectItem(
-                                    itemID: "preference_show_in_screenshot_false",
-                                    itemName: "preference_show_in_screenshot_false"
+                                AnalyticsManager.shared.customEvent(
+                                    type: .action,
+                                    primary: "preference_show_in_screenshot",
+                                    secondary: .value_false
                                 )
                             }
                         }
@@ -145,14 +147,16 @@ struct SettingsPreferencesTab: View {
                             setPreferencesCaptureFullScreen(newValue)
 
                             if newValue {
-                                AnalyticsManager.shared.selectItem(
-                                    itemID: "preference_capture_full_screen_true",
-                                    itemName: "preference_capture_full_screen_true"
+                                AnalyticsManager.shared.customEvent(
+                                    type: .action,
+                                    primary: "preference_capture_full_screen",
+                                    secondary: .value_true
                                 )
                             } else {
-                                AnalyticsManager.shared.selectItem(
-                                    itemID: "preference_capture_full_screen_false",
-                                    itemName: "preference_capture_full_screen_false"
+                                AnalyticsManager.shared.customEvent(
+                                    type: .action,
+                                    primary: "preference_capture_full_screen",
+                                    secondary: .value_false
                                 )
                             }
                         }

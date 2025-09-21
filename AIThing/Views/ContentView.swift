@@ -300,7 +300,7 @@ struct ContentView: View {
                 showToast = false
                 toastColor = .white
             }
-            AnalyticsManager.shared.customEventTab(action: "tab_capacity_reached")
+            AnalyticsManager.shared.customEvent(type: .tab, primary: "capacity_reached")
             return
         }
 
@@ -311,7 +311,7 @@ struct ContentView: View {
         tabs.append(TabItem(id: uuid, history: history))
         focusedIndex = tabs.count - 1
 
-        AnalyticsManager.shared.customEventTab(action: "tab_continue_conversation")
+        AnalyticsManager.shared.customEvent(type: .tab, primary: "continue_conversation")
     }
 
     private func addTab(bypass: Bool = false) {
@@ -326,7 +326,7 @@ struct ContentView: View {
                 showToast = false
                 toastColor = .white
             }
-            AnalyticsManager.shared.customEventTab(action: "tab_capacity_reached")
+            AnalyticsManager.shared.customEvent(type: .tab, primary: "capacity_reached")
             return
         }
 
@@ -340,7 +340,7 @@ struct ContentView: View {
             focusedIndex = tabs.count - 1
         }
 
-        AnalyticsManager.shared.customEventTab(action: "tab_add")
+        AnalyticsManager.shared.customEvent(type: .tab, primary: "add")
     }
 
     private func addTabWithoutAnimation() {
@@ -361,7 +361,7 @@ struct ContentView: View {
         tabs.append(TabItem())
         focusedIndex = tabs.count - 1
 
-        AnalyticsManager.shared.customEventTab(action: "tab_add_without_animation")
+        AnalyticsManager.shared.customEvent(type: .tab, primary: "add_without_animation")
     }
 
     private func closeTab() {
@@ -378,7 +378,7 @@ struct ContentView: View {
             focusedIndex = tabs.count - 1
         }
 
-        AnalyticsManager.shared.customEventTab(action: "tab_close")
+        AnalyticsManager.shared.customEvent(type: .tab, primary: "close")
     }
 
     private func onClick(tabId: UUID) {
@@ -397,7 +397,7 @@ struct ContentView: View {
             }
         }
 
-        AnalyticsManager.shared.customEventTab(action: "tab_click")
+        AnalyticsManager.shared.customEvent(type: .tab, primary: "click")
     }
 
     private func moveFocus(_ direction: Int) {
@@ -418,7 +418,7 @@ struct ContentView: View {
             focusedIndex = newIndex
         }
 
-        AnalyticsManager.shared.customEventTab(action: "tab_move")
+        AnalyticsManager.shared.customEvent(type: .tab, primary: "move")
     }
 
     private func recalcZStackWidth() {
@@ -524,10 +524,10 @@ struct ContentView: View {
         if !disconnectRc.isEmpty {
             toastColor = .red
             toastText = "Failed to wake up agents: \(disconnectRc)"
-            AnalyticsManager.shared.customError(
-                type: "failure_disconnect_agents",
-                severity: "low",
-                location: "content_view"
+            AnalyticsManager.shared.customEvent(
+                type: .agent,
+                primary: "disconnect_agents",
+                secondary: .status_failure_high
             )
             DispatchQueue.main.asyncAfter(deadline: .now() + 2) {
                 showToast = false
@@ -544,23 +544,36 @@ struct ContentView: View {
             }
 
             let name: String
+            let primary: String
             let connectRc: String
             var oauth: Bool = false
 
             switch agent.entry {
             case let .url(n, url):
                 name = n
+                primary = url
+
                 // todo url is oauth ready and set oauth variable
                 connectRc = await mcp.connect(clientName: name, url: url, authToken: nil)
 
             case let .urlWithToken(n, url, token):
                 name = n
+                primary = url
+
                 connectRc = await mcp.connect(clientName: name, url: url, authToken: token)
 
             case let .command(n, command, arguments):
                 name = n
+                primary = command
+
                 connectRc = await mcp.connect(clientName: name, command: command, args: arguments)
             }
+
+            AnalyticsManager.shared.customEvent(
+                type: .agent,
+                primary: primary,
+                secondary: .status_success
+            )
 
             if !oauth {
                 if connectRc.isEmpty {
@@ -576,10 +589,10 @@ struct ContentView: View {
         if !failure.isEmpty {
             toastColor = .red
             toastText = "Failed to wake up agents\n" + failure
-            AnalyticsManager.shared.customError(
-                type: "failure_connect_agents",
-                severity: "warning",
-                location: "content_view"
+            AnalyticsManager.shared.customEvent(
+                type: .agent,
+                primary: "connect_agents",
+                secondary: .status_failure_med
             )
         }
 
@@ -639,10 +652,17 @@ struct ContentView: View {
             var accessToken: String?
             var refreshedAccessToken: String?
 
+            AnalyticsManager.shared.customEvent(
+                type: .agent,
+                primary: clientName,
+                secondary: .reconnect_attempt
+            )
+
             if googleOAuthManager.user != nil {
                 accessToken = googleOAuthManager.user?.accessToken.tokenString
                 logger.debug("AccessToken \(String(describing: accessToken))")
             }
+
             if let user = await googleOAuthManager.generateToken(refresh: true) {
                 refreshedAccessToken = user.accessToken.tokenString
                 // If token has been refreshed OR client does not exist
@@ -654,8 +674,14 @@ struct ContentView: View {
                         url: "https://google.mcp.aithing.dev/mcp",
                         authToken: refreshedAccessToken!
                     )
+                    AnalyticsManager.shared.customEvent(
+                        type: .agent,
+                        primary: clientName,
+                        secondary: .reconnect_success
+                    )
                 }
             }
+
             let tools = await mcp.getTools(
                 clientName: clientName,
                 filter: googleOAuthManager.enabledCapabilities()
@@ -672,10 +698,17 @@ struct ContentView: View {
             var accessToken: String?
             var refreshedAccessToken: String?
 
+            AnalyticsManager.shared.customEvent(
+                type: .agent,
+                primary: clientName,
+                secondary: .reconnect_attempt
+            )
+
             if githubOAuthManager.user != nil {
                 accessToken = githubOAuthManager.user?.accessToken
                 logger.debug("AccessToken \(String(describing: accessToken))")
             }
+
             if let user = await githubOAuthManager.generateToken(refresh: true) {
                 refreshedAccessToken = user.accessToken
                 // If token has been refreshed OR client does not exist
@@ -686,6 +719,11 @@ struct ContentView: View {
                         clientName: clientName,
                         url: "https://api.githubcopilot.com/mcp",
                         authToken: refreshedAccessToken!
+                    )
+                    AnalyticsManager.shared.customEvent(
+                        type: .agent,
+                        primary: clientName,
+                        secondary: .reconnect_success
                     )
                 }
             }
@@ -705,6 +743,12 @@ struct ContentView: View {
                 var accessToken: String?
                 var refreshedAccessToken: String?
 
+                AnalyticsManager.shared.customEvent(
+                    type: .agent,
+                    primary: clientName,
+                    secondary: .reconnect_attempt
+                )
+
                 if agentOAuthManager.user != nil {
                     accessToken = agentOAuthManager.user?.accessToken
                     logger.debug("AccessToken \(String(describing: accessToken))")
@@ -720,6 +764,11 @@ struct ContentView: View {
                             clientName: clientName,
                             url: agentOAuthManager.server.url,
                             authToken: refreshedAccessToken!
+                        )
+                        AnalyticsManager.shared.customEvent(
+                            type: .agent,
+                            primary: clientName,
+                            secondary: .reconnect_success
                         )
                     }
                 }

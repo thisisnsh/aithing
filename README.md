@@ -2,23 +2,106 @@
 
 ------------------------ 
 
-
-- Audio commands 
-- Listen computer audio 
-- Live transcribe and send to AI 
-
+Saturday & Sunday
+- Perform QA
 - Update Doc BYOK Free
 - Update Doc for Model Selection 
 - Update Doc for Prompt Cache & Output Token
 - Update Doc for Adding Global Agents   
+- Release 1.6
 
-- Check Analytics
-- Perform QA
+Sunday 
+- Make UI on notebook 
+
+Sep 22
+- Select text show FAB and show selected text
+
+Sep 23
+- Drag to grab image and show FAB
+
+Sep 24
+- Vertical history 
+
+Sep 25
+- Generate image and drag outside 
+
+Sep 26
+- Landing page 
+
+Sep 27
+- Edit tab title 
+
+Sep 28
+- a
+
+Sep 29
+- a
+
+Sep 30
+- a
+
+Oct 1
+- a
+
+Oct 2
+- a
+
+Oct 3
+- a
+
+Oct 4
+- a
+
+Oct 5
+- a
+
+- select a text, and ai thing shows up to help 
+- press shortcut, grab the screen, and ai thing shows up to help
+- press shortcut, see ai thing, task anything, do anything
+
+- Select a text, if text can be selected, show the icon
+- Hover over the icon, color shows, click to expand into text box
+- how to see history? how to expand? how to continue? 
+
+- ctrl+sht+4 to screen grab, and show on top, below that ai thing, where the cursor was
+- how to see history? how to expand? how to continue? 
+
+- press ctrl when tab is open to show the top 10 tabs and the shortcuts to resume 
+- also show the icon to close the tab while pressing command   
+- settigs button right of input 
+
+- first open landing app with instructions and login 
+- ctrl+space to hide and show 
+
+- minimize button, fabs floating everywhere upto 10 
+- edit title of floating tab 
+
+- all local storage 
+
+- selected text is shown in the input box 
+- show screen grab option to add image to the input 
+- drag and drop image out of ai thing 
+
+
+
+Usecase
+- text edit
+- text write
+- code understand
+- code debug 
+- code write 
+- create image 
+- understand image 
+- 
+
+
+
+
+
 
 
 Later
 - Wait for Google
-- Release 1.6
 - Create Ads
 - Create Post Reddit
 - Post Ads
@@ -29,6 +112,9 @@ Later
 
 
 Missing Features
+- Audio commands 
+- Listen computer audio 
+- Live transcribe and send to AI 
 - Get max agent from firebase 
 - No Audio recording 
 - Understand you and suggest things based on time and this

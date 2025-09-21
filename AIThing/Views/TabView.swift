@@ -303,7 +303,10 @@ struct TabView: View {
                                     modelContext.append(r)
                                     modelContextZoomed.append(false)
                                 }
-                                AnalyticsManager.shared.customEventTab(action: "tab_click_upload")
+                                AnalyticsManager.shared.customEvent(
+                                    type: .action,
+                                    primary: "file_upload"
+                                )
                             }
                         }
                     }
@@ -319,7 +322,7 @@ struct TabView: View {
                 Button(
                     action: {
                         showTools.toggle()
-                        AnalyticsManager.shared.customEventTab(action: "tab_click_tools")
+                        AnalyticsManager.shared.customEvent(type: .action, primary: "tools")
                     }
                 ) {
                     Image(systemName: "hammer.circle.fill")
@@ -333,7 +336,7 @@ struct TabView: View {
                 Button(
                     action: {
                         onSetting()
-                        AnalyticsManager.shared.customEventTab(action: "tab_click_settings")
+                        AnalyticsManager.shared.customEvent(type: .action, primary: "settings")
                     }
                 ) {
                     Image(systemName: "gearshape.circle.fill")
@@ -444,7 +447,10 @@ struct TabView: View {
                             Button(
                                 action: {
                                     copyToClipboard(string: modelOutput)
-                                    AnalyticsManager.shared.customEventTab(action: "tab_click_copy")
+                                    AnalyticsManager.shared.customEvent(
+                                        type: .action,
+                                        primary: "response_copy"
+                                    )
                                 }
                             ) {
                                 Image(systemName: "document.on.document.fill")
@@ -507,8 +513,9 @@ struct TabView: View {
             onDelete: { index in
                 modelContext.remove(at: index)
                 modelContextZoomed.remove(at: index)
-                AnalyticsManager.shared.customEventTab(
-                    action: "tab_file_remove"
+                AnalyticsManager.shared.customEvent(
+                    type: .action,
+                    primary: "file_remove"
                 )
             },
             updatePassthrough: { inside in
@@ -544,12 +551,16 @@ struct TabView: View {
                     {
                         modelContext.append(.image("Screen", image, base64))
                         modelContextZoomed.append(false)
-                        AnalyticsManager.shared.customEventTab(action: "tab_image_add_entire")
+                        AnalyticsManager.shared
+                            .customEvent(
+                                type: .action,
+                                primary: "image_entire"
+                            )
                     } else {
-                        AnalyticsManager.shared.customError(
-                            type: "failure_tab_image_add_entire",
-                            severity: "high",
-                            location: "tab_view"
+                        AnalyticsManager.shared.customEvent(
+                            type: .error,
+                            primary: "image_entire",
+                            secondary: .status_failure_high
                         )
                     }
                 } else {
@@ -558,38 +569,65 @@ struct TabView: View {
                     {
                         modelContext.append(.image("Window", image, base64))
                         modelContextZoomed.append(false)
-                        AnalyticsManager.shared.customEventTab(action: "tab_image_add_selected")
+                        AnalyticsManager.shared
+                            .customEvent(
+                                type: .action,
+                                primary: "image_selected"
+                            )
                     } else {
-                        AnalyticsManager.shared.customError(
-                            type: "failure_tab_image_add_selected",
-                            severity: "high",
-                            location: "tab_view"
+                        AnalyticsManager.shared.customEvent(
+                            type: .error,
+                            primary: "image_selected",
+                            secondary: .status_failure_high
                         )
                     }
                 }
 
                 takingScreenshot = false
-                AnalyticsManager.shared.customEventTab(action: "tab_context_add_this")
+                AnalyticsManager.shared.customEvent(
+                    type: .tab,
+                    primary: "file_remove"
+                )
+
+                AnalyticsManager.shared.customEvent(
+                    type: .tab,
+                    primary: "context_this_add"
+                )
             } else if command == "@selected" {
                 selectionContext = true
                 selectedText = TypingManager.shared.getSelectedText() ?? ""
-                AnalyticsManager.shared.customEventTab(action: "tab_context_add_selected")
+                AnalyticsManager.shared.customEvent(
+                    type: .tab,
+                    primary: "context_selected_add"
+                )
             } else if command == "@here" {
                 hereContext = true
                 TypingManager.shared.requestAXIfNeeded()
-                AnalyticsManager.shared.customEventTab(action: "tab_context_add_here")
+                AnalyticsManager.shared.customEvent(
+                    type: .tab,
+                    primary: "context_here_add"
+                )
             }
         case "remove":
             if command == "@this" {
                 screenshotManager.cancelScreenshot()
-                AnalyticsManager.shared.customEventTab(action: "tab_context_remove_this")
+                AnalyticsManager.shared.customEvent(
+                    type: .tab,
+                    primary: "context_this_remove"
+                )
             } else if command == "@selected" {
                 selectionContext = false
                 selectedText = ""
-                AnalyticsManager.shared.customEventTab(action: "tab_context_remove_selected")
+                AnalyticsManager.shared.customEvent(
+                    type: .tab,
+                    primary: "context_selected_remove"
+                )
             } else if command == "@here" {
                 hereContext = false
-                AnalyticsManager.shared.customEventTab(action: "tab_context_remove_here")
+                AnalyticsManager.shared.customEvent(
+                    type: .tab,
+                    primary: "context_here_remove"
+                )
             }
         default:
             break
@@ -612,13 +650,14 @@ struct TabView: View {
             updatePanelSizeFromDefault(getResponseHeight())
         }
 
-        AnalyticsManager.shared.customEventTab(action: "tab_query_handle_start")
+        AnalyticsManager.shared.customEvent(
+            type: .tab,
+            primary: "handle_query"
+        )
 
         isViewBlinking = true
         await callModel(query: trimmed)
         isViewBlinking = false
-
-        AnalyticsManager.shared.customEventTab(action: "tab_query_handle_end")
     }
 
     private func callModel(query: String) async {
@@ -632,10 +671,10 @@ struct TabView: View {
                     For updates, please contact help@aithing.dev.
                     """
             )
-            AnalyticsManager.shared.customError(
-                type: "breakglass_enabled",
-                severity: "low",
-                location: "tab_view"
+            AnalyticsManager.shared.customEvent(
+                type: .error,
+                primary: "breakglass_enabled",
+                secondary: .status_failure_low,
             )
             return
         }
@@ -649,10 +688,10 @@ struct TabView: View {
                     Please [upgrade the version](https://aithing.dev/upgrade) to enjoy new features and continue using the app.
                     """
             )
-            AnalyticsManager.shared.customError(
-                type: "version_expired",
-                severity: "low",
-                location: "tab_view"
+            AnalyticsManager.shared.customEvent(
+                type: .error,
+                primary: "version_expired",
+                secondary: .status_failure_low,
             )
             return
         }
@@ -707,10 +746,10 @@ struct TabView: View {
                 if !byok && creditsUsed >= creditsTotal {
                     isThinking = false
                     await animateOutput(content: creditErrorMessage)
-                    AnalyticsManager.shared.customError(
-                        type: "credits_consumed",
-                        severity: "high",
-                        location: "tab_view"
+                    AnalyticsManager.shared.customEvent(
+                        type: .error,
+                        primary: "credits_consumed",
+                        secondary: .status_failure_high,
                     )
                     return
                 }
@@ -723,19 +762,19 @@ struct TabView: View {
 
             isThinking = false
             await animateOutput(content: profileErrorMessage)
-            AnalyticsManager.shared.customError(
-                type: "profile_error",
-                severity: "high",
-                location: "tab_view"
+            AnalyticsManager.shared.customEvent(
+                type: .error,
+                primary: "profile_fetch",
+                secondary: .status_failure_high,
             )
             return
         default:
             isThinking = false
             await animateOutput(content: loginPromptMessage)
-            AnalyticsManager.shared.customError(
-                type: "query_without_login",
-                severity: "low",
-                location: "tab_view"
+            AnalyticsManager.shared.customEvent(
+                type: .error,
+                primary: "query_without_login",
+                secondary: .status_failure_low,
             )
             return
         }
@@ -744,7 +783,7 @@ struct TabView: View {
         if isTabClosed() {
             isThinking = false
             logger.info("Exiting callModel for \(tabId) as it was closed")
-            AnalyticsManager.shared.customEventTab(action: "query_stop_on_close")
+            AnalyticsManager.shared.customEvent(type: .tab, primary: "query_stop_on_close")
             return
         }
 
@@ -760,9 +799,10 @@ struct TabView: View {
 
         let model = getModel()
 
-        AnalyticsManager.shared.customEventModel(
-            name: model,
-            type: byok ? "byok" : "managed"
+        AnalyticsManager.shared.customEvent(
+            type: .model,
+            primary: model,
+            secondary: byok ? .byok_model : .managed_model
         )
 
         guard let apiKey = byok ? getAnthropicAPIKey() : apiKeyManaged, !apiKey.isEmpty
@@ -795,10 +835,10 @@ struct TabView: View {
 
             isThinking = false
             await animateOutput(content: apiErrorMessage)
-            AnalyticsManager.shared.customError(
-                type: "missing_api_key",
-                severity: byok ? "low" : "high",
-                location: "tab_view"
+            AnalyticsManager.shared.customEvent(
+                type: .error,
+                primary: "missing_api_key",
+                secondary: byok ? .status_failure_low : .status_failure_high
             )
             return
         }
@@ -819,7 +859,7 @@ struct TabView: View {
                 switch modelContext[i] {
                 case .image(_, _, let base64):
                     fileCount += 1
-                    AnalyticsManager.shared.customEventTab(action: "file_upload_image")
+                    AnalyticsManager.shared.customEvent(type: .tab, primary: "file_upload_image")
                     modelInput.append(
                         [
                             "role": "user",
@@ -838,7 +878,10 @@ struct TabView: View {
                 case .pdf(_, _, _, let base64s):
                     fileCount += 1
                     for base64 in base64s {
-                        AnalyticsManager.shared.customEventTab(action: "file_upload_pdf_page")
+                        AnalyticsManager.shared.customEvent(
+                            type: .tab,
+                            primary: "file_upload_pdf_page"
+                        )
                         modelInput.append(
                             [
                                 "role": "user",
@@ -857,7 +900,7 @@ struct TabView: View {
                     }
                 case .text(let name, let text, _):
                     fileCount += 1
-                    AnalyticsManager.shared.customEventTab(action: "file_upload_text")
+                    AnalyticsManager.shared.customEvent(type: .tab, primary: "file_upload_text")
                     modelInput.append(
                         [
                             "role": "user",
@@ -897,10 +940,10 @@ struct TabView: View {
                             Please report issues to help@aithing.dev
                             """
                     )
-                    AnalyticsManager.shared.customError(
-                        type: "query_no_selection_found",
-                        severity: "low",
-                        location: "tab_view"
+                    AnalyticsManager.shared.customEvent(
+                        type: .error,
+                        primary: "query_no_selection_found",
+                        secondary: .status_failure_low,
                     )
                     return
                 }
@@ -962,10 +1005,10 @@ struct TabView: View {
                     """
 
                 await animateOutput(content: creditErrorMessage)
-                AnalyticsManager.shared.customError(
-                    type: "credits_not_enough",
-                    severity: "high",
-                    location: "tab_view"
+                AnalyticsManager.shared.customEvent(
+                    type: .error,
+                    primary: "credits_not_enough",
+                    secondary: .status_failure_high,
                 )
                 return
             }
@@ -980,10 +1023,10 @@ struct TabView: View {
             else {
                 isThinking = false
                 await animateOutput(content: "Invalid response\n\nReport issue at help@aithing.dev")
-                AnalyticsManager.shared.customError(
-                    type: "response_invalid",
-                    severity: "high",
-                    location: "tab_view"
+                AnalyticsManager.shared.customEvent(
+                    type: .error,
+                    primary: "response_invalid",
+                    secondary: .status_failure_high,
                 )
                 return
             }
@@ -1012,20 +1055,20 @@ struct TabView: View {
                                 """
                         )
                     }
-                    AnalyticsManager.shared.customError(
-                        type: "response_rate_limit",
-                        severity: byok ? "low" : "high",
-                        location: "tab_view"
+                    AnalyticsManager.shared.customEvent(
+                        type: .error,
+                        primary: "response_rate_limit",
+                        secondary: byok ? .status_failure_low : .status_failure_high
                     )
                 } else {
                     await animateOutput(
                         content:
                             "Error \(httpResponse.statusCode)\n\(error)\n\nReport issue at help@aithing.dev"
                     )
-                    AnalyticsManager.shared.customError(
-                        type: "response_failure",
-                        severity: "high",
-                        location: "tab_view"
+                    AnalyticsManager.shared.customEvent(
+                        type: .error,
+                        primary: "response_failure",
+                        secondary: .status_failure_high,
                     )
                 }
                 return
@@ -1070,21 +1113,11 @@ struct TabView: View {
                         ],
                     ])
                 }
-
-                AnalyticsManager.shared.customEventCost(
-                    type: (query.isEmpty ? "Agent Use" : "Query"),
-                    value: costPerQuery
-                )
-                AnalyticsManager.shared.customEventCost(type: "Attached Files", value: costFile)
-                AnalyticsManager.shared.customEventCost(
-                    type: "Agents Enabled",
-                    value: costAgent
-                )
             } else {
-                AnalyticsManager.shared.customError(
-                    type: "cost_not_calculated",
-                    severity: "high",
-                    location: "tab_view"
+                AnalyticsManager.shared.customEvent(
+                    type: .error,
+                    primary: "cost_not_calculated",
+                    secondary: .status_failure_high,
                 )
             }
 
@@ -1132,7 +1165,8 @@ struct TabView: View {
                         if isTabClosed() {
                             isThinking = false
                             logger.info("Exiting text_delta for \(tabId) as it was closed")
-                            AnalyticsManager.shared.customEventTab(action: "query_stop_on_close")
+                            AnalyticsManager.shared
+                                .customEvent(type: .tab, primary: "query_stop_on_close")
                             return
                         }
 
@@ -1173,7 +1207,10 @@ struct TabView: View {
                         if isTabClosed() {
                             isThinking = false
                             logger.info("Exiting message_delta for \(tabId) as it was closed")
-                            AnalyticsManager.shared.customEventTab(action: "query_stop_on_close")
+                            AnalyticsManager.shared.customEvent(
+                                type: .tab,
+                                primary: "query_stop_on_close"
+                            )
                             return
                         }
 
@@ -1230,8 +1267,14 @@ struct TabView: View {
                                 input: finalToolUseInputParam
                             )
 
-                            AnalyticsManager.shared.customEventTab(action: "query_tool_called")
-                            AnalyticsManager.shared.customEventTool(name: finalToolUseName)
+                            AnalyticsManager.shared.customEvent(
+                                type: .tab,
+                                primary: "query_tool_called"
+                            )
+                            AnalyticsManager.shared.customEvent(
+                                type: .tool,
+                                primary: finalToolUseName,
+                            )
 
                             logger.debug("Call tool: \(finalToolUseName)")
                             logger.debug("Tool input: \(finalToolUseInputParam)")
