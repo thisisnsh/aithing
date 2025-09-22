@@ -118,7 +118,7 @@ struct ContextGridView: View {
     var updatePassthrough: (_ inside: Bool) -> Void
 
     var body: some View {
-        MasonryGrid(columns: 6, columnWidth: 90, spacing: 8) {
+        MasonryGrid(columns: 7, columnWidth: 91, spacing: 8) {
             ForEach(modelContext.indices, id: \.self) { index in
                 let context = modelContext[index]
                 let zoomed = index < modelContextZoomed.count && modelContextZoomed[index]

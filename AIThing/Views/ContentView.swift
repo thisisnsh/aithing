@@ -763,10 +763,8 @@ struct ContentView: View {
         let keepingCurrent = mcpOAuthManagers.managers.merging(mcpOAuthManagers.selfManagers) {
             (current, _) in current
         }
-        print(keepingCurrent)
         for (clientName, agentOAuthManager) in keepingCurrent {
             if agentOAuthManager.enabled {
-                print("Reconnect \(clientName)")
                 var accessToken: String?
                 var refreshedAccessToken: String?
 
