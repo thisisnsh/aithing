@@ -2,18 +2,8 @@
 
 ------------------------ 
 
-Saturday & Sunday
-- Perform QA
-- Update Doc BYOK Free
-- Update Doc for Model Selection 
-- Update Doc for Prompt Cache & Output Token
-- Update Doc for Adding Global Agents   
-- Release 1.6
-
-Sunday 
-- Make UI on notebook 
-
 Sep 22
+- Make UI on notebook 
 - Select text show FAB and show selected text
 
 Sep 23

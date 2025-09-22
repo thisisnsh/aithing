@@ -311,7 +311,7 @@ struct TabView: View {
                         }
                     }
                 ) {
-                    Image(systemName: "square.and.arrow.up.circle.fill")
+                    Image(systemName: "arrowshape.up.circle.fill")
                         .resizable()
                         .scaledToFit()
                 }

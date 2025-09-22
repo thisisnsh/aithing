@@ -28,7 +28,7 @@ struct SettingsPreferencesTab: View {
                             Text("5-Minute Prompt Cache")
                                 .font(.system(size: 14, weight: .medium))
                             Text(
-                                "Reduces processing time and costs for\nfollow-up tasks. Learn More."
+                                "Reduces processing time and costs for\nfollow-up tasks. [Learn More](https://aithing.dev/features/managed-models#prompt-cache)"
                             )
                             .font(.system(size: 10, weight: .medium))
                             .foregroundStyle(.secondary)
