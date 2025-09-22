@@ -1544,12 +1544,16 @@ struct TabView: View {
     }
 
     private func openFilePanel(completion: @escaping ([URL]) -> Void) {
-        let panel = NSOpenPanel()
-        panel.allowsMultipleSelection = true
-        panel.canChooseDirectories = false
-        panel.canChooseFiles = true
+        DispatchQueue.main.async {
+            NSApp.activate(ignoringOtherApps: true)            
 
-        let response = panel.runModal()
-        completion(response == .OK ? panel.urls : [])
+            let panel = NSOpenPanel()
+            panel.allowsMultipleSelection = true
+            panel.canChooseDirectories = false
+            panel.canChooseFiles = true
+
+            let response = panel.runModal()
+            completion(response == .OK ? panel.urls : [])
+        }
     }
 }
