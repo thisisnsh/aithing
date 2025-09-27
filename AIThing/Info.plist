@@ -4,7 +4,8 @@
 <dict>
     <key>NSAccessibilityUsageDescription</key>
     <string>AI Thing needs accessibility access to detect text selection and show the floating window at the cursor location.</string>
-	<key>CFBundleURLTypes</key>
+	
+    <key>CFBundleURLTypes</key>
 	<array>
 		<dict>
 			<key>CFBundleTypeRole</key>
@@ -31,8 +32,10 @@
 			</array>
 		</dict>
 	</array>
+    
 	<key>GOOGLE_ANALYTICS_REGISTRATION_WITH_AD_NETWORK_ENABLED</key>
 	<false/>
+    
 	<key>NSAppTransportSecurity</key>
 	<dict>
 		<key>NSExceptionDomains</key>

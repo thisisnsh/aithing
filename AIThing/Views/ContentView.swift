@@ -6,6 +6,7 @@
 //
 
 import Firebase
+import SelectedTextKit
 import SwiftUI
 import os
 
@@ -74,6 +75,10 @@ struct ContentView: View {
     @StateObject private var githubOAuthManager = GithubOAuthManager()
     @StateObject private var mcpOAuthManagers = McpOAuthManagers()
 
+    private let textManager = SelectedTextManager.shared
+    let timer = Timer.publish(every: 1, on: .main, in: .common).autoconnect()
+    @State private var selectedText = ""
+
     var body: some View {
         ZStack(alignment: .top) {
             HStack(alignment: .top, spacing: hSpacing) {
@@ -111,6 +116,10 @@ struct ContentView: View {
             if showToast {
                 Toast()
             }
+
+            Color.red
+                .frame(width: 10, height: 10)
+                .opacity(selectedText.isEmpty ? 0 : 1)
         }
         .frame(width: zStackWidth)
         .onAppear {
@@ -180,6 +189,38 @@ struct ContentView: View {
                 }
                 return event
             }
+        }
+        .onReceive(timer) { _ in
+            Task {
+                await example()
+            }
+        }
+    }
+
+    func example() async {
+        do {
+            // Try AXUI method first
+            if let text = try await textManager.getSelectedTextByAX() {
+                let sanitizedText = text.trimmingCharacters(in: .whitespacesAndNewlines)
+                if !sanitizedText.isEmpty {
+                    selectedText = sanitizedText
+                    return
+                }
+            }
+
+            // If AXUI fails or returns empty text, try menu action copy
+            if let menuCopyText = try await textManager.getSelectedTextByMenuAction() {
+                let sanitizedText = menuCopyText.trimmingCharacters(in: .whitespacesAndNewlines)
+                if !sanitizedText.isEmpty {
+                    selectedText = sanitizedText
+                    return
+                }
+            }
+
+            selectedText = ""
+            return
+        } catch {
+            selectedText = ""
         }
     }
 

@@ -1,5 +1,5 @@
 {
-  "originHash" : "b69df57478437d41e2427e9cea34e23ab7eecbfeb79f7f53c96880d291639c51",
+  "originHash" : "80106bf14ff2243adbad556a9af4a80e178c467e0aa45c7428de849a5ea81f6e",
   "pins" : [
     {
       "identity" : "abseil-cpp-binary",
@@ -26,6 +26,24 @@
       "state" : {
         "revision" : "145104f5ea9d58ae21b60add007c33c1cc0c948e",
         "version" : "2.0.0"
+      }
+    },
+    {
+      "identity" : "axswift",
+      "kind" : "remoteSourceControl",
+      "location" : "https://github.com/tmandry/AXSwift.git",
+      "state" : {
+        "revision" : "81dcc36aced905d6464cc25e35f8d13184bbf21c",
+        "version" : "0.3.2"
+      }
+    },
+    {
+      "identity" : "axswiftext",
+      "kind" : "remoteSourceControl",
+      "location" : "https://github.com/s1ntoneli/AXSwiftExt",
+      "state" : {
+        "revision" : "a2696cad4504996dffc53bb59892e13242a2c243",
+        "version" : "0.1.0"
       }
     },
     {
@@ -173,6 +191,15 @@
       }
     },
     {
+      "identity" : "keysender",
+      "kind" : "remoteSourceControl",
+      "location" : "https://github.com/jordanbaird/KeySender",
+      "state" : {
+        "revision" : "99584bf1a03ab600cc44be89a2dcd98b2dbeb9de",
+        "version" : "0.0.5"
+      }
+    },
+    {
       "identity" : "leveldb",
       "kind" : "remoteSourceControl",
       "location" : "https://github.com/firebase/leveldb.git",
@@ -215,6 +242,15 @@
       "state" : {
         "revision" : "540318ecedd63d883069ae7f1ed811a2df00b6ac",
         "version" : "2.4.0"
+      }
+    },
+    {
+      "identity" : "selectedtextkit",
+      "kind" : "remoteSourceControl",
+      "location" : "https://github.com/tisfeng/SelectedTextKit.git",
+      "state" : {
+        "revision" : "d0b1199ebd0d6f6663b3a7b77947060a6e0f753a",
+        "version" : "2.6.0"
       }
     },
     {
