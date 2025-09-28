@@ -26,6 +26,8 @@
 - [6] edit title 
     - coming soon
 - [7] create copy button in code block
+- [8] custom system message based on actions 
+
 
 ### Milestones 
 
@@ -39,7 +41,7 @@ Sep 29
 - [0][1]
 
 Sep 30
-- [2]
+- [2][7][8]
 
 Oct 1
 - Release
