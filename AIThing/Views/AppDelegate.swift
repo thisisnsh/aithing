@@ -19,23 +19,25 @@ import SwiftUI
 import os
 
 class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate {
-    var floatingWindow: NonActivatingPanel!
-    var floatingActionWindow: NonActivatingPanel!
+    private var floatingWindow: NonActivatingPanel!
+    private var floatingActionWindow: NonActivatingPanel!
 
-    var hotKey: HotKey?
+    private var escMonitor: Any?
+    private var globalMouseMonitor: Any?
+    private var hotKey: HotKey?
 
-    let width: CGFloat = 1500
-    let height: CGFloat = 96
+    private let width: CGFloat = 1500
+    private let height: CGFloat = 96
 
     static var allowQuit = false
 
-    let screenshotManager = ScreenshotManager()
-    var selectionResetRequired = false
+    private let screenshotManager = ScreenshotManager()
 
+    private var selectionResetRequired = false
     private let textManager = SelectedTextManager.shared
-    let timer = Timer.publish(every: 1, on: .main, in: .common).autoconnect()
-    var selectedText: String = ""
+    private var selectedText: String = ""
     private var pollingTimer: DispatchSourceTimer?
+    private var mouseLocation = NSEvent.mouseLocation
 
     func applicationDidFinishLaunching(_ notification: Notification) {
         NSApp.setActivationPolicy(.accessory)  // background-style app
@@ -51,6 +53,7 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate {
         setupWindow()
         setupHotKey()
         startSelectionPoll()
+        startGlobalInput()
 
         try? SMAppService.mainApp.register()
 
@@ -67,6 +70,7 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate {
     func applicationWillTerminate(_ notification: Notification) {
         pollingTimer?.cancel()
         pollingTimer = nil
+        stopGlobalInput()
     }
 
     func setupWindow() {
@@ -150,13 +154,17 @@ extension AppDelegate {
             return
         }
 
-        let size = NSSize(width: 24 + 32 + 8 + 200 + 8 + 18 + 24, height: 48)
+        let size = NSSize(width: 32, height: 32)
         let contentView = MiniTabView(
             onClick: { return self.selectedText },
             onClose: { self.closeActiveWindow() },
+            updatePanelSizeFromCurrent: { width, height in
+                return self.updateFloatingActiveWindowSizeFromCurrent(width: width, height: height)
+            },
             onSetting: {},
             setPanelPassthrough: { self.setPanelPassthrough($0) }
         )
+
         let hostingView = NSHostingView(rootView: contentView)
         hostingView.frame = NSRect(origin: .zero, size: size)
 
@@ -164,31 +172,47 @@ extension AppDelegate {
         panel.contentView = hostingView
         panel.isReleasedWhenClosed = false
 
-        let cursor = NSEvent.mouseLocation
+        // Location of first click
+        let cursor = mouseLocation
         let origin = NSPoint(
-            x: cursor.x - size.width / 2,
+            x: cursor.x - size.width / 2 - 48,
             y: cursor.y - size.height / 2
         )
         panel.setFrame(NSRect(origin: origin, size: size), display: false)
 
         panel.orderFrontRegardless()
-        panel.makeKeyAndOrderFront(nil)
 
         floatingActionWindow = panel
         setPanelVisibility()
     }
 
+    private func updateFloatingActiveWindowSizeFromCurrent(width: CGFloat, height: CGFloat) {
+        guard let floatingActionWindow = floatingActionWindow else { return }
+        // Updates the floating window size by adding extra height while keeping the top edge aligned
+        var frame = floatingActionWindow.frame
+        let targetSize = NSSize(width: frame.width + width, height: frame.height + height)
+
+        frame.origin.y += (frame.size.height - targetSize.height)  // keep top aligned
+        frame.size = targetSize
+
+        if frame.origin.y > 0 {
+            floatingActionWindow.setFrame(frame, display: true, animate: false)
+        }
+    }
+
     private func closeActiveWindow() {
         selectionResetRequired = true
-        floatingActionWindow.close()
-        floatingActionWindow = nil
+        if let panel = floatingActionWindow {
+            panel.close()
+            floatingActionWindow = nil
+        }
     }
 
     private func startSelectionPoll() {
         pollingTimer?.cancel()
 
         let timer = DispatchSource.makeTimerSource(queue: .main)
-        timer.schedule(deadline: .now(), repeating: 1.0)
+        timer.schedule(deadline: .now(), repeating: 0.5)
         timer.setEventHandler {
             if !AXIsProcessTrusted() {
                 let opts: NSDictionary = [
@@ -293,4 +317,39 @@ extension AppDelegate {
         }
     }
 
+}
+
+/// Functions for Global Events
+extension AppDelegate {
+    private func requestAXIfNeeded() {
+        let options =
+            [kAXTrustedCheckOptionPrompt.takeUnretainedValue() as String: true] as CFDictionary
+        _ = AXIsProcessTrustedWithOptions(options)
+    }
+
+    private func startGlobalInput() {
+        stopGlobalInput()  // idempotent
+        requestAXIfNeeded()
+
+        escMonitor = NSEvent.addGlobalMonitorForEvents(matching: .keyDown) { [weak self] event in
+            if event.keyCode == 53 {  // 53 = Escape
+                self?.closeActiveWindow()
+            }
+        }
+        globalMouseMonitor = NSEvent.addGlobalMonitorForEvents(matching: [.leftMouseDown]) {
+            [weak self] _ in
+            self?.saveMouseCoordinates()
+        }
+    }
+
+    private func stopGlobalInput() {
+        if let monitor = globalMouseMonitor { NSEvent.removeMonitor(monitor) }
+        if let monitor = escMonitor { NSEvent.removeMonitor(monitor) }
+        globalMouseMonitor = nil
+        escMonitor = nil
+    }
+
+    private func saveMouseCoordinates() {
+        mouseLocation = NSEvent.mouseLocation
+    }
 }

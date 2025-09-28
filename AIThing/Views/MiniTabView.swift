@@ -13,6 +13,7 @@ struct MiniTabView: View {
 
     var onClick: () -> String
     var onClose: () -> Void
+    var updatePanelSizeFromCurrent: (CGFloat, CGFloat) -> Void
     let onSetting: () -> Void
     let setPanelPassthrough: (_ enabled: Bool) -> Void
 
@@ -31,52 +32,63 @@ struct MiniTabView: View {
     @State private var showDragIcon: Bool = false
 
     @State private var expanded = false
+    @State private var collapseWork: DispatchWorkItem?
 
     var body: some View {
         VStack(alignment: .leading, spacing: 0) {
-            Color.clear.frame(height: 32).overlay(alignment: .bottom) {
-                if showDragIcon {
-                    Image(systemName: "square.grid.3x2.fill")
-                        .resizable()
-                        .scaledToFit()
-                        .frame(width: 16, height: 16)
-                        .shadow(color: .black, radius: 1)
-                        .onHover { inside in
-                            if inside {
-                                NSCursor.openHand.set()
-                            } else {
-                                NSCursor.arrow.set()
-                            }
-                            updatePassthrough(inside: inside)
-                        }
+            inputView()
+                .frame(
+                    width: expanded ? 314 : 32,
+                    height: expanded ? 48 : 32,
+                    alignment: .topLeading
+                )
+                .animation(.easeInOut(duration: 0.25), value: expanded)
+                .background(.ultraThinMaterial)
+                .background(Color.clear)
+                .overlay(
+                    RoundedRectangle(cornerRadius: getCornerRadius())
+                        .stroke(Color.white, lineWidth: 1.5)
+                )
+                .cornerRadius(getCornerRadius())
+                .shadow(radius: 4)
+                .onHover { inside in updatePassthrough(inside: inside) }
+        }
+        .frame(maxWidth: .infinity, alignment: .leading)  // anchor left
+        .padding(8)
+        .background(Color.clear)  // keep outer background inert
+        .contentShape(Rectangle())
+        .onHover { inside in
+            if expanded { return }
+
+            // Debounced collapse to prevent flicker on tiny exits
+            if inside {
+                collapseWork?.cancel()
+                withAnimation(.easeInOut(duration: 0.25)) {
+                    expanded = true
+                }
+            } else {
+                let w = DispatchWorkItem {
+                    withAnimation(.easeInOut(duration: 0.25)) {
+                        expanded = false
+                    }
+                }
+                collapseWork?.cancel()
+                collapseWork = w
+                DispatchQueue.main.asyncAfter(deadline: .now() + 0.12, execute: w)
+            }
+        }
+        .onChange(of: expanded) { isExpanded in
+            // Defer panel size mutation to the next runloop to avoid layout recursion
+            DispatchQueue.main.async {
+                if isExpanded {
+                    updatePanelSizeFromCurrent(282, 16)
+                } else {
+                    updatePanelSizeFromCurrent(-282, -16)
                 }
             }
-            .padding(.bottom, 8)
-
-            VStack(alignment: .leading, spacing: 0) {
-                inputView()
-                    .onHover { inside in
-                        updatePassthrough(inside: inside)
-                    }
-            }
-            .background(.ultraThinMaterial)
-            .frame(
-                height: 48,
-                alignment: .topLeading
-            )
-            .background(Color.clear)
-            .overlay(
-                RoundedRectangle(cornerRadius: getCornerRadius())
-                    .stroke(Color.white, lineWidth: 1.5)
-            )
-            .cornerRadius(getCornerRadius())
-            .shadow(radius: 4)
-
-            .padding(.bottom, 8)
-
         }
-        .onHover { inside in
-            showDragIcon = inside
+        .onExitCommand {
+            onClose()
         }
     }
 
@@ -85,16 +97,13 @@ struct MiniTabView: View {
             LogoShape()
                 .fill(.white)
                 .scaledToFit()
-                .frame(width: 32)
-                .onTapGesture {
-                    query = onClick()
-                    expanded = true
-                }
+                .frame(width: expanded ? 0 : 16)
+                .opacity(expanded ? 0 : 1)
 
             if expanded {
                 ZStack(alignment: .leading) {
                     InputTextView(
-                        text: $query,  // .constant(text),
+                        text: $query,
                         seenCommands: $seenCommands,
                         size: .constant(18),
                         isNotEditable: false,
@@ -106,34 +115,37 @@ struct MiniTabView: View {
                     )
                     .onChange(of: query) { x in }
                     .opacity(1)
-                    .frame(width: 200)
+                    .frame(width: 254)
+                    .padding(.vertical, 8)
+                    .padding(.leading, -8)
 
                     if query.isEmpty {
-                        Text("Ask anything...")
+                        Text("Ask on AI Thing...")
                             .foregroundColor(.white.opacity(0.6))
                             .font(.system(size: 18, weight: .medium))
-                            .padding(.leading, 6)
+                            .padding(.leading, -2)
                             .allowsHitTesting(false)
                     }
                 }
 
                 Button(
                     action: {
-                        onClose()
+                        onSetting()
+                        AnalyticsManager.shared.customEvent(type: .action, primary: "settings")
                     }
                 ) {
-                    Image(systemName: "x.circle.fill")
+                    Image(systemName: "gearshape.circle.fill")
                         .resizable()
                         .scaledToFit()
                         .foregroundStyle(.white)
+                        .padding(.vertical, 2)
                 }
                 .buttonStyle(PlainButtonStyle())
                 .frame(width: 18, height: 18)
             }
         }
-        .frame(height: 48 - 16)
-        .padding(.horizontal, 24)
-        .padding(.vertical, 8)
+        .padding(.vertical, expanded ? 0 : 8)
+        .padding(.horizontal, expanded ? 16 : 8)
     }
 
     private func getCornerRadius() -> CGFloat {

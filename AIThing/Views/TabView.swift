@@ -1545,7 +1545,7 @@ struct TabView: View {
 
     private func openFilePanel(completion: @escaping ([URL]) -> Void) {
         DispatchQueue.main.async {
-            NSApp.activate(ignoringOtherApps: true)            
+            NSApp.activate(ignoringOtherApps: true)
 
             let panel = NSOpenPanel()
             panel.allowsMultipleSelection = true
