@@ -4,53 +4,30 @@
 
 ## Plan 2.0
 
-- [0] show full conversation in response
-- [1] ctrl+space: 
+### Milestones 
+
+- ctrl+space: 
     - slide down from top and fade in 
     - show existing ai thing 
     - slide up and fade out 
-- [2] ctrl+shift+4/3: selected/full 
+- Fix setting open bug 
+- Animate like spotlight
+
+- Open settings from mini tab 
+- Show response in mini tab 
+
+
+
+
+- Release
+
+Later
+- ctrl+shift+4/3: selected/full 
     - grab screenshot 
     - open new tab with that screenshot 
     - if tab open, grab screenshot and attach
-- [3] ctrl+shift+5: record video 
-    - coming soon 
-- [4] fab
-    - select text and fab shows
-    - hover over the fab to expand 
-    - expand button to move it to big ai thing 
-    - esc to hide
-    - press control to see top 10 history 
-- [5] generate image
-    - coming soon 
-- [6] edit title 
-    - coming soon
-- [7] create copy button in code block
-- [8] custom system message based on actions 
-
-
-### Milestones 
-
-Sep 27
-- [4]
-
-Sep 28
-- [4]
-
-Sep 29
-- [0][1]
-
-Sep 30
-- [2][7][8]
-
-Oct 1
-- Release
-
-Oct 2
-- a
-
-
-
+- create copy button in code block
+- custom system message based on actions 
 
 
 
@@ -61,6 +38,9 @@ Oct 2
 
 ## Missing Features
 
+- Show full conversation in response
+- Edit title
+- Generate image 
 - Audio commands 
 - Listen computer audio 
 - Live transcribe and send to AI 
