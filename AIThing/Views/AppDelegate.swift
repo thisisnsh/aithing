@@ -27,7 +27,7 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate {
     private var hotKey: HotKey?
 
     private let width: CGFloat = 1500
-    private let height: CGFloat = 96
+    private let height: CGFloat = 1000
 
     static var allowQuit = false
 
@@ -97,7 +97,10 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate {
         floatingWindow.alphaValue = 1
         floatingWindow.center()
         floatingWindow.orderFrontRegardless()  // no app activation
-
+        
+        var framea = floatingWindow.frame
+        print(framea)
+        
         setPanelVisibility()
     }
 
@@ -267,26 +270,51 @@ extension AppDelegate {
 extension AppDelegate {
 
     private func updatePanelSizeFromDefault(extraHeight: CGFloat) {
-        let targetSize = NSSize(width: width, height: height + extraHeight)
+//        var framea = floatingWindow.frame
+//        print(framea)
+//        return;
+//        print("updatePanelSizeFromDefault")
+//        print(extraHeight)        
+        
+        let targetSize = NSSize(width: width, height: height)
 
         var frame = floatingWindow.frame
-        frame.origin.y += (frame.size.height - targetSize.height)  // keep top aligned
+//        frame.origin.y += (frame.size.height - targetSize.height)  // keep top aligned
         frame.size = targetSize
-
+//        print(frame.size.width)
+//        print(frame.size.height)
+        
         floatingWindow.setFrame(frame, display: true, animate: false)
     }
 
     private func updatePanelSizeFromCurrent(extraHeight: CGFloat) {
-        // Updates the floating window size by adding extra height while keeping the top edge aligned
+        let targetSize = NSSize(width: width, height: height)
+
         var frame = floatingWindow.frame
-        let targetSize = NSSize(width: frame.width, height: frame.height + extraHeight)
-
-        frame.origin.y += (frame.size.height - targetSize.height)  // keep top aligned
+//        frame.origin.y += (frame.size.height - targetSize.height)  // keep top aligned
         frame.size = targetSize
-
-        if frame.origin.y > 0 {
-            floatingWindow.setFrame(frame, display: true, animate: false)
-        }
+//        print(frame.size.width)
+//        print(frame.size.height)
+        
+        floatingWindow.setFrame(frame, display: true, animate: false)
+        //        var framea = floatingWindow.frame
+//        print(framea)
+//        return;
+//        print("updatePanelSizeFromCurrent")
+////        print(extraHeight)
+//        
+//        // Updates the floating window size by adding extra height while keeping the top edge aligned
+//        var frame = floatingWindow.frame
+//        let targetSize = NSSize(width: frame.width, height: frame.height + extraHeight)
+//
+//        frame.origin.y += (frame.size.height - targetSize.height)  // keep top aligned
+//        frame.size = targetSize
+////        print(frame.size.width)
+////        print(frame.size.height)
+//        
+//        if frame.origin.y > 0 {
+//            floatingWindow.setFrame(frame, display: true, animate: false)
+//        }
     }
 
     /// Returns the extra panel height by calculating the difference between the floating window's current height and the base height

@@ -142,6 +142,7 @@ struct TabView: View {
             .animation(.easeInOut(duration: 0.25), value: isFocused)
             .onAppear {
                 DispatchQueue.main.async {
+                    print("1")
                     updatePanelSizeFromDefault(getResponseHeight())
                 }
                 if let tabHistory {
@@ -170,10 +171,12 @@ struct TabView: View {
                 // views not in focus adjust height first
                 if isFocused {
                     DispatchQueue.main.asyncAfter(deadline: .now() + 0.4) {
+                        print("2")
                         updatePanelSizeFromDefault(getResponseHeight())
                     }
                 } else {
                     DispatchQueue.main.async {
+                        print("3")
                         updatePanelSizeFromDefault(getResponseHeight())
                     }
                 }
@@ -485,6 +488,7 @@ struct TabView: View {
                     responseHeight = checkedHeight
                     if isFocused {
                         DispatchQueue.main.async {
+                            print("4")
                             updatePanelSizeFromDefault(getResponseHeight())
                         }
                     }
@@ -647,6 +651,7 @@ struct TabView: View {
 
         responseHeight = responseHeightMin
         DispatchQueue.main.async {
+            print("5")
             updatePanelSizeFromDefault(getResponseHeight())
         }
 
