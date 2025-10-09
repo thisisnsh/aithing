@@ -14,6 +14,7 @@ struct MiniTabView: View {
     var onClick: () -> String
     var onClose: () -> Void
     let onSetting: () -> Void
+    let expandSize: () -> Void
     let setPanelPassthrough: (_ enabled: Bool) -> Void
 
     private func updatePassthrough(inside: Bool) {
@@ -37,7 +38,7 @@ struct MiniTabView: View {
         VStack(alignment: .leading, spacing: 0) {
             inputView()
                 .frame(
-                    width: expanded ? 314 : 32,
+                    width: expanded ? 304 : 32,
                     height: expanded ? 48 : 32,
                     alignment: .topLeading
                 )
@@ -74,6 +75,16 @@ struct MiniTabView: View {
                 collapseWork?.cancel()
                 collapseWork = w
                 DispatchQueue.main.asyncAfter(deadline: .now() + 0.12, execute: w)
+            }
+        }
+        .onChange(of: expanded) { newValue in
+            expandSize()
+        }
+        .onAppear {
+            DispatchQueue.main.asyncAfter(deadline: .now() + 5) {
+                if !expanded {
+                    onClose()
+                }                
             }
         }
         .onExitCommand {

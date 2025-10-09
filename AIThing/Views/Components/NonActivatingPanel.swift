@@ -25,7 +25,7 @@ class NonActivatingPanel: NSPanel {
         self.hasShadow = false
         self.backgroundColor = .clear
         self.isOpaque = false
-        self.ignoresMouseEvents = false
+        self.ignoresMouseEvents = true
         self.collectionBehavior = [.transient, .moveToActiveSpace, .ignoresCycle]
         self.isMovableByWindowBackground = true
     }

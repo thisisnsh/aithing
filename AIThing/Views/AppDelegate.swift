@@ -29,6 +29,11 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate {
     private let width: CGFloat = 1500
     private let height: CGFloat = 1000
 
+    private let miniWidth: CGFloat = 32
+    private let miniHeight: CGFloat = 32
+    private let miniWidthExpanded: CGFloat = 320
+    private let miniHeightExpanded: CGFloat = 320
+
     static var allowQuit = false
 
     private let screenshotManager = ScreenshotManager()
@@ -153,11 +158,22 @@ extension AppDelegate {
             return
         }
 
-        let size = NSSize(width: 32, height: 32)
+        let size = NSSize(width: miniWidth, height: miniHeight)
         let contentView = MiniTabView(
-            onClick: { return self.selectedText },
+            onClick: {
+                return self.selectedText
+            },
             onClose: { self.closeActiveWindow() },
             onSetting: {},
+            expandSize: {
+                let targetSize = NSSize(
+                    width: self.miniWidthExpanded,
+                    height: self.miniHeightExpanded
+                )
+                var frame = self.floatingActionWindow.frame
+                frame.size = targetSize
+                self.floatingActionWindow.setFrame(frame, display: true, animate: false)
+            },
             setPanelPassthrough: { self.setPanelPassthrough($0) }
         )
 
