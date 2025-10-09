@@ -13,7 +13,6 @@ struct MiniTabView: View {
 
     var onClick: () -> String
     var onClose: () -> Void
-    var updatePanelSizeFromCurrent: (CGFloat, CGFloat) -> Void
     let onSetting: () -> Void
     let setPanelPassthrough: (_ enabled: Bool) -> Void
 
@@ -75,16 +74,6 @@ struct MiniTabView: View {
                 collapseWork?.cancel()
                 collapseWork = w
                 DispatchQueue.main.asyncAfter(deadline: .now() + 0.12, execute: w)
-            }
-        }
-        .onChange(of: expanded) { isExpanded in
-            // Defer panel size mutation to the next runloop to avoid layout recursion
-            DispatchQueue.main.async {
-                if isExpanded {
-                    updatePanelSizeFromCurrent(282, 16)
-                } else {
-                    updatePanelSizeFromCurrent(-282, -16)
-                }
             }
         }
         .onExitCommand {

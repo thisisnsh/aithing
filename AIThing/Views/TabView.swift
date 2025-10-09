@@ -31,8 +31,6 @@ struct TabView: View {
 
     let onClick: (_ tabId: UUID) -> Void
     let onSetting: () -> Void
-    let updatePanelSizeFromDefault: (CGFloat) -> Void
-    let updatePanelSizeFromCurrent: (CGFloat) -> Void
     let setPanelPassthrough: (_ enabled: Bool) -> Void
     let reconnectManagedAgents: () async -> Void
 
@@ -141,10 +139,6 @@ struct TabView: View {
             .shadow(radius: 4)
             .animation(.easeInOut(duration: 0.25), value: isFocused)
             .onAppear {
-                DispatchQueue.main.async {
-                    print("1")
-                    updatePanelSizeFromDefault(getResponseHeight())
-                }
                 if let tabHistory {
                     modelInput = tabHistory.history
                     modelOutput = assistantMessages(from: tabHistory.history)
@@ -167,19 +161,6 @@ struct TabView: View {
             }
             .onChange(of: isFocused) { newValue in
                 showTools = false
-                // Delay size change when in focus so that other
-                // views not in focus adjust height first
-                if isFocused {
-                    DispatchQueue.main.asyncAfter(deadline: .now() + 0.4) {
-                        print("2")
-                        updatePanelSizeFromDefault(getResponseHeight())
-                    }
-                } else {
-                    DispatchQueue.main.async {
-                        print("3")
-                        updatePanelSizeFromDefault(getResponseHeight())
-                    }
-                }
             }
             .padding(.bottom, 8)
 
@@ -196,9 +177,6 @@ struct TabView: View {
                     .environmentObject(mcp)
                     .onHover { inside in
                         updatePassthrough(inside: inside)
-                    }
-                    .onAppear {
-                        updatePanelSizeFromCurrent(200)
                     }
                     .transition(.identity)
                     .animation(nil, value: isFocused)
@@ -269,7 +247,6 @@ struct TabView: View {
                                 newHeight = 48
                             }
 
-                            updatePanelSizeFromCurrent(newHeight - inputHeight)
                             inputHeight = newHeight
                         }
                     )
@@ -486,12 +463,6 @@ struct TabView: View {
 
                 if responseHeight < checkedHeight {
                     responseHeight = checkedHeight
-                    if isFocused {
-                        DispatchQueue.main.async {
-                            print("4")
-                            updatePanelSizeFromDefault(getResponseHeight())
-                        }
-                    }
                 }
             }
             .onChange(of: modelOutput) { newValue in
@@ -526,9 +497,6 @@ struct TabView: View {
                 updatePassthrough(inside: inside)
             }
         )
-        .onAppear {
-            updatePanelSizeFromCurrent(500)
-        }
     }
 
     private func getResponseHeight() -> CGFloat {
@@ -649,12 +617,7 @@ struct TabView: View {
         isThinking = true
         showResponseArea = true
 
-        responseHeight = responseHeightMin
-        DispatchQueue.main.async {
-            print("5")
-            updatePanelSizeFromDefault(getResponseHeight())
-        }
-
+        responseHeight = responseHeightMin        
         AnalyticsManager.shared.customEvent(
             type: .tab,
             primary: "handle_query"

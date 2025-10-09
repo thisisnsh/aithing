@@ -35,9 +35,7 @@ struct ContentView: View {
     let logger = Logger(subsystem: "com.thisisnsh.mac.AIThing", category: "ContentView")
 
     var onClose: () -> Void
-    var updatePanelSizeFromDefault: (CGFloat) -> Void
-    var updatePanelSizeFromCurrent: (CGFloat) -> Void
-    var getExtraSize: () -> CGFloat
+    var resetSize: () -> Void
     var setPanelVisibility: () -> Void
     let setPanelPassthrough: (_ enabled: Bool) -> Void
 
@@ -98,6 +96,7 @@ struct ContentView: View {
             }
             .onPreferenceChange(TabWidthsKey.self) { dict in
                 measuredTabWidths = dict
+                resetSize()
                 recalcZStackWidth()
                 edgePadding(for: focusedIndex)
             }
@@ -114,6 +113,7 @@ struct ContentView: View {
         }
         .frame(width: zStackWidth)
         .onAppear {
+            resetSize()
             recalcZStackWidth()
             edgePadding(for: focusedIndex)
         }
@@ -125,7 +125,6 @@ struct ContentView: View {
         }
         .background(Color.clear)
         .onChange(of: showSettings) { newValue in
-            updatePanelSizeFromCurrent(showSettings ? 500 : -500)
             Task {
                 managedModels = await firestoreManager.getModelInfos()
                 await loadAllClientTools()
@@ -333,9 +332,6 @@ struct ContentView: View {
 
         DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
             tabs.append(TabItem())
-            if count > 0 {
-                updatePanelSizeFromDefault(1000)
-            }
         }
         DispatchQueue.main.asyncAfter(deadline: .now() + 0.2) {
             focusedIndex = tabs.count - 1
@@ -386,13 +382,6 @@ struct ContentView: View {
         if let newIndex = tabs.firstIndex(where: { $0.id == tabId }) {
             screenshotManager.cancelScreenshot()
 
-            DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
-                // Increase height to max while switching
-                // It will be resized when tab in focus
-                if tabs.count > 0 {
-                    updatePanelSizeFromDefault(1000)
-                }
-            }
             DispatchQueue.main.asyncAfter(deadline: .now() + 0.2) {
                 focusedIndex = newIndex
             }
@@ -408,13 +397,6 @@ struct ContentView: View {
         guard count > 0 else { return }
 
         let newIndex = (focusedIndex + direction + count) % count
-        DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
-            // Increase height to max while switching
-            // It will be resized when tab in focus
-            if count > 0 {
-                updatePanelSizeFromDefault(1000)
-            }
-        }
         DispatchQueue.main.asyncAfter(deadline: .now() + 0.2) {
             focusedIndex = newIndex
         }
@@ -479,12 +461,6 @@ struct ContentView: View {
             showHistory: $showHistory,
             onClick: { tabId in onClick(tabId: tabId) },
             onSetting: { self.onSetting() },
-            updatePanelSizeFromDefault: { extraHeight in
-                updatePanelSizeFromDefault(extraHeight)
-            },
-            updatePanelSizeFromCurrent: { height in
-                updatePanelSizeFromCurrent(height)
-            },
             setPanelPassthrough: { self.setPanelPassthrough($0) },
             reconnectManagedAgents: { await self.reconnectManagedAgents() }
         )

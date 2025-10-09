@@ -76,13 +76,12 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate {
     func setupWindow() {
         let contentView = ContentView(
             onClose: { self.toggleWindow() },
-            updatePanelSizeFromDefault: { extraHeight in
-                self.updatePanelSizeFromDefault(extraHeight: extraHeight)
+            resetSize: {
+                let targetSize = NSSize(width: self.width, height: self.height)
+                var frame = self.floatingWindow.frame
+                frame.size = targetSize
+                self.floatingWindow.setFrame(frame, display: true, animate: false)
             },
-            updatePanelSizeFromCurrent: { extraHeight in
-                return self.updatePanelSizeFromCurrent(extraHeight: extraHeight)
-            },
-            getExtraSize: { return self.getExtraPanelSizeFromDefault() },
             setPanelVisibility: { return self.setPanelVisibility() },
             setPanelPassthrough: { self.setPanelPassthrough($0) }
         )
@@ -97,10 +96,7 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate {
         floatingWindow.alphaValue = 1
         floatingWindow.center()
         floatingWindow.orderFrontRegardless()  // no app activation
-        
-        var framea = floatingWindow.frame
-        print(framea)
-        
+
         setPanelVisibility()
     }
 
@@ -161,9 +157,6 @@ extension AppDelegate {
         let contentView = MiniTabView(
             onClick: { return self.selectedText },
             onClose: { self.closeActiveWindow() },
-            updatePanelSizeFromCurrent: { width, height in
-                return self.updateFloatingActiveWindowSizeFromCurrent(width: width, height: height)
-            },
             onSetting: {},
             setPanelPassthrough: { self.setPanelPassthrough($0) }
         )
@@ -268,60 +261,6 @@ extension AppDelegate {
 
 /// Size Functinos
 extension AppDelegate {
-
-    private func updatePanelSizeFromDefault(extraHeight: CGFloat) {
-//        var framea = floatingWindow.frame
-//        print(framea)
-//        return;
-//        print("updatePanelSizeFromDefault")
-//        print(extraHeight)        
-        
-        let targetSize = NSSize(width: width, height: height)
-
-        var frame = floatingWindow.frame
-//        frame.origin.y += (frame.size.height - targetSize.height)  // keep top aligned
-        frame.size = targetSize
-//        print(frame.size.width)
-//        print(frame.size.height)
-        
-        floatingWindow.setFrame(frame, display: true, animate: false)
-    }
-
-    private func updatePanelSizeFromCurrent(extraHeight: CGFloat) {
-        let targetSize = NSSize(width: width, height: height)
-
-        var frame = floatingWindow.frame
-//        frame.origin.y += (frame.size.height - targetSize.height)  // keep top aligned
-        frame.size = targetSize
-//        print(frame.size.width)
-//        print(frame.size.height)
-        
-        floatingWindow.setFrame(frame, display: true, animate: false)
-        //        var framea = floatingWindow.frame
-//        print(framea)
-//        return;
-//        print("updatePanelSizeFromCurrent")
-////        print(extraHeight)
-//        
-//        // Updates the floating window size by adding extra height while keeping the top edge aligned
-//        var frame = floatingWindow.frame
-//        let targetSize = NSSize(width: frame.width, height: frame.height + extraHeight)
-//
-//        frame.origin.y += (frame.size.height - targetSize.height)  // keep top aligned
-//        frame.size = targetSize
-////        print(frame.size.width)
-////        print(frame.size.height)
-//        
-//        if frame.origin.y > 0 {
-//            floatingWindow.setFrame(frame, display: true, animate: false)
-//        }
-    }
-
-    /// Returns the extra panel height by calculating the difference between the floating window's current height and the base height
-    private func getExtraPanelSizeFromDefault() -> CGFloat {
-        let frame = floatingWindow.frame
-        return frame.size.height - height
-    }
 
     /// Sets the panel visibility in screenshots based on user preferences
     /// Uses readOnly sharing type to show the panel, or none to hide it from screenshots
