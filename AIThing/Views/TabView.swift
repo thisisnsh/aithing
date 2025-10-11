@@ -29,6 +29,9 @@ struct TabView: View {
     @Binding var showSettings: Bool
     @Binding var showHistory: Bool
 
+    @State private var placeholder: String = ""
+    @State private var animatePlaceholder: Bool = false
+
     let onClick: (_ tabId: UUID) -> Void
     let onSetting: () -> Void
     let setPanelPassthrough: (_ enabled: Bool) -> Void
@@ -147,6 +150,18 @@ struct TabView: View {
                     }
                     tabTitle = tabHistory.title
                 }
+
+                DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) {
+                    placeholder =
+                        showSettings
+                        ? "Settings"
+                        : showHistory
+                            ? "History"
+                            : tabHistory?.history.isEmpty ?? true
+                                ? "Ask anything on this AI Thing..." : "Continue conversation..."
+                    animatePlaceholder = true
+                }
+
                 AnalyticsManager.shared.screenView(
                     screenName: "tab_view",
                     screenClass: "tab_view"
@@ -161,6 +176,30 @@ struct TabView: View {
             }
             .onChange(of: isFocused) { newValue in
                 showTools = false
+            }
+            .onChange(of: showSettings) { _ in
+
+                placeholder =
+                    showSettings
+                    ? "Settings"
+                    : showHistory
+                        ? "History"
+                        : tabHistory?.history.isEmpty ?? true
+                            ? "Ask anything on this AI Thing..." : "Continue conversation..."
+                animatePlaceholder = true
+
+            }
+            .onChange(of: showHistory) { _ in
+
+                placeholder =
+                    showSettings
+                    ? "Settings"
+                    : showHistory
+                        ? "History"
+                        : tabHistory?.history.isEmpty ?? true
+                            ? "Ask anything on this AI Thing..." : "Continue conversation..."
+                animatePlaceholder = true
+
             }
             .padding(.bottom, 8)
 
@@ -211,9 +250,7 @@ struct TabView: View {
                 ZStack(alignment: .leading) {
 
                     InputTextView(
-                        text: showSettings
-                            ? .constant("Settings")
-                            : (showHistory ? .constant("History") : $query),
+                        text: $query,
                         seenCommands: $seenCommands,
                         size: $textSize,
                         isNotEditable: isViewBlinking || showSettings || showHistory,
@@ -260,18 +297,27 @@ struct TabView: View {
                             textSize = 18
                         }
                     }
-                    .opacity(showSettings || showHistory ? 0.6 : 1)
+                    .opacity(showSettings || showHistory ? 0 : 1)
                     .frame(width: 482)
 
-                    if query.isEmpty && !showSettings && !showHistory {
-                        Text(
-                            tabHistory?.history.isEmpty ?? true
-                                ? "Ask anything on this AI Thing..." : "Continue conversation..."
-                        )
-                        .foregroundColor(.white.opacity(0.6))
-                        .font(.system(size: 18, weight: .medium))
-                        .padding(.leading, 6)
-                        .allowsHitTesting(false)
+                    if query.isEmpty {
+                        Text(placeholder)
+                            .foregroundColor(.white.opacity(0.6))
+                            .font(.system(size: 18, weight: .medium))
+                            .padding(.leading, 6)
+                            .allowsHitTesting(false)
+                            .mask(
+                                LinearGradient(
+                                    gradient: Gradient(stops: [
+                                        .init(color: .white, location: 0),
+                                        //                                        .init(color: .white.opacity(0.5), location: 0),
+                                        .init(color: .white, location: animatePlaceholder ? 1 : 0),
+                                    ]),
+                                    startPoint: .leading,
+                                    endPoint: .trailing
+                                )
+                            )
+                            .animation(.easeOut(duration: 0.3), value: animatePlaceholder)
                     }
                 }
 
@@ -302,7 +348,9 @@ struct TabView: View {
 
                 Button(
                     action: {
-                        showTools.toggle()
+                        withAnimation(.easeInOut(duration: 0.3)) {
+                            showTools.toggle()
+                        }
                         AnalyticsManager.shared.customEvent(type: .action, primary: "tools")
                     }
                 ) {

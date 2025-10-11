@@ -257,7 +257,9 @@ struct ContentView: View {
             addTab(bypass: true)
         }
         DispatchQueue.main.asyncAfter(deadline: .now() + (shouldCreateTab ? 0.5 : 0)) {
-            showSettings.toggle()
+            withAnimation(.easeInOut(duration: 0.3)) {
+                showSettings.toggle()
+            }
             showHistory = false
             if !showSettings && !showHistory {
                 closeTab()
@@ -271,7 +273,9 @@ struct ContentView: View {
             addTab(bypass: true)
         }
         DispatchQueue.main.asyncAfter(deadline: .now() + (shouldCreateTab ? 0.5 : 0)) {
-            showHistory.toggle()
+            withAnimation(.easeInOut(duration: 0.3)) {
+                showHistory.toggle()
+            }
             showSettings = false
             if !showSettings && !showHistory {
                 closeTab()
@@ -331,7 +335,9 @@ struct ContentView: View {
         }
 
         DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
-            tabs.append(TabItem())
+            withAnimation(.easeInOut(duration: 0.3)) {
+                tabs.append(TabItem())
+            }
         }
         DispatchQueue.main.asyncAfter(deadline: .now() + 0.2) {
             focusedIndex = tabs.count - 1
