@@ -29,10 +29,11 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate {
     private let width: CGFloat = 1500
     private let height: CGFloat = 1000
 
-    private let miniWidth: CGFloat = 32
-    private let miniHeight: CGFloat = 32
+    private let miniWidth: CGFloat = 16
+    private let miniHeight: CGFloat = 16
     private let miniWidthExpanded: CGFloat = 320
     private let miniHeightExpanded: CGFloat = 320
+    private let miniHeightInput: CGFloat = 48
 
     static var allowQuit = false
 
@@ -57,8 +58,8 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate {
 
         setupWindow()
         setupHotKey()
-        startSelectionPoll()
-        startGlobalInput()
+        // startSelectionPoll()
+        // startGlobalInput()
 
         try? SMAppService.mainApp.register()
 
@@ -165,12 +166,13 @@ extension AppDelegate {
             },
             onClose: { self.closeActiveWindow() },
             onSetting: {},
-            expandSize: {
+            expandSize: { response in
                 let targetSize = NSSize(
                     width: self.miniWidthExpanded,
-                    height: self.miniHeightExpanded
+                    height: response ? self.miniHeightExpanded : self.miniHeightInput
                 )
                 var frame = self.floatingActionWindow.frame
+                frame.origin.y += (frame.size.height - self.miniWidthExpanded)
                 frame.size = targetSize
                 self.floatingActionWindow.setFrame(frame, display: true, animate: false)
             },
@@ -191,10 +193,10 @@ extension AppDelegate {
             y: cursor.y - size.height / 2
         )
         panel.setFrame(NSRect(origin: origin, size: size), display: false)
-
         panel.orderFrontRegardless()
 
         floatingActionWindow = panel
+        floatingActionWindow.backgroundColor = .red
         setPanelVisibility()
     }
 

@@ -6,26 +6,22 @@
 
 ### Milestones 
 
-- ctrl+space: 
-    - slide down from top and fade in 
-    - show existing ai thing 
-    - slide up and fade out 
-- Fix setting open bug 
-- Animate like spotlight
-
-- Open settings from mini tab 
-- Show response in mini tab 
-
-
-
-
-- Release
-
-Later
+- Select and show the selected on main tab 
+- Animate down from the notch
+- Animate width of the tab
 - ctrl+shift+4/3: selected/full 
     - grab screenshot 
     - open new tab with that screenshot 
     - if tab open, grab screenshot and attach
+- Release
+
+
+
+
+
+Later
+- Open settings from mini tab 
+- Show response in mini tab 
 - create copy button in code block
 - custom system message based on actions 
 

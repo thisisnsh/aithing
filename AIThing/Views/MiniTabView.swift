@@ -14,12 +14,17 @@ struct MiniTabView: View {
     var onClick: () -> String
     var onClose: () -> Void
     let onSetting: () -> Void
-    let expandSize: () -> Void
+    let expandSize: (_ response: Bool) -> Void
     let setPanelPassthrough: (_ enabled: Bool) -> Void
 
     private func updatePassthrough(inside: Bool) {
         setPanelPassthrough(!inside)
     }
+
+    private let miniWidth: CGFloat = 16
+    private let miniHeight: CGFloat = 16
+    private let miniWidthExpanded: CGFloat = 320
+    private let miniHeightExpanded: CGFloat = 320
 
     @State private var text: String = ""
 
@@ -34,29 +39,26 @@ struct MiniTabView: View {
     @State private var expanded = false
     @State private var collapseWork: DispatchWorkItem?
 
+    @State private var showResponseArea = false
+    @State private var isThinkingBlinking = false
+
     var body: some View {
         VStack(alignment: .leading, spacing: 0) {
             inputView()
-                .frame(
-                    width: expanded ? 304 : 32,
-                    height: expanded ? 48 : 32,
-                    alignment: .topLeading
-                )
-                .animation(.easeInOut(duration: 0.25), value: expanded)
-                .background(.ultraThinMaterial)
-                .background(Color.clear)
-                .overlay(
-                    RoundedRectangle(cornerRadius: getCornerRadius())
-                        .stroke(Color.white, lineWidth: 1.5)
-                )
-                .cornerRadius(getCornerRadius())
-                .shadow(radius: 4)
-                .onHover { inside in updatePassthrough(inside: inside) }
+            if expanded, showResponseArea {
+                responseView()
+            }
         }
-        .frame(maxWidth: .infinity, alignment: .leading)  // anchor left
+        .background(.ultraThinMaterial)
+        .frame(width: .infinity, height: .infinity, alignment: .topLeading)
+        .animation(.easeInOut(duration: 0.25), value: expanded)
+        .overlay(
+            RoundedRectangle(cornerRadius: getCornerRadius())
+                .stroke(Color.white, lineWidth: 1.5)
+        )
+        .cornerRadius(getCornerRadius())
+        .shadow(radius: 4)
         .padding(8)
-        .background(Color.clear)  // keep outer background inert
-        .contentShape(Rectangle())
         .onHover { inside in
             if expanded { return }
 
@@ -78,13 +80,14 @@ struct MiniTabView: View {
             }
         }
         .onChange(of: expanded) { newValue in
-            expandSize()
+            expandSize(false)
         }
         .onAppear {
+            // Auto close after 5 seconds of inaction
             DispatchQueue.main.asyncAfter(deadline: .now() + 5) {
                 if !expanded {
                     onClose()
-                }                
+                }
             }
         }
         .onExitCommand {
@@ -93,13 +96,7 @@ struct MiniTabView: View {
     }
 
     private func inputView() -> some View {
-        HStack(spacing: 8) {
-            LogoShape()
-                .fill(.white)
-                .scaledToFit()
-                .frame(width: expanded ? 0 : 16)
-                .opacity(expanded ? 0 : 1)
-
+        HStack(spacing: 0) {
             if expanded {
                 ZStack(alignment: .leading) {
                     InputTextView(
@@ -113,18 +110,22 @@ struct MiniTabView: View {
                         onDebouncedTextChange: { x in },
                         onSpillover: { x in }
                     )
-                    .onChange(of: query) { x in }
-                    .opacity(1)
-                    .frame(width: 254)
-                    .padding(.vertical, 8)
-                    .padding(.leading, -8)
+                    .onChange(of: query) { x in
+                        showResponseArea = true
+                        expandSize(true)
+                    }
+                    .frame(maxWidth: .infinity)
+                    .padding(8)
+                    .padding(.leading, 16)
 
                     if query.isEmpty {
                         Text("Ask on AI Thing...")
                             .foregroundColor(.white.opacity(0.6))
                             .font(.system(size: 18, weight: .medium))
-                            .padding(.leading, -2)
+                            .padding(.leading, -6)
                             .allowsHitTesting(false)
+                            .padding(8)
+                            .padding(.leading, 16)
                     }
                 }
 
@@ -138,17 +139,63 @@ struct MiniTabView: View {
                         .resizable()
                         .scaledToFit()
                         .foregroundStyle(.white)
-                        .padding(.vertical, 2)
                 }
                 .buttonStyle(PlainButtonStyle())
                 .frame(width: 18, height: 18)
+                .padding(8)
+                .padding(.trailing, 16)
+            } else {
+                LogoShape()
+                    .fill(.white)
+                    .scaledToFit()
+                    .padding(2)
             }
         }
-        .padding(.vertical, expanded ? 0 : 8)
-        .padding(.horizontal, expanded ? 16 : 8)
+        .frame(
+            width: expanded ? miniWidthExpanded : miniWidth,
+            height: expanded ? inputHeight : miniHeight,
+        )
+        .onHover { inside in updatePassthrough(inside: inside) }
+    }
+
+    private func responseView() -> some View {
+        ScrollViewReader { proxy in
+            ScrollView {
+                VStack(alignment: .leading, spacing: 0) {
+
+                    Text("Thinking...")
+                        .foregroundColor(.white)
+                        .font(.system(size: 14))
+                        .frame(maxWidth: .infinity, alignment: .leading)
+                        .padding(.horizontal, 16)
+                        .padding(.vertical, 16)
+                        .opacity(isThinkingBlinking ? 1 : 0.4)
+                        .onAppear {
+                            withAnimation(
+                                .easeInOut(duration: 0.6).repeatForever(autoreverses: true)
+                            ) {
+                                isThinkingBlinking.toggle()
+                            }
+                        }
+
+                    Color.clear
+                        .frame(height: 1)
+                        .id("BOTTOM")
+                }
+                .background(
+                    GeometryReader { geo in
+                        Color.clear
+                            .preference(key: ViewHeightKey.self, value: geo.size.height)
+                    }
+                )
+            }
+            .frame(width: miniWidthExpanded, height: miniHeightExpanded - inputHeight)
+            .background(Color.black.opacity(0.3))
+        }
+        .onHover { inside in updatePassthrough(inside: inside) }
     }
 
     private func getCornerRadius() -> CGFloat {
-        return 32
+        return showResponseArea ? 24 : 32
     }
 }
