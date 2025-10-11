@@ -78,7 +78,7 @@ struct TabView: View {
     var body: some View {
         VStack(alignment: .leading, spacing: 0) {
             Color.clear.frame(height: 32).overlay(alignment: .bottom) {
-                if showDragIcon {
+                if isFocused, showDragIcon {
                     Image(systemName: "square.grid.3x2.fill")
                         .resizable()
                         .scaledToFit()
@@ -93,7 +93,7 @@ struct TabView: View {
                             updatePassthrough(inside: inside)
                         }
                 }
-                if takingScreenshot && !getPreferencesCaptureFullScreen() {
+                if isFocused, takingScreenshot && !getPreferencesCaptureFullScreen() {
                     Text(
                         "Click on the application to capture that window\nDrag to select a specific area."
                     )
@@ -173,7 +173,7 @@ struct TabView: View {
                     }
                     .cornerRadius(24)
                     .shadow(radius: 4)
-                    .frame(minWidth: 740, maxWidth: 740, minHeight: 200, maxHeight: 200)
+                    .frame(minWidth: 640, maxWidth: 640, minHeight: 200, maxHeight: 200)
                     .environmentObject(mcp)
                     .onHover { inside in
                         updatePassthrough(inside: inside)
@@ -205,6 +205,7 @@ struct TabView: View {
                 .fill(isFocused && !showSettings && !showHistory ? .white : .white.opacity(0.5))
                 .scaledToFit()
                 .frame(width: isFocused ? 32 : 24)
+                .padding(.leading, isFocused ? -8 : 0)
 
             if isFocused {
                 ZStack(alignment: .leading) {
@@ -260,7 +261,7 @@ struct TabView: View {
                         }
                     }
                     .opacity(showSettings || showHistory ? 0.6 : 1)
-                    .frame(width: 574)
+                    .frame(width: 482)
 
                     if query.isEmpty && !showSettings && !showHistory {
                         Text(
@@ -456,7 +457,7 @@ struct TabView: View {
                     }
                 )
             }
-            .frame(width: 24 + 32 + 8 + 626 + 8 + 18 + 24, height: getResponseHeight())
+            .frame(width: 640, height: getResponseHeight())
             .background(Color.black.opacity(0.3))
             .onPreferenceChange(ViewHeightKey.self) { height in
                 let checkedHeight = min(max(responseHeightMin, height), responseHeightMax)
@@ -617,7 +618,7 @@ struct TabView: View {
         isThinking = true
         showResponseArea = true
 
-        responseHeight = responseHeightMin        
+        responseHeight = responseHeightMin
         AnalyticsManager.shared.customEvent(
             type: .tab,
             primary: "handle_query"
