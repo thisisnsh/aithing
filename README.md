@@ -7,8 +7,7 @@
 ### Milestones 
 
 - Select and show the selected on main tab 
-- Animate down from the notch
-- Animate width of the tab
+- animate settings 
 - ctrl+shift+4/3: selected/full 
     - grab screenshot 
     - open new tab with that screenshot 

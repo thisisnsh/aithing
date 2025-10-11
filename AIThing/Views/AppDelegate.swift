@@ -13,6 +13,7 @@ import FirebaseCore
 import HotKey
 import Logging
 import OAuthSwift
+import QuartzCore
 import SelectedTextKit
 import ServiceManagement
 import SwiftUI
@@ -116,18 +117,58 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate {
     func toggleWindow() {
         self.screenshotManager.cancelScreenshot()
 
+        // Tunables
+        let yOffset: CGFloat = 18  // how far to glide
+        let fadeOpenDur: TimeInterval = 0.35
+        let fadeCloseDur: TimeInterval = 0.22
+
+        func addSpringYAnimation(from: CGFloat, to: CGFloat, on layer: CALayer) {
+            let spring = CASpringAnimation(keyPath: "transform.translation.y")
+            spring.fromValue = from
+            spring.toValue = to
+            spring.mass = 1.0
+            spring.stiffness = 180.0
+            spring.damping = 18.0
+            spring.initialVelocity = 0.0
+            spring.fillMode = .forwards
+            spring.isRemovedOnCompletion = true
+            // Match the model layer to the end state so it sticks after animation
+            var t = CATransform3DIdentity
+            t = CATransform3DTranslate(t, 0, to, 0)
+            CATransaction.begin()
+            CATransaction.setDisableActions(true)
+            layer.transform = t
+            CATransaction.commit()
+            layer.add(spring, forKey: "springY")
+        }
+
+        guard let contentView = floatingWindow.contentView else { return }
+        contentView.wantsLayer = true
+
         if floatingWindow.isVisible {
+            // --- CLOSE: glide down + fade out ---
             let origin = floatingWindow.frame.origin
             UserDefaults.standard.set(origin.x, forKey: "FloatingPanelOriginX")
             UserDefaults.standard.set(origin.y, forKey: "FloatingPanelOriginY")
 
-            NSAnimationContext.runAnimationGroup { context in
-                context.duration = 0.2
+            // Spring to a slightly lower position
+            addSpringYAnimation(from: 0, to: yOffset, on: contentView.layer!)
+
+            // Fade out
+            NSAnimationContext.runAnimationGroup { ctx in
+                ctx.duration = fadeCloseDur
                 floatingWindow.animator().alphaValue = 0
             } completionHandler: {
                 self.floatingWindow.orderOut(nil)
+                // Reset transform for next show
+                CATransaction.begin()
+                CATransaction.setDisableActions(true)
+                contentView.layer?.transform = CATransform3DIdentity
+                CATransaction.commit()
             }
+
         } else {
+            // --- OPEN: place window, start slightly lower, spring up + fade in ---
             if let x = UserDefaults.standard.value(forKey: "FloatingPanelOriginX") as? CGFloat,
                 let y = UserDefaults.standard.value(forKey: "FloatingPanelOriginY") as? CGFloat
             {
@@ -135,11 +176,22 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate {
             } else {
                 floatingWindow.center()
             }
+
+            // Start below (model layer) before we show it
+            CATransaction.begin()
+            CATransaction.setDisableActions(true)
+            contentView.layer?.transform = CATransform3DMakeTranslation(0, yOffset, 0)
+            CATransaction.commit()
+
             floatingWindow.alphaValue = 0
             floatingWindow.makeKeyAndOrderFront(nil)
 
-            NSAnimationContext.runAnimationGroup { context in
-                context.duration = 0.2
+            // Spring up to identity
+            addSpringYAnimation(from: yOffset, to: 0, on: contentView.layer!)
+
+            // Fade in
+            NSAnimationContext.runAnimationGroup { ctx in
+                ctx.duration = fadeOpenDur
                 floatingWindow.animator().alphaValue = 1
             }
 
