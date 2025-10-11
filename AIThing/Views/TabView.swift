@@ -472,25 +472,6 @@ struct TabView: View {
                                 .frame(maxWidth: .infinity, alignment: .leading)
                                 .padding(.horizontal, 24)
                                 .padding(.vertical, 16)
-
-                            Button(
-                                action: {
-                                    copyToClipboard(string: modelOutput)
-                                    AnalyticsManager.shared.customEvent(
-                                        type: .action,
-                                        primary: "response_copy"
-                                    )
-                                }
-                            ) {
-                                Image(systemName: "document.on.document.fill")
-                                    .resizable()
-                                    .scaledToFit()
-                                    .foregroundColor(.white.opacity(0.5))
-                            }
-                            .buttonStyle(PlainButtonStyle())
-                            .frame(width: 18, height: 18)
-                            .padding(.horizontal, 24)
-                            .padding(.vertical, 16)
                         }
                     }
 

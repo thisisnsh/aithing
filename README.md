@@ -7,11 +7,12 @@
 ### Milestones 
 
 - Select and show the selected on main tab 
-- animate settings 
+- Remove @here, @selected, @this
 - ctrl+shift+4/3: selected/full 
     - grab screenshot 
     - open new tab with that screenshot 
     - if tab open, grab screenshot and attach
+- custom system message based on actions
 - Release
 
 
@@ -21,8 +22,7 @@
 Later
 - Open settings from mini tab 
 - Show response in mini tab 
-- create copy button in code block
-- custom system message based on actions 
+ 
 
 
 

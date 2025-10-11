@@ -11,6 +11,7 @@ import SwiftUI
 
 struct MarkdownText: View {
     var text: String
+    @State private var copiedBlock: String? = nil
 
     var body: some View {
         Markdown(text)
@@ -30,19 +31,42 @@ struct MarkdownText: View {
                 .fixedSize(horizontal: false, vertical: true)
             }
             .markdownBlockStyle(\.codeBlock) { configuration in
-                ScrollView(.horizontal) {
-                    configuration.label
-                        .fixedSize(horizontal: false, vertical: true)
-                        .relativeLineSpacing(.em(0.225))
-                        .markdownTextStyle {
-                            FontFamilyVariant(.monospaced)
-                            FontSize(.em(1))
+                ZStack(alignment: .topTrailing) {
+                    ScrollView(.horizontal) {
+                        configuration.label
+                            .fixedSize(horizontal: false, vertical: true)
+                            .relativeLineSpacing(.em(0.225))
+                            .markdownTextStyle {
+                                FontFamilyVariant(.monospaced)
+                                FontSize(.em(1))
+                            }
+                            .padding(16)
+                    }
+                    .background(.gray.opacity(0.25))
+                    .clipShape(RoundedRectangle(cornerRadius: 8))
+                    .markdownMargin(top: 0, bottom: 16)
+
+                    Button(action: {
+                        copyToClipboard(configuration.content)
+                        copiedBlock = configuration.content
+                        DispatchQueue.main.asyncAfter(deadline: .now() + 1.5) {
+                            copiedBlock = nil
                         }
-                        .padding(16)
+                    }) {
+                        Label(
+                            copiedBlock == configuration.content ? "Copied!" : "Copy",
+                            systemImage: "doc.on.doc"
+                        )
+                        .labelStyle(.titleAndIcon)
+                        .font(.system(size: 11, weight: .medium))
+                        .padding(.horizontal, 8)
+                        .padding(.vertical, 4)
+                        .background(.ultraThinMaterial)
+                        .cornerRadius(6)
+                    }
+                    .buttonStyle(.plain)
+                    .padding(8)
                 }
-                .background(.gray.opacity(0.25))
-                .clipShape(RoundedRectangle(cornerRadius: 8))
-                .markdownMargin(top: 0, bottom: 16)
             }
             .markdownTextStyle(\.code) {
                 FontFamilyVariant(.monospaced)
@@ -52,5 +76,10 @@ struct MarkdownText: View {
             .markdownTextStyle(\.text) {
                 FontSize(.em(1))
             }
+    }
+
+    private func copyToClipboard(_ text: String) {
+        NSPasteboard.general.clearContents()
+        NSPasteboard.general.setString(text, forType: .string)
     }
 }
