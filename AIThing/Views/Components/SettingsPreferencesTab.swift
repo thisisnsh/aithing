@@ -137,31 +137,6 @@ struct SettingsPreferencesTab: View {
                     )
                     Divider()
 
-                    PreferenceToggleRow(
-                        isOn: $preferencesCaptureFullScreen,
-                        iconOn: "camera.metering.matrix",
-                        iconOff: "camera.metering.spot",
-                        title: "Capture Entire Screen on @this",
-                        onChange: { newValue in
-                            setPreferencesCaptureFullScreen(newValue)
-
-                            if newValue {
-                                AnalyticsManager.shared.customEvent(
-                                    type: .action,
-                                    primary: "preference_capture_full_screen",
-                                    secondary: .value_true
-                                )
-                            } else {
-                                AnalyticsManager.shared.customEvent(
-                                    type: .action,
-                                    primary: "preference_capture_full_screen",
-                                    secondary: .value_false
-                                )
-                            }
-                        }
-                    )
-                    Divider()
-
                     HStack {
                         Image(systemName: "paintpalette.fill")
                             .resizable()

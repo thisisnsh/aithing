@@ -68,11 +68,7 @@ struct TabView: View {
     @State private var showResponseArea: Bool = false
 
     @State private var showDragIcon: Bool = false
-
-    @State private var selectionContext: Bool = false
     @State private var selectedText: String = ""
-    @State private var hereContext: Bool = false
-    @State private var takingScreenshot: Bool = false
 
     @State private var textSize: CGFloat = 18
     @State private var showTools: Bool = false
@@ -96,14 +92,6 @@ struct TabView: View {
                             }
                             updatePassthrough(inside: inside)
                         }
-                }
-                if isFocused, takingScreenshot && !getPreferencesCaptureFullScreen() {
-                    Text(
-                        "Click on the application to capture that window\nDrag to select a specific area."
-                    )
-                    .font(.system(size: 10, weight: .medium))
-                    .multilineTextAlignment(.center)
-                    .shadow(color: .black, radius: 1)
                 }
             }
             .padding(.bottom, 8)
@@ -271,30 +259,18 @@ struct TabView: View {
                                 await handleQuery()
                             }
                         },
-                        onCommandTyped: { command in
-                            Task {
-                                await handleCommand(type: "add", command: command)
-                            }
-                        },
-                        onCommandRemoved: { command in
-                            Task {
-                                await handleCommand(type: "remove", command: command)
-                            }
-                        },
-                        onDebouncedTextChange: { _ in
-                            Task {
-                                await handleCommand(type: "update", command: "")
-                            }
-                        },
+                        onCommandTyped: { _ in },
+                        onCommandRemoved: { _ in },
+                        onDebouncedTextChange: { _ in },
                         onSpillover: { count in
-                            var newHeight: CGFloat = 48
+                            var newHeight: CGFloat = inputHeight
 
                             if count >= 2 && count <= 8 {
-                                newHeight = 48 + CGFloat(count - 1) * 24
+                                newHeight = inputHeight + CGFloat(count - 1) * inputHeight / 2
                             } else if count > 8 {
-                                newHeight = 48 + 8 * 24
+                                newHeight = inputHeight + 8 * inputHeight / 2
                             } else {
-                                newHeight = 48
+                                newHeight = inputHeight
                             }
 
                             inputHeight = newHeight
@@ -322,7 +298,6 @@ struct TabView: View {
                                 LinearGradient(
                                     gradient: Gradient(stops: [
                                         .init(color: .white, location: 0),
-                                        //                                        .init(color: .white.opacity(0.5), location: 0),
                                         .init(color: .white, location: animatePlaceholder ? 1 : 0),
                                     ]),
                                     startPoint: .leading,
@@ -554,101 +529,6 @@ struct TabView: View {
 
     private func getCornerRadius() -> CGFloat {
         return showResponseArea ? 24 : 32
-    }
-
-    private func handleCommand(type: String, command: String) async {
-        switch type {
-        case "add":
-            if command == "@this" {
-                screenshotManager.cancelScreenshot()
-                takingScreenshot = true
-                if getPreferencesCaptureFullScreen() {
-                    if let (image, base64) =
-                        await screenshotManager.captureScreenUnderMouse()
-                    {
-                        modelContext.append(.image("Screen", image, base64))
-                        modelContextZoomed.append(false)
-                        AnalyticsManager.shared
-                            .customEvent(
-                                type: .action,
-                                primary: "image_entire"
-                            )
-                    } else {
-                        AnalyticsManager.shared.customEvent(
-                            type: .error,
-                            primary: "image_entire",
-                            secondary: .status_failure_high
-                        )
-                    }
-                } else {
-                    if let (image, base64) =
-                        await screenshotManager.captureSelectedScreenUnderMouse()
-                    {
-                        modelContext.append(.image("Window", image, base64))
-                        modelContextZoomed.append(false)
-                        AnalyticsManager.shared
-                            .customEvent(
-                                type: .action,
-                                primary: "image_selected"
-                            )
-                    } else {
-                        AnalyticsManager.shared.customEvent(
-                            type: .error,
-                            primary: "image_selected",
-                            secondary: .status_failure_high
-                        )
-                    }
-                }
-
-                takingScreenshot = false
-                AnalyticsManager.shared.customEvent(
-                    type: .tab,
-                    primary: "file_remove"
-                )
-
-                AnalyticsManager.shared.customEvent(
-                    type: .tab,
-                    primary: "context_this_add"
-                )
-            } else if command == "@selected" {
-                selectionContext = true
-                selectedText = TypingManager.shared.getSelectedText() ?? ""
-                AnalyticsManager.shared.customEvent(
-                    type: .tab,
-                    primary: "context_selected_add"
-                )
-            } else if command == "@here" {
-                hereContext = true
-                TypingManager.shared.requestAXIfNeeded()
-                AnalyticsManager.shared.customEvent(
-                    type: .tab,
-                    primary: "context_here_add"
-                )
-            }
-        case "remove":
-            if command == "@this" {
-                screenshotManager.cancelScreenshot()
-                AnalyticsManager.shared.customEvent(
-                    type: .tab,
-                    primary: "context_this_remove"
-                )
-            } else if command == "@selected" {
-                selectionContext = false
-                selectedText = ""
-                AnalyticsManager.shared.customEvent(
-                    type: .tab,
-                    primary: "context_selected_remove"
-                )
-            } else if command == "@here" {
-                hereContext = false
-                AnalyticsManager.shared.customEvent(
-                    type: .tab,
-                    primary: "context_here_remove"
-                )
-            }
-        default:
-            break
-        }
     }
 
     private func handleQuery() async {
@@ -928,38 +808,18 @@ struct TabView: View {
                 }
             }
 
-            if selectionContext {
-                selectedText = TypingManager.shared.getSelectedText() ?? ""
-                if !selectedText.isEmpty {
-                    modelInput.append(
-                        [
-                            "role": "user",
-                            "content": [
-                                [
-                                    "type": "text",
-                                    "text": "Selected text:\n\n\(selectedText)",
-                                ]
-                            ],
-                        ]
-                    )
-                } else {
-                    isThinking = false
-                    await animateOutput(
-                        content: """
-                            No selection detected. Please select again. 
-
-                            Another reason could be that the application may not support selected text. Use `@this` to capture the selected text. 
-                                                        
-                            Please report issues to help@aithing.dev
-                            """
-                    )
-                    AnalyticsManager.shared.customEvent(
-                        type: .error,
-                        primary: "query_no_selection_found",
-                        secondary: .status_failure_low,
-                    )
-                    return
-                }
+            if !selectedText.isEmpty {
+                modelInput.append(
+                    [
+                        "role": "user",
+                        "content": [
+                            [
+                                "type": "text",
+                                "text": "Selected text:\n\n\(selectedText)",
+                            ]
+                        ],
+                    ]
+                )
             }
 
             modelInput.append(
@@ -1193,9 +1053,6 @@ struct TabView: View {
                             finalResponse += String(text)
                             await MainActor.run {
                                 modelOutput = finalResponse + " " + shimmerPlaceholder()
-                                if hereContext {
-                                    TypingManager.shared.typeText(text)
-                                }
                             }
 
                         case "input_json_delta":
@@ -1211,9 +1068,6 @@ struct TabView: View {
                     case "content_block_stop":
                         await MainActor.run {
                             modelOutput = finalResponse
-                            if hereContext {
-                                TypingManager.shared.endTypeText()
-                            }
                         }
 
                     case "message_delta":
@@ -1400,28 +1254,12 @@ struct TabView: View {
                     """
                 ## Identity  
                 - Your name is **AI Thing**.  
-                - You are an AI tool with a special ability: you can understand what is happening on the screen and take action directly in the applications. 
-                - Output response in Markdown.
-                """,
-            ],
-            [
-                "type": "text",
-                "text":
-                    """
-                ## Special Keywords & Behaviors  
-                - **@this** → 
-                  - Use the provided image in context to answer the query.  
-
-                - **@file** → 
-                  - Use the provided file in context to answer the query.  
-
-                - **@selected** → 
-                  - Use the selected text in context to answer the query.  
-                  
-                - **@here** → 
-                  - Output ONLY the text that goes into the file with ```text code formatting.  
-                  - No extra output or commentary. Just OUTPUT text that replaces @selected text.
-                  - Do not output @here word.
+                - You are an AI tool with a special abilities. 
+                - You can handle simple, complex or repetitive tasks in background.                
+                - You have multiple AI models and agents that users can use for their tasks. 
+                - You are secure and store all data locally. 
+                - Website: aithing.dev
+                - Privacy Policy: aithing.dev/privacy                                                 
                 """,
             ],
             [
@@ -1434,7 +1272,7 @@ struct TabView: View {
                     """
                 ## Behavior Rules  
                 - Act as an **agent**: perceive instructions, reason, and invoke tools when needed.  
-                - Be **precise, context-aware**, and never guess if info is missing.  
+                - Be **precise, context-aware**, and never guess if info is missing.                   
                 """,
             ],
             [
@@ -1445,6 +1283,7 @@ struct TabView: View {
                 - Keep answers **brief** by default.  
                 - Only elaborate when explicitly asked.  
                 - If in doubt, **ask first** before expanding with detail.  
+                - Output response in Markdown.  
                 """,
             ],
         ]

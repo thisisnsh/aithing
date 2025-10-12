@@ -2,15 +2,8 @@
 
 ------------------------ 
 
-## Plan 2.0
-
-### Milestones 
-
 - Select text and show the selected text on main tab 
 - Fix file select
-
-- Remove @here, @selected, @this
-- custom system message based on actions
 
 - Release
 
