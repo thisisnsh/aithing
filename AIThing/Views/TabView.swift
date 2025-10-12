@@ -49,7 +49,7 @@ struct TabView: View {
     @State private var title: String = "AI Thing"
 
     let responseHeightMin: CGFloat = 100
-    let responseHeightMax: CGFloat = 700
+    let responseHeightMax: CGFloat = 500
     @State private var responseHeight: CGFloat = 100
 
     @State private var isThinking: Bool = false
