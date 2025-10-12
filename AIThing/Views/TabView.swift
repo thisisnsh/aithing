@@ -16,6 +16,7 @@ struct TabView: View {
     @EnvironmentObject var loginManager: LoginManager
     @EnvironmentObject var screenshotManager: ScreenshotManager
     @EnvironmentObject var firestoreManager: FirestoreManager
+    @StateObject private var monitor = ScreenshotMonitor()
 
     let logger = Logger(subsystem: "com.thisisnsh.mac.AIThing", category: "TabView")
 
@@ -124,7 +125,6 @@ struct TabView: View {
                 height: isFocused ? inputHeight + getResponseHeight() : 48,
                 alignment: .topLeading
             )
-            .background(Color.clear)
             .overlay(
                 Group {
                     if isThinking || isViewBlinking {
@@ -174,11 +174,25 @@ struct TabView: View {
                     showResponseArea = true
                 }
             }
+            .onReceive(monitor.$latestScreenshot) { ss in
+                if let ss = ss, isFocused {
+                    Task {
+                        let results = await DragFileManager.processPaths([ss.url])
+                        for r in results {
+                            modelContext.append(r)
+                            modelContextZoomed.append(false)
+                        }
+                        AnalyticsManager.shared.customEvent(
+                            type: .action,
+                            primary: "file_upload"
+                        )
+                    }
+                }
+            }
             .onChange(of: isFocused) { newValue in
                 showTools = false
             }
             .onChange(of: showSettings) { _ in
-
                 placeholder =
                     showSettings
                     ? "Settings"
@@ -190,7 +204,6 @@ struct TabView: View {
 
             }
             .onChange(of: showHistory) { _ in
-
                 placeholder =
                     showSettings
                     ? "Settings"
@@ -199,7 +212,6 @@ struct TabView: View {
                         : tabHistory?.history.isEmpty ?? true
                             ? "Ask anything on this AI Thing..." : "Continue conversation..."
                 animatePlaceholder = true
-
             }
             .padding(.bottom, 8)
 
@@ -514,6 +526,9 @@ struct TabView: View {
             onTap: { index in
                 guard index < modelContextZoomed.count else { return }
                 modelContextZoomed[index].toggle()
+                let val = modelContextZoomed[index]
+                modelContextZoomed = [Bool](repeating: false, count: modelContextZoomed.count)
+                modelContextZoomed[index] = val
             },
             onDelete: { index in
                 modelContext.remove(at: index)

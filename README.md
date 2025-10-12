@@ -6,27 +6,18 @@
 
 ### Milestones 
 
-- Select and show the selected on main tab 
+- Select text and show the selected text on main tab 
+- Fix file select
+
 - Remove @here, @selected, @this
-- ctrl+shift+4/3: selected/full 
-    - grab screenshot 
-    - open new tab with that screenshot 
-    - if tab open, grab screenshot and attach
 - custom system message based on actions
+
 - Release
-
-
-
 
 
 Later
 - Open settings from mini tab 
 - Show response in mini tab 
- 
-
-
-
-
 
 
 ------------------------

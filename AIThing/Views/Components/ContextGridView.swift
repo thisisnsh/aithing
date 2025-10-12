@@ -127,7 +127,7 @@ struct ContextGridView: View {
                     .onHover { inside in
                         updatePassthrough(inside)
                     }
-                    .layoutValue(key: GridSpanKey.self, value: zoomed ? 2 : 1)
+                    .layoutValue(key: GridSpanKey.self, value: zoomed ? 4 : 1)
                     .shadow(radius: 4)
             }
         }

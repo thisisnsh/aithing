@@ -19,49 +19,53 @@ struct ImageContextView: View {
     @State private var nameShow = false
 
     var body: some View {
-        VStack {
+        VStack(spacing: 0) {
             ZStack {
                 Image(nsImage: image)
                     .resizable()
                     .aspectRatio(contentMode: .fit)
                     .frame(maxWidth: .infinity)
-                    .background(.white)
-                    .clipShape(RoundedRectangle(cornerRadius: isZoomed ? 16 : 8))
-                    .overlay {
-                        RoundedRectangle(cornerRadius: isZoomed ? 16 : 8).stroke(
-                            Color.white,
-                            lineWidth: 1
-                        )
-                    }
-                    .onTapGesture {
-                        withAnimation(
-                            .spring(response: 0.3, dampingFraction: 0.7, blendDuration: 0.2)
-                        ) { onTap() }
-                    }
 
                 if !compact && trashShow {
                     Button(action: onDelete) {
                         Image(systemName: "xmark.circle.fill")
                             .frame(width: 12, height: 12)
                             .foregroundStyle(.red)
+                            .padding(2)
+                            .background(.white)
+                            .clipShape(Circle())
                     }
                     .buttonStyle(PlainButtonStyle())
                 }
             }
-            .padding(.top, 8)
 
             if !compact && nameShow {
                 Text(name)
                     .font(.system(size: 10, weight: .medium))
-                    .lineLimit(2)
+                    .lineLimit(1)
                     .padding(4)
-                    .shadow(color: .black, radius: 1)
             }
         }
-        .onHover { inside in
-            trashShow = inside
-            nameShow = inside
+        .background(.ultraThinMaterial)
+        .clipShape(RoundedRectangle(cornerRadius: isZoomed ? 16 : 8))
+        .overlay {
+            RoundedRectangle(cornerRadius: isZoomed ? 16 : 8).stroke(
+                Color.white,
+                lineWidth: 1
+            )
         }
+        .onTapGesture {
+            withAnimation(
+                .spring(response: 0.3, dampingFraction: 0.7, blendDuration: 0.2)
+            ) { onTap() }
+        }
+        .onHover { inside in
+            withAnimation(.easeInOut(duration: 0.3)) {
+                trashShow = inside
+                nameShow = inside
+            }
+        }
+        .padding(.top, 8)
     }
 }
 
@@ -77,80 +81,85 @@ struct PDFContextView: View {
     @State private var nameShow = false
 
     var body: some View {
-        VStack {
-            ZStack {
-                ZStack {
-                    if isZoomed {
-                        Image(nsImage: image)
-                            .resizable()
-                            .aspectRatio(contentMode: .fit)
-                            .frame(maxWidth: .infinity)
-                            .overlay { Color.black.opacity(0.5) }
-                            .clipShape(RoundedRectangle(cornerRadius: 8))
-                            .overlay {
-                                RoundedRectangle(cornerRadius: 8).stroke(
-                                    Color.white,
-                                    lineWidth: 1
-                                )
-                            }
-                            .rotationEffect(.degrees(-4))
-
-                        Image(nsImage: image)
-                            .resizable()
-                            .aspectRatio(contentMode: .fit)
-                            .frame(maxWidth: .infinity)
-                            .overlay { Color.black.opacity(0.5) }
-                            .clipShape(RoundedRectangle(cornerRadius: 8))
-                            .overlay {
-                                RoundedRectangle(cornerRadius: 8).stroke(
-                                    Color.white,
-                                    lineWidth: 1
-                                )
-                            }
-                            .rotationEffect(.degrees(4))
+        ZStack {
+            if isZoomed {
+                Image(nsImage: image)
+                    .resizable()
+                    .aspectRatio(contentMode: .fit)
+                    .frame(maxWidth: .infinity)
+                    .overlay { Color.black.opacity(0.5) }
+                    .clipShape(RoundedRectangle(cornerRadius: 8))
+                    .overlay {
+                        RoundedRectangle(cornerRadius: 8).stroke(
+                            Color.white,
+                            lineWidth: 1
+                        )
                     }
+                    .rotationEffect(.degrees(-4))
 
+                Image(nsImage: image)
+                    .resizable()
+                    .aspectRatio(contentMode: .fit)
+                    .frame(maxWidth: .infinity)
+                    .overlay { Color.black.opacity(0.5) }
+                    .clipShape(RoundedRectangle(cornerRadius: 8))
+                    .overlay {
+                        RoundedRectangle(cornerRadius: 8).stroke(
+                            Color.white,
+                            lineWidth: 1
+                        )
+                    }
+                    .rotationEffect(.degrees(4))
+            }
+
+            VStack(spacing: 0) {
+                ZStack {
                     Image(nsImage: image)
                         .resizable()
                         .aspectRatio(contentMode: .fit)
                         .frame(maxWidth: .infinity)
-                        .clipShape(RoundedRectangle(cornerRadius: 8))
-                        .overlay {
-                            RoundedRectangle(cornerRadius: 8).stroke(
-                                Color.white,
-                                lineWidth: 1
-                            )
-                        }
-                        .onTapGesture {
-                            withAnimation(
-                                .spring(response: 0.3, dampingFraction: 0.7, blendDuration: 0.2)
-                            ) { onTap() }
-                        }
-                }
 
-                if !compact && trashShow {
-                    Button(action: onDelete) {
-                        Image(systemName: "xmark.circle.fill")
-                            .frame(width: 12, height: 12)
-                            .foregroundStyle(.red)
+                    if !compact && trashShow {
+                        Button(action: onDelete) {
+                            Image(systemName: "xmark.circle.fill")
+                                .frame(width: 12, height: 12)
+                                .foregroundStyle(.red)
+                                .padding(2)
+                                .background(.white)
+                                .clipShape(Circle())
+                        }
+                        .buttonStyle(PlainButtonStyle())
                     }
-                    .buttonStyle(PlainButtonStyle())
+                }
+
+                if !compact && nameShow {
+                    Text(name)
+                        .font(.system(size: 10, weight: .medium))
+                        .lineLimit(2)
+                        .padding(4)
                 }
             }
-            .padding(.top, 8)
-
-            if !compact && nameShow {
-                Text(name)
-                    .font(.system(size: 10, weight: .medium))
-                    .lineLimit(2)
-                    .padding(4)
-                    .shadow(color: .black, radius: 1)
+            .background(.ultraThinMaterial)
+            .clipShape(RoundedRectangle(cornerRadius: isZoomed ? 16 : 8))
+            .overlay {
+                RoundedRectangle(cornerRadius: isZoomed ? 16 : 8).stroke(
+                    Color.white,
+                    lineWidth: 1
+                )
             }
+        }
+        .onTapGesture {
+            withAnimation(
+                .spring(response: 0.3, dampingFraction: 0.7, blendDuration: 0.2)
+            ) { onTap() }
         }
         .onHover { inside in
-            trashShow = inside
-            nameShow = inside
+            withAnimation(.easeInOut(duration: 0.3)) {
+                trashShow = inside
+                nameShow = inside
+            }
         }
+        .padding(.top, 8)
     }
 }
 
@@ -165,7 +174,7 @@ struct TextContextView: View {
     @State private var nameShow = false
 
     var body: some View {
-        VStack {
+        VStack(spacing: 0) {
             ZStack {
                 Text(
                     isZoomed ? name : name.components(separatedBy: ".").last ?? name
@@ -173,42 +182,46 @@ struct TextContextView: View {
                 .font(.system(size: 14, weight: .medium))
                 .lineLimit(isZoomed ? 4 : 2)
                 .frame(maxWidth: .infinity, minHeight: 90, maxHeight: 180, alignment: .center)
-                .background(.ultraThinMaterial)
-                .clipShape(RoundedRectangle(cornerRadius: 8))
-                .overlay {
-                    RoundedRectangle(cornerRadius: 8).stroke(
-                        Color.white,
-                        lineWidth: 1
-                    )
-                }
-                .onTapGesture {
-                    withAnimation(
-                        .spring(response: 0.3, dampingFraction: 0.7, blendDuration: 0.2)
-                    ) { onTap() }
-                }
 
                 if !compact && trashShow {
                     Button(action: onDelete) {
                         Image(systemName: "xmark.circle.fill")
                             .frame(width: 12, height: 12)
                             .foregroundStyle(.red)
+                            .padding(2)
+                            .background(.white)
+                            .clipShape(Circle())
                     }
                     .buttonStyle(PlainButtonStyle())
                 }
             }
-            .padding(.top, 8)
 
             if !compact && nameShow {
                 Text(name)
                     .font(.system(size: 10, weight: .medium))
                     .lineLimit(2)
                     .padding(4)
-                    .shadow(color: .black, radius: 1)
             }
         }
-        .onHover { inside in
-            trashShow = inside
-            nameShow = inside
+        .background(.ultraThinMaterial)
+        .clipShape(RoundedRectangle(cornerRadius: isZoomed ? 16 : 8))
+        .overlay {
+            RoundedRectangle(cornerRadius: isZoomed ? 16 : 8).stroke(
+                Color.white,
+                lineWidth: 1
+            )
         }
+        .onTapGesture {
+            withAnimation(
+                .spring(response: 0.3, dampingFraction: 0.7, blendDuration: 0.2)
+            ) { onTap() }
+        }
+        .onHover { inside in
+            withAnimation(.easeInOut(duration: 0.3)) {
+                trashShow = inside
+                nameShow = inside
+            }
+        }
+        .padding(.top, 8)
     }
 }
