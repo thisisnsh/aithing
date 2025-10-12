@@ -81,7 +81,7 @@ struct PDFContextView: View {
     @State private var nameShow = false
 
     var body: some View {
-        ZStack {
+        ZStack(alignment: .topLeading) {
             if isZoomed {
                 Image(nsImage: image)
                     .resizable()

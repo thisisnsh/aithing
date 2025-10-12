@@ -127,13 +127,23 @@ struct ContextGridView: View {
                     .onHover { inside in
                         updatePassthrough(inside)
                     }
-                    .layoutValue(key: GridSpanKey.self, value: zoomed ? 4 : 1)
+                    .layoutValue(
+                        key: GridSpanKey.self,
+                        value: gridSpan(context: context, zoomed: zoomed)
+                    )
                     .shadow(radius: 4)
             }
         }
         .padding(.horizontal, 24)
         .padding(.bottom, 16)
         .padding(.top, -8)
+    }
+
+    private func gridSpan(context: DroppedContent, zoomed: Bool) -> Int {
+        return switch context {
+        case .image, .text: zoomed ? 4 : 1
+        case .pdf: zoomed ? 2 : 1
+        }
     }
 
     // MARK: - Small helper to simplify the type the compiler must infer
