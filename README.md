@@ -2,13 +2,20 @@
 
 ------------------------ 
 
-- Select text and show the selected text on main tab 
+
+Oct 13
 - Fix file select
-
+Oct 14
+- Select text and show the selected text on main tab 
+Oct 15
 - Release
+Oct 16
+- Reddit 
+Oct 17
+- Ads & Reddit 
 
 
-Later
+Oct 20 - Later
 - Open settings from mini tab 
 - Show response in mini tab 
 
