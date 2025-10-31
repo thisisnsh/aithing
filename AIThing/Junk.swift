@@ -1,9 +1,13 @@
 //
-//  AppDelegate.swift
+//  Junk.swift
 //  AIThing
 //
-//  Created by Nishant Singh Hada on 7/12/25.
+//  Created by Nishant Singh Hada on 10/31/25.
 //
+
+/*
+
+import Foundation
 
 import AppKit
 import ApplicationServices
@@ -390,3 +394,5 @@ extension AppDelegate {
         mouseLocation = NSEvent.mouseLocation
     }
 }
+
+*/

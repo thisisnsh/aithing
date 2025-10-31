@@ -10,6 +10,7 @@ import AppKit
 class NonActivatingPanel: NSPanel {
     override var canBecomeKey: Bool { true }
     override var canBecomeMain: Bool { false }
+    private var lockXDuringDrag: CGFloat?
 
     init(contentRect: NSRect) {
         super.init(
@@ -21,12 +22,15 @@ class NonActivatingPanel: NSPanel {
 
         self.isFloatingPanel = true
         self.hidesOnDeactivate = false
-        self.level = .floating
+        self.level = .statusBar
         self.hasShadow = false
         self.backgroundColor = .clear
         self.isOpaque = false
-        self.ignoresMouseEvents = true
-        self.collectionBehavior = [.transient, .moveToActiveSpace, .ignoresCycle]
-        self.isMovableByWindowBackground = true
+        self.ignoresMouseEvents = false
+        self.collectionBehavior = [
+            .transient, .canJoinAllSpaces, .ignoresCycle, .fullScreenAuxiliary,
+        ]
+        self.isMovableByWindowBackground = false
     }
+
 }

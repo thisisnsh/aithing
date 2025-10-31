@@ -2,22 +2,63 @@
 
 ------------------------ 
 
+## 2.0 
 
-Oct 13
-- Fix file select
-Oct 14
-- Select text and show the selected text on main tab 
-Oct 15
-- Release
-Oct 16
-- Reddit 
-Oct 17
-- Ads & Reddit 
+Notch like sidebar that expands on hover 
+
+29 Oct
+- Figma Design
+- SUI: Hover to expand vertically
+- SUI: Click to expand horizontally 
+- SUI: Scroll 
+
+30 Oct
+- a
+
+31 Oct
+- a
+
+1 Nov
+- a
+
+2 Nov
+- a
+
+3 Nov
+- a
+
+4 Nov
+- a
+
+5 Nov
+- a
+
+6 Nov
+- a
+
+7 Nov
+- Release 2.0
+
+8 Nov
+- Doc
+
+9 Nov
+- YC Apple
 
 
-Oct 20 - Later
-- Open settings from mini tab 
-- Show response in mini tab 
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 ------------------------
