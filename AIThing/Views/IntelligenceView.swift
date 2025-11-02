@@ -18,11 +18,10 @@ struct IntelligenceView: View {
     @StateObject var screenshotMonitor = ScreenshotMonitor()
 
     @Binding var isFocused: Bool
-    var tabId: UUID
-    var tabHistory: History?
-    @Binding var allTabs: [TabItem]
     @Binding var allClientTools: [String: [[String: Any]]]
     @Binding var managedModels: [ModelInfo]
+    @ObservedObject var controller: ChatController
+    let lastUpdated: String
 
     let resizeAlpha: () -> Void
     let resizeBeta: () -> Void
@@ -33,6 +32,7 @@ struct IntelligenceView: View {
 
     let logger = Logger(subsystem: "com.thisisnsh.mac.AIThing", category: "IntelligenceView")
 
+    @State private var tabId = UUID()
     @State private var tabTitle: String = ""
     @State private var inputHeight: CGFloat = 24
     private let baseHeight: CGFloat = 24
@@ -61,8 +61,10 @@ struct IntelligenceView: View {
         VStack {
             TitleView()
 
-            ResponseView()
-                .padding(.vertical, 8)
+            ChatView(controller: controller, lastUpdated: lastUpdated).padding(.vertical, 8)
+
+            //            ResponseView()
+            //                .padding(.vertical, 8)
 
             Spacer()
 
@@ -77,16 +79,9 @@ struct IntelligenceView: View {
             .overlay(
                 Group {
                     if isThinking {
-                        AnimatedGradientBorder(
-                            cornerRadius: 8,
-                            lineWidth: 1.5
-                        )
+                        AnimatedGradientBorder(cornerRadius: 8, lineWidth: 1.5)
                     } else if isDropping {
-                        AnimatedGradientBorder(
-                            cornerRadius: 8,
-                            lineWidth: 1.5,
-                            color: .blue
-                        )
+                        AnimatedGradientBorder(cornerRadius: 8, lineWidth: 1.5, color: .blue)
                     }
                 }
             )
@@ -96,6 +91,10 @@ struct IntelligenceView: View {
         .background(.white.opacity(0.1))
         .clipShape(RoundedRectangle(cornerRadius: 8))
         .padding(.leading, 8)
+        .onAppear {
+            guard let history = controller.history else { return }
+            tabId = UUID(uuidString: history.id) ?? UUID()
+        }
         .task {
             let notification = await firestoreManager.getNotification() ?? ""
             if !notification.isEmpty {
@@ -1066,6 +1065,6 @@ extension IntelligenceView {
 
     private func isTabClosed() -> Bool {
         return false
-        !allTabs.contains(where: { $0.id == tabId })
+        // !allTabs.contains(where: { $0.id == tabId })
     }
 }

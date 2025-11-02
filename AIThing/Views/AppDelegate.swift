@@ -28,7 +28,7 @@ enum WindowSize: Int {
 class AppDelegate: NSObject, NSApplicationDelegate {
     private var floatingWindow: NonActivatingPanel!
 
-    static var allowQuit = false
+    static var allowQuit = true
 
     func applicationDidFinishLaunching(_ notification: Notification) {
         NSApp.setActivationPolicy(.accessory)  // background-style app

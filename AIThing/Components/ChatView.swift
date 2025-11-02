@@ -21,8 +21,8 @@ enum ChatPayload: Equatable {
 
     static func == (lhs: ChatPayload, rhs: ChatPayload) -> Bool {
         switch (lhs, rhs) {
-        case let (.text(a), .text(b)): return a == b
-        case let (.toolUse(a), .toolUse(b)): return a == b
+        case (.text(let a), .text(let b)): return a == b
+        case (.toolUse(let a), .toolUse(let b)): return a == b
         case (.image, .image): return false  // NSImage not Equatable; treat as unequal
         default: return false
         }
@@ -33,6 +33,193 @@ struct ChatItem: Identifiable, Equatable {
     let id = UUID()
     let role: ChatRole
     let payload: ChatPayload
+}
+
+final class ChatController: ObservableObject {
+    @Published var items: [ChatItem] = []
+    @Published var history: History?
+    func setHistory(_ history: History?) {
+        if let history {
+            items = parseHistory(history.history)
+            self.history = history
+        } else {
+            items = []
+            self.history = history
+        }
+    }
+}
+
+struct ChatView: View {
+    @ObservedObject var controller: ChatController
+    let lastUpdated: String
+    //    let continueConversation: (_ history: History) -> Void
+
+    var formattedLastUpdated: String? {
+        return formatEpoch(lastUpdated)
+    }
+
+    var body: some View {
+        VStack(spacing: 0) {
+            if let formattedLastUpdated {
+                HStack {
+                    Text("Last updated: \(formattedLastUpdated)")
+                        .font(.footnote)
+                        .foregroundColor(.secondary)
+                    Spacer()
+                    if controller.history != nil {
+                        Button {
+                            //                            continueConversation(controller.history!)
+                        } label: {
+                            HStack {
+                                Text("Continue")
+                                    .font(.system(size: 12, weight: .medium))
+                                Image(systemName: "arrow.up.right")
+                                    .resizable()
+                                    .aspectRatio(contentMode: .fit)
+                                    .frame(width: 8)
+                            }
+                            .padding(.vertical, 4)
+                            .padding(.horizontal, 8)
+                            .background(Color.black.opacity(0.2))
+                            .clipShape(RoundedRectangle(cornerRadius: 8))
+                        }
+                        .buttonStyle(.plain)
+                    }
+                }
+                .padding(.top, 4)
+                .padding(.horizontal, 16)
+                .padding(.vertical, 8)
+
+                Divider()
+            }
+
+            ScrollViewReader { proxy in
+                ScrollView {
+                    LazyVStack(alignment: .leading, spacing: 12) {
+                        ForEach(controller.items) { item in
+                            ChatBubble(item: item)
+                                .id(item.id)
+                        }
+                    }
+                    .padding(16)
+                }
+                .onReceive(controller.$items) { _ in
+                    if let lastID = controller.items.last?.id {
+                        DispatchQueue.main.async {
+                            withAnimation(.easeOut(duration: 0.25)) {
+                                proxy.scrollTo(lastID, anchor: .bottom)
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
+}
+
+struct ChatBubble: View {
+    let item: ChatItem
+
+    var body: some View {
+        HStack {
+            if item.role == .assistant { Spacer().frame(width: 0) }
+            if item.role == .usage { Spacer().frame(width: 0) }
+
+            switch item.payload {
+            case .text(let text):
+                if item.role == .usage {
+                    UsageBubble(text: text)
+                        .frame(maxWidth: 500, alignment: .leading)
+                } else {
+                    TextBubble(text: text, isUser: item.role == .user)
+                        .frame(maxWidth: 500, alignment: item.role == .user ? .trailing : .leading)
+                }
+            case .image(let image):
+                ImageBubble(image: image, isUser: item.role == .user)
+                    .frame(maxWidth: 320, alignment: item.role == .user ? .trailing : .leading)
+            case .toolUse(let name):
+                TextBubble(text: "Called tool: \(name)", isUser: false)
+                    .frame(maxWidth: 500, alignment: item.role == .user ? .trailing : .leading)
+            }
+
+            if item.role == .user { Spacer().frame(width: 0) }
+        }
+        .frame(maxWidth: .infinity, alignment: item.role == .user ? .trailing : .leading)
+    }
+}
+
+struct UsageBubble: View {
+    let text: String
+
+    var body: some View {
+        Text(text)
+            .font(.system(size: 10, weight: .medium, design: .monospaced))
+            .textSelection(.enabled)
+            .padding(8)
+            .background(
+                RoundedRectangle(cornerRadius: 8, style: .continuous)
+                    .fill(Color.gray.opacity(0.1))
+            )
+            .overlay(
+                RoundedRectangle(cornerRadius: 8, style: .continuous)
+                    .stroke(Color.gray.opacity(0.5), lineWidth: 1)
+            )
+    }
+}
+
+struct TextBubble: View {
+    let text: String
+    let isUser: Bool
+
+    var body: some View {
+        Text(text)
+            .font(.system(size: 12, weight: .medium))
+            .textSelection(.enabled)
+            .padding(8)
+            .background(
+                RoundedRectangle(cornerRadius: 8, style: .continuous)
+                    .fill(isUser ? Color.gray.opacity(0.1) : Color.clear)
+            )
+            .overlay(
+                RoundedRectangle(cornerRadius: 8, style: .continuous)
+                    .stroke(Color.gray.opacity(0.5), lineWidth: isUser ? 0 : 1)
+            )
+    }
+}
+
+struct ImageBubble: View {
+    let image: NSImage
+    let isUser: Bool
+
+    var body: some View {
+        Image(nsImage: image)
+            .resizable()
+            .scaledToFit()
+            .clipShape(RoundedRectangle(cornerRadius: 10, style: .continuous))
+            .padding(4)
+            .background(
+                RoundedRectangle(cornerRadius: 16, style: .continuous)
+                    .fill(
+                        isUser
+                            ? Color.gray.opacity(0.1) : Color.clear
+                    )
+            )
+            .overlay(
+                RoundedRectangle(cornerRadius: 16, style: .continuous)
+                    .stroke(Color.gray.opacity(0.5), lineWidth: isUser ? 0 : 1)
+            )
+    }
+}
+
+func formatEpoch(_ epochS: String, format: String = "MMMM, dd yyyy HH:mm") -> String? {
+    if let epoch = Double(epochS) {
+        let date = Date(timeIntervalSince1970: epoch)
+        let formatter = DateFormatter()
+        formatter.dateFormat = format
+        return formatter.string(from: date)
+    } else {
+        return nil
+    }
 }
 
 func assistantMessages(from history: [[String: Any]]) -> String {
@@ -139,191 +326,4 @@ private func base64ToNSImage(_ base64: String) -> NSImage? {
         let img = NSImage(data: data)
     else { return nil }
     return img
-}
-
-final class ChatController: ObservableObject {
-    @Published var items: [ChatItem] = []
-    @Published var history: History?
-    func setHistory(_ history: History?) {
-        if let history {
-            items = parseHistory(history.history)
-            self.history = history
-        } else {
-            items = []
-            self.history = history
-        }
-    }
-}
-
-struct ChatView: View {
-    @ObservedObject var controller: ChatController
-    let lastUpdated: String
-    let continueConversation: (_ history: History) -> Void
-
-    var formattedLastUpdated: String? {
-        return formatEpoch(lastUpdated)
-    }
-
-    var body: some View {
-        VStack(spacing: 0) {
-            if let formattedLastUpdated {
-                HStack {
-                    Text("Last updated: \(formattedLastUpdated)")
-                        .font(.footnote)
-                        .foregroundColor(.secondary)
-                    Spacer()
-                    if controller.history != nil {
-                        Button {
-                            continueConversation(controller.history!)
-                        } label: {
-                            HStack {
-                                Text("Continue")
-                                    .font(.system(size: 12, weight: .medium))
-                                Image(systemName: "arrow.up.right")
-                                    .resizable()
-                                    .aspectRatio(contentMode: .fit)
-                                    .frame(width: 8)
-                            }
-                            .padding(.vertical, 4)
-                            .padding(.horizontal, 8)
-                            .background(Color.black.opacity(0.2))
-                            .clipShape(RoundedRectangle(cornerRadius: 8))
-                        }
-                        .buttonStyle(.plain)
-                    }
-                }
-                .padding(.top, 4)
-                .padding(.horizontal, 16)
-                .padding(.vertical, 8)
-
-                Divider()
-            }
-
-            ScrollViewReader { proxy in
-                ScrollView {
-                    LazyVStack(alignment: .leading, spacing: 12) {
-                        ForEach(controller.items) { item in
-                            ChatBubble(item: item)
-                                .id(item.id)
-                        }
-                    }
-                    .padding(16)
-                }
-                .onReceive(controller.$items) { _ in
-                    if let lastID = controller.items.last?.id {
-                        DispatchQueue.main.async {
-                            withAnimation(.easeOut(duration: 0.25)) {
-                                proxy.scrollTo(lastID, anchor: .bottom)
-                            }
-                        }
-                    }
-                }
-            }
-        }
-    }
-}
-
-struct ChatBubble: View {
-    let item: ChatItem
-
-    var body: some View {
-        HStack {
-            if item.role == .assistant { Spacer().frame(width: 0) }
-            if item.role == .usage { Spacer().frame(width: 0) }
-
-            switch item.payload {
-            case .text(let text):
-                if item.role == .usage {
-                    UsageBubble(text: text)
-                        .frame(maxWidth: 500, alignment: .leading)
-                } else {
-                    TextBubble(text: text, isUser: item.role == .user)
-                        .frame(maxWidth: 500, alignment: item.role == .user ? .trailing : .leading)
-                }
-            case .image(let image):
-                ImageBubble(image: image, isUser: item.role == .user)
-                    .frame(maxWidth: 320, alignment: item.role == .user ? .trailing : .leading)
-            case .toolUse(let name):
-                TextBubble(text: "Called tool: \(name)", isUser: false)
-                    .frame(maxWidth: 500, alignment: item.role == .user ? .trailing : .leading)
-            }
-
-            if item.role == .user { Spacer().frame(width: 0) }
-        }
-        .frame(maxWidth: .infinity, alignment: item.role == .user ? .trailing : .leading)
-    }
-}
-
-struct UsageBubble: View {
-    let text: String
-
-    var body: some View {
-        Text(text)
-            .font(.system(size: 10, weight: .medium, design: .monospaced))
-            .textSelection(.enabled)
-            .padding(8)
-            .background(
-                RoundedRectangle(cornerRadius: 8, style: .continuous)
-                    .fill(Color.gray.opacity(0.1))
-            )
-            .overlay(
-                RoundedRectangle(cornerRadius: 8, style: .continuous)
-                    .stroke(Color.gray.opacity(0.5), lineWidth: 1)
-            )
-    }
-}
-
-struct TextBubble: View {
-    let text: String
-    let isUser: Bool
-
-    var body: some View {
-        Text(text)            
-            .font(.system(size: 12, weight: .medium))
-            .textSelection(.enabled)
-            .padding(8)
-            .background(
-                RoundedRectangle(cornerRadius: 8, style: .continuous)
-                    .fill(isUser ? Color.gray.opacity(0.1) : Color.clear)
-            )
-            .overlay(
-                RoundedRectangle(cornerRadius: 8, style: .continuous)
-                    .stroke(Color.gray.opacity(0.5), lineWidth: isUser ? 0 : 1)
-            )
-    }
-}
-
-struct ImageBubble: View {
-    let image: NSImage
-    let isUser: Bool
-
-    var body: some View {
-        Image(nsImage: image)
-            .resizable()
-            .scaledToFit()
-            .clipShape(RoundedRectangle(cornerRadius: 10, style: .continuous))
-            .padding(4)
-            .background(
-                RoundedRectangle(cornerRadius: 16, style: .continuous)
-                    .fill(
-                        isUser
-                            ? Color.gray.opacity(0.1) : Color.clear
-                    )
-            )
-            .overlay(
-                RoundedRectangle(cornerRadius: 16, style: .continuous)
-                    .stroke(Color.gray.opacity(0.5), lineWidth: isUser ? 0 : 1)
-            )
-    }
-}
-
-func formatEpoch(_ epochS: String, format: String = "MMMM, dd yyyy HH:mm") -> String? {
-    if let epoch = Double(epochS) {
-        let date = Date(timeIntervalSince1970: epoch)
-        let formatter = DateFormatter()
-        formatter.dateFormat = format
-        return formatter.string(from: date)
-    } else {
-        return nil
-    }
 }
