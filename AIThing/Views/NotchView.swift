@@ -26,7 +26,6 @@ struct NotchView: View {
                 .fill(.black)
 
             HStack(spacing: 0) {
-
                 if windowSize.rawValue >= WindowSize.gamma.rawValue {
                     IntelligenceView(
                         isFocused: .constant(true),

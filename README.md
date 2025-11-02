@@ -6,41 +6,27 @@
 
 Notch like sidebar that expands on hover 
 
-29 Oct
-- Figma Design
-- SUI: Hover to expand vertically
-- SUI: Click to expand horizontally 
-- SUI: Scroll 
-
-30 Oct
-- a
-
-31 Oct
-- a
-
-1 Nov
-- a
 
 2 Nov
-- a
+- Complete Intelligence View
 
 3 Nov
-- a
+- New Tab and Old Tab Side Bar
 
 4 Nov
-- a
+- Settings & History 
 
 5 Nov
-- a
+- Animations
 
 6 Nov
-- a
+- 
 
 7 Nov
-- Release 2.0
+- Analytics & Doc 
 
 8 Nov
-- Doc
+- Release 2.0
 
 9 Nov
 - YC Apple

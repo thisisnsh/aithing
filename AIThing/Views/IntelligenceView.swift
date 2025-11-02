@@ -34,12 +34,12 @@ struct IntelligenceView: View {
     let logger = Logger(subsystem: "com.thisisnsh.mac.AIThing", category: "IntelligenceView")
 
     @State private var tabTitle: String = ""
+    @State private var inputHeight: CGFloat = 24
+    private let baseHeight: CGFloat = 24
+    @State private var textSize: CGFloat = 14
 
     @State private var isThinking: Bool = false
-    @State private var isThinkingBlinking: Bool = true
-    @State private var showTools: Bool = false
-    @State private var textSize: CGFloat = 14
-    @State private var animatePlaceholder: Bool = false
+    @State private var isThinkingBlinking: Bool = false
 
     @State private var modelInput: [[String: Any]] = []
     @State private var modelOutput: String = ""
@@ -48,9 +48,16 @@ struct IntelligenceView: View {
     @State private var query: String = ""
     @State private var selectedText: String = ""
 
+    @State private var isDropping: Bool = false
+
+    @State private var showMcpTools: Bool = false
+    @State private var hoverMcpTools: Bool = false
+
     var body: some View {
         VStack {
             TitleView()
+
+            Spacer()
 
             VStack {
                 ResponseView()
@@ -59,12 +66,30 @@ struct IntelligenceView: View {
             .padding(.vertical, 16)
 
             VStack {
-                ContextView()
+                if modelContext.count > 0 {
+                    ContextView()
+                }
                 InputView()
             }
             .padding(8)
             .background(.white.opacity(0.1))
-            .clipShape(RoundedRectangle(cornerRadius: 8))
+            .overlay(
+                Group {
+                    if isThinking {
+                        AnimatedGradientBorder(
+                            cornerRadius: 8,
+                            lineWidth: 1.5
+                        )
+                    } else if isDropping {
+                        AnimatedGradientBorder(
+                            cornerRadius: 8,
+                            lineWidth: 1.5,
+                            color: .blue
+                        )
+                    }
+                }
+            )
+            .cornerRadius(8)
         }
         .padding(8)
         .background(.white.opacity(0.1))
@@ -81,7 +106,7 @@ struct IntelligenceView: View {
                 Task {
                     let results = await DragFileManager.processPaths([ss.url])
                     for r in results {
-                        modelContext.append(r)
+                        modelContext.insert(r, at: 0)
                     }
                 }
             }
@@ -121,61 +146,93 @@ struct IntelligenceView: View {
     }
 
     private func InputView() -> some View {
-        HStack {
+        VStack {
             ZStack(alignment: .leading) {
-                InputTextView(
-                    text: $query,
-                    seenCommands: .constant([]),
-                    size: $textSize,
-                    isNotEditable: isThinking,
-                    onCommit: {
-                        Task {
-                            await handleQuery()
+                if !isDropping {
+                    InputTextView(
+                        text: $query,
+                        seenCommands: .constant([]),
+                        size: $textSize,
+                        isNotEditable: isThinking,
+                        onCommit: {
+                            Task {
+                                await handleQuery()
+                            }
+                        },
+                        onCommandTyped: { _ in },
+                        onCommandRemoved: { _ in },
+                        onDebouncedTextChange: { _ in },
+                        onSpillover: { count in
+                            if count >= 2 && count <= 5 {
+                                inputHeight = CGFloat(count) * baseHeight
+                            } else if count > 5 {
+                                inputHeight = 5 * baseHeight
+                            } else {
+                                inputHeight = baseHeight
+                            }
                         }
-                    },
-                    onCommandTyped: { _ in },
-                    onCommandRemoved: { _ in },
-                    onDebouncedTextChange: { _ in },
-                    onSpillover: { _ in }
-                )
-                .onChange(of: query) { _ in }
-                //                .frame(minWidth: .infinity, maxWidth: .infinity)
+                    )
+                    .onChange(of: query) { _ in }
+                }
 
-                if query.isEmpty {
-                    Text("Ask anything on AI Thing...")
-                        .foregroundColor(.white.opacity(0.6))
+                if query.isEmpty || isDropping {
+                    Text(isDropping ? "Drop files here..." : "Ask anything on AI Thing...")
+                        .foregroundColor(isDropping ? .blue : .white.opacity(0.6))
                         .font(.system(size: textSize, weight: .medium))
-                        .padding(.leading, 6)
+                        .padding(.top, 2)
+                        .padding(.leading, 5)
                         .allowsHitTesting(false)
-                        .mask(
-                            LinearGradient(
-                                gradient: Gradient(stops: [
-                                    .init(color: .white, location: 0),
-                                    .init(color: .white, location: animatePlaceholder ? 1 : 0),
-                                ]),
-                                startPoint: .leading,
-                                endPoint: .trailing
-                            )
-                        )
-                        .animation(.easeOut(duration: 0.3), value: animatePlaceholder)
+                }
+            }
+            .frame(height: inputHeight)
+            //            .padding(.vertical, 8)
+
+            HStack {
+                Button(
+                    action: {
+                        withAnimation(.easeInOut(duration: 0.3)) {
+                            showMcpTools.toggle()
+                        }
+                    }
+                ) {
+                    HStack {
+                        Image(systemName: "hammer.fill")
+                            .resizable()
+                            .frame(width: 12, height: 12)
+                            .foregroundStyle(hoverMcpTools ? .black : .white)
+
+                        Text("MCP Tools")
+                            .font(.system(size: 10, weight: .medium))
+                            .foregroundStyle(hoverMcpTools ? .black : .white)
+                    }
+                    .padding(4)
+                    .padding(.horizontal, 4)
+                    .background(hoverMcpTools ? .white : .white.opacity(0.1))
+                    .clipShape(RoundedRectangle(cornerRadius: 6))
+                }
+                .buttonStyle(PlainButtonStyle())
+                .onHover { hoverMcpTools = $0 }
+
+                Spacer()
+            }
+        }
+        .dropDestination(for: URL.self) { urls, _ in
+            if !isFocused { return false }
+
+            Task {
+                let results = await DragFileManager.processPaths(urls)
+                for r in results {
+                    modelContext.append(r)
                 }
             }
 
-            Button(
-                action: {
-                    withAnimation(.easeInOut(duration: 0.3)) {
-                        showTools.toggle()
-                    }
-                }
-            ) {
-                Image(systemName: "hammer.circle.fill")
-                    .resizable()
-                    .scaledToFit()
+            // You can’t know yet, so just return true to accept the drop.
+            return true
+        } isTargeted: {
+            if isFocused {
+                isDropping = $0
             }
-            .buttonStyle(PlainButtonStyle())
-            .frame(width: 18, height: 18)
         }
-        .padding(.vertical, 8)
     }
 
     private func ResponseView() -> some View {
@@ -184,7 +241,7 @@ struct IntelligenceView: View {
                 if isThinking {
                     Text("Thinking...")
                         .foregroundColor(.white)
-                        .font(.system(size: 14))
+                        .font(.system(size: textSize))
                         .frame(maxWidth: .infinity, alignment: .leading)
                         .padding(.horizontal, 24)
                         .padding(.vertical, 16)
@@ -200,7 +257,7 @@ struct IntelligenceView: View {
                     ZStack(alignment: .topTrailing) {
                         MarkdownText(text: modelOutput)
                             .foregroundColor(.white)
-                            .font(.system(size: 14))
+                            .font(.system(size: textSize))
                             .frame(maxWidth: .infinity, alignment: .leading)
                             .padding(.horizontal, 24)
                             .padding(.vertical, 16)
@@ -215,48 +272,50 @@ struct IntelligenceView: View {
     }
 
     private func ContextView() -> some View {
-        HStack {
-            ForEach(modelContext.indices, id: \.self) { index in
-                let context = modelContext[index]
-                switch context {
-                case .image(let name, let image, _):
-                    FilePillView(
-                        index: index,
-                        name: name,
-                        onDelete: { index in
-                            modelContext.remove(at: index)
-                            AnalyticsManager.shared.customEvent(
-                                type: .action,
-                                primary: "file_remove"
-                            )
-                        }
-                    )
+        ScrollView(.horizontal, showsIndicators: false) {
+            HStack {
+                ForEach(modelContext.indices, id: \.self) { index in
+                    let context = modelContext[index]
+                    switch context {
+                    case .image(let name, let image, _):
+                        FilePill(
+                            index: index,
+                            name: name,
+                            onDelete: { index in
+                                modelContext.remove(at: index)
+                                AnalyticsManager.shared.customEvent(
+                                    type: .action,
+                                    primary: "file_remove"
+                                )
+                            }
+                        )
 
-                case .pdf(let name, _, let images, _):
-                    FilePillView(
-                        index: index,
-                        name: name,
-                        onDelete: { index in
-                            modelContext.remove(at: index)
-                            AnalyticsManager.shared.customEvent(
-                                type: .action,
-                                primary: "file_remove"
-                            )
-                        }
-                    )
+                    case .pdf(let name, _, let images, _):
+                        FilePill(
+                            index: index,
+                            name: name,
+                            onDelete: { index in
+                                modelContext.remove(at: index)
+                                AnalyticsManager.shared.customEvent(
+                                    type: .action,
+                                    primary: "file_remove"
+                                )
+                            }
+                        )
 
-                case .text(let name, _, let image):
-                    FilePillView(
-                        index: index,
-                        name: name,
-                        onDelete: { index in
-                            modelContext.remove(at: index)
-                            AnalyticsManager.shared.customEvent(
-                                type: .action,
-                                primary: "file_remove"
-                            )
-                        }
-                    )
+                    case .text(let name, _, let image):
+                        FilePill(
+                            index: index,
+                            name: name,
+                            onDelete: { index in
+                                modelContext.remove(at: index)
+                                AnalyticsManager.shared.customEvent(
+                                    type: .action,
+                                    primary: "file_remove"
+                                )
+                            }
+                        )
+                    }
                 }
             }
         }
