@@ -402,49 +402,7 @@ struct TabView: View {
                         if !modelContextSubmitted.isEmpty {
                             ScrollView(.horizontal, showsIndicators: false) {
                                 HStack {
-                                    ForEach(Array(modelContextSubmitted.enumerated()), id: \.offset)
-                                    {
-                                        (index, context) in
-                                        switch context {
-                                        case .image(let name, let image, _):
-                                            ImageContextView(
-                                                name: name,
-                                                image: image,
-                                                compact: true,
-                                                isZoomed: false,
-                                                onTap: {},
-                                                onDelete: {}
-                                            )
-                                        case .pdf(let name, _, let images, _):
-                                            PDFContextView(
-                                                name: name,
-                                                image: images[0],
-                                                compact: true,
-                                                isZoomed: false,
-                                                onTap: {},
-                                                onDelete: {}
-                                            )
-                                        case .text(let name, _, let image):
-                                            if let image {
-                                                ImageContextView(
-                                                    name: name,
-                                                    image: image,
-                                                    compact: true,
-                                                    isZoomed: false,
-                                                    onTap: {},
-                                                    onDelete: {}
-                                                )
-                                            } else {
-                                                TextContextView(
-                                                    name: name,
-                                                    compact: true,
-                                                    isZoomed: false,
-                                                    onTap: {},
-                                                    onDelete: {}
-                                                )
-                                            }
-                                        }
-                                    }
+                                    
                                 }
                                 .padding(.horizontal, 24)
                                 .padding(.top, 16)
@@ -495,28 +453,7 @@ struct TabView: View {
     }
 
     private func contextView() -> some View {
-        ContextGridView(
-            modelContext: $modelContext,
-            modelContextZoomed: $modelContextZoomed,
-            onTap: { index in
-                guard index < modelContextZoomed.count else { return }
-                modelContextZoomed[index].toggle()
-                let val = modelContextZoomed[index]
-                modelContextZoomed = [Bool](repeating: false, count: modelContextZoomed.count)
-                modelContextZoomed[index] = val
-            },
-            onDelete: { index in
-                modelContext.remove(at: index)
-                modelContextZoomed.remove(at: index)
-                AnalyticsManager.shared.customEvent(
-                    type: .action,
-                    primary: "file_remove"
-                )
-            },
-            updatePassthrough: { inside in
-                updatePassthrough(inside: inside)
-            }
-        )
+        Text("")
     }
 
     private func getResponseHeight() -> CGFloat {

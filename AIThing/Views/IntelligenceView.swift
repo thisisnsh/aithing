@@ -53,17 +53,18 @@ struct IntelligenceView: View {
     @State private var showMcpTools: Bool = false
     @State private var hoverMcpTools: Bool = false
 
+    @State private var hoverRed: Bool = false
+    @State private var hoverYellow: Bool = false
+    @State private var hoverGreen: Bool = false
+
     var body: some View {
         VStack {
             TitleView()
 
-            Spacer()
+            ResponseView()
+                .padding(.vertical, 8)
 
-            VStack {
-                ResponseView()
-                Spacer()
-            }
-            .padding(.vertical, 16)
+            Spacer()
 
             VStack {
                 if modelContext.count > 0 {
@@ -116,25 +117,22 @@ struct IntelligenceView: View {
     private func TitleView() -> some View {
         HStack {
             Circle()
-                .frame(width: 10, height: 10)
-                .foregroundStyle(.red)
-                .onTapGesture {
-                    resizeAlpha()
-                }
+                .frame(width: 12, height: 12)
+                .foregroundStyle(hoverRed ? .red.opacity(0.5) : .red)
+                .onTapGesture { resizeAlpha() }
+                .onHover { hoverRed = $0 }
 
             Circle()
-                .frame(width: 10, height: 10)
-                .foregroundStyle(.yellow)
-                .onTapGesture {
-                    resizeAlpha()
-                }
+                .frame(width: 12, height: 12)
+                .foregroundStyle(hoverYellow ? .yellow.opacity(0.5) : .yellow)
+                .onTapGesture { resizeAlpha() }
+                .onHover { hoverYellow = $0 }
 
             Circle()
-                .frame(width: 10, height: 10)
-                .foregroundStyle(.green)
-                .onTapGesture {
-                    toggleGammaDelta()
-                }
+                .frame(width: 12, height: 12)
+                .foregroundStyle(hoverGreen ? .green.opacity(0.5) : .green)
+                .onTapGesture { toggleGammaDelta() }
+                .onHover { hoverGreen = $0 }
 
             Text(tabTitle)
                 .font(.system(size: 14, weight: .medium))
@@ -142,6 +140,95 @@ struct IntelligenceView: View {
                 .padding(.leading, 8)
 
             Spacer()
+        }
+        .frame(height: 16)
+    }
+
+    private func ResponseView() -> some View {
+        ScrollView {
+            VStack(alignment: .leading, spacing: 0) {
+                if isThinking {
+                    Text("Thinking...")
+                        .foregroundColor(.white)
+                        .font(.system(size: textSize))
+                        .frame(maxWidth: .infinity, alignment: .leading)
+                        .opacity(isThinkingBlinking ? 1 : 0.4)
+                        .onAppear {
+                            withAnimation(
+                                .easeInOut(duration: 0.6).repeatForever(autoreverses: true)
+                            ) {
+                                isThinkingBlinking.toggle()
+                            }
+                        }
+                } else {
+                    ZStack(alignment: .topTrailing) {
+                        MarkdownText(text: modelOutput)
+                            .foregroundColor(.white)
+                            .font(.system(size: textSize))
+                            .frame(maxWidth: .infinity, alignment: .leading)
+                    }
+                }
+
+                Color.clear
+                    .frame(height: 1)
+                    .id("BOTTOM")
+            }
+        }
+    }
+
+    private func ContextView() -> some View {
+        ScrollView(.horizontal, showsIndicators: false) {
+            HStack {
+                ForEach(modelContext.indices, id: \.self) { index in
+                    let context = modelContext[index]
+                    switch context {
+                    case .image(let name, let image, _):
+                        FilePill(
+                            index: index,
+                            name: name,
+                            image: image,
+                            big: modelContext.count == 1,
+                            onDelete: { index in
+                                modelContext.remove(at: index)
+                                AnalyticsManager.shared.customEvent(
+                                    type: .action,
+                                    primary: "file_remove"
+                                )
+                            }
+                        )
+
+                    case .pdf(let name, _, let images, _):
+                        FilePill(
+                            index: index,
+                            name: name,
+                            image: images[0],
+                            big: modelContext.count == 1,
+                            onDelete: { index in
+                                modelContext.remove(at: index)
+                                AnalyticsManager.shared.customEvent(
+                                    type: .action,
+                                    primary: "file_remove"
+                                )
+                            }
+                        )
+
+                    case .text(let name, _, let image):
+                        FilePill(
+                            index: index,
+                            name: name,
+                            image: image,
+                            big: modelContext.count == 1,
+                            onDelete: { index in
+                                modelContext.remove(at: index)
+                                AnalyticsManager.shared.customEvent(
+                                    type: .action,
+                                    primary: "file_remove"
+                                )
+                            }
+                        )
+                    }
+                }
+            }
         }
     }
 
@@ -185,7 +272,7 @@ struct IntelligenceView: View {
                 }
             }
             .frame(height: inputHeight)
-            //            .padding(.vertical, 8)
+            .padding(.bottom, 8)
 
             HStack {
                 Button(
@@ -231,92 +318,6 @@ struct IntelligenceView: View {
         } isTargeted: {
             if isFocused {
                 isDropping = $0
-            }
-        }
-    }
-
-    private func ResponseView() -> some View {
-        ScrollView {
-            VStack(alignment: .leading, spacing: 0) {
-                if isThinking {
-                    Text("Thinking...")
-                        .foregroundColor(.white)
-                        .font(.system(size: textSize))
-                        .frame(maxWidth: .infinity, alignment: .leading)
-                        .padding(.horizontal, 24)
-                        .padding(.vertical, 16)
-                        .opacity(isThinkingBlinking ? 1 : 0.4)
-                        .onAppear {
-                            withAnimation(
-                                .easeInOut(duration: 0.6).repeatForever(autoreverses: true)
-                            ) {
-                                isThinkingBlinking.toggle()
-                            }
-                        }
-                } else {
-                    ZStack(alignment: .topTrailing) {
-                        MarkdownText(text: modelOutput)
-                            .foregroundColor(.white)
-                            .font(.system(size: textSize))
-                            .frame(maxWidth: .infinity, alignment: .leading)
-                            .padding(.horizontal, 24)
-                            .padding(.vertical, 16)
-                    }
-                }
-
-                Color.clear
-                    .frame(height: 1)
-                    .id("BOTTOM")
-            }
-        }
-    }
-
-    private func ContextView() -> some View {
-        ScrollView(.horizontal, showsIndicators: false) {
-            HStack {
-                ForEach(modelContext.indices, id: \.self) { index in
-                    let context = modelContext[index]
-                    switch context {
-                    case .image(let name, let image, _):
-                        FilePill(
-                            index: index,
-                            name: name,
-                            onDelete: { index in
-                                modelContext.remove(at: index)
-                                AnalyticsManager.shared.customEvent(
-                                    type: .action,
-                                    primary: "file_remove"
-                                )
-                            }
-                        )
-
-                    case .pdf(let name, _, let images, _):
-                        FilePill(
-                            index: index,
-                            name: name,
-                            onDelete: { index in
-                                modelContext.remove(at: index)
-                                AnalyticsManager.shared.customEvent(
-                                    type: .action,
-                                    primary: "file_remove"
-                                )
-                            }
-                        )
-
-                    case .text(let name, _, let image):
-                        FilePill(
-                            index: index,
-                            name: name,
-                            onDelete: { index in
-                                modelContext.remove(at: index)
-                                AnalyticsManager.shared.customEvent(
-                                    type: .action,
-                                    primary: "file_remove"
-                                )
-                            }
-                        )
-                    }
-                }
             }
         }
     }
