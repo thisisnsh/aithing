@@ -1,0 +1,1011 @@
+//
+//  IntelligenceView.swift
+//  AIThing
+//
+//  Created by Nishant Singh Hada on 11/1/25.
+//
+
+import AppKit
+import MCP
+import MarkdownUI
+import SwiftUI
+import os
+
+struct IntelligenceView: View {
+    @EnvironmentObject var mcpManager: MCPManager
+    @EnvironmentObject var loginManager: LoginManager
+    @EnvironmentObject var firestoreManager: FirestoreManager
+    @StateObject var screenshotMonitor = ScreenshotMonitor()
+
+    @Binding var isFocused: Bool
+    var tabId: UUID
+    var tabHistory: History?
+    @Binding var allTabs: [TabItem]
+    @Binding var allClientTools: [String: [[String: Any]]]
+    @Binding var managedModels: [ModelInfo]
+
+    let resizeAlpha: () -> Void
+    let resizeBeta: () -> Void
+    let resizeGamma: () -> Void
+    let resizeDelta: () -> Void
+    let toggleGammaDelta: () -> Void
+    let reconnectManagedAgents: () async -> Void
+
+    let logger = Logger(subsystem: "com.thisisnsh.mac.AIThing", category: "IntelligenceView")
+
+    @State private var tabTitle: String = ""
+
+    @State private var isThinking: Bool = false
+    @State private var isThinkingBlinking: Bool = true
+    @State private var showTools: Bool = false
+    @State private var textSize: CGFloat = 14
+    @State private var animatePlaceholder: Bool = false
+
+    @State private var modelInput: [[String: Any]] = []
+    @State private var modelOutput: String = ""
+    @State private var modelContext: [DroppedContent] = []
+
+    @State private var query: String = ""
+    @State private var selectedText: String = ""
+
+    var body: some View {
+        VStack {
+            TitleView()
+
+            VStack {
+                ResponseView()
+                Spacer()
+            }
+            .padding(.vertical, 16)
+
+            VStack {
+                ContextView()
+                InputView()
+            }
+            .padding(8)
+            .background(.white.opacity(0.1))
+            .clipShape(RoundedRectangle(cornerRadius: 8))
+        }
+        .padding(8)
+        .background(.white.opacity(0.1))
+        .clipShape(RoundedRectangle(cornerRadius: 8))
+        .padding(.leading, 8)
+        .task {
+            let notification = await firestoreManager.getNotification() ?? ""
+            if !notification.isEmpty {
+                modelOutput = notification
+            }
+        }
+        .onReceive(screenshotMonitor.$latestScreenshot) { ss in
+            if let ss = ss, isFocused {
+                Task {
+                    let results = await DragFileManager.processPaths([ss.url])
+                    for r in results {
+                        modelContext.append(r)
+                    }
+                }
+            }
+        }
+    }
+
+    private func TitleView() -> some View {
+        HStack {
+            Circle()
+                .frame(width: 10, height: 10)
+                .foregroundStyle(.red)
+                .onTapGesture {
+                    resizeAlpha()
+                }
+
+            Circle()
+                .frame(width: 10, height: 10)
+                .foregroundStyle(.yellow)
+                .onTapGesture {
+                    resizeAlpha()
+                }
+
+            Circle()
+                .frame(width: 10, height: 10)
+                .foregroundStyle(.green)
+                .onTapGesture {
+                    toggleGammaDelta()
+                }
+
+            Text(tabTitle)
+                .font(.system(size: 14, weight: .medium))
+                .foregroundStyle(.white)
+                .padding(.leading, 8)
+
+            Spacer()
+        }
+    }
+
+    private func InputView() -> some View {
+        HStack {
+            ZStack(alignment: .leading) {
+                InputTextView(
+                    text: $query,
+                    seenCommands: .constant([]),
+                    size: $textSize,
+                    isNotEditable: isThinking,
+                    onCommit: {
+                        Task {
+                            await handleQuery()
+                        }
+                    },
+                    onCommandTyped: { _ in },
+                    onCommandRemoved: { _ in },
+                    onDebouncedTextChange: { _ in },
+                    onSpillover: { _ in }
+                )
+                .onChange(of: query) { _ in }
+                //                .frame(minWidth: .infinity, maxWidth: .infinity)
+
+                if query.isEmpty {
+                    Text("Ask anything on AI Thing...")
+                        .foregroundColor(.white.opacity(0.6))
+                        .font(.system(size: textSize, weight: .medium))
+                        .padding(.leading, 6)
+                        .allowsHitTesting(false)
+                        .mask(
+                            LinearGradient(
+                                gradient: Gradient(stops: [
+                                    .init(color: .white, location: 0),
+                                    .init(color: .white, location: animatePlaceholder ? 1 : 0),
+                                ]),
+                                startPoint: .leading,
+                                endPoint: .trailing
+                            )
+                        )
+                        .animation(.easeOut(duration: 0.3), value: animatePlaceholder)
+                }
+            }
+
+            Button(
+                action: {
+                    withAnimation(.easeInOut(duration: 0.3)) {
+                        showTools.toggle()
+                    }
+                }
+            ) {
+                Image(systemName: "hammer.circle.fill")
+                    .resizable()
+                    .scaledToFit()
+            }
+            .buttonStyle(PlainButtonStyle())
+            .frame(width: 18, height: 18)
+        }
+        .padding(.vertical, 8)
+    }
+
+    private func ResponseView() -> some View {
+        ScrollView {
+            VStack(alignment: .leading, spacing: 0) {
+                if isThinking {
+                    Text("Thinking...")
+                        .foregroundColor(.white)
+                        .font(.system(size: 14))
+                        .frame(maxWidth: .infinity, alignment: .leading)
+                        .padding(.horizontal, 24)
+                        .padding(.vertical, 16)
+                        .opacity(isThinkingBlinking ? 1 : 0.4)
+                        .onAppear {
+                            withAnimation(
+                                .easeInOut(duration: 0.6).repeatForever(autoreverses: true)
+                            ) {
+                                isThinkingBlinking.toggle()
+                            }
+                        }
+                } else {
+                    ZStack(alignment: .topTrailing) {
+                        MarkdownText(text: modelOutput)
+                            .foregroundColor(.white)
+                            .font(.system(size: 14))
+                            .frame(maxWidth: .infinity, alignment: .leading)
+                            .padding(.horizontal, 24)
+                            .padding(.vertical, 16)
+                    }
+                }
+
+                Color.clear
+                    .frame(height: 1)
+                    .id("BOTTOM")
+            }
+        }
+    }
+
+    private func ContextView() -> some View {
+        HStack {
+            ForEach(modelContext.indices, id: \.self) { index in
+                let context = modelContext[index]
+                switch context {
+                case .image(let name, let image, _):
+                    FilePillView(
+                        index: index,
+                        name: name,
+                        onDelete: { index in
+                            modelContext.remove(at: index)
+                            AnalyticsManager.shared.customEvent(
+                                type: .action,
+                                primary: "file_remove"
+                            )
+                        }
+                    )
+
+                case .pdf(let name, _, let images, _):
+                    FilePillView(
+                        index: index,
+                        name: name,
+                        onDelete: { index in
+                            modelContext.remove(at: index)
+                            AnalyticsManager.shared.customEvent(
+                                type: .action,
+                                primary: "file_remove"
+                            )
+                        }
+                    )
+
+                case .text(let name, _, let image):
+                    FilePillView(
+                        index: index,
+                        name: name,
+                        onDelete: { index in
+                            modelContext.remove(at: index)
+                            AnalyticsManager.shared.customEvent(
+                                type: .action,
+                                primary: "file_remove"
+                            )
+                        }
+                    )
+                }
+            }
+        }
+    }
+
+}
+
+extension IntelligenceView {
+    private func handleQuery() async {
+        let trimmed = query.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !trimmed.isEmpty else { return }
+
+        modelOutput = ""
+        isThinking = true
+
+        await callModel(query: trimmed)
+    }
+
+    private func callModel(query: String) async {
+        // Check if version is breakglassed
+        if await firestoreManager.getBreakglass() {
+            isThinking = false
+            await animateOutput(
+                content: """
+                    This version has been disabled due to an internal issue.
+                    We apologize for the inconvenience. The app will be re-enabled soon.
+                    For updates, please contact help@aithing.dev.
+                    """
+            )
+            AnalyticsManager.shared.customEvent(
+                type: .error,
+                primary: "breakglass_enabled",
+                secondary: .status_failure_low,
+            )
+            return
+        }
+
+        // Check if version is expired
+        if await firestoreManager.getExpired() {
+            isThinking = false
+            await animateOutput(
+                content: """
+                    Current version has expired.
+                    Please [upgrade the version](https://aithing.dev/upgrade) to enjoy new features and continue using the app.
+                    """
+            )
+            AnalyticsManager.shared.customEvent(
+                type: .error,
+                primary: "version_expired",
+                secondary: .status_failure_low,
+            )
+            return
+        }
+
+        var appUser: AppUser?
+        switch loginManager.authState {
+        case .signedIn(let user):
+            if let profile = await firestoreManager.getProfile(user: user) {
+                // Check if profile is blocked
+                if profile.blocked {
+                    isThinking = false
+                    await animateOutput(
+                        content: """
+                            You access has been disabled. We apologize for the inconvenience.
+
+                            Please contact help@aithing.dev.
+                            """
+                    )
+                    return
+                }
+
+                appUser = user
+                AnalyticsManager.shared.setUserId(user.uid)
+                break
+            }
+
+            isThinking = false
+            await animateOutput(
+                content: """
+                    Something went wrong. Please log out and log in again. 
+
+                    Report issue at help@aithing.dev
+                    """
+            )
+            AnalyticsManager.shared.customEvent(
+                type: .error,
+                primary: "profile_fetch",
+                secondary: .status_failure_high,
+            )
+            return
+        default:
+            isThinking = false
+            await animateOutput(
+                content: """
+                    Please log in to continue.
+
+                    Read our [Privacy Policy](https://aithing.dev/privacy)
+                    """
+            )
+            AnalyticsManager.shared.customEvent(
+                type: .error,
+                primary: "query_without_login",
+                secondary: .status_failure_low,
+            )
+            return
+        }
+
+        // Check if tab is alive, else return without processing
+        if isTabClosed() {
+            isThinking = false
+            logger.info("Exiting callModel for \(tabId) as it was closed")
+            AnalyticsManager.shared.customEvent(type: .tab, primary: "query_stop_on_close")
+            return
+        }
+
+        do {
+            // Sleeping just to complete debounce on typing
+            try await Task.sleep(nanoseconds: 200_000_000)
+        } catch {}
+
+        // Load latest tools
+        await reconnectManagedAgents()
+        let modelAgentCount = allClientTools.keys.count
+        let modelTools = allClientTools.values.flatMap { $0 }
+
+        let model = getModel()
+
+        AnalyticsManager.shared.customEvent(
+            type: .model,
+            primary: model,
+            secondary: .byok_model
+        )
+
+        guard let apiKey = getAnthropicAPIKey(), !apiKey.isEmpty
+        else {
+            let modelTitle = getModelTitle(getModel(), all: managedModels)
+
+            isThinking = false
+            await animateOutput(
+                content: """
+                    API key not found.
+
+                    You have selected the \(modelTitle) model in **Settings** under the *"Use Own API Key"* section in the **Models** tab.
+
+                    This model requires you to provide an API key.
+
+                    You can create one at: https://console.anthropic.com/settings/keys
+
+                    For setup instructions, visit: https://aithing.dev/quickstart
+                    """
+            )
+            AnalyticsManager.shared.customEvent(
+                type: .error,
+                primary: "missing_api_key",
+                secondary: .status_failure_low
+            )
+            return
+        }
+
+        guard let url = URL(string: "https://api.anthropic.com/v1/messages") else { return }
+
+        var request = URLRequest(url: url)
+        request.httpMethod = "POST"
+        request.setValue("application/json", forHTTPHeaderField: "Content-Type")
+        request.setValue("2023-06-01", forHTTPHeaderField: "anthropic-version")
+        request.setValue("\(apiKey)", forHTTPHeaderField: "x-api-key")
+        request.setValue("extended-cache-ttl-2025-04-11", forHTTPHeaderField: "anthropic-beta")
+
+        var fileCount = 0
+        // query is non-empty only on first parse
+        if !query.isEmpty {
+            for i in 0..<modelContext.count {
+                switch modelContext[i] {
+                case .image(_, _, let base64):
+                    fileCount += 1
+                    AnalyticsManager.shared.customEvent(type: .tab, primary: "file_upload_image")
+                    modelInput.append(
+                        [
+                            "role": "user",
+                            "content": [
+                                [
+                                    "type": "image",
+                                    "source": [
+                                        "type": "base64",
+                                        "media_type": "image/jpeg",
+                                        "data": base64,
+                                    ],
+                                ]
+                            ],
+                        ]
+                    )
+                case .pdf(_, _, _, let base64s):
+                    fileCount += 1
+                    for base64 in base64s {
+                        AnalyticsManager.shared.customEvent(
+                            type: .tab,
+                            primary: "file_upload_pdf_page"
+                        )
+                        modelInput.append(
+                            [
+                                "role": "user",
+                                "content": [
+                                    [
+                                        "type": "image",
+                                        "source": [
+                                            "type": "base64",
+                                            "media_type": "image/jpeg",
+                                            "data": base64,
+                                        ],
+                                    ]
+                                ],
+                            ]
+                        )
+                    }
+                case .text(let name, let text, _):
+                    fileCount += 1
+                    AnalyticsManager.shared.customEvent(type: .tab, primary: "file_upload_text")
+                    modelInput.append(
+                        [
+                            "role": "user",
+                            "content": [
+                                [
+                                    "type": "text",
+                                    "text": "File \(name) content:\n\n\(text)",
+                                ]
+                            ],
+                        ]
+                    )
+                }
+            }
+
+            if !selectedText.isEmpty {
+                modelInput.append(
+                    [
+                        "role": "user",
+                        "content": [
+                            [
+                                "type": "text",
+                                "text": "Selected text:\n\n\(selectedText)",
+                            ]
+                        ],
+                    ]
+                )
+            }
+
+            modelInput.append(
+                [
+                    "role": "user",
+                    "content": [
+                        ["type": "text", "text": buildQuery(query: query)]
+                    ],
+                ]
+            )
+        }
+
+        let body: [String: Any] = [
+            "model": model,
+            "stream": true,
+            "max_tokens": getOutputToken(),
+            "temperature": 0.7,
+            "messages": addCacheBlock(input: nonUsageMessages(from: modelInput), isMessage: true),
+            "tools": addCacheBlock(input: modelTools),
+            "system": addCacheBlock(input: buildSystemMessages()),
+
+        ]
+
+        // Cost Calculation
+        let costPerQuery = getModelCost(getModel(), all: managedModels)
+        let costPerFile = getModelCostImage(getModel(), all: managedModels)
+        let costFile = costPerFile * fileCount
+        let costAgent = costPerQuery * modelAgentCount
+        let total = costPerQuery + costAgent + costFile
+
+        logger.debug("api key: \(apiKey)")
+        logger.debug("model: \(model)")
+        logger.debug("tokens: \(getOutputToken())")
+        logger.debug("messages: \(String(describing: body["messages"]))")
+        logger.debug("tools count: \((body["tools"] as? [[String: Any]])?.count ?? 0)")
+        logger.debug(
+            "cost query: \(costPerQuery) file: \(costFile) agent: \(costAgent) total: \(total)"
+        )
+
+        request.httpBody = try? JSONSerialization.data(withJSONObject: body)
+
+        do {
+            let (stream, response) = try await URLSession.shared.bytes(for: request)
+
+            guard let httpResponse = response as? HTTPURLResponse
+            else {
+                isThinking = false
+                await animateOutput(content: "Invalid response\n\nReport issue at help@aithing.dev")
+                AnalyticsManager.shared.customEvent(
+                    type: .error,
+                    primary: "response_invalid",
+                    secondary: .status_failure_high,
+                )
+                return
+            }
+
+            if httpResponse.statusCode != 200 {
+                isThinking = false
+                var error = ""
+                for try await line in stream.lines {
+                    error += line
+                }
+                if httpResponse.statusCode == 429 {
+                    await animateOutput(
+                        content: """
+                            You’ve reached your API key’s rate limit.
+
+                            Learn more: https://console.anthropic.com/settings/limits
+                            """
+                    )
+                    AnalyticsManager.shared.customEvent(
+                        type: .error,
+                        primary: "response_rate_limit",
+                        secondary: .status_failure_low
+                    )
+                } else {
+                    await animateOutput(
+                        content:
+                            "Error \(httpResponse.statusCode)\n\(error)\n\nReport issue at help@aithing.dev"
+                    )
+                    AnalyticsManager.shared.customEvent(
+                        type: .error,
+                        primary: "response_failure",
+                        secondary: .status_failure_high,
+                    )
+                }
+                return
+            }
+
+            if let appUser {
+                let usage = Usage(
+                    query: (query.isEmpty ? 0 : 1),
+                    agentUse: (query.isEmpty ? 1 : 0),
+                    filesAttached: fileCount
+                )
+                await firestoreManager.incrementUsage(user: appUser, usage: usage)
+                modelInput.append([
+                    "role": "usage",
+                    "content": [
+                        [
+                            "type": "text",
+                            "text": """
+                            Total Usage:
+                            1 \(query.isEmpty ? "Agent Use" : "Query")
+                            \(fileCount) Attached Files                                
+                            """,
+                        ]
+                    ],
+                ])
+
+            } else {
+                AnalyticsManager.shared.customEvent(
+                    type: .error,
+                    primary: "cost_not_calculated",
+                    secondary: .status_failure_high,
+                )
+            }
+
+            modelContext.removeAll()
+
+            var finalResponse = ""
+            var finalToolUseInputParam = ""
+            var finalToolUseId = ""
+            var finalToolUseName = ""
+
+            for try await line in stream.lines {
+                if line.starts(with: "data: ") {
+                    let jsonString = line.replacingOccurrences(of: "data: ", with: "")
+
+                    guard let data = jsonString.data(using: .utf8) else { continue }
+                    guard let json = try? JSONSerialization.jsonObject(with: data) as? [String: Any]
+                    else { continue }
+
+                    guard let data_type = json["type"] as? String else { continue }
+
+                    switch data_type {
+                    case "content_block_start":
+                        guard let content_block = json["content_block"] as? [String: Any] else {
+                            continue
+                        }
+                        guard let content_block_type = content_block["type"] as? String else {
+                            continue
+                        }
+
+                        switch content_block_type {
+                        case "text":
+                            continue
+                        case "tool_use":
+                            guard let id = content_block["id"] as? String else { continue }
+                            guard let name = content_block["name"] as? String else { continue }
+                            finalToolUseId = id
+                            finalToolUseName = name
+                        default:
+                            continue
+                        }
+
+                    case "content_block_delta":
+                        if isTabClosed() {
+                            isThinking = false
+                            logger.info("Exiting text_delta for \(tabId) as it was closed")
+                            AnalyticsManager.shared
+                                .customEvent(type: .tab, primary: "query_stop_on_close")
+                            return
+                        }
+
+                        guard let delta = json["delta"] as? [String: Any] else { continue }
+                        guard let delta_type = delta["type"] as? String else { continue }
+
+                        switch delta_type {
+                        case "text_delta":
+                            guard let text = delta["text"] as? String else { continue }
+                            isThinking = false
+                            finalResponse += String(text)
+                            await MainActor.run {
+                                modelOutput = finalResponse + " " + shimmerPlaceholder()
+                            }
+
+                        case "input_json_delta":
+                            guard let partial_json = delta["partial_json"] as? String else {
+                                continue
+                            }
+                            finalToolUseInputParam += partial_json
+
+                        default:
+                            continue
+                        }
+
+                    case "content_block_stop":
+                        await MainActor.run {
+                            modelOutput = finalResponse
+                        }
+
+                    case "message_delta":
+                        if isTabClosed() {
+                            isThinking = false
+                            logger.info("Exiting message_delta for \(tabId) as it was closed")
+                            AnalyticsManager.shared.customEvent(
+                                type: .tab,
+                                primary: "query_stop_on_close"
+                            )
+                            return
+                        }
+
+                        guard let delta = json["delta"] as? [String: Any] else { continue }
+                        guard let delta_stop_reason = delta["stop_reason"] as? String else {
+                            continue
+                        }
+
+                        if !modelOutput.isEmpty {
+                            modelInput.append([
+                                "role": "assistant",
+                                "content": [["text": modelOutput, "type": "text"]],
+                            ])
+
+                            await createTitle(
+                                query: modelOutput,
+                                model: model,
+                                apiKey: apiKey,
+                                byok: true
+                            )
+
+                            await HistoryStore.shared.store(
+                                id: tabId.uuidString,
+                                title: tabTitle,
+                                history: modelInput
+                            )
+                        }
+
+                        switch delta_stop_reason {
+                        case "max_tokens":
+                            continue
+                        case "tool_use":
+                            modelInput.append([
+                                "role": "assistant",
+                                "content": [
+                                    [
+                                        "type": "tool_use",
+                                        "id": finalToolUseId,
+                                        "name": finalToolUseName,
+                                        "input": parseJSONStringToDictObject(
+                                            finalToolUseInputParam
+                                        ),
+                                    ]
+                                ],
+                            ])
+
+                            finalResponse += "\n\n```Calling tool: \(finalToolUseName)...```\n\n"
+                            await MainActor.run {
+                                modelOutput = finalResponse
+                            }
+                            let result = await mcpManager.callTools(
+                                clientName: getClientName(toolName: finalToolUseName),
+                                name: finalToolUseName,
+                                input: finalToolUseInputParam
+                            )
+
+                            AnalyticsManager.shared.customEvent(
+                                type: .tab,
+                                primary: "query_tool_called"
+                            )
+                            AnalyticsManager.shared.customEvent(
+                                type: .tool,
+                                primary: finalToolUseName,
+                            )
+
+                            logger.debug("Call tool: \(finalToolUseName)")
+                            logger.debug("Tool input: \(finalToolUseInputParam)")
+                            logger.debug("Tool output: \(result)")
+
+                            modelInput.append([
+                                "role": "user",
+                                "content": [
+                                    [
+                                        "type": "tool_result",
+                                        "tool_use_id": finalToolUseId,
+                                        "content": result,
+                                    ]
+                                ],
+                            ])
+
+                            await callModel(query: "")
+                            return
+
+                        default:
+                            continue
+                        }
+
+                    default:
+                        continue
+                    }
+                }
+            }
+        } catch {
+            await MainActor.run {
+                isThinking = false
+                modelOutput =
+                    "Error streaming response: \(error.localizedDescription)\n\nReport issue at help@aithing.dev"
+            }
+        }
+    }
+
+    private func buildQuery(query: String) -> String {
+        return query
+    }
+
+    private func getClientName(toolName: String) -> String {
+        for (clientName, tools) in allClientTools {
+            for tool in tools {
+                if let name = tool["name"] as? String, name == toolName {
+                    return clientName
+                }
+            }
+        }
+        return ""
+    }
+
+    private func addCacheBlock(input: [[String: Any]], isMessage: Bool = false) -> [[String: Any]] {
+        if !getCacheMessages() {
+            return input
+        }
+
+        var updated = input
+
+        if isMessage {
+            guard var last = input.last,
+                var contentArray = last["content"] as? [[String: Any]],
+                var lastContent = contentArray.last
+            else {
+                return input
+            }
+
+            lastContent["cache_control"] = [
+                "type": "ephemeral",
+                "ttl": "5m",
+            ]
+            contentArray[contentArray.count - 1] = lastContent
+            last["content"] = contentArray
+
+            updated[updated.count - 1] = last
+        } else {
+
+            guard var last = input.last else {
+                return input
+            }
+
+            last["cache_control"] = [
+                "type": "ephemeral",
+                "ttl": "5m",
+            ]
+
+            updated[updated.count - 1] = last
+        }
+        return updated
+    }
+
+    private func shimmerPlaceholder() -> String {
+        return "▌"  // or use "…" or a flashing cursor symbol
+    }
+
+    private func buildSystemMessages() -> [[String: Any]] {
+        let formatter = DateFormatter()
+        formatter.dateStyle = .long
+        formatter.timeStyle = .none
+        formatter.locale = Locale(identifier: "en_US")
+        let today = formatter.string(from: Date())
+
+        let messages: [[String: Any]] = [
+            [
+                "type": "text",
+                "text":
+                    """
+                ## Identity  
+                - Your name is **AI Thing**.  
+                - You are an AI tool with a special abilities. 
+                - You can handle simple, complex or repetitive tasks in background.                
+                - You have multiple AI models and agents that users can use for their tasks. 
+                - You are secure and store all data locally. 
+                - Website: aithing.dev
+                - Privacy Policy: aithing.dev/privacy                                                 
+                """,
+            ],
+            [
+                "type": "text",
+                "text": "## Today is \(today).",
+            ],
+            [
+                "type": "text",
+                "text":
+                    """
+                ## Behavior Rules  
+                - Act as an **agent**: perceive instructions, reason, and invoke tools when needed.  
+                - Be **precise, context-aware**, and never guess if info is missing.                   
+                """,
+            ],
+            [
+                "type": "text",
+                "text":
+                    """
+                ## Answer Style  
+                - Keep answers **brief** by default.  
+                - Only elaborate when explicitly asked.  
+                - If in doubt, **ask first** before expanding with detail.  
+                - Output response in Markdown.  
+                """,
+            ],
+        ]
+
+        return messages
+    }
+
+    private func createTitle(query: String, model: String, apiKey: String, byok: Bool) async {
+        if !tabTitle.isEmpty {
+            return
+        }
+
+        // Check if version is breakglassed
+        if await firestoreManager.getBreakglass() {
+            return
+        }
+
+        // Check if version is expired
+        if await firestoreManager.getExpired() {
+            return
+        }
+
+        guard let url = URL(string: "https://api.anthropic.com/v1/messages") else { return }
+
+        var request = URLRequest(url: url)
+        request.httpMethod = "POST"
+        request.setValue("application/json", forHTTPHeaderField: "Content-Type")
+        request.setValue("2023-06-01", forHTTPHeaderField: "anthropic-version")
+        request.setValue("\(apiKey)", forHTTPHeaderField: "x-api-key")
+        request.setValue("extended-cache-ttl-2025-04-11", forHTTPHeaderField: "anthropic-beta")
+
+        let input = [
+            [
+                "role": "user",
+                "content": [
+                    ["type": "text", "text": buildQuery(query: query)]
+                ],
+            ]
+        ]
+
+        var bestModel = model
+        if let cheapestModel = getCheapestModel(in: managedModels), !byok {
+            bestModel = cheapestModel.id
+        }
+
+        let body: [String: Any] = [
+            "model": bestModel,
+            "stream": false,
+            "max_tokens": 10,
+            "temperature": 0.7,
+            "messages": input,
+            "system":
+                "Generate a concise title of no more than 18 characters. Do not include quotation marks or any extra text. Output only the title, nothing else.",
+        ]
+
+        request.httpBody = try? JSONSerialization.data(withJSONObject: body)
+
+        do {
+            let (data, response) = try await URLSession.shared.data(for: request)
+
+            guard let httpResponse = response as? HTTPURLResponse,
+                (200..<300).contains(httpResponse.statusCode)
+            else {
+                logger.error("Bad HTTP response")
+                return
+            }
+
+            // Parse JSON manually
+            if let json = try JSONSerialization.jsonObject(with: data) as? [String: Any],
+                let contentArray = json["content"] as? [[String: Any]]
+            {
+                // Find the first item with type = "text"
+                for item in contentArray {
+                    if let type = item["type"] as? String, type == "text",
+                        let text = item["text"] as? String
+                    {
+                        tabTitle = text
+                        return
+                    }
+                }
+            }
+            return
+        } catch {
+            return
+        }
+    }
+
+    private func animateOutput(content: String) async {
+        var partial = ""
+        for text in content.split(separator: " ") {
+            partial += String(text) + " "
+            await MainActor.run {
+                modelOutput = partial + " " + shimmerPlaceholder()
+            }
+            do {
+                try await Task.sleep(for: .milliseconds(10))
+            } catch {}
+        }
+        modelOutput = partial
+    }
+
+    private func isTabClosed() -> Bool {
+        return false
+        !allTabs.contains(where: { $0.id == tabId })
+    }
+}

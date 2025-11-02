@@ -29,33 +29,6 @@ struct NotchShape: Shape {
 
         var p = Path()
 
-        //        p.move(to: CGPoint(x: tl.x, y: tl.y))
-        //        p.addQuadCurve(
-        //            to: CGPoint(x: tl.x + r, y: tl.y + r),
-        //            control: CGPoint(x: tl.x + r, y: tl.y)
-        //        )
-        //
-        //        p.addLine(to: CGPoint(x: bl.x + r, y: bl.y - r))
-        //        p.addQuadCurve(
-        //            to: CGPoint(x: bl.x + 2 * r, y: bl.y),
-        //            control: CGPoint(x: bl.x + r, y: bl.y)
-        //        )
-        //
-        //        p.addLine(to: CGPoint(x: br.x - 2 * r, y: br.y))
-        //        p.addQuadCurve(
-        //            to: CGPoint(x: br.x - r, y: br.y - r),
-        //            control: CGPoint(x: br.x - r, y: br.y)
-        //        )
-        //
-        //        p.addLine(to: CGPoint(x: tr.x - r, y: tr.y + r))
-        //        p.addQuadCurve(
-        //            to: CGPoint(x: tr.x, y: tr.y),
-        //            control: CGPoint(x: tr.x - r, y: tr.y)
-        //        )
-        //
-        //        p.addLine(to: CGPoint(x: tl.x, y: tl.y))
-        //        p.closeSubpath()
-
         p.move(to: CGPoint(x: tr.x, y: tr.y))
         p.addQuadCurve(
             to: CGPoint(x: tr.x - r, y: tr.y + r),
