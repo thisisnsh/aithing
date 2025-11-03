@@ -51,57 +51,18 @@ final class ChatController: ObservableObject {
 
 struct ChatView: View {
     @ObservedObject var controller: ChatController
-    let lastUpdated: String
-    //    let continueConversation: (_ history: History) -> Void
-
-    var formattedLastUpdated: String? {
-        return formatEpoch(lastUpdated)
-    }
 
     var body: some View {
         VStack(spacing: 0) {
-            if let formattedLastUpdated {
-                HStack {
-                    Text("Last updated: \(formattedLastUpdated)")
-                        .font(.footnote)
-                        .foregroundColor(.secondary)
-                    Spacer()
-                    if controller.history != nil {
-                        Button {
-                            //                            continueConversation(controller.history!)
-                        } label: {
-                            HStack {
-                                Text("Continue")
-                                    .font(.system(size: 12, weight: .medium))
-                                Image(systemName: "arrow.up.right")
-                                    .resizable()
-                                    .aspectRatio(contentMode: .fit)
-                                    .frame(width: 8)
-                            }
-                            .padding(.vertical, 4)
-                            .padding(.horizontal, 8)
-                            .background(Color.black.opacity(0.2))
-                            .clipShape(RoundedRectangle(cornerRadius: 8))
-                        }
-                        .buttonStyle(.plain)
-                    }
-                }
-                .padding(.top, 4)
-                .padding(.horizontal, 16)
-                .padding(.vertical, 8)
-
-                Divider()
-            }
-
             ScrollViewReader { proxy in
-                ScrollView {
+                ScrollView(.vertical, showsIndicators: false) {
                     LazyVStack(alignment: .leading, spacing: 12) {
                         ForEach(controller.items) { item in
                             ChatBubble(item: item)
                                 .id(item.id)
                         }
                     }
-                    .padding(16)
+                    .padding(.vertical, 16)
                 }
                 .onReceive(controller.$items) { _ in
                     if let lastID = controller.items.last?.id {
@@ -127,16 +88,13 @@ struct ChatBubble: View {
 
             switch item.payload {
             case .text(let text):
-                if item.role == .usage {
-                    UsageBubble(text: text)
-                        .frame(maxWidth: 500, alignment: .leading)
-                } else {
+                if item.role != .usage {
                     TextBubble(text: text, isUser: item.role == .user)
                         .frame(maxWidth: 500, alignment: item.role == .user ? .trailing : .leading)
                 }
             case .image(let image):
                 ImageBubble(image: image, isUser: item.role == .user)
-                    .frame(maxWidth: 320, alignment: item.role == .user ? .trailing : .leading)
+                    .frame(maxWidth: 300, alignment: item.role == .user ? .trailing : .leading)
             case .toolUse(let name):
                 TextBubble(text: "Called tool: \(name)", isUser: false)
                     .frame(maxWidth: 500, alignment: item.role == .user ? .trailing : .leading)
@@ -152,7 +110,7 @@ struct UsageBubble: View {
     let text: String
 
     var body: some View {
-        Text(text)
+        MarkdownText(text: text)
             .font(.system(size: 10, weight: .medium, design: .monospaced))
             .textSelection(.enabled)
             .padding(8)
@@ -172,17 +130,13 @@ struct TextBubble: View {
     let isUser: Bool
 
     var body: some View {
-        Text(text)
+        MarkdownText(text: text)
             .font(.system(size: 12, weight: .medium))
             .textSelection(.enabled)
             .padding(8)
             .background(
                 RoundedRectangle(cornerRadius: 8, style: .continuous)
                     .fill(isUser ? Color.gray.opacity(0.1) : Color.clear)
-            )
-            .overlay(
-                RoundedRectangle(cornerRadius: 8, style: .continuous)
-                    .stroke(Color.gray.opacity(0.5), lineWidth: isUser ? 0 : 1)
             )
     }
 }

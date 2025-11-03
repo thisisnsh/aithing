@@ -100,11 +100,11 @@ extension AppDelegate {
         case .alpha:  // collapsed notch
             return (60, 100)
         case .beta:  // expanded notch
-            return (60, 200)
+            return (200, 600)
         case .gamma:  // chat window shown (use expanded for now)
-            return (360, 600)
+            return (560, 600)
         case .delta:  // chat window expanded (use expanded for now)
-            return (600, 600)
+            return (860, 600)
         }
     }
 

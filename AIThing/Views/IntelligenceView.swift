@@ -21,7 +21,6 @@ struct IntelligenceView: View {
     @Binding var allClientTools: [String: [[String: Any]]]
     @Binding var managedModels: [ModelInfo]
     @ObservedObject var controller: ChatController
-    let lastUpdated: String
 
     let resizeAlpha: () -> Void
     let resizeBeta: () -> Void
@@ -60,11 +59,13 @@ struct IntelligenceView: View {
     var body: some View {
         VStack {
             TitleView()
+                .padding(8)
 
-            ChatView(controller: controller, lastUpdated: lastUpdated).padding(.vertical, 8)
+            Divider()
+                .padding(.horizontal, -8)
 
-            //            ResponseView()
-            //                .padding(.vertical, 8)
+            ChatView(controller: controller)
+                .padding(.vertical, -8)
 
             Spacer()
 
@@ -94,6 +95,7 @@ struct IntelligenceView: View {
         .onAppear {
             guard let history = controller.history else { return }
             tabId = UUID(uuidString: history.id) ?? UUID()
+            tabTitle = history.title ?? ""
         }
         .task {
             let notification = await firestoreManager.getNotification() ?? ""
@@ -134,7 +136,7 @@ struct IntelligenceView: View {
                 .onHover { hoverGreen = $0 }
 
             Text(tabTitle)
-                .font(.system(size: 14, weight: .medium))
+                .font(.system(size: 12, weight: .medium))
                 .foregroundStyle(.white)
                 .padding(.leading, 8)
 

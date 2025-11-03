@@ -8,16 +8,6 @@
 import SwiftUI
 import os
 
-struct TabItem: Identifiable, Equatable {
-    let id: UUID
-    let history: History?
-
-    init(id: UUID = UUID(), history: History? = nil) {
-        self.id = id
-        self.history = history
-    }
-}
-
 struct NotchView: View {
     @StateObject var mcpManager = MCPManager()
     @StateObject var loginManager = LoginManager()
@@ -30,12 +20,13 @@ struct NotchView: View {
     @State private var width: CGFloat = 0
     @State private var height: CGFloat = 0
     @State private var windowSize = WindowSize.alpha
+    @State private var hoverTask: Task<Void, Never>?
 
     @State private var managedModels: [ModelInfo] = []
     @State private var agents: [AgentEntry] = []
     @State private var allClientTools: [String: [[String: Any]]] = [:]
 
-    @State private var focusedIndex: Int = 0
+    @State private var focusedIndex: Int = -1
     @State private var histories: [History] = []
     @State private var index = 0
     @StateObject private var chatController = ChatController()
@@ -44,6 +35,8 @@ struct NotchView: View {
     @State private var showToast = false
     @State private var toastText = ""
     @State private var toastColor: Color = .yellow
+    @State private var hoverSidebar = false
+    @State private var resizeSidebar = false
 
     // Managed Agents
     // StateObjects not persisted after application quit
@@ -71,7 +64,6 @@ struct NotchView: View {
                             allClientTools: $allClientTools,
                             managedModels: $managedModels,
                             controller: chatController,
-                            lastUpdated: histories[safe: index]?.lastUpdated ?? "—",
                             resizeAlpha: resizeAlpha,
                             resizeBeta: resizeBeta,
                             resizeGamma: resizeGamma,
@@ -85,44 +77,61 @@ struct NotchView: View {
                     }
                 }
 
-                VStack(alignment: .center, spacing: 0) {
-                    LogoShape()
-                        .fill(.white)
-                        .scaledToFit()
-                        .frame(height: 32)
-                        .padding(.top, 8)
+                VStack(alignment: .leading, spacing: 0) {
+                    HStack {
+                        LogoShape()
+                            .fill(.white)
+                            .scaledToFit()
+                            .frame(height: 32)
+
+                        if windowSize.rawValue >= WindowSize.beta.rawValue {
+                            Spacer()
+
+                            Image(systemName: "sidebar.right")
+                                .resizable()
+                                .frame(width: 14, height: 14)
+                                .padding(8)
+                                .background(hoverSidebar ? Color.white.opacity(0.1) : .clear)
+                                .cornerRadius(8)
+                                .onHover { hoverSidebar = $0 }
+                                .onTapGesture { resizeSidebar.toggle() }
+                        }
+                    }
+                    .padding(.top, 8)
+                    .padding(.horizontal, windowSize.rawValue >= WindowSize.beta.rawValue ? 16 : 0)
 
                     if windowSize.rawValue >= WindowSize.beta.rawValue {
-                        Divider().padding(.vertical, 8)
+                        Divider().opacity(0)
 
-                        Image(systemName: "plus.circle.fill")
-                            .resizable()
-                            .frame(width: 20, height: 20)
-                            .onTapGesture {
-                                resizeGamma()
-                            }
-                            .padding(.top, 8)
+                        HoverableTabButton(
+                            title: "New Chat",
+                            isActive: false,
+                            action: resizeGamma,
+                            deleteAction: {},
+                            image: "plus.circle.fill",
+                            isDeletable: false,
+                        )
+                        .padding(.top, 8)
+
+                        HoverableTabButton(
+                            title: "Settings",
+                            isActive: false,
+                            action: { showSettings.toggle() },
+                            deleteAction: {},
+                            image: "gearshape.fill",
+                            isDeletable: false,
+                        )
 
                         if histories.count > 0 {
-                            Divider().padding(.vertical, 8)
+                            Divider().opacity(0).padding(.vertical, 8)
                         }
 
-                        HStack(spacing: 0) {
-                            Sidebar()
-                        }
-                        .onAppear {
-                            Task {
-                                histories = await HistoryStore.shared.getAll(limit: 100)
-                                if let first = histories.first {
-                                    chatController.setHistory(first)
-                                }
-                            }
-                        }
+                        Sidebar()
                     }
 
                     Spacer()
                 }
-                .frame(width: 60)
+                .frame(width: windowSize.rawValue >= WindowSize.beta.rawValue ? 200 : 60)
             }
             .padding(.vertical, 24)
         }
@@ -140,16 +149,30 @@ struct NotchView: View {
         }
         .onAppear {
             resizeAlpha()
+            Task {
+                histories = await HistoryStore.shared.getAll(limit: 100)
+                if let first = histories.first {
+                    chatController.setHistory(first)
+                }
+            }
         }
         .onHover { hovering in
-            if windowSize != WindowSize.gamma {
-                if hovering {
-                    if windowSize == WindowSize.alpha {
-                        resizeBeta()
-                    }
-                } else {
-                    if windowSize == WindowSize.beta {
-                        resizeAlpha()
+            hoverTask?.cancel()  // cancel any pending hover change
+            hoverTask = Task { @MainActor in
+                // delay a bit before applying the hover state
+                try? await Task.sleep(nanoseconds: 150_000_000)  // 150ms
+
+                guard !Task.isCancelled else { return }
+
+                if windowSize != WindowSize.gamma {
+                    if hovering {
+                        if windowSize == WindowSize.alpha {
+                            resizeBeta()
+                        }
+                    } else {
+                        if windowSize == WindowSize.beta {
+                            resizeAlpha()
+                        }
                     }
                 }
             }
@@ -159,19 +182,13 @@ struct NotchView: View {
     private func Sidebar() -> some View {
         ScrollView(.vertical, showsIndicators: false) {
             LazyVStack(alignment: .leading, spacing: 0) {
-                Color.clear.frame(height: 16)
-
-                Text("Maximum 100")
-                    .font(.system(size: 10, weight: .medium))
-                    .opacity(0.5)
-                    .padding(.horizontal, 16)
-                    .padding(.bottom, 8)
-
                 ForEach(Array(histories.enumerated()), id: \.offset) { (i, h) in
                     HoverableTabButton(
-                        title: h.title ?? title(for: h.history, fallback: "Session #\(i + 1)"),
+                        title: h.title
+                            ?? createTitle(for: h.history, fallback: "Session #\(i + 1)"),
                         isActive: (i == index),
                         action: {
+                            resizeGamma()
                             index = i
                             chatController.setHistory(h)
                             AnalyticsManager.shared.customEvent(
@@ -192,6 +209,7 @@ struct NotchView: View {
                                     chatController.setHistory(history)
                                 }
                             }
+                            resizeGamma()
                             AnalyticsManager.shared.customEvent(
                                 type: .action,
                                 primary: "history_remove"
@@ -201,75 +219,16 @@ struct NotchView: View {
                 }
 
                 if histories.isEmpty {
-                    Text("No history yet")
+                    Text("No chats")
                         .foregroundColor(.secondary)
                         .font(.system(size: 10))
-                        .padding(.horizontal, 16)
-                        .padding(.vertical, 8)
+                        .padding(20)
                 }
 
                 Color.clear.frame(height: 16)
             }
         }
         .frame(width: 200)
-        .background(Color.gray.opacity(0.08))
-    }
-
-    private func title(for history: [[String: Any]], fallback: String) -> String {
-        for entry in history {
-            guard let content = entry["content"] as? [[String: Any]] else { continue }
-            for item in content {
-                if (item["type"] as? String) == "text",
-                    let text = item["text"] as? String,
-                    !text.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
-                {
-                    return String(text.prefix(60))
-                }
-            }
-        }
-        return fallback
-    }
-
-    struct HoverableTabButton: View {
-        let title: String
-        let isActive: Bool
-        let action: () -> Void
-        let deleteAction: () -> Void
-
-        @State private var isHovered = false
-
-        var body: some View {
-            HStack(spacing: 8) {
-                // Main clickable area
-                Button(action: action) {
-                    Text(title)
-                        .font(.system(size: 12, weight: .medium))
-                        .lineLimit(1)
-                        .frame(maxWidth: .infinity, alignment: .leading)
-                        .padding(.vertical, 8)
-                        .padding(.horizontal, 12)
-                        .background(isActive ? Color.black.opacity(0.5) : .clear)
-                        .clipShape(RoundedRectangle(cornerRadius: 8))
-                }
-                .buttonStyle(.plain)
-
-                // Trash button (shown only when hovered)
-                if isHovered {
-                    Button(action: deleteAction) {
-                        Image(systemName: "trash.fill")
-                            .foregroundColor(.red)
-                    }
-                    .buttonStyle(.plain)
-                    .transition(.opacity.combined(with: .move(edge: .trailing)))
-                }
-            }
-            .padding(.horizontal, 8)
-            .onHover { hovering in
-                withAnimation(.easeInOut(duration: 0.2)) {
-                    isHovered = hovering
-                }
-            }
-        }
     }
 
     private func Settings() -> some View {
@@ -280,33 +239,7 @@ struct NotchView: View {
         MarkdownText(text: toastText)
     }
 
-    private func resizeAlpha() {
-        windowSize = WindowSize.alpha
-        (width, height) = updateWindowSize(windowSize)
-    }
-
-    private func resizeBeta() {
-        windowSize = WindowSize.beta
-        (width, height) = updateWindowSize(windowSize)
-    }
-
-    private func resizeGamma() {
-        windowSize = WindowSize.gamma
-        (width, height) = updateWindowSize(windowSize)
-    }
-
-    private func resizeDelta() {
-        windowSize = WindowSize.delta
-        (width, height) = updateWindowSize(windowSize)
-    }
-
-    private func toggleGammaDelta() {
-        if windowSize == WindowSize.delta {
-            resizeGamma()
-        } else {
-            resizeDelta()
-        }
-    }
+    // MARK: AI Stuff
 
     private func loadAllClientTools() async {
         let newAgents = getAgentEntries()
@@ -583,6 +516,50 @@ struct NotchView: View {
         }
     }
 
+    // MARK: Utility
+
+    private func createTitle(for history: [[String: Any]], fallback: String) -> String {
+        for entry in history {
+            guard let content = entry["content"] as? [[String: Any]] else { continue }
+            for item in content {
+                if (item["type"] as? String) == "text",
+                    let text = item["text"] as? String,
+                    !text.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
+                {
+                    return String(text.prefix(60))
+                }
+            }
+        }
+        return fallback
+    }
+
+    private func resizeAlpha() {
+        windowSize = WindowSize.alpha
+        (width, height) = updateWindowSize(windowSize)
+    }
+
+    private func resizeBeta() {
+        windowSize = WindowSize.beta
+        (width, height) = updateWindowSize(windowSize)
+    }
+
+    private func resizeGamma() {
+        windowSize = WindowSize.gamma
+        (width, height) = updateWindowSize(windowSize)
+    }
+
+    private func resizeDelta() {
+        windowSize = WindowSize.delta
+        (width, height) = updateWindowSize(windowSize)
+    }
+
+    private func toggleGammaDelta() {
+        if windowSize == WindowSize.delta {
+            resizeGamma()
+        } else {
+            resizeDelta()
+        }
+    }
 }
 
 extension Array {
