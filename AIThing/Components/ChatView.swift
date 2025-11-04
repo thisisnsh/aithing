@@ -35,45 +35,79 @@ struct ChatItem: Identifiable, Equatable {
     let payload: ChatPayload
 }
 
-final class ChatController: ObservableObject {
-    @Published var items: [ChatItem] = []
-    @Published var history: History?
-    func setHistory(_ history: History?) {
-        if let history {
-            items = parseHistory(history.history)
-            self.history = history
-        } else {
-            items = []
-            self.history = history
-        }
-    }
-}
-
 struct ChatView: View {
-    @ObservedObject var controller: ChatController
+    @Binding var history: History?
+    @Binding var isThinking: Bool
+    @Binding var isThinkingBlinking: Bool
+    @Binding var textSize: CGFloat
+    @Binding var modelOutput: String
+
+    @State private var items: [ChatItem] = []
 
     var body: some View {
         VStack(spacing: 0) {
             ScrollViewReader { proxy in
                 ScrollView(.vertical, showsIndicators: false) {
                     LazyVStack(alignment: .leading, spacing: 12) {
-                        ForEach(controller.items) { item in
+                        ForEach(items) { item in
                             ChatBubble(item: item)
-                                .id(item.id)
+                        }
+
+                        // Temporary Output
+                        if !modelOutput.isEmpty {
+                            ChatBubble(
+                                item: ChatItem(
+                                    role: .assistant,
+                                    payload: ChatPayload.text(modelOutput)
+                                )
+                            )
+                        } else if isThinking {
+                            ChatBubble(
+                                item: ChatItem(
+                                    role: .assistant,
+                                    payload: ChatPayload.text("Thinking...")
+                                )
+                            )
+                            .opacity(isThinkingBlinking ? 1 : 0.4)
+                            .onAppear {
+                                withAnimation(
+                                    .easeInOut(duration: 0.6).repeatForever(autoreverses: true)
+                                ) { isThinkingBlinking.toggle() }
+                            }
+                        }
+
+                        Color.clear.frame(height: 16).id("Bottom")
+                    }
+                    .padding(.top, 16)
+                }
+                .onChange(of: items) { _ in
+                    DispatchQueue.main.async {
+                        withAnimation(.easeOut(duration: 0.25)) {
+                            proxy.scrollTo("Bottom", anchor: .bottom)
                         }
                     }
-                    .padding(.vertical, 16)
                 }
-                .onReceive(controller.$items) { _ in
-                    if let lastID = controller.items.last?.id {
-                        DispatchQueue.main.async {
-                            withAnimation(.easeOut(duration: 0.25)) {
-                                proxy.scrollTo(lastID, anchor: .bottom)
-                            }
+                .onChange(of: modelOutput) { _ in
+                    DispatchQueue.main.async {
+                        withAnimation(.easeOut(duration: 0.25)) {
+                            proxy.scrollTo("Bottom", anchor: .bottom)
                         }
                     }
                 }
             }
+        }
+        .onChange(of: history) { _ in
+            setHistory(history)
+        }
+    }
+
+    private func setHistory(_ history: History?) {
+        if let history {
+            items = parseHistory(history.history)
+            self.history = history
+        } else {
+            items = []
+            self.history = history
         }
     }
 }

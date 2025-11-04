@@ -17,22 +17,18 @@ struct IntelligenceView: View {
     @EnvironmentObject var firestoreManager: FirestoreManager
     @StateObject var screenshotMonitor = ScreenshotMonitor()
 
-    @Binding var isFocused: Bool
+    let tabId: String
     @Binding var allClientTools: [String: [[String: Any]]]
     @Binding var managedModels: [ModelInfo]
-    @ObservedObject var controller: ChatController
 
-    let resizeAlpha: () -> Void
-    let resizeBeta: () -> Void
-    let resizeGamma: () -> Void
-    let resizeDelta: () -> Void
-    let toggleGammaDelta: () -> Void
+    let close: () -> Void
+    let minimize: () -> Void
+    let expand: () -> Void
     let reconnectManagedAgents: () async -> Void
 
     let logger = Logger(subsystem: "com.thisisnsh.mac.AIThing", category: "IntelligenceView")
 
-    @State private var tabId = UUID()
-    @State private var tabTitle: String = ""
+    @State private var tabTitle: String = "New Chat"
     @State private var inputHeight: CGFloat = 24
     private let baseHeight: CGFloat = 24
     @State private var textSize: CGFloat = 14
@@ -40,6 +36,7 @@ struct IntelligenceView: View {
     @State private var isThinking: Bool = false
     @State private var isThinkingBlinking: Bool = false
 
+    @State private var history: History?
     @State private var modelInput: [[String: Any]] = []
     @State private var modelOutput: String = ""
     @State private var modelContext: [DroppedContent] = []
@@ -64,7 +61,7 @@ struct IntelligenceView: View {
             Divider()
                 .padding(.horizontal, -8)
 
-            ChatView(controller: controller)
+            ResponseView()
                 .padding(.vertical, -8)
 
             Spacer()
@@ -92,19 +89,35 @@ struct IntelligenceView: View {
         .background(.white.opacity(0.1))
         .clipShape(RoundedRectangle(cornerRadius: 8))
         .padding(.leading, 8)
-        .onAppear {
-            guard let history = controller.history else { return }
-            tabId = UUID(uuidString: history.id) ?? UUID()
-            tabTitle = history.title ?? ""
-        }
         .task {
             let notification = await firestoreManager.getNotification() ?? ""
             if !notification.isEmpty {
-                modelOutput = notification
+                history = History(
+                    id: tabId,
+                    lastUpdated: String(Int64(Date().timeIntervalSince1970)),
+                    title: "Notification",
+                    history: [
+                        [
+                            "role": "user",
+                            "content": [
+                                [
+                                    "type": "text",
+                                    "text": notification,
+                                ]
+                            ],
+                        ]
+                    ]
+                )
+            } else {
+                history = await HistoryStore.shared.get(id: tabId)
             }
+
+            guard let history = history else { return }
+            modelInput = history.history
+            tabTitle = history.title ?? "New Chat"
         }
         .onReceive(screenshotMonitor.$latestScreenshot) { ss in
-            if let ss = ss, isFocused {
+            if let ss = ss {
                 Task {
                     let results = await DragFileManager.processPaths([ss.url])
                     for r in results {
@@ -120,19 +133,19 @@ struct IntelligenceView: View {
             Circle()
                 .frame(width: 12, height: 12)
                 .foregroundStyle(hoverRed ? .red.opacity(0.5) : .red)
-                .onTapGesture { resizeAlpha() }
+                .onTapGesture { close() }
                 .onHover { hoverRed = $0 }
 
             Circle()
                 .frame(width: 12, height: 12)
                 .foregroundStyle(hoverYellow ? .yellow.opacity(0.5) : .yellow)
-                .onTapGesture { resizeAlpha() }
+                .onTapGesture { minimize() }
                 .onHover { hoverYellow = $0 }
 
             Circle()
                 .frame(width: 12, height: 12)
                 .foregroundStyle(hoverGreen ? .green.opacity(0.5) : .green)
-                .onTapGesture { toggleGammaDelta() }
+                .onTapGesture { expand() }
                 .onHover { hoverGreen = $0 }
 
             Text(tabTitle)
@@ -146,35 +159,13 @@ struct IntelligenceView: View {
     }
 
     private func ResponseView() -> some View {
-        ScrollView {
-            VStack(alignment: .leading, spacing: 0) {
-                if isThinking {
-                    Text("Thinking...")
-                        .foregroundColor(.white)
-                        .font(.system(size: textSize))
-                        .frame(maxWidth: .infinity, alignment: .leading)
-                        .opacity(isThinkingBlinking ? 1 : 0.4)
-                        .onAppear {
-                            withAnimation(
-                                .easeInOut(duration: 0.6).repeatForever(autoreverses: true)
-                            ) {
-                                isThinkingBlinking.toggle()
-                            }
-                        }
-                } else {
-                    ZStack(alignment: .topTrailing) {
-                        MarkdownText(text: modelOutput)
-                            .foregroundColor(.white)
-                            .font(.system(size: textSize))
-                            .frame(maxWidth: .infinity, alignment: .leading)
-                    }
-                }
-
-                Color.clear
-                    .frame(height: 1)
-                    .id("BOTTOM")
-            }
-        }
+        ChatView(
+            history: $history,
+            isThinking: $isThinking,
+            isThinkingBlinking: $isThinkingBlinking,
+            textSize: $textSize,
+            modelOutput: $modelOutput
+        )
     }
 
     private func ContextView() -> some View {
@@ -305,8 +296,6 @@ struct IntelligenceView: View {
             }
         }
         .dropDestination(for: URL.self) { urls, _ in
-            if !isFocused { return false }
-
             Task {
                 let results = await DragFileManager.processPaths(urls)
                 for r in results {
@@ -317,9 +306,7 @@ struct IntelligenceView: View {
             // You can’t know yet, so just return true to accept the drop.
             return true
         } isTargeted: {
-            if isFocused {
-                isDropping = $0
-            }
+            isDropping = $0
         }
     }
 
@@ -329,11 +316,11 @@ extension IntelligenceView {
     private func handleQuery() async {
         let trimmed = query.trimmingCharacters(in: .whitespacesAndNewlines)
         guard !trimmed.isEmpty else { return }
-
+        query = ""
         modelOutput = ""
         isThinking = true
-
         await callModel(query: trimmed)
+        modelOutput = ""
     }
 
     private func callModel(query: String) async {
@@ -346,6 +333,8 @@ extension IntelligenceView {
                     We apologize for the inconvenience. The app will be re-enabled soon.
                     For updates, please contact help@aithing.dev.
                     """
+                ,
+                notification: true
             )
             AnalyticsManager.shared.customEvent(
                 type: .error,
@@ -363,6 +352,8 @@ extension IntelligenceView {
                     Current version has expired.
                     Please [upgrade the version](https://aithing.dev/upgrade) to enjoy new features and continue using the app.
                     """
+                ,
+                notification: true
             )
             AnalyticsManager.shared.customEvent(
                 type: .error,
@@ -385,6 +376,8 @@ extension IntelligenceView {
 
                             Please contact help@aithing.dev.
                             """
+                        ,
+                        notification: true
                     )
                     return
                 }
@@ -401,6 +394,8 @@ extension IntelligenceView {
 
                     Report issue at help@aithing.dev
                     """
+                ,
+                notification: true
             )
             AnalyticsManager.shared.customEvent(
                 type: .error,
@@ -416,6 +411,8 @@ extension IntelligenceView {
 
                     Read our [Privacy Policy](https://aithing.dev/privacy)
                     """
+                ,
+                notification: true
             )
             AnalyticsManager.shared.customEvent(
                 type: .error,
@@ -468,6 +465,8 @@ extension IntelligenceView {
 
                     For setup instructions, visit: https://aithing.dev/quickstart
                     """
+                ,
+                notification: true
             )
             AnalyticsManager.shared.customEvent(
                 type: .error,
@@ -608,7 +607,10 @@ extension IntelligenceView {
             guard let httpResponse = response as? HTTPURLResponse
             else {
                 isThinking = false
-                await animateOutput(content: "Invalid response\n\nReport issue at help@aithing.dev")
+                await animateOutput(
+                    content: "Invalid response\n\nReport issue at help@aithing.dev",
+                    notification: true
+                )
                 AnalyticsManager.shared.customEvent(
                     type: .error,
                     primary: "response_invalid",
@@ -630,6 +632,8 @@ extension IntelligenceView {
 
                             Learn more: https://console.anthropic.com/settings/limits
                             """
+                        ,
+                        notification: true
                     )
                     AnalyticsManager.shared.customEvent(
                         type: .error,
@@ -639,7 +643,8 @@ extension IntelligenceView {
                 } else {
                     await animateOutput(
                         content:
-                            "Error \(httpResponse.statusCode)\n\(error)\n\nReport issue at help@aithing.dev"
+                            "Error \(httpResponse.statusCode)\n\(error)\n\nReport issue at help@aithing.dev",
+                        notification: true
                     )
                     AnalyticsManager.shared.customEvent(
                         type: .error,
@@ -680,6 +685,16 @@ extension IntelligenceView {
             }
 
             modelContext.removeAll()
+
+            // Store the current input
+            await HistoryStore.shared.store(
+                id: tabId,
+                title: tabTitle,
+                history: modelInput
+            )
+            // Fetch and display it
+            history = await HistoryStore.shared.get(id: tabId)
+            print(history?.history)
 
             var finalResponse = ""
             var finalToolUseInputParam = ""
@@ -783,7 +798,7 @@ extension IntelligenceView {
                             )
 
                             await HistoryStore.shared.store(
-                                id: tabId.uuidString,
+                                id: tabId,
                                 title: tabTitle,
                                 history: modelInput
                             )
@@ -972,7 +987,7 @@ extension IntelligenceView {
     }
 
     private func createTitle(query: String, model: String, apiKey: String, byok: Bool) async {
-        if !tabTitle.isEmpty {
+        if !tabTitle.isEmpty || tabTitle == "New Chat" {
             return
         }
 
@@ -1051,7 +1066,7 @@ extension IntelligenceView {
         }
     }
 
-    private func animateOutput(content: String) async {
+    private func animateOutput(content: String, notification: Bool) async {
         var partial = ""
         for text in content.split(separator: " ") {
             partial += String(text) + " "
@@ -1063,6 +1078,28 @@ extension IntelligenceView {
             } catch {}
         }
         modelOutput = partial
+
+        if notification {
+            history = History(
+                id: tabId,
+                lastUpdated: String(Int64(Date().timeIntervalSince1970)),
+                title: "Notification",
+                history: [
+                    [
+                        "role": "user",
+                        "content": [
+                            [
+                                "type": "text",
+                                "text": modelOutput,
+                            ]
+                        ],
+                    ]
+                ]
+            )
+        } else {
+            history = await HistoryStore.shared.get(id: tabId)
+        }
+        modelOutput = ""
     }
 
     private func isTabClosed() -> Bool {

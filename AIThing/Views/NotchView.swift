@@ -20,16 +20,15 @@ struct NotchView: View {
     @State private var width: CGFloat = 0
     @State private var height: CGFloat = 0
     @State private var windowSize = WindowSize.alpha
+    @State private var lastExpandedWindowSize = WindowSize.beta
     @State private var hoverTask: Task<Void, Never>?
 
     @State private var managedModels: [ModelInfo] = []
     @State private var agents: [AgentEntry] = []
     @State private var allClientTools: [String: [[String: Any]]] = [:]
 
-    @State private var focusedIndex: Int = -1
+    @State private var tabId: String = UUID().uuidString
     @State private var histories: [History] = []
-    @State private var index = 0
-    @StateObject private var chatController = ChatController()
 
     @State private var showSettings = false
     @State private var showToast = false
@@ -57,23 +56,18 @@ struct NotchView: View {
                         Settings()
                     } else {
                         IntelligenceView(
-                            isFocused: Binding(
-                                get: { focusedIndex == index },
-                                set: { if $0 { focusedIndex = index } }
-                            ),
+                            tabId: tabId,
                             allClientTools: $allClientTools,
                             managedModels: $managedModels,
-                            controller: chatController,
-                            resizeAlpha: resizeAlpha,
-                            resizeBeta: resizeBeta,
-                            resizeGamma: resizeGamma,
-                            resizeDelta: resizeDelta,
-                            toggleGammaDelta: toggleGammaDelta,
+                            close: { close() },
+                            minimize: { minimize() },
+                            expand: { maximize() },
                             reconnectManagedAgents: reconnectManagedAgents,
                         )
                         .environmentObject(mcpManager)
                         .environmentObject(loginManager)
                         .environmentObject(firestoreManager)
+                        .id(tabId)
                     }
                 }
 
@@ -106,7 +100,10 @@ struct NotchView: View {
                         HoverableTabButton(
                             title: "New Chat",
                             isActive: false,
-                            action: resizeGamma,
+                            action: {
+                                open()
+                                tabId = UUID().uuidString
+                            },
                             deleteAction: {},
                             image: "plus.circle.fill",
                             isDeletable: false,
@@ -116,7 +113,10 @@ struct NotchView: View {
                         HoverableTabButton(
                             title: "Settings",
                             isActive: false,
-                            action: { showSettings.toggle() },
+                            action: {
+                                open()
+                                showSettings.toggle()
+                            },
                             deleteAction: {},
                             image: "gearshape.fill",
                             isDeletable: false,
@@ -136,6 +136,7 @@ struct NotchView: View {
             .padding(.vertical, 24)
         }
         .frame(width: width, height: height)
+        .onAppear { close() }
         .task {
             switch loginManager.authState {
             case .signedIn(let user):
@@ -143,18 +144,12 @@ struct NotchView: View {
             default:
                 AnalyticsManager.shared.setUserId(nil)
             }
+
+            histories = await HistoryStore.shared.getAll(limit: 100)
+
             managedModels = await firestoreManager.getModelInfos()
             await loadAllClientTools()
             await reconnectManagedAgents()
-        }
-        .onAppear {
-            resizeAlpha()
-            Task {
-                histories = await HistoryStore.shared.getAll(limit: 100)
-                if let first = histories.first {
-                    chatController.setHistory(first)
-                }
-            }
         }
         .onHover { hovering in
             hoverTask?.cancel()  // cancel any pending hover change
@@ -167,11 +162,11 @@ struct NotchView: View {
                 if windowSize != WindowSize.gamma {
                     if hovering {
                         if windowSize == WindowSize.alpha {
-                            resizeBeta()
+                            open()
                         }
                     } else {
                         if windowSize == WindowSize.beta {
-                            resizeAlpha()
+                            close()
                         }
                     }
                 }
@@ -186,34 +181,20 @@ struct NotchView: View {
                     HoverableTabButton(
                         title: h.title
                             ?? createTitle(for: h.history, fallback: "Session #\(i + 1)"),
-                        isActive: (i == index),
+                        isActive: (tabId == h.id),
                         action: {
-                            resizeGamma()
-                            index = i
-                            chatController.setHistory(h)
-                            AnalyticsManager.shared.customEvent(
-                                type: .action,
-                                primary: "history_read"
-                            )
+                            open()
+                            tabId = h.id
                         },
                         deleteAction: {
                             Task {
-                                let isActive = i == index
+                                let isActive = tabId == h.id
                                 await HistoryStore.shared.delete(id: h.id)
                                 histories = await HistoryStore.shared.getAll(limit: 100)
                                 if isActive {
-                                    if index >= histories.count {
-                                        index = max(0, histories.count - 1)
-                                    }
-                                    let history = histories[safe: index]
-                                    chatController.setHistory(history)
+                                    tabId = UUID().uuidString
                                 }
                             }
-                            resizeGamma()
-                            AnalyticsManager.shared.customEvent(
-                                type: .action,
-                                primary: "history_remove"
-                            )
                         }
                     )
                 }
@@ -533,32 +514,35 @@ struct NotchView: View {
         return fallback
     }
 
-    private func resizeAlpha() {
+    private func close() {
+        windowSize = WindowSize.alpha
+        (width, height) = updateWindowSize(windowSize)
+        lastExpandedWindowSize = WindowSize.beta
+    }
+
+    private func open() {
+        if windowSize == WindowSize.beta {
+            windowSize = WindowSize.gamma
+        } else {
+            windowSize = lastExpandedWindowSize
+        }
+        (width, height) = updateWindowSize(windowSize)
+        lastExpandedWindowSize = windowSize
+    }
+
+    private func minimize() {
         windowSize = WindowSize.alpha
         (width, height) = updateWindowSize(windowSize)
     }
 
-    private func resizeBeta() {
-        windowSize = WindowSize.beta
-        (width, height) = updateWindowSize(windowSize)
-    }
-
-    private func resizeGamma() {
-        windowSize = WindowSize.gamma
-        (width, height) = updateWindowSize(windowSize)
-    }
-
-    private func resizeDelta() {
-        windowSize = WindowSize.delta
-        (width, height) = updateWindowSize(windowSize)
-    }
-
-    private func toggleGammaDelta() {
-        if windowSize == WindowSize.delta {
-            resizeGamma()
+    private func maximize() {
+        if windowSize == WindowSize.gamma {
+            windowSize = WindowSize.delta
         } else {
-            resizeDelta()
+            windowSize = WindowSize.gamma
         }
+        (width, height) = updateWindowSize(windowSize)
+        lastExpandedWindowSize = windowSize
     }
 }
 

@@ -4,54 +4,36 @@
 
 ## 2.0 
 
-Notch like sidebar that expands on hover 
-
-
-2 Nov
-- Complete Intelligence View
-
-3 Nov
-- New Tab and Old Tab Side Bar
-
 4 Nov
-- Settings & History 
+- Multitasking 
+- Resuming conversation 
 
 5 Nov
-- Animations
-
+- Settings 
+- Size relative to screen. Store the size in settings by percentage of the screen.  
+    
 6 Nov
-- 
+- Remove double clicks due to hover
+- Shortcut
+    - ctrl left / right to open minimize 
+    - ctrl up / down to shift up / down 
+- Notch Animations
 
 7 Nov
-- Analytics & Doc 
+- Analytics  
+- Doc 
 
 8 Nov
 - Release 2.0
 
 9 Nov
-- YC Apple
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+- YC Apply
 
 
 ------------------------
 
 ## Missing Features
 
-- Show full conversation in response
 - Edit title
 - Generate image 
 - Audio commands 
@@ -65,7 +47,6 @@ Notch like sidebar that expands on hover
 - Fix Flickering Animation
 - No Markdown Select
 - Search History
-- Old images from history are not shown 
 - Allow OpenAI Models 
 - Detect API key in BYOK b/w Anthropic and OpenAI
 - Change Models based on API Key 
