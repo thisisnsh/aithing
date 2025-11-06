@@ -53,16 +53,6 @@ struct ChatView: View {
                         ForEach(items) { item in
                             ChatBubble(item: item)
                         }
-                        
-                        // Temporary Input
-                        if !query.isEmpty {
-                            ChatBubble(
-                                item: ChatItem(
-                                    role: .user,
-                                    payload: ChatPayload.text(query)
-                                )
-                            )
-                        }
 
                         // Temporary Output
                         if !modelOutput.isEmpty {

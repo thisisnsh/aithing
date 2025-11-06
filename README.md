@@ -6,7 +6,6 @@
 
 
 5 Nov 
-- Collapse sidebar
 - Settings 
 - Size relative to screen. Store the size in settings by percentage of the screen.  
 
@@ -15,6 +14,7 @@
     
 7 Nov
 - Remove double clicks due to hover
+- Bug when hover on lower width screen it shifts horizontally 
 - Shortcut
     - ctrl left / right to open minimize 
     - ctrl up / down to shift up / down 

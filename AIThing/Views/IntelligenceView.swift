@@ -25,6 +25,7 @@ struct IntelligenceView: View {
     let minimize: () -> Void
     let expand: () -> Void
     let isTabClosed: (String) -> Bool
+    let updateHistoryList: () async -> Void
     let reconnectManagedAgents: () async -> Void
 
     let logger = Logger(subsystem: "com.thisisnsh.mac.AIThing", category: "IntelligenceView")
@@ -309,15 +310,18 @@ extension IntelligenceView {
         isThinking = true
         query = ""
 
-        await callModel(query: trimmed)
+        let result = await callModel(query: trimmed)
 
+        await updateHistoryList()
         isThinking = false
         history = await HistoryStore.shared.get(id: tabId)
-        modelOutput = ""
+        if result {
+            modelOutput = ""
+        }
         displayQuery = ""
     }
 
-    private func callModel(query: String) async {
+    private func callModel(query: String) async -> Bool {
         // Check if version is breakglassed
         if await firestoreManager.getBreakglass() {
             isThinking = false
@@ -335,7 +339,7 @@ extension IntelligenceView {
                 primary: "breakglass_enabled",
                 secondary: .status_failure_low,
             )
-            return
+            return false
         }
 
         // Check if version is expired
@@ -354,7 +358,7 @@ extension IntelligenceView {
                 primary: "version_expired",
                 secondary: .status_failure_low,
             )
-            return
+            return false
         }
 
         var appUser: AppUser?
@@ -373,7 +377,7 @@ extension IntelligenceView {
                         ,
                         notification: true
                     )
-                    return
+                    return false
                 }
 
                 appUser = user
@@ -396,7 +400,7 @@ extension IntelligenceView {
                 primary: "profile_fetch",
                 secondary: .status_failure_high,
             )
-            return
+            return false
         default:
             isThinking = false
             await animateOutput(
@@ -413,7 +417,7 @@ extension IntelligenceView {
                 primary: "query_without_login",
                 secondary: .status_failure_low,
             )
-            return
+            return false
         }
 
         // Check if tab is alive, else return without processing
@@ -421,7 +425,7 @@ extension IntelligenceView {
             isThinking = false
             logger.info("Exiting callModel for \(tabId) as it was closed")
             AnalyticsManager.shared.customEvent(type: .tab, primary: "query_stop_on_close")
-            return
+            return true
         }
 
         do {
@@ -467,10 +471,10 @@ extension IntelligenceView {
                 primary: "missing_api_key",
                 secondary: .status_failure_low
             )
-            return
+            return false
         }
 
-        guard let url = URL(string: "https://api.anthropic.com/v1/messages") else { return }
+        guard let url = URL(string: "https://api.anthropic.com/v1/messages") else { return true }
 
         var request = URLRequest(url: url)
         request.httpMethod = "POST"
@@ -608,7 +612,7 @@ extension IntelligenceView {
                     primary: "response_invalid",
                     secondary: .status_failure_high,
                 )
-                return
+                return false
             }
 
             if httpResponse.statusCode != 200 {
@@ -644,7 +648,7 @@ extension IntelligenceView {
                         secondary: .status_failure_high,
                     )
                 }
-                return
+                return false
             }
 
             if let appUser {
@@ -729,7 +733,7 @@ extension IntelligenceView {
                             logger.info("Exiting text_delta for \(tabId) as it was closed")
                             AnalyticsManager.shared
                                 .customEvent(type: .tab, primary: "query_stop_on_close")
-                            return
+                            return true
                         }
 
                         guard let delta = json["delta"] as? [String: Any] else { continue }
@@ -767,7 +771,7 @@ extension IntelligenceView {
                                 type: .tab,
                                 primary: "query_stop_on_close"
                             )
-                            return
+                            return true
                         }
 
                         guard let delta = json["delta"] as? [String: Any] else { continue }
@@ -847,8 +851,8 @@ extension IntelligenceView {
                                 ],
                             ])
 
-                            await callModel(query: "")
-                            return
+                            let rc = await callModel(query: "")
+                            return rc
 
                         default:
                             continue
@@ -865,7 +869,9 @@ extension IntelligenceView {
                 modelOutput =
                     "Error streaming response: \(error.localizedDescription)\n\nReport issue at help@aithing.dev"
             }
+            return false
         }
+        return true
     }
 
     private func buildQuery(query: String) -> String {
@@ -978,7 +984,7 @@ extension IntelligenceView {
     }
 
     private func createTitle(query: String, model: String, apiKey: String, byok: Bool) async {
-        if !tabTitle.isEmpty || tabTitle == "New Chat" {
+        if !tabTitle.isEmpty && tabTitle != "New Chat" {
             return
         }
 

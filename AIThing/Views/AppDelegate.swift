@@ -14,14 +14,11 @@ import ServiceManagement
 import SwiftUI
 
 enum WindowSize: Int {
-    // notch is collapsed
-    case alpha = 0
-    // notch is expanded
-    case beta = 1
-    // chat window is shown
-    case gamma = 2
-    // chat window is expanded
-    case delta = 3
+    case notchIsCollapsed = 0
+    case notchIsExpandedSidebarIsCollapsed = 1
+    case notchIsExpanded = 2
+    case chatIsShown = 3
+    case chatIsExpanded = 4
 }
 
 // MARK: - AppDelegate
@@ -64,7 +61,7 @@ extension AppDelegate {
         let screenFrame = screen.visibleFrame
 
         // Create a borderless, floating window on the right side
-        let (windowWidth, windowHeight) = getWindowSize(windowSize: .alpha)
+        let (windowWidth, windowHeight) = getWindowSize(windowSize: .notchIsCollapsed)
         let xPosition = screenFrame.maxX - windowWidth
         let yPosition = screenFrame.midY - (windowHeight / 2)
 
@@ -97,14 +94,22 @@ extension AppDelegate {
 
     private func getWindowSize(windowSize: WindowSize) -> (CGFloat, CGFloat) {
         switch windowSize {
-        case .alpha:  // collapsed notch
+        case .notchIsCollapsed:
+            // collapsed notch
             return (60, 100)
-        case .beta:  // expanded notch
+        case .notchIsExpandedSidebarIsCollapsed:
+            // expanded notch with collapsed sidebar
+            return (60, 180)
+        case .notchIsExpanded:
+            // expanded notch
             return (200, 600)
-        case .gamma:  // chat window shown (use expanded for now)
+        case .chatIsShown:
+            // chat window shown (use expanded for now)
             return (560, 600)
-        case .delta:  // chat window expanded (use expanded for now)
+        case .chatIsExpanded:
+            // chat window expanded (use expanded for now)
             return (860, 600)
+
         }
     }
 

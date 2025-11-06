@@ -14,6 +14,7 @@ struct HoverableTabButton: View {
     let deleteAction: () -> Void
     var image: String? = nil
     var isDeletable: Bool = true
+    var isExpanded: Bool = true
 
     @State private var isHovered = false
     @State private var hoverTask: Task<Void, Never>?
@@ -29,12 +30,14 @@ struct HoverableTabButton: View {
                             .frame(width: 14, height: 14)
                     }
 
-                    Text(title)
-                        .font(.system(size: 12, weight: .medium))
-                        .lineLimit(1)
+                    if isExpanded {
+                        Text(title)
+                            .font(.system(size: 12, weight: .medium))
+                            .lineLimit(1)
+                    }
                 }
 
-                .frame(maxWidth: .infinity, alignment: .leading)
+                .frame(maxWidth: .infinity, alignment: isExpanded ? .leading : .center)
                 .padding(.vertical, 8)
                 .padding(.horizontal, 12)
                 .background(isActive || isHovered ? Color.white.opacity(0.1) : .clear)
@@ -43,7 +46,7 @@ struct HoverableTabButton: View {
             .buttonStyle(.plain)
 
             // Trash button (shown only when hovered)
-            if isDeletable, isHovered {
+            if isDeletable, isHovered, isExpanded {
                 Button(action: deleteAction) {
                     Image(systemName: "trash.fill")
                         .foregroundColor(.red)

@@ -19,8 +19,8 @@ struct NotchView: View {
 
     @State private var width: CGFloat = 0
     @State private var height: CGFloat = 0
-    @State private var windowSize = WindowSize.alpha
-    @State private var lastExpandedWindowSize = WindowSize.beta
+    @State private var windowSize = WindowSize.notchIsCollapsed
+    @State private var lastExpandedWindowSize = WindowSize.notchIsExpanded
     @State private var hoverTask: Task<Void, Never>?
 
     @State private var managedModels: [ModelInfo] = []
@@ -35,7 +35,14 @@ struct NotchView: View {
     @State private var toastText = ""
     @State private var toastColor: Color = .yellow
     @State private var hoverSidebar = false
-    @State private var resizeSidebar = false
+    @State private var expandSidebar = true
+
+    private var showChatWindow: Bool {
+        windowSize.rawValue >= WindowSize.chatIsShown.rawValue
+    }
+    private var expandNotch: Bool {
+        windowSize.rawValue >= WindowSize.notchIsExpandedSidebarIsCollapsed.rawValue
+    }
 
     // Managed Agents
     // StateObjects not persisted after application quit
@@ -51,7 +58,7 @@ struct NotchView: View {
                 .fill(.black)
 
             HStack(spacing: 0) {
-                if windowSize.rawValue >= WindowSize.gamma.rawValue {
+                if showChatWindow {
                     if showSettings {
                         Settings()
                     } else {
@@ -63,6 +70,7 @@ struct NotchView: View {
                             minimize: { minimize() },
                             expand: { maximize() },
                             isTabClosed: { !isTabActive(tabId: $0) },
+                            updateHistoryList: { await updateHistoryList() },
                             reconnectManagedAgents: reconnectManagedAgents,
                         )
                         .environmentObject(mcpManager)
@@ -72,30 +80,46 @@ struct NotchView: View {
                     }
                 }
 
-                VStack(alignment: .leading, spacing: 0) {
+                VStack(alignment: expandSidebar ? .leading : .center, spacing: 0) {
                     HStack {
-                        LogoShape()
-                            .fill(.white)
-                            .scaledToFit()
-                            .frame(height: 32)
+                        if !expandNotch || expandSidebar {
+                            LogoShape()
+                                .fill(.white)
+                                .scaledToFit()
+                                .frame(height: 32)
+                        }
 
-                        if windowSize.rawValue >= WindowSize.beta.rawValue {
-                            Spacer()
-
-                            Image(systemName: "sidebar.right")
-                                .resizable()
-                                .frame(width: 14, height: 14)
-                                .padding(8)
-                                .background(hoverSidebar ? Color.white.opacity(0.1) : .clear)
-                                .cornerRadius(8)
-                                .onHover { hoverSidebar = $0 }
-                                .onTapGesture { resizeSidebar.toggle() }
+                        if expandNotch {
+                            if expandSidebar {
+                                Spacer()
+                                                                
+                                Image(systemName: "sidebar.right")
+                                    .resizable()
+                                    .frame(width: 14, height: 14)
+                                    .padding(8)
+                                    .background(hoverSidebar ? Color.white.opacity(0.1) : .clear)
+                                    .cornerRadius(8)
+                                    .onHover { hoverSidebar = $0 }
+                                    .onTapGesture { sidebarToggle() }
+                            } else {
+                                HoverableTabButton(
+                                    title: "Expand Sidebar",
+                                    isActive: false,
+                                    action: {
+                                        sidebarToggle()
+                                    },
+                                    deleteAction: {},
+                                    image: "sidebar.right",
+                                    isDeletable: false,
+                                    isExpanded: expandSidebar
+                                )
+                            }
                         }
                     }
                     .padding(.top, 8)
-                    .padding(.horizontal, windowSize.rawValue >= WindowSize.beta.rawValue ? 16 : 0)
+                    .padding(.horizontal, expandNotch && expandSidebar ? 16 : 0)
 
-                    if windowSize.rawValue >= WindowSize.beta.rawValue {
+                    if expandNotch {
                         Divider().opacity(0)
 
                         HoverableTabButton(
@@ -108,6 +132,7 @@ struct NotchView: View {
                             deleteAction: {},
                             image: "plus.circle.fill",
                             isDeletable: false,
+                            isExpanded: expandSidebar
                         )
                         .padding(.top, 8)
 
@@ -121,18 +146,21 @@ struct NotchView: View {
                             deleteAction: {},
                             image: "gearshape.fill",
                             isDeletable: false,
+                            isExpanded: expandSidebar
                         )
 
                         if histories.count > 0 {
                             Divider().opacity(0).padding(.vertical, 8)
                         }
 
-                        Sidebar()
+                        if expandSidebar {
+                            Sidebar()
+                        }
                     }
 
                     Spacer()
                 }
-                .frame(width: windowSize.rawValue >= WindowSize.beta.rawValue ? 200 : 60)
+                .frame(width: expandNotch ? (expandSidebar ? 200 : 60) : 60)
             }
             .padding(.vertical, 24)
         }
@@ -160,13 +188,15 @@ struct NotchView: View {
 
                 guard !Task.isCancelled else { return }
 
-                if windowSize != WindowSize.gamma {
+                if windowSize != WindowSize.chatIsShown {
                     if hovering {
-                        if windowSize == WindowSize.alpha {
+                        if windowSize == WindowSize.notchIsCollapsed {
                             open()
                         }
                     } else {
-                        if windowSize == WindowSize.beta {
+                        if windowSize == WindowSize.notchIsExpanded
+                            || windowSize == WindowSize.notchIsExpandedSidebarIsCollapsed
+                        {
                             close()
                         }
                     }
@@ -180,8 +210,9 @@ struct NotchView: View {
             LazyVStack(alignment: .leading, spacing: 0) {
                 ForEach(Array(histories.enumerated()), id: \.offset) { (i, h) in
                     HoverableTabButton(
-                        title: h.title
-                            ?? createTitle(for: h.history, fallback: "Session #\(i + 1)"),
+                        title: expandSidebar
+                            ? (h.title ?? createTitle(for: h.history, fallback: "Session #\(i + 1)"))
+                            : "ABC",
                         isActive: (tabId == h.id),
                         action: {
                             open()
@@ -210,7 +241,7 @@ struct NotchView: View {
                 Color.clear.frame(height: 16)
             }
         }
-        .frame(width: 200)
+        .frame(width: expandSidebar ? 200 : 60)
     }
 
     private func Settings() -> some View {
@@ -516,14 +547,18 @@ struct NotchView: View {
     }
 
     private func close() {
-        windowSize = WindowSize.alpha
+        windowSize = WindowSize.notchIsCollapsed
         (width, height) = updateWindowSize(windowSize)
-        lastExpandedWindowSize = WindowSize.beta
+        lastExpandedWindowSize =
+            expandSidebar
+            ? WindowSize.notchIsExpanded : WindowSize.notchIsExpandedSidebarIsCollapsed
     }
 
     private func open() {
-        if windowSize == WindowSize.beta {
-            windowSize = WindowSize.gamma
+        if windowSize == WindowSize.notchIsExpanded
+            || windowSize == WindowSize.notchIsExpandedSidebarIsCollapsed
+        {
+            windowSize = WindowSize.chatIsShown
         } else {
             windowSize = lastExpandedWindowSize
         }
@@ -532,15 +567,26 @@ struct NotchView: View {
     }
 
     private func minimize() {
-        windowSize = WindowSize.alpha
+        windowSize = WindowSize.notchIsCollapsed
         (width, height) = updateWindowSize(windowSize)
     }
 
     private func maximize() {
-        if windowSize == WindowSize.gamma {
-            windowSize = WindowSize.delta
+        if windowSize == WindowSize.chatIsShown {
+            windowSize = WindowSize.chatIsExpanded
         } else {
-            windowSize = WindowSize.gamma
+            windowSize = WindowSize.chatIsShown
+        }
+        (width, height) = updateWindowSize(windowSize)
+        lastExpandedWindowSize = windowSize
+    }
+
+    private func sidebarToggle() {
+        expandSidebar.toggle()
+        if windowSize == WindowSize.notchIsExpanded {
+            windowSize = WindowSize.notchIsExpandedSidebarIsCollapsed
+        } else if windowSize == WindowSize.notchIsExpandedSidebarIsCollapsed {
+            windowSize = WindowSize.notchIsExpanded
         }
         (width, height) = updateWindowSize(windowSize)
         lastExpandedWindowSize = windowSize
@@ -548,6 +594,10 @@ struct NotchView: View {
 
     private func isTabActive(tabId: String) -> Bool {
         tabId == self.tabId
+    }
+    
+    private func updateHistoryList() async {
+        histories = await HistoryStore.shared.getAll(limit: 100)
     }
 }
 
