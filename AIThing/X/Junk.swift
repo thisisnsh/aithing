@@ -333,32 +333,6 @@ extension AppDelegate {
     }
 }
 
-/// Size Functinos
-extension AppDelegate {
-
-    /// Sets the panel visibility in screenshots based on user preferences
-    /// Uses readOnly sharing type to show the panel, or none to hide it from screenshots
-    private func setPanelVisibility() {
-        if let floatingWindow = floatingWindow {
-            floatingWindow.sharingType = getPreferencesShowInScreenshot() ? .readOnly : .none
-        }
-        if let floatingActionWindow = floatingActionWindow {
-            floatingActionWindow.sharingType = getPreferencesShowInScreenshot() ? .readOnly : .none
-        }
-    }
-
-    private func setPanelPassthrough(_ enabled: Bool) {
-        // true  -> panel ignores events (clicks pass through)
-        // false -> panel receives events (interactive)
-        if let floatingWindow = floatingWindow {
-            floatingWindow.ignoresMouseEvents = enabled
-        }
-        if let floatingActionWindow = floatingActionWindow {
-            floatingActionWindow.ignoresMouseEvents = enabled
-        }
-    }
-
-}
 
 /// Functions for Global Events
 extension AppDelegate {

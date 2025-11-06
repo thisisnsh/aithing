@@ -26,6 +26,7 @@ class AppDelegate: NSObject, NSApplicationDelegate {
     private var floatingWindow: NonActivatingPanel!
 
     static var allowQuit = false
+    private var screen = NSScreen.main
 
     func applicationDidFinishLaunching(_ notification: Notification) {
         NSApp.setActivationPolicy(.accessory)  // background-style app
@@ -57,7 +58,7 @@ extension AppDelegate {
 
     private func setupNotchWindow() {
         // Get screen dimensions
-        guard let screen = NSScreen.main else { return }
+        guard let screen = screen else { return }
         let screenFrame = screen.visibleFrame
 
         // Create a borderless, floating window on the right side
@@ -117,7 +118,7 @@ extension AppDelegate {
         let (windowWidth, windowHeight) = getWindowSize(windowSize: windowSize)
 
         // Calculate new position to keep top-right corner fixed
-        if let screen = NSScreen.main {
+        if let screen = screen {
             let screenFrame = screen.visibleFrame
             let xPosition = screenFrame.maxX - windowWidth
 

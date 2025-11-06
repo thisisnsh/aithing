@@ -7,7 +7,6 @@
 
 5 Nov 
 - Size relative to screen. Store the size in settings by percentage of the screen.  
-- Bug when hover on lower width screen it shifts horizontally 
 - Bug change color of send gmail message
 - Bug cursor shifted up
 - On settings change refresh modesl in notch view

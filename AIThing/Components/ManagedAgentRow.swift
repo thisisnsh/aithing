@@ -61,7 +61,9 @@ struct ManagedAgentRow: View {
                         }
                     )
                 )
-                .toggleStyle(.switch).tint(.black).scaleEffect(0.7)
+                .toggleStyle(.switch)
+                .tint(.black)
+                .scaleEffect(0.7)
             }
         }
         .padding(4)
@@ -135,7 +137,9 @@ struct GithubManagedAgentRow: View {
                                     }
                                 )
                             )
-                            .toggleStyle(.switch).tint(.black).scaleEffect(0.7)
+                            .toggleStyle(.switch)
+                            .tint(.black)
+                            .scaleEffect(0.7)
                         }
                     }
                     .padding(.horizontal, 8)
@@ -213,7 +217,9 @@ struct GoogleManagedAgentRow: View {
                                     }
                                 )
                             )
-                            .toggleStyle(.switch).tint(.black).scaleEffect(0.7)
+                            .toggleStyle(.switch)
+                            .tint(.black)
+                            .scaleEffect(0.7)
                         }
                     }
                     .padding(.horizontal, 8)
