@@ -42,6 +42,7 @@ struct IntelligenceView: View {
     @State private var modelInput: [[String: Any]] = []
     @State private var modelOutput: String = ""
     @State private var modelContext: [DroppedContent] = []
+    @State private var toolCall: String = ""
 
     @State private var query: String = ""
     @State private var displayQuery: String = ""
@@ -93,6 +94,9 @@ struct IntelligenceView: View {
         .clipShape(RoundedRectangle(cornerRadius: 8))
         .padding(.leading, 8)
         .task {
+            modelOutput = ""
+            displayQuery = ""
+            toolCall = ""
             history = await HistoryStore.shared.get(id: tabId)
             guard let history = history else { return }
             modelInput = history.history
@@ -152,7 +156,8 @@ struct IntelligenceView: View {
             isThinkingBlinking: $isThinkingBlinking,
             textSize: $textSize,
             query: $displayQuery,
-            modelOutput: $modelOutput
+            modelOutput: $modelOutput,
+            toolCall: $toolCall
         )
     }
 
@@ -309,6 +314,7 @@ extension IntelligenceView {
         modelOutput = ""
         isThinking = true
         query = ""
+        toolCall = ""
 
         let result = await callModel(query: trimmed)
 
@@ -319,6 +325,7 @@ extension IntelligenceView {
             modelOutput = ""
         }
         displayQuery = ""
+        toolCall = ""
     }
 
     private func callModel(query: String) async -> Bool {
@@ -689,6 +696,9 @@ extension IntelligenceView {
                 history: modelInput
             )
             // Fetch and display it
+            modelOutput = ""
+            displayQuery = ""
+            toolCall = ""
             history = await HistoryStore.shared.get(id: tabId)
 
             var finalResponse = ""
@@ -817,10 +827,7 @@ extension IntelligenceView {
                                 ],
                             ])
 
-                            finalResponse += "\n\n```Calling tool: \(finalToolUseName)...```\n\n"
-                            await MainActor.run {
-                                modelOutput = finalResponse
-                            }
+                            toolCall = "Calling tool: \(finalToolUseName)..."
                             let result = await mcpManager.callTools(
                                 clientName: getClientName(toolName: finalToolUseName),
                                 name: finalToolUseName,

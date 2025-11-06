@@ -42,6 +42,7 @@ struct ChatView: View {
     @Binding var textSize: CGFloat
     @Binding var query: String
     @Binding var modelOutput: String
+    @Binding var toolCall: String
 
     @State private var items: [ChatItem] = []
 
@@ -62,7 +63,14 @@ struct ChatView: View {
                                     payload: ChatPayload.text(modelOutput)
                                 )
                             )
-                        } else if isThinking {
+                        }
+
+                        if !toolCall.isEmpty {
+                            ToolBubble(text: toolCall)
+                                .frame(maxWidth: 500, alignment: .leading)
+                        }
+
+                        if isThinking {
                             ChatBubble(
                                 item: ChatItem(
                                     role: .assistant,
@@ -139,8 +147,8 @@ struct ChatBubble: View {
                 ImageBubble(image: image, isUser: item.role == .user)
                     .frame(maxWidth: 300, alignment: item.role == .user ? .trailing : .leading)
             case .toolUse(let name):
-                TextBubble(text: "Called tool: \(name)", isUser: false)
-                    .frame(maxWidth: 500, alignment: item.role == .user ? .trailing : .leading)
+                ToolBubble(text: "Called tool: \(name)")
+                    .frame(maxWidth: 500, alignment: .leading)
             }
 
             if item.role == .user { Spacer().frame(width: 0) }
@@ -149,22 +157,19 @@ struct ChatBubble: View {
     }
 }
 
-struct UsageBubble: View {
+struct ToolBubble: View {
     let text: String
 
     var body: some View {
-        MarkdownText(text: text)
+        Text(text)
             .font(.system(size: 10, weight: .medium, design: .monospaced))
             .textSelection(.enabled)
             .padding(8)
-            .background(
-                RoundedRectangle(cornerRadius: 8, style: .continuous)
-                    .fill(Color.gray.opacity(0.1))
-            )
             .overlay(
                 RoundedRectangle(cornerRadius: 8, style: .continuous)
                     .stroke(Color.gray.opacity(0.5), lineWidth: 1)
             )
+            .padding(.leading, 8)
     }
 }
 
