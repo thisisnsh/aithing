@@ -62,6 +62,7 @@ struct NotchView: View {
                             close: { close() },
                             minimize: { minimize() },
                             expand: { maximize() },
+                            isTabClosed: { !isTabActive(tabId: $0) },
                             reconnectManagedAgents: reconnectManagedAgents,
                         )
                         .environmentObject(mcpManager)
@@ -543,6 +544,10 @@ struct NotchView: View {
         }
         (width, height) = updateWindowSize(windowSize)
         lastExpandedWindowSize = windowSize
+    }
+
+    private func isTabActive(tabId: String) -> Bool {
+        tabId == self.tabId
     }
 }
 

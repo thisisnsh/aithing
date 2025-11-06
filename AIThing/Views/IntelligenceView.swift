@@ -24,6 +24,7 @@ struct IntelligenceView: View {
     let close: () -> Void
     let minimize: () -> Void
     let expand: () -> Void
+    let isTabClosed: (String) -> Bool
     let reconnectManagedAgents: () async -> Void
 
     let logger = Logger(subsystem: "com.thisisnsh.mac.AIThing", category: "IntelligenceView")
@@ -42,6 +43,7 @@ struct IntelligenceView: View {
     @State private var modelContext: [DroppedContent] = []
 
     @State private var query: String = ""
+    @State private var displayQuery: String = ""
     @State private var selectedText: String = ""
 
     @State private var isDropping: Bool = false
@@ -90,31 +92,15 @@ struct IntelligenceView: View {
         .clipShape(RoundedRectangle(cornerRadius: 8))
         .padding(.leading, 8)
         .task {
-            let notification = await firestoreManager.getNotification() ?? ""
-            if !notification.isEmpty {
-                history = History(
-                    id: tabId,
-                    lastUpdated: String(Int64(Date().timeIntervalSince1970)),
-                    title: "Notification",
-                    history: [
-                        [
-                            "role": "user",
-                            "content": [
-                                [
-                                    "type": "text",
-                                    "text": notification,
-                                ]
-                            ],
-                        ]
-                    ]
-                )
-            } else {
-                history = await HistoryStore.shared.get(id: tabId)
-            }
-
+            history = await HistoryStore.shared.get(id: tabId)
             guard let history = history else { return }
             modelInput = history.history
             tabTitle = history.title ?? "New Chat"
+
+            let notification = await firestoreManager.getNotification() ?? ""
+            if !notification.isEmpty {
+                modelOutput = notification
+            }
         }
         .onReceive(screenshotMonitor.$latestScreenshot) { ss in
             if let ss = ss {
@@ -164,6 +150,7 @@ struct IntelligenceView: View {
             isThinking: $isThinking,
             isThinkingBlinking: $isThinkingBlinking,
             textSize: $textSize,
+            query: $displayQuery,
             modelOutput: $modelOutput
         )
     }
@@ -316,11 +303,18 @@ extension IntelligenceView {
     private func handleQuery() async {
         let trimmed = query.trimmingCharacters(in: .whitespacesAndNewlines)
         guard !trimmed.isEmpty else { return }
-        query = ""
+
+        displayQuery = trimmed
         modelOutput = ""
         isThinking = true
+        query = ""
+
         await callModel(query: trimmed)
+
+        isThinking = false
+        history = await HistoryStore.shared.get(id: tabId)
         modelOutput = ""
+        displayQuery = ""
     }
 
     private func callModel(query: String) async {
@@ -423,7 +417,7 @@ extension IntelligenceView {
         }
 
         // Check if tab is alive, else return without processing
-        if isTabClosed() {
+        if isTabClosed(tabId) {
             isThinking = false
             logger.info("Exiting callModel for \(tabId) as it was closed")
             AnalyticsManager.shared.customEvent(type: .tab, primary: "query_stop_on_close")
@@ -590,14 +584,12 @@ extension IntelligenceView {
         let costAgent = costPerQuery * modelAgentCount
         let total = costPerQuery + costAgent + costFile
 
-        logger.debug("api key: \(apiKey)")
-        logger.debug("model: \(model)")
+        // logger.debug("api key: \(apiKey)")
+        // logger.debug("model: \(model)")
         logger.debug("tokens: \(getOutputToken())")
-        logger.debug("messages: \(String(describing: body["messages"]))")
-        logger.debug("tools count: \((body["tools"] as? [[String: Any]])?.count ?? 0)")
-        logger.debug(
-            "cost query: \(costPerQuery) file: \(costFile) agent: \(costAgent) total: \(total)"
-        )
+        // logger.debug("messages: \(String(describing: body["messages"]))")
+        // logger.debug("tools count: \((body["tools"] as? [[String: Any]])?.count ?? 0)")
+        // logger.debug("cost query: \(costPerQuery) file: \(costFile) agent: \(costAgent) total: \(total)")
 
         request.httpBody = try? JSONSerialization.data(withJSONObject: body)
 
@@ -694,7 +686,6 @@ extension IntelligenceView {
             )
             // Fetch and display it
             history = await HistoryStore.shared.get(id: tabId)
-            print(history?.history)
 
             var finalResponse = ""
             var finalToolUseInputParam = ""
@@ -733,7 +724,7 @@ extension IntelligenceView {
                         }
 
                     case "content_block_delta":
-                        if isTabClosed() {
+                        if isTabClosed(tabId) {
                             isThinking = false
                             logger.info("Exiting text_delta for \(tabId) as it was closed")
                             AnalyticsManager.shared
@@ -769,7 +760,7 @@ extension IntelligenceView {
                         }
 
                     case "message_delta":
-                        if isTabClosed() {
+                        if isTabClosed(tabId) {
                             isThinking = false
                             logger.info("Exiting message_delta for \(tabId) as it was closed")
                             AnalyticsManager.shared.customEvent(
@@ -1078,32 +1069,5 @@ extension IntelligenceView {
             } catch {}
         }
         modelOutput = partial
-
-        if notification {
-            history = History(
-                id: tabId,
-                lastUpdated: String(Int64(Date().timeIntervalSince1970)),
-                title: "Notification",
-                history: [
-                    [
-                        "role": "user",
-                        "content": [
-                            [
-                                "type": "text",
-                                "text": modelOutput,
-                            ]
-                        ],
-                    ]
-                ]
-            )
-        } else {
-            history = await HistoryStore.shared.get(id: tabId)
-        }
-        modelOutput = ""
-    }
-
-    private func isTabClosed() -> Bool {
-        return false
-        // !allTabs.contains(where: { $0.id == tabId })
     }
 }

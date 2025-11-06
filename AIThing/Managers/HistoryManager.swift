@@ -16,7 +16,10 @@ struct History: Identifiable, Equatable {
     let title: String?
     let history: [[String: Any]]
 
-    static func == (lhs: History, rhs: History) -> Bool { lhs.id == rhs.id }
+    static func == (lhs: History, rhs: History) -> Bool {
+        lhs.id == rhs.id && lhs.lastUpdated == rhs.lastUpdated && lhs.title == rhs.title
+            && lhs.history.count == rhs.history.count
+    }
 }
 
 @objc(HistoryDocMO)

@@ -40,6 +40,7 @@ struct ChatView: View {
     @Binding var isThinking: Bool
     @Binding var isThinkingBlinking: Bool
     @Binding var textSize: CGFloat
+    @Binding var query: String
     @Binding var modelOutput: String
 
     @State private var items: [ChatItem] = []
@@ -51,6 +52,16 @@ struct ChatView: View {
                     LazyVStack(alignment: .leading, spacing: 12) {
                         ForEach(items) { item in
                             ChatBubble(item: item)
+                        }
+                        
+                        // Temporary Input
+                        if !query.isEmpty {
+                            ChatBubble(
+                                item: ChatItem(
+                                    role: .user,
+                                    payload: ChatPayload.text(query)
+                                )
+                            )
                         }
 
                         // Temporary Output
@@ -76,9 +87,9 @@ struct ChatView: View {
                             }
                         }
 
-                        Color.clear.frame(height: 16).id("Bottom")
+                        Divider().opacity(0).id("Bottom")
                     }
-                    .padding(.top, 16)
+                    .padding(.vertical, 16)
                 }
                 .onChange(of: items) { _ in
                     DispatchQueue.main.async {
@@ -94,9 +105,17 @@ struct ChatView: View {
                         }
                     }
                 }
+                .onChange(of: isThinking) { _ in
+                    DispatchQueue.main.async {
+                        withAnimation(.easeOut(duration: 0.25)) {
+                            proxy.scrollTo("Bottom", anchor: .bottom)
+                        }
+                    }
+                }
             }
         }
         .onChange(of: history) { _ in
+            print("history changed")
             setHistory(history)
         }
     }

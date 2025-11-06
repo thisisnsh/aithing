@@ -4,26 +4,26 @@
 
 ## 2.0 
 
-4 Nov
-- Multitasking 
-- Resuming conversation 
 
-5 Nov
+5 Nov 
+- Collapse sidebar
 - Settings 
 - Size relative to screen. Store the size in settings by percentage of the screen.  
-    
+
 6 Nov
+- Multitasking 
+    
+7 Nov
 - Remove double clicks due to hover
 - Shortcut
     - ctrl left / right to open minimize 
     - ctrl up / down to shift up / down 
 - Notch Animations
 
-7 Nov
+8 Nov
+- Fix System Message
 - Analytics  
 - Doc 
-
-8 Nov
 - Release 2.0
 
 9 Nov
