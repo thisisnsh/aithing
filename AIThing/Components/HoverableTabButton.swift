@@ -15,6 +15,7 @@ struct HoverableTabButton: View {
     var image: String? = nil
     var isDeletable: Bool = true
     var isExpanded: Bool = true
+    var rotateImage: Angle = Angle(degrees: 0)
 
     @State private var isHovered = false
     @State private var hoverTask: Task<Void, Never>?
@@ -28,6 +29,7 @@ struct HoverableTabButton: View {
                         Image(systemName: image)
                             .resizable()
                             .frame(width: 14, height: 14)
+                            .rotationEffect(rotateImage)
                     }
 
                     if isExpanded {

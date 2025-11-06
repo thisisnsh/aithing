@@ -25,7 +25,7 @@ enum WindowSize: Int {
 class AppDelegate: NSObject, NSApplicationDelegate {
     private var floatingWindow: NonActivatingPanel!
 
-    static var allowQuit = true
+    static var allowQuit = false
 
     func applicationDidFinishLaunching(_ notification: Notification) {
         NSApp.setActivationPolicy(.accessory)  // background-style app
@@ -99,7 +99,7 @@ extension AppDelegate {
             return (60, 100)
         case .notchIsExpandedSidebarIsCollapsed:
             // expanded notch with collapsed sidebar
-            return (60, 180)
+            return (60, 160)
         case .notchIsExpanded:
             // expanded notch
             return (200, 600)

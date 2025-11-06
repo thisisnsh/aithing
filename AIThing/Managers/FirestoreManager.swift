@@ -46,7 +46,7 @@ class FirestoreManager: ObservableObject {
 
     func getBreakglass() async -> Bool {
         do {
-            let snapshot = try await db.collection("System").document("Configs-1.6").getDocument()
+            let snapshot = try await db.collection("System").document("Configs-2.0").getDocument()
             guard let data = snapshot.data() else { return false }
             guard let breakglass = data["breakglass"] as? Bool else { return false }
             AnalyticsManager.shared.customEvent(
@@ -70,7 +70,7 @@ class FirestoreManager: ObservableObject {
 
     func getExpired() async -> Bool {
         do {
-            let snapshot = try await db.collection("System").document("Configs-1.6").getDocument()
+            let snapshot = try await db.collection("System").document("Configs-2.0").getDocument()
             guard let data = snapshot.data() else { return false }
             guard let expired = data["expired"] as? Bool else { return false }
             AnalyticsManager.shared.customEvent(
@@ -94,7 +94,7 @@ class FirestoreManager: ObservableObject {
 
     func getApiKeyAnthropic() async -> String {
         do {
-            let snapshot = try await db.collection("System").document("Configs-1.6").getDocument()
+            let snapshot = try await db.collection("System").document("Configs-2.0").getDocument()
             guard let data = snapshot.data() else { return "" }
             guard let apiKeyAnthropic = data["apiKeyAnthropic"] as? String else { return "" }
             AnalyticsManager.shared.customEvent(
@@ -118,7 +118,7 @@ class FirestoreManager: ObservableObject {
 
     func getDefaultCredits() async -> Int? {
         do {
-            let snapshot = try await db.collection("System").document("Configs-1.6").getDocument()
+            let snapshot = try await db.collection("System").document("Configs-2.0").getDocument()
             guard let data = snapshot.data() else { return nil }
             guard let defaultCredits = data["defaultCredits"] as? Int else { return nil }
             AnalyticsManager.shared.customEvent(
@@ -142,7 +142,7 @@ class FirestoreManager: ObservableObject {
 
     func getNotification() async -> String? {
         do {
-            let snapshot = try await db.collection("System").document("Configs-1.6").getDocument()
+            let snapshot = try await db.collection("System").document("Configs-2.0").getDocument()
             guard let data = snapshot.data() else { return nil }
             guard let notification = data["notification"] as? String else { return nil }
             AnalyticsManager.shared.customEvent(

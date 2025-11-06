@@ -233,13 +233,13 @@ struct AgentRow: View {
         HStack(alignment: .center) {
             VStack(alignment: .leading, spacing: 2) {
                 switch agent.entry {
-                case let .url(name, url):
+                case .url(let name, let url):
                     RowTitle(name)
                     RowSub("URL: \(url)")
-                case let .urlWithToken(name, url, token):
+                case .urlWithToken(let name, let url, let token):
                     RowTitle(name)
                     RowSub("URL: \(url)\nToken: \(token.prefix(4))...\(token.suffix(4))")
-                case let .command(name, command, arguments):
+                case .command(let name, let command, let arguments):
                     RowTitle(name)
                     RowSub("Command: \(command)\nArguments: [\(arguments.joined(separator: " "))]")
                 }

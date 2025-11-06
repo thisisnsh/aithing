@@ -6,15 +6,17 @@
 
 
 5 Nov 
-- Settings 
 - Size relative to screen. Store the size in settings by percentage of the screen.  
+- Bug when hover on lower width screen it shifts horizontally 
+- Bug change color of send gmail message
+- Bug cursor shifted up
+- On settings change refresh modesl in notch view
 
 6 Nov
 - Multitasking 
-    
-7 Nov
 - Remove double clicks due to hover
-- Bug when hover on lower width screen it shifts horizontally 
+    
+7 Nov 
 - Shortcut
     - ctrl left / right to open minimize 
     - ctrl up / down to shift up / down 

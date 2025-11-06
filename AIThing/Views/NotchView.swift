@@ -35,7 +35,7 @@ struct NotchView: View {
     @State private var toastText = ""
     @State private var toastColor: Color = .yellow
     @State private var hoverSidebar = false
-    @State private var expandSidebar = true
+    @State private var expandSidebar = false
 
     private var showChatWindow: Bool {
         windowSize.rawValue >= WindowSize.chatIsShown.rawValue
@@ -60,7 +60,25 @@ struct NotchView: View {
             HStack(spacing: 0) {
                 if showChatWindow {
                     if showSettings {
-                        Settings()
+                        SettingsView(
+                            isPresented: $showSettings,
+                            managedModels: $managedModels,
+                            close: {
+                                showSettings = false
+                                close()
+                            },
+                            minimize: {
+                                showSettings = false
+                                minimize()
+                            },
+                            expand: { maximize() },
+
+                        )
+                        .environmentObject(loginManager)
+                        .environmentObject(firestoreManager)
+                        .environmentObject(googleOAuthManager)
+                        .environmentObject(githubOAuthManager)
+                        .environmentObject(mcpOAuthManagers)
                     } else {
                         IntelligenceView(
                             tabId: tabId,
@@ -89,11 +107,11 @@ struct NotchView: View {
                                 .frame(height: 32)
                         }
 
-                        if expandNotch {
+                        if expandNotch, !showSettings {
                             if expandSidebar {
                                 Spacer()
-                                                                
-                                Image(systemName: "sidebar.right")
+
+                                Image(systemName: "rectangle.grid.3x1.fill")
                                     .resizable()
                                     .frame(width: 14, height: 14)
                                     .padding(8)
@@ -101,18 +119,7 @@ struct NotchView: View {
                                     .cornerRadius(8)
                                     .onHover { hoverSidebar = $0 }
                                     .onTapGesture { sidebarToggle() }
-                            } else {
-                                HoverableTabButton(
-                                    title: "Expand Sidebar",
-                                    isActive: false,
-                                    action: {
-                                        sidebarToggle()
-                                    },
-                                    deleteAction: {},
-                                    image: "sidebar.right",
-                                    isDeletable: false,
-                                    isExpanded: expandSidebar
-                                )
+                                    .rotationEffect(Angle(degrees: 270))
                             }
                         }
                     }
@@ -127,6 +134,7 @@ struct NotchView: View {
                             isActive: false,
                             action: {
                                 open()
+                                showSettings = false
                                 tabId = UUID().uuidString
                             },
                             deleteAction: {},
@@ -134,13 +142,14 @@ struct NotchView: View {
                             isDeletable: false,
                             isExpanded: expandSidebar
                         )
-                        .padding(.top, 8)
+                        .padding(.top, expandSidebar ? 8 : 0)
 
                         HoverableTabButton(
                             title: "Settings",
                             isActive: false,
                             action: {
                                 open()
+                                expandSidebar = false
                                 showSettings.toggle()
                             },
                             deleteAction: {},
@@ -149,11 +158,26 @@ struct NotchView: View {
                             isExpanded: expandSidebar
                         )
 
-                        if histories.count > 0 {
-                            Divider().opacity(0).padding(.vertical, 8)
+                        if !expandSidebar, !showSettings {
+                            HoverableTabButton(
+                                title: "Expand Sidebar",
+                                isActive: false,
+                                action: {
+                                    sidebarToggle()
+                                },
+                                deleteAction: {},
+                                image: "rectangle.grid.1x2.fill",
+                                isDeletable: false,
+                                isExpanded: expandSidebar,
+                                rotateImage: Angle(degrees: 270)
+                            )
                         }
 
                         if expandSidebar {
+                            if histories.count > 0 {
+                                Divider().opacity(0).padding(.vertical, 8)
+                            }
+
                             Sidebar()
                         }
                     }
@@ -216,6 +240,7 @@ struct NotchView: View {
                         isActive: (tabId == h.id),
                         action: {
                             open()
+                            showSettings = false
                             tabId = h.id
                         },
                         deleteAction: {
@@ -242,10 +267,6 @@ struct NotchView: View {
             }
         }
         .frame(width: expandSidebar ? 200 : 60)
-    }
-
-    private func Settings() -> some View {
-        Text("")
     }
 
     private func Toast() -> some View {
@@ -595,7 +616,7 @@ struct NotchView: View {
     private func isTabActive(tabId: String) -> Bool {
         tabId == self.tabId
     }
-    
+
     private func updateHistoryList() async {
         histories = await HistoryStore.shared.getAll(limit: 100)
     }

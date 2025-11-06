@@ -11,11 +11,15 @@ struct SettingsView: View {
     @EnvironmentObject var mcpOAuthManagers: McpOAuthManagers
 
     @Binding var isPresented: Bool
-    var setPanelVisibility: () -> Void
-    let setPanelPassthrough: (_ enabled: Bool) -> Void
     @Binding var managedModels: [ModelInfo]
-    let onHistory: () -> Void
+    let close: () -> Void
+    let minimize: () -> Void
+    let expand: () -> Void
+
     @State private var selectedTab: SettingsTab = getSelectedTab()
+    @State private var hoverRed: Bool = false
+    @State private var hoverYellow: Bool = false
+    @State private var hoverGreen: Bool = false
 
     // Models
     @State private var apiKey: String = getAnthropicAPIKey() ?? ""
@@ -33,14 +37,16 @@ struct SettingsView: View {
     // Usage
     @State private var usageData: Usage = Usage()
 
-    private func updatePassthrough(inside: Bool) { setPanelPassthrough(!inside) }
-
     var body: some View {
-        HStack(spacing: 0) {
-            sidebar
+        VStack {
+            TitleView()
+                .padding(8)
+
             Divider()
+                .padding(.horizontal, -8)
+
             ScrollView(.vertical, showsIndicators: false) {
-                VStack(alignment: .leading, spacing: 16) {
+                VStack {
                     switch selectedTab {
                     case .account:
                         SettingsAccountTab(
@@ -48,7 +54,7 @@ struct SettingsView: View {
                             signIn: { await signIn() },
                             signOut: { await signOut() },
                             usageData: usageData,
-                            onHistory: { self.onHistory() }
+                            onHistory: {}
                         )
 
                     case .models:
@@ -79,18 +85,22 @@ struct SettingsView: View {
                             preferencesCaptureFullScreen: $preferencesCaptureFullScreen,
                             setPreferencesShowInScreenshot: setPreferencesShowInScreenshot,
                             setPreferencesCaptureFullScreen: setPreferencesCaptureFullScreen,
-                            setPanelVisibility: setPanelVisibility
+                            setPanelVisibility: {}
                         )
                     }
                 }
-                .padding()
-            }
+                .padding(.vertical, 16)
+            }.padding(.vertical, -8)
+
         }
+        .padding(8)
+        .background(.white.opacity(0.1))
+        .clipShape(RoundedRectangle(cornerRadius: 8))
+        .padding(.leading, 8)
         .onDisappear {
             saveModels()
             saveAgents()
         }
-        .onHover(perform: updatePassthrough)
         .task {
             let managedAgents = await firestoreManager.getManagedAgents()
             var allServerIds: [String] = []
@@ -130,116 +140,90 @@ struct SettingsView: View {
         }
     }
 
-    private var sidebar: some View {
-        VStack(alignment: .leading, spacing: 0) {
-            Color.clear.frame(height: 16)
+    private func TitleView() -> some View {
+        HStack {
+            Circle()
+                .frame(width: 12, height: 12)
+                .foregroundStyle(hoverRed ? .red.opacity(0.5) : .red)
+                .onTapGesture { close() }
+                .onHover { hoverRed = $0 }
 
-            sidebarButton("Account", isActive: selectedTab == .account) {
-                selectedTab = .account
-                setSelectedTab(value: selectedTab)
-                saveModels()
-                saveAgents()
-                AnalyticsManager.shared.screenView(
-                    screenName: "account",
-                    screenClass: "settings_view"
-                )
-            }
-            sidebarButton("Models", isActive: selectedTab == .models) {
-                selectedTab = .models
-                setSelectedTab(value: selectedTab)
-                saveModels()
-                saveAgents()
-                AnalyticsManager.shared.screenView(
-                    screenName: "models",
-                    screenClass: "settings_view"
-                )
-            }
-            sidebarButton("Agents", isActive: selectedTab == .agents) {
-                selectedTab = .agents
-                setSelectedTab(value: selectedTab)
-                saveModels()
-                saveAgents()
-                AnalyticsManager.shared.screenView(
-                    screenName: "agents",
-                    screenClass: "settings_view"
-                )
-            }
-            sidebarButton("Preferences", isActive: selectedTab == .preferences) {
-                selectedTab = .preferences
-                setSelectedTab(value: selectedTab)
-                saveModels()
-                saveAgents()
-                AnalyticsManager.shared.screenView(
-                    screenName: "preferences",
-                    screenClass: "settings_view"
-                )
-            }
+            Circle()
+                .frame(width: 12, height: 12)
+                .foregroundStyle(hoverYellow ? .yellow.opacity(0.5) : .yellow)
+                .onTapGesture { minimize() }
+                .onHover { hoverYellow = $0 }
+
+            Circle()
+                .frame(width: 12, height: 12)
+                .foregroundStyle(hoverGreen ? .green.opacity(0.5) : .green)
+                .onTapGesture { expand() }
+                .onHover { hoverGreen = $0 }
+
+            Text("Settings")
+                .font(.system(size: 12, weight: .medium))
+                .foregroundStyle(.white)
+                .padding(.leading, 8)
 
             Spacer()
 
-            Button(action: {
-                AnalyticsManager.shared.customAppQuit()
-                AppDelegate.allowQuit = true
-                NSApplication.shared.terminate(nil)
-            }) {
-                Text("Quit")
-                    .font(.system(size: 14, weight: .medium))
-                    .frame(maxWidth: .infinity, alignment: .leading)
-                    .padding(.vertical, 8)
-                    .padding(.horizontal, 16)
-                    .background(Color.black.opacity(0.1))
-                    .clipShape(RoundedRectangle(cornerRadius: 8))
-                    .padding(.horizontal, 8)
-            }
-            .buttonStyle(.plain)
-
-            if let infoDictionary = Bundle.main.infoDictionary {
-                let version = infoDictionary["CFBundleShortVersionString"] as? String ?? "X"
-                let build = infoDictionary["CFBundleVersion"] as? String ?? "Y"
-
-                Text("Version \(version).\(build)")
-                    .font(.system(size: 10, weight: .medium))
-                    .padding(.top, 8)
-                    .padding(.horizontal, 16)
-            }
-
-            Link(
-                "Report Bug",
-                destination: URL(
-                    string:
-                        "mailto:help@aithing.dev?subject=Bug Report \(Date())&body=Description:\nPlease describe the issue.\n\nScreenshot:\n(Optional) Attach a screenshot. Make sure 'Show in Screenshot' is enabled in Settings."
-                )!
-            )
-            .font(.system(size: 10, weight: .medium))
-            .padding(.vertical, 8)
-            .padding(.horizontal, 16)
-            .onHover { perform in
-                if perform {
-                    AnalyticsManager.shared
-                        .customEvent(type: .action, primary: "report_bug_hover")
+            ControlGroup {
+                Button(action: {
+                    selectedTab = .account
+                    setSelectedTab(value: selectedTab)
+                    saveModels()
+                    saveAgents()
+                    AnalyticsManager.shared.screenView(
+                        screenName: "account",
+                        screenClass: "settings_view"
+                    )
+                }) {
+                    Label("Account", systemImage: "person.fill")
+                        .labelStyle(.iconOnly)
+                }
+                Button(action: {
+                    selectedTab = .models
+                    setSelectedTab(value: selectedTab)
+                    saveModels()
+                    saveAgents()
+                    AnalyticsManager.shared.screenView(
+                        screenName: "models",
+                        screenClass: "settings_view"
+                    )
+                }) {
+                    Label("Models", systemImage: "sparkles.2")
+                        .labelStyle(.iconOnly)
+                }
+                Button(action: {
+                    selectedTab = .agents
+                    setSelectedTab(value: selectedTab)
+                    saveModels()
+                    saveAgents()
+                    AnalyticsManager.shared.screenView(
+                        screenName: "agents",
+                        screenClass: "settings_view"
+                    )
+                }) {
+                    Label("Agents", systemImage: "pointer.arrow.ipad")
+                        .labelStyle(.iconOnly)
+                }
+                Button(action: {
+                    selectedTab = .preferences
+                    setSelectedTab(value: selectedTab)
+                    saveModels()
+                    saveAgents()
+                    AnalyticsManager.shared.screenView(
+                        screenName: "preferences",
+                        screenClass: "settings_view"
+                    )
+                }) {
+                    Label("Preferences", systemImage: "keyboard.fill")
+                        .labelStyle(.iconOnly)
                 }
             }
-
-            Color.clear.frame(height: 16)
+            .padding(.trailing, -8)
         }
-        .frame(width: 200)
-        .background(Color.gray.opacity(0.1))
-    }
-
-    private func sidebarButton(_ title: String, isActive: Bool, action: @escaping () -> Void)
-        -> some View
-    {
-        Button(action: action) {
-            Text(title)
-                .font(.system(size: 12, weight: .medium))
-                .frame(maxWidth: .infinity, alignment: .leading)
-                .padding(.vertical, 8)
-                .padding(.horizontal, 16)
-                .background(isActive ? Color.black.opacity(0.5) : .clear)
-                .clipShape(RoundedRectangle(cornerRadius: 8))
-                .padding(.horizontal, 8)
-        }
-        .buttonStyle(.plain)
+        .frame(height: 16)
     }
 
     func bindingForModel(_ binding: Binding<String>, _ target: String) -> Binding<Bool> {
@@ -310,15 +294,15 @@ struct SettingsView: View {
         let allAgents = getAgentEntries()
         for agent in allAgents {
             switch agent.entry {
-            case let .url(n, _):
+            case .url(let n, _):
                 if n == name {
                     return "Agent name \(name) should be unique"
                 }
-            case let .urlWithToken(n, _, _):
+            case .urlWithToken(let n, _, _):
                 if n == name {
                     return "Agent name \(name) should be unique"
                 }
-            case let .command(n, _, _):
+            case .command(let n, _, _):
                 if n == name {
                     return "Agent name \(name) should be unique"
                 }

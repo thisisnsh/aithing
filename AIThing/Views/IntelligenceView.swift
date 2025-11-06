@@ -586,13 +586,13 @@ extension IntelligenceView {
         let costPerFile = getModelCostImage(getModel(), all: managedModels)
         let costFile = costPerFile * fileCount
         let costAgent = costPerQuery * modelAgentCount
-        let total = costPerQuery + costAgent + costFile
+        let _ = costPerQuery + costAgent + costFile
 
-        // logger.debug("api key: \(apiKey)")
-        // logger.debug("model: \(model)")
-        logger.debug("tokens: \(getOutputToken())")
-        // logger.debug("messages: \(String(describing: body["messages"]))")
-        // logger.debug("tools count: \((body["tools"] as? [[String: Any]])?.count ?? 0)")
+        logger.debug("api key: \(apiKey)")
+        logger.debug("model: \(model)")
+        logger.debug("max tokens: \(getOutputToken())")
+        logger.debug("messages: \(String(describing: body["messages"]))")
+        logger.debug("tools count: \((body["tools"] as? [[String: Any]])?.count ?? 0)")
         // logger.debug("cost query: \(costPerQuery) file: \(costFile) agent: \(costAgent) total: \(total)")
 
         request.httpBody = try? JSONSerialization.data(withJSONObject: body)

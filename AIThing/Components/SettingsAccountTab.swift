@@ -14,15 +14,16 @@ struct SettingsAccountTab: View {
     let usageData: Usage
     let onHistory: () -> Void
 
-    private let help: [(String, String)] = [
-        ("Show / Hide AI Thing", "Control (⌃) + Space"),
-        ("Show / Hide Settings", "Control (⌃) + S"),
-        ("Show / Hide History", "Control (⌃) + H"),
-        ("Open New Tab", "Control (⌃) + N"),
-        ("Close Current Tab", "Control (⌃) + W"),
-        ("Move to Right Tab", "Control (⌃) + (Right Angular Bracket) >"),
-        ("Move to Left Tab", "Control (⌃) + (Left Angular Bracket) <"),
-    ]
+    private var version: String {
+        if let infoDictionary = Bundle.main.infoDictionary {
+            let version = infoDictionary["CFBundleShortVersionString"] as? String ?? "X"
+            let build = infoDictionary["CFBundleVersion"] as? String ?? "Y"
+
+            return "Version \(version).\(build)"
+        } else {
+            return "Version X.Y"
+        }
+    }
 
     var body: some View {
         VStack(alignment: .leading, spacing: 16) {
@@ -101,39 +102,39 @@ struct SettingsAccountTab: View {
                 .padding(4)
             }
 
-            GroupBox {
-                Button {
-                    onHistory()
-                } label: {
-                    HStack {
-                        Text("See Conversations").font(.system(size: 14, weight: .medium))
-                        Spacer()
-                        Image(systemName: "chevron.right")
-                            .frame(width: 10, height: 10)
-                    }
-                }
-                .buttonStyle(.plain)
-                .padding(4)
-            }
-            .padding(.top, -8)
-
-            GroupBox(label: title("Help")) {
+            GroupBox(label: title(version)) {
                 VStack(alignment: .leading) {
-                    ForEach(help, id: \.0) { h in
+                    Button {
+                        AnalyticsManager.shared.customAppQuit()
+                        AppDelegate.allowQuit = true
+                        NSApplication.shared.terminate(nil)
+                    } label: {
                         HStack {
-                            Text(h.0)
-                                .font(.system(size: 14, weight: .medium))
-                            Spacer()
-                            Text(h.1)
-                                .font(.system(size: 10, weight: .medium))
-                                .opacity(0.5)
+                            Text("Quit").font(.system(size: 14, weight: .medium))
                         }
-                        .padding(4)
-                        Divider()
                     }
-                    Text("Still Stuck? Check https://aithing.dev")
-                        .font(.system(size: 10, weight: .medium))
-                        .padding(4)
+                    .buttonStyle(.plain)
+                    .padding(4)
+
+                    Divider()
+
+                    Link(
+                        "Report Bug",
+                        destination: URL(
+                            string:
+                                "mailto:help@aithing.dev?subject=Bug Report \(Date())&body=Description:\nPlease describe the issue.\n\nScreenshot:\n(Optional) Attach a screenshot. Make sure 'Show in Screenshot' is enabled in Settings."
+                        )!
+                    )
+                    .buttonStyle(.plain)
+                    .font(.system(size: 14, weight: .medium))
+                    .padding(4)
+                    .onHover { perform in
+                        if perform {
+                            AnalyticsManager.shared
+                                .customEvent(type: .action, primary: "report_bug_hover")
+                        }
+                    }
+
                 }
                 .padding(4)
             }
