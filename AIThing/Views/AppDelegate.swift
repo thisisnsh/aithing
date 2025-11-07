@@ -33,6 +33,8 @@ class AppDelegate: NSObject, NSApplicationDelegate {
     private var width: CGFloat = 560
     private var height: CGFloat = 600
 
+    private var previousTopY: CGFloat = 0
+
     func applicationDidFinishLaunching(_ notification: Notification) {
         NSApp.setActivationPolicy(.accessory)  // background-style app
 
@@ -128,7 +130,10 @@ extension AppDelegate {
             return (width, height)
         case .chatIsExpanded:
             if let screen = screen {
-                return (min(screen.frame.width / 2, 1000), min(screen.frame.width / 0.8, 1000))
+                return (
+                    min(screen.visibleFrame.maxX / 2, 1000),
+                    min(screen.visibleFrame.maxY * 0.8, 1000)
+                )
             }
             return (860, 600)
         }
@@ -145,11 +150,19 @@ extension AppDelegate {
             // Calculate Y position to keep top-right corner fixed
             // When expanding, we need to move the origin down
             let currentTopY = floatingWindow.frame.origin.y + floatingWindow.frame.height
-            let newY = currentTopY - windowHeight
+            var newY = currentTopY - windowHeight
+
+            if windowSize == .chatIsExpanded {
+                previousTopY = currentTopY
+                newY = screenFrame.midY - (windowHeight / 2)
+            } else if previousTopY != 0 {
+                newY = previousTopY - windowHeight
+                previousTopY = 0
+            }
 
             floatingWindow.setFrame(
                 NSRect(x: xPosition, y: newY, width: windowWidth, height: windowHeight),
-                display: true,
+                display: false,
                 animate: false
             )
         }
