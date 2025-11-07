@@ -11,10 +11,7 @@
 - Animations
 - Multitasking 
 
-8 Nov
-- Shortcut
-    - Ctrl left/right to open minimize 
-    - Ctrl up/down to shift up/down 
+8 Nov    
 - Fix System Message
 - Analytics  
 - Doc 

@@ -113,7 +113,6 @@ struct ChatView: View {
             }
         }
         .onChange(of: history) { _ in
-            print("history changed")
             setHistory(history)
         }
     }

@@ -217,13 +217,19 @@ struct NotchView: View {
         .onAppear {
             close()
             NSEvent.addLocalMonitorForEvents(matching: .keyDown) { event in
-                if event.modifierFlags.contains(.control), event.modifierFlags.contains(.shift) {
+                if event.modifierFlags.contains(.option), event.modifierFlags.contains(.command) {
                     switch event.keyCode {
                     case 126:  // Up arrow
                         dragViewY(multiplier: 1)
                         return nil
                     case 125:  // Down arrow
                         dragViewY(multiplier: -1)
+                        return nil
+                    case 124:  // Right arrow
+                        minimize()
+                        return nil
+                    case 123:  // Left arrow
+                        open()
                         return nil
                     default:
                         break
