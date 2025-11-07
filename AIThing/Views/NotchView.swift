@@ -217,27 +217,6 @@ struct NotchView: View {
         .frame(width: width, height: height)
         .onAppear {
             close()
-            NSEvent.addLocalMonitorForEvents(matching: .keyDown) { event in
-                if event.modifierFlags.contains(.option), event.modifierFlags.contains(.command) {
-                    switch event.keyCode {
-                    case 126:  // Up arrow
-                        dragViewY(multiplier: 1)
-                        return nil
-                    case 125:  // Down arrow
-                        dragViewY(multiplier: -1)
-                        return nil
-                    case 124:  // Right arrow
-                        minimize()
-                        return nil
-                    case 123:  // Left arrow
-                        open()
-                        return nil
-                    default:
-                        break
-                    }
-                }
-                return event
-            }
         }
         .onChange(of: showSettings) { newValue in
             Task {
@@ -248,6 +227,13 @@ struct NotchView: View {
         }
         .onChange(of: vm.refresh) { _ in
             (width, height) = updateWindowSize(lastExpandedWindowSize)
+        }
+        .onChange(of: vm.toggle) { _ in
+            if windowSize == WindowSize.notchIsCollapsed {
+                open()
+            } else {
+                minimize()
+            }
         }
         .task {
             switch loginManager.authState {
@@ -268,7 +254,6 @@ struct NotchView: View {
             hoverTask = Task { @MainActor in
                 // delay a bit before applying the hover state
                 try? await Task.sleep(nanoseconds: 150_000_000)  // 150ms
-
                 guard !Task.isCancelled else { return }
 
                 if windowSize != WindowSize.chatIsShown {
@@ -405,11 +390,6 @@ struct NotchView: View {
             )
             .padding(.bottom, -8)
             .padding(.horizontal, 32)
-    }
-
-    private func dragViewY(multiplier: CGFloat) {
-        let offset: CGFloat = 16
-        modifyWindowTopOffset(offset * multiplier, lastExpandedWindowSize)
     }
 
     private func Toast() -> some View {

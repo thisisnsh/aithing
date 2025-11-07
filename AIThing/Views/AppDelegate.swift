@@ -6,8 +6,10 @@
 //
 
 import AppKit
+import Cocoa
 import FirebaseAuth
 import FirebaseCore
+import HotKey
 import Logging
 import OAuthSwift
 import ServiceManagement
@@ -23,7 +25,13 @@ enum WindowSize: Int {
 
 final class NotchVM: ObservableObject {
     @Published var refresh = false
+    @Published var minimize = false
+    @Published var open = false
+    @Published var toggle = false
     func refreshDimensions() { refresh.toggle() }
+    func minimizeDimensions() { minimize.toggle() }
+    func openDimensions() { open.toggle() }
+    func toggleDimensions() { toggle.toggle() }
 }
 
 // MARK: - AppDelegate
@@ -40,6 +48,10 @@ class AppDelegate: NSObject, NSApplicationDelegate {
 
     private var previousTopY: CGFloat = 0
     private var lastWindowSize: WindowSize = .notchIsCollapsed
+
+    private var upHotKey: HotKey?
+    private var downHotKey: HotKey?
+    private var spaceHotKey: HotKey?
 
     let vm = NotchVM()
 
@@ -61,6 +73,7 @@ class AppDelegate: NSObject, NSApplicationDelegate {
 
         FirebaseApp.configure()
 
+        setupGlobalHotKeys()
         setupNotchWindow()
 
         // Launch app on login
@@ -82,6 +95,19 @@ class AppDelegate: NSObject, NSApplicationDelegate {
 }
 
 extension AppDelegate {
+    private func setupGlobalHotKeys() {
+        upHotKey = HotKey(key: .upArrow, modifiers: [.control, .option])
+        downHotKey = HotKey(key: .downArrow, modifiers: [.control, .option])
+        spaceHotKey = HotKey(key: .space, modifiers: [.control, .option])
+
+        upHotKey?.keyDownHandler = {
+            self.modifyWindowTopOffset(offset: 16, windowSize: self.lastWindowSize)
+        }
+        downHotKey?.keyDownHandler = {
+            self.modifyWindowTopOffset(offset: -16, windowSize: self.lastWindowSize)
+        }
+        spaceHotKey?.keyDownHandler = { self.vm.toggleDimensions() }
+    }
 
     private func setupNotchWindow() {
         // Get screen dimensions
@@ -118,7 +144,7 @@ extension AppDelegate {
             modifyWindowTopOffset: { self.modifyWindowTopOffset(offset: $0, windowSize: $1) }
 
         )
-        floatingWindow.contentView = NSHostingView(rootView: notchView)
+        floatingWindow.contentView = FirstMouseHostingView(rootView: notchView)
         floatingWindow.makeKeyAndOrderFront(nil)
 
         setPanelVisibility()
@@ -241,5 +267,9 @@ extension AppDelegate {
             floatingWindow.sharingType = getPreferencesShowInScreenshot() ? .readOnly : .none
         }
     }
+}
 
+final class FirstMouseHostingView<Content: View>: NSHostingView<Content> {
+    override func acceptsFirstMouse(for event: NSEvent?) -> Bool { true }
+    override var acceptsFirstResponder: Bool { true }
 }

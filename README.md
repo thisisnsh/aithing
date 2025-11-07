@@ -4,19 +4,25 @@
 
 ## 2.0 
 
-7 Nov 
-- Remove double clicks due to hover
-- Animations
-- Multitasking 
+hover fix 
+global shortcuts
+scroll animation chat view
 
-8 Nov    
+7 Nov 
+- Animations
 - Fix System Message
 - Analytics  
+
+8 Nov    
+- Multitasking 
 - Doc 
 - Release 2.0
 
 9 Nov
 - YC Apply
+
+BF
+- 2 hover required to open the app after closing
 
 ------------------------
 

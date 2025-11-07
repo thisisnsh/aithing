@@ -90,24 +90,24 @@ struct ChatView: View {
                     .padding(.vertical, 16)
                 }
                 .onChange(of: items) { _ in
-                    DispatchQueue.main.async {
-                        withAnimation(.easeOut(duration: 0.25)) {
-                            proxy.scrollTo("Bottom", anchor: .bottom)
-                        }
+                    var t = Transaction()
+                    t.disablesAnimations = true
+                    withTransaction(t) {
+                        proxy.scrollTo("Bottom", anchor: .bottom)
                     }
                 }
                 .onChange(of: modelOutput) { _ in
-                    DispatchQueue.main.async {
-                        withAnimation(.easeOut(duration: 0.25)) {
-                            proxy.scrollTo("Bottom", anchor: .bottom)
-                        }
+                    var t = Transaction()
+                    t.disablesAnimations = true
+                    withTransaction(t) {
+                        proxy.scrollTo("Bottom", anchor: .bottom)
                     }
                 }
                 .onChange(of: isThinking) { _ in
-                    DispatchQueue.main.async {
-                        withAnimation(.easeOut(duration: 0.25)) {
-                            proxy.scrollTo("Bottom", anchor: .bottom)
-                        }
+                    var t = Transaction()
+                    t.disablesAnimations = true
+                    withTransaction(t) {
+                        proxy.scrollTo("Bottom", anchor: .bottom)
                     }
                 }
             }
