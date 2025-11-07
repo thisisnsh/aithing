@@ -28,6 +28,11 @@ class AppDelegate: NSObject, NSApplicationDelegate {
     static var allowQuit = false
     private var screen = NSScreen.main
 
+    private var originalWidth: CGFloat = 560
+    private var originalHeight: CGFloat = 600
+    private var width: CGFloat = 560
+    private var height: CGFloat = 600
+
     func applicationDidFinishLaunching(_ notification: Notification) {
         NSApp.setActivationPolicy(.accessory)  // background-style app
 
@@ -83,6 +88,10 @@ extension AppDelegate {
             updateWindowSize: {
                 return self.updateWindowSize(windowSize: $0)
             },
+            modifyWindowBaseSize: {
+                return self.modifyWindowBaseSize(size: $0, windowSize: $1)
+            },
+            modifyWindowOriginalSize: { self.modifyWindowOriginalSize() }
         )
         floatingWindow.contentView = NSHostingView(rootView: notchView)
         floatingWindow.makeKeyAndOrderFront(nil)
@@ -93,24 +102,35 @@ extension AppDelegate {
 
 extension AppDelegate {
 
+    private func modifyWindowBaseSize(size: CGSize, windowSize: WindowSize) -> (CGFloat, CGFloat) {
+        let newWidth = max(560, originalWidth + size.width)
+        let newHeight = max(600, originalHeight + size.height)
+
+        self.width = newWidth
+        self.height = newHeight
+        return updateWindowSize(windowSize: windowSize)
+    }
+
+    private func modifyWindowOriginalSize() {
+        originalWidth = width
+        originalHeight = height
+    }
+
     private func getWindowSize(windowSize: WindowSize) -> (CGFloat, CGFloat) {
         switch windowSize {
         case .notchIsCollapsed:
-            // collapsed notch
             return (60, 100)
         case .notchIsExpandedSidebarIsCollapsed:
-            // expanded notch with collapsed sidebar
             return (60, 160)
         case .notchIsExpanded:
-            // expanded notch
             return (200, 600)
         case .chatIsShown:
-            // chat window shown (use expanded for now)
-            return (560, 600)
+            return (width, height)
         case .chatIsExpanded:
-            // chat window expanded (use expanded for now)
+            if let screen = screen {
+                return (min(screen.frame.width / 2, 1000), min(screen.frame.width / 0.8, 1000))
+            }
             return (860, 600)
-
         }
     }
 

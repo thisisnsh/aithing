@@ -16,6 +16,8 @@ struct NotchView: View {
     let logger = Logger(subsystem: "com.thisisnsh.mac.AIThing", category: "NotchView")
 
     let updateWindowSize: (WindowSize) -> (CGFloat, CGFloat)
+    let modifyWindowBaseSize: (CGSize, WindowSize) -> (CGFloat, CGFloat)
+    let modifyWindowOriginalSize: () -> Void
 
     @State private var width: CGFloat = 0
     @State private var height: CGFloat = 0
@@ -90,6 +92,10 @@ struct NotchView: View {
                             isTabClosed: { !isTabActive(tabId: $0) },
                             updateHistoryList: { await updateHistoryList() },
                             reconnectManagedAgents: reconnectManagedAgents,
+                            modifyWindowBaseSize: {
+                                (width, height) = modifyWindowBaseSize($0, lastExpandedWindowSize)
+                            },
+                            modifyWindowOriginalSize: { modifyWindowOriginalSize() }
                         )
                         .environmentObject(mcpManager)
                         .environmentObject(loginManager)

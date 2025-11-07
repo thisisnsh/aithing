@@ -4,21 +4,18 @@
 
 ## 2.0 
 
-
-5 Nov 
-- Size relative to screen. Store the size in settings by percentage of the screen.  
-
 6 Nov
-- Multitasking 
+- Size relative to screen and changable
 - Remove double clicks due to hover
-    
+
 7 Nov 
-- Shortcut
-    - ctrl left / right to open minimize 
-    - ctrl up / down to shift up / down 
-- Notch Animations
+- Animations
+- Multitasking 
 
 8 Nov
+- Shortcut
+    - Ctrl left/right to open minimize 
+    - Ctrl up/down to shift up/down 
 - Fix System Message
 - Analytics  
 - Doc 
@@ -26,7 +23,6 @@
 
 9 Nov
 - YC Apply
-
 
 ------------------------
 
