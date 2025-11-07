@@ -6,12 +6,10 @@
 
 6 Nov
 - Remove double clicks due to hover
-- Drag up and down
 
 7 Nov 
 - Animations
 - Multitasking 
-
 
 8 Nov
 - Shortcut

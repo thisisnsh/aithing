@@ -93,7 +93,9 @@ extension AppDelegate {
             modifyWindowBaseSize: {
                 return self.modifyWindowBaseSize(size: $0, windowSize: $1)
             },
-            modifyWindowOriginalSize: { self.modifyWindowOriginalSize() }
+            modifyWindowOriginalSize: { self.modifyWindowOriginalSize() },
+            modifyWindowTopOffset: { self.modifyWindowTopOffset(offset: $0, windowSize: $1) }
+
         )
         floatingWindow.contentView = NSHostingView(rootView: notchView)
         floatingWindow.makeKeyAndOrderFront(nil)
@@ -118,6 +120,13 @@ extension AppDelegate {
         originalHeight = height
     }
 
+    private func modifyWindowTopOffset(offset: CGFloat, windowSize: WindowSize) {
+        if windowSize == .chatIsExpanded {
+            return
+        }
+        _ = updateWindowSize(windowSize: windowSize, offsetTopY: offset)
+    }
+
     private func getWindowSize(windowSize: WindowSize) -> (CGFloat, CGFloat) {
         switch windowSize {
         case .notchIsCollapsed:
@@ -139,7 +148,10 @@ extension AppDelegate {
         }
     }
 
-    private func updateWindowSize(windowSize: WindowSize) -> (CGFloat, CGFloat) {
+    private func updateWindowSize(windowSize: WindowSize, offsetTopY: CGFloat = 0) -> (
+        CGFloat,
+        CGFloat
+    ) {
         let (windowWidth, windowHeight) = getWindowSize(windowSize: windowSize)
 
         // Calculate new position to keep top-right corner fixed
@@ -150,13 +162,13 @@ extension AppDelegate {
             // Calculate Y position to keep top-right corner fixed
             // When expanding, we need to move the origin down
             let currentTopY = floatingWindow.frame.origin.y + floatingWindow.frame.height
-            var newY = currentTopY - windowHeight
+            var newY = currentTopY - windowHeight + offsetTopY
 
             if windowSize == .chatIsExpanded {
                 previousTopY = currentTopY
                 newY = screenFrame.midY - (windowHeight / 2)
             } else if previousTopY != 0 {
-                newY = previousTopY - windowHeight
+                newY = previousTopY - windowHeight + offsetTopY
                 previousTopY = 0
             }
 

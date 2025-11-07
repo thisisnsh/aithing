@@ -18,6 +18,7 @@ struct NotchView: View {
     let updateWindowSize: (WindowSize) -> (CGFloat, CGFloat)
     let modifyWindowBaseSize: (CGSize, WindowSize) -> (CGFloat, CGFloat)
     let modifyWindowOriginalSize: () -> Void
+    let modifyWindowTopOffset: (CGFloat, WindowSize) -> Void
 
     @State private var width: CGFloat = 0
     @State private var height: CGFloat = 0
@@ -46,6 +47,17 @@ struct NotchView: View {
         windowSize.rawValue >= WindowSize.notchIsExpandedSidebarIsCollapsed.rawValue
     }
 
+    // Resize
+    @State private var smoothedY: CGFloat = 0
+    @State private var smoothedX: CGFloat = 0
+    @State private var smoothedDragY: CGFloat = 0
+    @State private var lastAppliedY: CGFloat = 0
+    @State private var lastAppliedX: CGFloat = 0
+    @State private var lastAppliedDragY: CGFloat = 0
+    private let alpha: CGFloat = 0.25
+    private let pixelStep: CGFloat = 1.0
+    @State private var resizeHoverTask: Task<Void, Never>?
+
     // Managed Agents
     // StateObjects not persisted after application quit
     // This is due to the nature of these servers that require token refresh
@@ -61,46 +73,52 @@ struct NotchView: View {
 
             HStack(spacing: 0) {
                 if showChatWindow {
-                    if showSettings {
-                        SettingsView(
-                            isPresented: $showSettings,
-                            managedModels: $managedModels,
-                            close: {
-                                showSettings = false
-                                close()
-                            },
-                            minimize: {
-                                showSettings = false
-                                minimize()
-                            },
-                            expand: { maximize() },
+                    ResizeViewX()
+                }
 
-                        )
-                        .environmentObject(loginManager)
-                        .environmentObject(firestoreManager)
-                        .environmentObject(googleOAuthManager)
-                        .environmentObject(githubOAuthManager)
-                        .environmentObject(mcpOAuthManagers)
-                    } else {
-                        IntelligenceView(
-                            tabId: tabId,
-                            allClientTools: $allClientTools,
-                            managedModels: $managedModels,
-                            close: { close() },
-                            minimize: { minimize() },
-                            expand: { maximize() },
-                            isTabClosed: { !isTabActive(tabId: $0) },
-                            updateHistoryList: { await updateHistoryList() },
-                            reconnectManagedAgents: reconnectManagedAgents,
-                            modifyWindowBaseSize: {
-                                (width, height) = modifyWindowBaseSize($0, lastExpandedWindowSize)
-                            },
-                            modifyWindowOriginalSize: { modifyWindowOriginalSize() }
-                        )
-                        .environmentObject(mcpManager)
-                        .environmentObject(loginManager)
-                        .environmentObject(firestoreManager)
-                        .id(tabId)
+                VStack(spacing: 0) {
+                    if showChatWindow {
+                        if showSettings {
+                            SettingsView(
+                                isPresented: $showSettings,
+                                managedModels: $managedModels,
+                                close: {
+                                    showSettings = false
+                                    close()
+                                },
+                                minimize: {
+                                    showSettings = false
+                                    minimize()
+                                },
+                                expand: { maximize() },
+
+                            )
+                            .environmentObject(loginManager)
+                            .environmentObject(firestoreManager)
+                            .environmentObject(googleOAuthManager)
+                            .environmentObject(githubOAuthManager)
+                            .environmentObject(mcpOAuthManagers)
+                        } else {
+                            IntelligenceView(
+                                tabId: tabId,
+                                allClientTools: $allClientTools,
+                                managedModels: $managedModels,
+                                close: { close() },
+                                minimize: { minimize() },
+                                expand: { maximize() },
+                                isTabClosed: { !isTabActive(tabId: $0) },
+                                updateHistoryList: { await updateHistoryList() },
+                                reconnectManagedAgents: reconnectManagedAgents
+                            )
+                            .environmentObject(mcpManager)
+                            .environmentObject(loginManager)
+                            .environmentObject(firestoreManager)
+                            .id(tabId)
+                        }
+                    }
+
+                    if showChatWindow {
+                        ResizeViewY()
                     }
                 }
 
@@ -193,9 +211,27 @@ struct NotchView: View {
                 .frame(width: expandNotch ? (expandSidebar ? 200 : 60) : 60)
             }
             .padding(.vertical, 24)
+
         }
         .frame(width: width, height: height)
-        .onAppear { close() }
+        .onAppear {
+            close()
+            NSEvent.addLocalMonitorForEvents(matching: .keyDown) { event in
+                if event.modifierFlags.contains(.control), event.modifierFlags.contains(.shift) {
+                    switch event.keyCode {
+                    case 126:  // Up arrow
+                        dragViewY(multiplier: 1)
+                        return nil
+                    case 125:  // Down arrow
+                        dragViewY(multiplier: -1)
+                        return nil
+                    default:
+                        break
+                    }
+                }
+                return event
+            }
+        }
         .onChange(of: showSettings) { newValue in
             Task {
                 managedModels = await firestoreManager.getModelInfos()
@@ -280,6 +316,90 @@ struct NotchView: View {
             }
         }
         .frame(width: expandSidebar ? 200 : 60)
+    }
+
+    private func ResizeViewX() -> some View {
+        Rectangle()
+            .fill(.black)
+            .frame(width: 8)
+            .onHover { inside in
+                resizeHoverTask?.cancel()
+                resizeHoverTask = Task { @MainActor in
+                    try? await Task.sleep(nanoseconds: 150_000_000)
+                    guard !Task.isCancelled else { return }
+                    if inside {
+                        NSCursor.resizeLeftRight.set()
+                    } else {
+                        NSCursor.arrow.set()
+                    }
+                }
+            }
+            .gesture(
+                DragGesture(minimumDistance: 0)
+                    .onChanged { value in
+                        NSCursor.resizeLeftRight.set()
+                        let rawX = value.translation.width * -1
+                        smoothedX += (rawX - smoothedX) * alpha
+                        let roundedX = (smoothedX / pixelStep).rounded() * pixelStep
+                        if roundedX != lastAppliedX {
+                            lastAppliedX = roundedX
+                            let size = CGSize(width: roundedX, height: 0)
+                            (width, height) = modifyWindowBaseSize(size, lastExpandedWindowSize)
+                        }
+                    }
+                    .onEnded { _ in
+                        smoothedX = 0
+                        lastAppliedX = 0
+                        modifyWindowOriginalSize()
+                        NSCursor.arrow.set()
+                    }
+            )
+            .padding(.vertical, 32)
+    }
+
+    private func ResizeViewY() -> some View {
+        Rectangle()
+            .fill(.black)
+            .frame(height: 8)
+            .onHover { inside in
+                resizeHoverTask?.cancel()
+                resizeHoverTask = Task { @MainActor in
+                    try? await Task.sleep(nanoseconds: 150_000_000)
+                    guard !Task.isCancelled else { return }
+                    if inside {
+                        NSCursor.resizeUpDown.set()
+                    } else {
+                        NSCursor.arrow.set()
+                    }
+                }
+            }
+            .gesture(
+                DragGesture(minimumDistance: 0)
+                    .onChanged { value in
+                        NSCursor.resizeUpDown.set()
+                        let rawY = value.translation.height
+                        smoothedY += (rawY - smoothedY) * alpha
+                        let roundedY = (smoothedY / pixelStep).rounded() * pixelStep
+                        if roundedY != lastAppliedY {
+                            lastAppliedY = roundedY
+                            let size = CGSize(width: 0, height: roundedY)
+                            (width, height) = modifyWindowBaseSize(size, lastExpandedWindowSize)
+                        }
+                    }
+                    .onEnded { _ in
+                        smoothedY = 0
+                        lastAppliedY = 0
+                        modifyWindowOriginalSize()
+                        NSCursor.arrow.set()
+                    }
+            )
+            .padding(.bottom, -8)
+            .padding(.horizontal, 32)
+    }
+
+    private func dragViewY(multiplier: CGFloat) {
+        let offset: CGFloat = 16
+        modifyWindowTopOffset(offset * multiplier, lastExpandedWindowSize)
     }
 
     private func Toast() -> some View {

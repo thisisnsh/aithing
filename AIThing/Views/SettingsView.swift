@@ -96,7 +96,6 @@ struct SettingsView: View {
         .padding(8)
         .background(.white.opacity(0.1))
         .clipShape(RoundedRectangle(cornerRadius: 8))
-        .padding(.leading, 8)
         .onDisappear {
             saveModels()
             saveAgents()

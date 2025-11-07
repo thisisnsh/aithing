@@ -27,8 +27,6 @@ struct IntelligenceView: View {
     let isTabClosed: (String) -> Bool
     let updateHistoryList: () async -> Void
     let reconnectManagedAgents: () async -> Void
-    let modifyWindowBaseSize: (CGSize) -> Void
-    let modifyWindowOriginalSize: () -> Void
 
     let logger = Logger(subsystem: "com.thisisnsh.mac.AIThing", category: "IntelligenceView")
 
@@ -60,63 +58,46 @@ struct IntelligenceView: View {
     @State private var hoverYellow: Bool = false
     @State private var hoverGreen: Bool = false
 
-    // Resize
-    @State private var smoothedY: CGFloat = 0
-    @State private var smoothedX: CGFloat = 0
-    @State private var lastAppliedY: CGFloat = 0
-    @State private var lastAppliedX: CGFloat = 0
-    private let alpha: CGFloat = 0.25
-    private let pixelStep: CGFloat = 1.0
-    @State private var resizeHoverTask: Task<Void, Never>?
-
     var body: some View {
-        HStack(spacing: 0) {
-            ResizeViewX()
-
-            VStack(spacing: 0) {
-                VStack {
-                    TitleView()
-                        .padding(8)
-
-                    Divider()
-                        .padding(.horizontal, -8)
-
-                    ResponseView()
-                        .padding(.vertical, -8)
-
-                    Spacer()
-
-                    InputView()
-                }
+        VStack {
+            TitleView()
                 .padding(8)
-                .background(.white.opacity(0.1))
-                .cornerRadius(8)
-                .task {
-                    modelOutput = ""
-                    displayQuery = ""
-                    toolCall = ""
-                    history = await HistoryStore.shared.get(id: tabId)
-                    guard let history = history else { return }
-                    modelInput = history.history
-                    tabTitle = history.title ?? "New Chat"
 
-                    let notification = await firestoreManager.getNotification() ?? ""
-                    if !notification.isEmpty {
-                        modelOutput = notification
+            Divider()
+                .padding(.horizontal, -8)
+
+            ResponseView()
+                .padding(.vertical, -8)
+
+            Spacer()
+
+            InputView()
+        }
+        .padding(8)
+        .background(.white.opacity(0.1))
+        .cornerRadius(8)
+        .task {
+            modelOutput = ""
+            displayQuery = ""
+            toolCall = ""
+            history = await HistoryStore.shared.get(id: tabId)
+            guard let history = history else { return }
+            modelInput = history.history
+            tabTitle = history.title ?? "New Chat"
+
+            let notification = await firestoreManager.getNotification() ?? ""
+            if !notification.isEmpty {
+                modelOutput = notification
+            }
+        }
+        .onReceive(screenshotMonitor.$latestScreenshot) { ss in
+            if let ss = ss {
+                Task {
+                    let results = await DragFileManager.processPaths([ss.url])
+                    for r in results {
+                        modelContext.insert(r, at: 0)
                     }
                 }
-                .onReceive(screenshotMonitor.$latestScreenshot) { ss in
-                    if let ss = ss {
-                        Task {
-                            let results = await DragFileManager.processPaths([ss.url])
-                            for r in results {
-                                modelContext.insert(r, at: 0)
-                            }
-                        }
-                    }
-                }
-
-                ResizeViewY()
             }
         }
     }
@@ -323,85 +304,6 @@ struct IntelligenceView: View {
         } isTargeted: {
             isDropping = $0
         }
-    }
-
-    private func ResizeViewX() -> some View {
-        Rectangle()
-            .fill(.black)
-            .frame(width: 8)
-            .onHover { inside in
-                resizeHoverTask?.cancel()
-                resizeHoverTask = Task { @MainActor in
-                    try? await Task.sleep(nanoseconds: 150_000_000)
-                    guard !Task.isCancelled else { return }
-                    if inside {
-                        NSCursor.resizeLeftRight.set()
-                    } else {
-                        NSCursor.arrow.set()
-                    }
-                }
-            }
-            .gesture(
-                DragGesture(minimumDistance: 0)
-                    .onChanged { value in
-                        NSCursor.resizeLeftRight.set()
-                        let rawX = value.translation.width * -1
-                        smoothedX += (rawX - smoothedX) * alpha
-                        let roundedX = (smoothedX / pixelStep).rounded() * pixelStep
-                        if roundedX != lastAppliedX {
-                            lastAppliedX = roundedX
-                            let size = CGSize(width: roundedX, height: 0)
-                            modifyWindowBaseSize(size)
-                        }
-                    }
-                    .onEnded { _ in
-                        smoothedX = 0
-                        lastAppliedX = 0
-                        modifyWindowOriginalSize()
-                        NSCursor.arrow.set()
-                    }
-            )
-            .padding(.vertical, 32)
-    }
-
-    private func ResizeViewY() -> some View {
-        Rectangle()
-            .fill(.black)
-            .frame(height: 8)
-            .onHover { inside in
-                resizeHoverTask?.cancel()
-                resizeHoverTask = Task { @MainActor in
-                    try? await Task.sleep(nanoseconds: 150_000_000)
-                    guard !Task.isCancelled else { return }
-                    if inside {
-                        NSCursor.resizeUpDown.set()
-                    } else {
-                        NSCursor.arrow.set()
-                    }
-                }
-            }
-            .gesture(
-                DragGesture(minimumDistance: 0)
-                    .onChanged { value in
-                        NSCursor.resizeUpDown.set()
-                        let rawY = value.translation.height
-                        smoothedY += (rawY - smoothedY) * alpha
-                        let roundedY = (smoothedY / pixelStep).rounded() * pixelStep
-                        if roundedY != lastAppliedY {
-                            lastAppliedY = roundedY
-                            let size = CGSize(width: 0, height: roundedY)
-                            modifyWindowBaseSize(size)
-                        }
-                    }
-                    .onEnded { _ in
-                        smoothedY = 0
-                        lastAppliedY = 0
-                        modifyWindowOriginalSize()
-                        NSCursor.arrow.set()
-                    }
-            )
-            .padding(.bottom, -8)
-            .padding(.horizontal, 32)
     }
 }
 
