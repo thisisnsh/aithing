@@ -80,18 +80,29 @@ struct IntelligenceView: View {
             .background(.white.opacity(0.1))
             .overlay(
                 Group {
-                    if isThinking {
-                        AnimatedGradientBorder(cornerRadius: 8, lineWidth: 1.5)
-                    } else if isDropping {
+                    if isDropping {
                         AnimatedGradientBorder(cornerRadius: 8, lineWidth: 1.5, color: .blue)
                     }
                 }
             )
             .cornerRadius(8)
+            .dropDestination(for: URL.self) { urls, _ in
+                Task {
+                    let results = await DragFileManager.processPaths(urls)
+                    for r in results {
+                        modelContext.append(r)
+                    }
+                }
+
+                // You can’t know yet, so just return true to accept the drop.
+                return true
+            } isTargeted: {
+                isDropping = $0
+            }
         }
         .padding(8)
         .background(.white.opacity(0.1))
-        .clipShape(RoundedRectangle(cornerRadius: 8))
+        .cornerRadius(8)
         .padding(.leading, 8)
         .task {
             modelOutput = ""
@@ -220,12 +231,12 @@ struct IntelligenceView: View {
     private func InputView() -> some View {
         VStack {
             ZStack(alignment: .leading) {
-                if !isDropping {
+                if !isThinking, !isDropping {
                     InputTextView(
                         text: $query,
                         seenCommands: .constant([]),
                         size: $textSize,
-                        isNotEditable: isThinking,
+                        isNotEditable: isThinking || isDropping,
                         onCommit: {
                             Task {
                                 await handleQuery()
@@ -247,13 +258,18 @@ struct IntelligenceView: View {
                     .onChange(of: query) { _ in }
                 }
 
-                if query.isEmpty || isDropping {
-                    Text(isDropping ? "Drop files here..." : "Ask anything on AI Thing...")
-                        .foregroundColor(isDropping ? .blue : .white.opacity(0.6))
-                        .font(.system(size: textSize, weight: .medium))
-                        .padding(.top, 2)
-                        .padding(.leading, 5)
-                        .allowsHitTesting(false)
+                if query.isEmpty {
+                    Text(
+                        isThinking
+                            ? "Thinking..."
+                            : (isDropping ? "Drop files here..." : "Ask anything on AI Thing...")
+                    )
+                    .foregroundColor(isDropping ? .blue : .white.opacity(0.6))
+                    .font(.system(size: textSize, weight: .medium))
+                    .padding(.top, 2)
+                    .padding(.leading, 5)
+                    .allowsHitTesting(false)
+                    .frame(maxWidth: .infinity, alignment: .leading)
                 }
             }
             .frame(height: inputHeight)
@@ -286,20 +302,7 @@ struct IntelligenceView: View {
                 .onHover { hoverMcpTools = $0 }
 
                 Spacer()
-            }
-        }
-        .dropDestination(for: URL.self) { urls, _ in
-            Task {
-                let results = await DragFileManager.processPaths(urls)
-                for r in results {
-                    modelContext.append(r)
-                }
-            }
-
-            // You can’t know yet, so just return true to accept the drop.
-            return true
-        } isTargeted: {
-            isDropping = $0
+            }            
         }
     }
 

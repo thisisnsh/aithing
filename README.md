@@ -7,7 +7,6 @@
 
 5 Nov 
 - Size relative to screen. Store the size in settings by percentage of the screen.  
-- Bug cursor shifted up
 - On settings change refresh modesl in notch view
 
 6 Nov
