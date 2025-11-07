@@ -4,10 +4,8 @@
 
 ## 2.0 
 
-6 Nov
-- Remove double clicks due to hover
-
 7 Nov 
+- Remove double clicks due to hover
 - Animations
 - Multitasking 
 

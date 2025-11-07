@@ -15,6 +15,7 @@ struct NotchView: View {
 
     let logger = Logger(subsystem: "com.thisisnsh.mac.AIThing", category: "NotchView")
 
+    @ObservedObject var vm: NotchVM
     let updateWindowSize: (WindowSize) -> (CGFloat, CGFloat)
     let modifyWindowBaseSize: (CGSize, WindowSize) -> (CGFloat, CGFloat)
     let modifyWindowOriginalSize: () -> Void
@@ -244,6 +245,9 @@ struct NotchView: View {
                 await loadAllClientTools()
                 await reconnectManagedAgents()
             }
+        }
+        .onChange(of: vm.refresh) { _ in
+            (width, height) = updateWindowSize(lastExpandedWindowSize)
         }
         .task {
             switch loginManager.authState {

@@ -21,12 +21,17 @@ enum WindowSize: Int {
     case chatIsExpanded = 4
 }
 
+final class NotchVM: ObservableObject {
+    @Published var refresh = false
+    func refreshDimensions() { refresh.toggle() }
+}
+
 // MARK: - AppDelegate
 class AppDelegate: NSObject, NSApplicationDelegate {
     private var floatingWindow: NonActivatingPanel!
 
     static var allowQuit = false
-    private var screen = NSScreen.main
+    static var screen = NSScreen.main
 
     private var originalWidth: CGFloat = 560
     private var originalHeight: CGFloat = 600
@@ -34,6 +39,9 @@ class AppDelegate: NSObject, NSApplicationDelegate {
     private var height: CGFloat = 600
 
     private var previousTopY: CGFloat = 0
+    private var lastWindowSize: WindowSize = .notchIsCollapsed
+
+    let vm = NotchVM()
 
     func applicationDidFinishLaunching(_ notification: Notification) {
         NSApp.setActivationPolicy(.accessory)  // background-style app
@@ -44,12 +52,24 @@ class AppDelegate: NSObject, NSApplicationDelegate {
             return handler
         }
 
+        NotificationCenter.default.addObserver(
+            self,
+            selector: #selector(handleScreenChange),
+            name: NSApplication.didChangeScreenParametersNotification,
+            object: nil
+        )
+
         FirebaseApp.configure()
 
         setupNotchWindow()
 
         // Launch app on login
         try? SMAppService.mainApp.register()
+    }
+
+    @objc private func handleScreenChange() {
+        _ = updateWindowSize(windowSize: lastWindowSize, resetY: true)
+        vm.refreshDimensions()
     }
 
     func application(_ application: NSApplication, open urls: [URL]) {
@@ -65,7 +85,7 @@ extension AppDelegate {
 
     private func setupNotchWindow() {
         // Get screen dimensions
-        guard let screen = screen else { return }
+        guard let screen = AppDelegate.screen else { return }
         let screenFrame = screen.visibleFrame
 
         // Create a borderless, floating window on the right side
@@ -87,6 +107,7 @@ extension AppDelegate {
 
         // Create the SwiftUI view
         let notchView = NotchView(
+            vm: vm,
             updateWindowSize: {
                 return self.updateWindowSize(windowSize: $0)
             },
@@ -138,9 +159,9 @@ extension AppDelegate {
         case .chatIsShown:
             return (width, height)
         case .chatIsExpanded:
-            if let screen = screen {
+            if let screen = AppDelegate.screen {
                 return (
-                    min(screen.visibleFrame.maxX / 2, 1000),
+                    min(screen.visibleFrame.maxX * 0.5, 1000),
                     min(screen.visibleFrame.maxY * 0.8, 1000)
                 )
             }
@@ -148,38 +169,69 @@ extension AppDelegate {
         }
     }
 
-    private func updateWindowSize(windowSize: WindowSize, offsetTopY: CGFloat = 0) -> (
+    private func updateWindowSize(
+        windowSize: WindowSize,
+        offsetTopY: CGFloat = 0,
+        resetY: Bool = false
+    ) -> (
         CGFloat,
         CGFloat
     ) {
+        // Calculate new position to keep top-right corner fixed
+        guard let screen = screen(for: floatingWindow) ?? currentAppScreen() else {
+            return getWindowSize(windowSize: windowSize)
+        }
+        AppDelegate.screen = screen
+
         let (windowWidth, windowHeight) = getWindowSize(windowSize: windowSize)
 
-        // Calculate new position to keep top-right corner fixed
-        if let screen = screen {
-            let screenFrame = screen.visibleFrame
-            let xPosition = screenFrame.maxX - windowWidth
+        let screenFrame = screen.visibleFrame
+        let xPosition = screenFrame.maxX - windowWidth
 
-            // Calculate Y position to keep top-right corner fixed
-            // When expanding, we need to move the origin down
-            let currentTopY = floatingWindow.frame.origin.y + floatingWindow.frame.height
-            var newY = currentTopY - windowHeight + offsetTopY
+        // Calculate Y position to keep top-right corner fixed
+        // When expanding, we need to move the origin down
+        let currentTopY = floatingWindow.frame.origin.y + floatingWindow.frame.height
+        var newY = currentTopY - windowHeight + offsetTopY
 
-            if windowSize == .chatIsExpanded {
-                previousTopY = currentTopY
-                newY = screenFrame.midY - (windowHeight / 2)
-            } else if previousTopY != 0 {
-                newY = previousTopY - windowHeight + offsetTopY
-                previousTopY = 0
-            }
-
-            floatingWindow.setFrame(
-                NSRect(x: xPosition, y: newY, width: windowWidth, height: windowHeight),
-                display: false,
-                animate: false
-            )
+        if windowSize == .chatIsExpanded {
+            previousTopY = currentTopY
+            newY = screenFrame.midY - (windowHeight / 2)
+        } else if previousTopY != 0 {
+            newY = previousTopY - windowHeight + offsetTopY
+            previousTopY = 0
         }
 
+        floatingWindow.setFrame(
+            NSRect(x: xPosition, y: newY, width: windowWidth, height: windowHeight),
+            display: false,
+            animate: false
+        )
+
+        lastWindowSize = windowSize
+
         return (windowWidth, windowHeight)
+    }
+
+    /// Screen that the given window is currently showing on.
+    /// Prefers NSWindow.screen; falls back to largest-intersection if nil.
+    private func screen(for window: NSWindow) -> NSScreen? {
+        if let s = window.screen { return s }  // where AppKit says the window is
+        // Fallback: pick the screen with the largest overlap with the window frame
+        let f = window.frame
+        return NSScreen.screens
+            .map {
+                ($0, f.intersection($0.visibleFrame).width * f.intersection($0.visibleFrame).height)
+            }
+            .max(by: { $0.1 < $1.1 })?.0
+    }
+
+    private func currentAppScreen() -> NSScreen? {
+        if let w = NSApp.keyWindow ?? NSApp.mainWindow
+            ?? NSApp.windows.first(where: { $0.isVisible })
+        {
+            return screen(for: w)
+        }
+        return nil
     }
 
     /// Sets the panel visibility in screenshots based on user preferences
