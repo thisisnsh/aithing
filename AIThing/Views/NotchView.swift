@@ -190,6 +190,13 @@ struct NotchView: View {
         }
         .frame(width: width, height: height)
         .onAppear { close() }
+        .onChange(of: showSettings) { newValue in
+            Task {
+                managedModels = await firestoreManager.getModelInfos()
+                await loadAllClientTools()
+                await reconnectManagedAgents()
+            }
+        }
         .task {
             switch loginManager.authState {
             case .signedIn(let user):
