@@ -19,40 +19,29 @@ struct FilePill: View {
     @State private var onHover = false
 
     var body: some View {
-        GroupView()
+        PillStack()
+            .padding(.trailing, 4)
+            .padding(image != nil && big ? 4 : 8)
             .background(.white)
             .cornerRadius(image != nil && big ? cornerRadius - 8 : cornerRadius)
             .onHover { onHover = $0 }
     }
 
-    private func GroupView() -> some View {
-        Group {
+    private func PillStack() -> some View {
+        HStack {
             if let image = image, big {
                 Image(nsImage: image)
                     .resizable()
                     .aspectRatio(contentMode: .fit)
                     .frame(height: 64)
                     .cornerRadius(cornerRadius - 8)
-                    .overlay {
-                        if onHover {
-                            DeleteButton()
-                        }
-                    }
             } else {
-                PillStack()
-                    .padding(.horizontal, 4)
-                    .padding(8)
+                Image(systemName: systemName)
+                    .resizable()
+                    .frame(width: 10, height: 10)
+                    .foregroundStyle(.black)
+                    .padding(.leading, 4)
             }
-        }
-
-    }
-
-    private func PillStack() -> some View {
-        HStack {
-            Image(systemName: systemName)
-                .resizable()
-                .frame(width: 10, height: 10)
-                .foregroundStyle(.black)
 
             Text(name)
                 .lineLimit(1)
@@ -60,9 +49,7 @@ struct FilePill: View {
                 .foregroundStyle(.black)
                 .frame(maxWidth: 100)
 
-            if onHover {
-                DeleteButton()
-            }
+            DeleteButton()
         }
     }
 

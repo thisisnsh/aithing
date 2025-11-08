@@ -111,7 +111,7 @@ struct IntelligenceView: View {
                 history = await HistoryStore.shared.get(id: tabId)
                 guard let history = history else { return }
                 modelInput = history.history
-                tabTitle = tabId  // history.title ?? "New Chat"
+                tabTitle = history.title ?? "New Chat"
 
                 let notification = await firestoreManager.getNotification() ?? ""
                 if !notification.isEmpty {
@@ -226,7 +226,7 @@ struct IntelligenceView: View {
                             name: name,
                             image: images[0],
                             systemName: "text.page",
-                            big: modelContext.count == 1,
+                            big: false,
                             onDelete: { index in
                                 modelContext.remove(at: index)
                                 AnalyticsManager.shared.customEvent(
@@ -243,7 +243,7 @@ struct IntelligenceView: View {
                             name: name,
                             image: image,
                             systemName: "text.alignleft",
-                            big: modelContext.count == 1,
+                            big: false,
                             onDelete: { index in
                                 modelContext.remove(at: index)
                                 AnalyticsManager.shared.customEvent(
@@ -268,11 +268,11 @@ struct IntelligenceView: View {
 
     private func InputView() -> some View {
         VStack(alignment: .leading) {
-            if modelContext.count > 0 {
+            if modelContext.count > 0, !isThinking {
                 ContextView()
             }
 
-            if !selectedText.isEmpty, selectionEnabled {
+            if !selectedText.isEmpty, selectionEnabled, !isThinking {
                 ScrollView {
                     MarkdownText(text: "```\n\(selectedText)\n```", noBackground: true)
                         .font(.system(size: 12, weight: .medium, design: .monospaced))
@@ -294,6 +294,7 @@ struct IntelligenceView: View {
                             .clipShape(Circle())
                     }
                     .buttonStyle(.plain)
+                    .padding(8)
                 }
             }
 
@@ -420,12 +421,14 @@ extension IntelligenceView {
         isThinking = true
         toolCall = ""
         vm.selectedText = ""
+        selectedText = ""
+        query = ""
+        selectionEnabled = false
 
         setTabActive(true)
         let result = await callModel(query: trimmed)
         setTabActive(false)
 
-        query = ""
         await updateHistoryList()
         isThinking = false
         history = await HistoryStore.shared.get(id: tabId)
@@ -434,7 +437,6 @@ extension IntelligenceView {
         }
         displayQuery = ""
         toolCall = ""
-        selectedText = ""
     }
 
     private func callModel(query: String) async -> Bool {
@@ -599,9 +601,21 @@ extension IntelligenceView {
         if !query.isEmpty {
             for i in 0..<modelContext.count {
                 switch modelContext[i] {
-                case .image(_, _, let base64):
+                case .image(let name, _, let base64):
                     fileCount += 1
                     AnalyticsManager.shared.customEvent(type: .tab, primary: "file_upload_image")
+                    modelInput.append(
+                        [
+                            "role": "file",
+                            "content": [
+                                [
+                                    "type": "file",
+                                    "text": "File \(name)",
+                                    "skip_next_messages": true,
+                                ]
+                            ],
+                        ]
+                    )
                     modelInput.append(
                         [
                             "role": "user",
@@ -617,39 +631,63 @@ extension IntelligenceView {
                             ],
                         ]
                     )
-                case .pdf(_, _, _, let base64s):
+                case .pdf(let name, _, _, let base64s):
                     fileCount += 1
+                    modelInput.append(
+                        [
+                            "role": "file",
+                            "content": [
+                                [
+                                    "type": "file",
+                                    "text": "File \(name)",
+                                    "skip_next_messages": true,
+                                ]
+                            ],
+                        ]
+                    )
+                    var content: [[String: Any]] = []
                     for base64 in base64s {
-                        AnalyticsManager.shared.customEvent(
-                            type: .tab,
-                            primary: "file_upload_pdf_page"
-                        )
-                        modelInput.append(
-                            [
-                                "role": "user",
-                                "content": [
-                                    [
-                                        "type": "image",
-                                        "source": [
-                                            "type": "base64",
-                                            "media_type": "image/jpeg",
-                                            "data": base64,
-                                        ],
-                                    ]
-                                ],
-                            ]
-                        )
+                        content.append([
+                            "type": "image",
+                            "source": [
+                                "type": "base64",
+                                "media_type": "image/jpeg",
+                                "data": base64,
+                            ],
+                        ])
                     }
+                    AnalyticsManager.shared.customEvent(
+                        type: .tab,
+                        primary: "file_upload_pdf_page"
+                    )
+                    modelInput.append(
+                        [
+                            "role": "user",
+                            "content": content,
+                        ]
+                    )
                 case .text(let name, let text, _):
                     fileCount += 1
                     AnalyticsManager.shared.customEvent(type: .tab, primary: "file_upload_text")
+                    modelInput.append(
+                        [
+                            "role": "file",
+                            "content": [
+                                [
+                                    "type": "file",
+                                    "text": "File \(name)",
+                                    "skip_next_messages": true,
+                                ]
+                            ],
+                        ]
+                    )
                     modelInput.append(
                         [
                             "role": "user",
                             "content": [
                                 [
                                     "type": "text",
-                                    "text": "File \(name) content:\n\n\(text)",
+                                    "text": "```\n\(text)\n```",
                                 ]
                             ],
                         ]
@@ -657,14 +695,26 @@ extension IntelligenceView {
                 }
             }
 
-            if !selectedText.isEmpty {
+            if !selectedText.isEmpty, selectionEnabled {
+                modelInput.append(
+                    [
+                        "role": "file",
+                        "content": [
+                            [
+                                "type": "file",
+                                "text": "Selected Text",
+                                "skip_next_messages": true,
+                            ]
+                        ],
+                    ]
+                )
                 modelInput.append(
                     [
                         "role": "user",
                         "content": [
                             [
                                 "type": "text",
-                                "text": "Selected text:\n\n\(selectedText)",
+                                "text": "```\n\(selectedText)\n```",
                             ]
                         ],
                     ]
@@ -686,7 +736,10 @@ extension IntelligenceView {
             "stream": true,
             "max_tokens": getOutputToken(),
             "temperature": 0.7,
-            "messages": addCacheBlock(input: nonUsageMessages(from: modelInput), isMessage: true),
+            "messages": addCacheBlock(
+                input: nonUsageFileMessages(from: modelInput),
+                isMessage: true
+            ),
             "tools": addCacheBlock(input: modelTools),
             "system": addCacheBlock(input: buildSystemMessages()),
 

@@ -7,6 +7,7 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
+		AA04A4B22EBFF62000482561 /* CoreXLSX in Frameworks */ = {isa = PBXBuildFile; productRef = AA04A4B12EBFF62000482561 /* CoreXLSX */; };
 		AA45F8FF2E6114F2001DAE39 /* OAuthSwift in Frameworks */ = {isa = PBXBuildFile; productRef = AA45F8FE2E6114F2001DAE39 /* OAuthSwift */; };
 		AA476E432E4D4813006F62F8 /* FirebaseFirestore in Frameworks */ = {isa = PBXBuildFile; productRef = AA476E422E4D4813006F62F8 /* FirebaseFirestore */; };
 		AA89AC282E888E73000EBE24 /* SelectedTextKit in Frameworks */ = {isa = PBXBuildFile; productRef = AA89AC272E888E73000EBE24 /* SelectedTextKit */; };
@@ -74,6 +75,7 @@
 				AAF11D172E2306C800E2743E /* MarkdownUI in Frameworks */,
 				AAEFEA792E46C3E600C47995 /* GoogleSignIn in Frameworks */,
 				AA89AC282E888E73000EBE24 /* SelectedTextKit in Frameworks */,
+				AA04A4B22EBFF62000482561 /* CoreXLSX in Frameworks */,
 				AA476E432E4D4813006F62F8 /* FirebaseFirestore in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
@@ -145,6 +147,7 @@
 				AA476E422E4D4813006F62F8 /* FirebaseFirestore */,
 				AA45F8FE2E6114F2001DAE39 /* OAuthSwift */,
 				AA89AC272E888E73000EBE24 /* SelectedTextKit */,
+				AA04A4B12EBFF62000482561 /* CoreXLSX */,
 			);
 			productName = AIThing;
 			productReference = AAF11CCB2E22DE1500E2743E /* AIThing.app */;
@@ -236,6 +239,7 @@
 				AAEFEA772E46C3E600C47995 /* XCRemoteSwiftPackageReference "GoogleSignIn-iOS" */,
 				AA45F8FD2E6114F2001DAE39 /* XCRemoteSwiftPackageReference "OAuthSwift" */,
 				AA89AC262E888E73000EBE24 /* XCRemoteSwiftPackageReference "SelectedTextKit" */,
+				AA04A4B02EBFF62000482561 /* XCRemoteSwiftPackageReference "CoreXLSX" */,
 			);
 			preferredProjectObjectVersion = 77;
 			productRefGroup = AAF11CCC2E22DE1500E2743E /* Products */;
@@ -616,6 +620,14 @@
 /* End XCConfigurationList section */
 
 /* Begin XCRemoteSwiftPackageReference section */
+		AA04A4B02EBFF62000482561 /* XCRemoteSwiftPackageReference "CoreXLSX" */ = {
+			isa = XCRemoteSwiftPackageReference;
+			repositoryURL = "https://github.com/CoreOffice/CoreXLSX";
+			requirement = {
+				kind = upToNextMajorVersion;
+				minimumVersion = 0.14.2;
+			};
+		};
 		AA45F8FD2E6114F2001DAE39 /* XCRemoteSwiftPackageReference "OAuthSwift" */ = {
 			isa = XCRemoteSwiftPackageReference;
 			repositoryURL = "https://github.com/OAuthSwift/OAuthSwift.git";
@@ -675,6 +687,11 @@
 /* End XCRemoteSwiftPackageReference section */
 
 /* Begin XCSwiftPackageProductDependency section */
+		AA04A4B12EBFF62000482561 /* CoreXLSX */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = AA04A4B02EBFF62000482561 /* XCRemoteSwiftPackageReference "CoreXLSX" */;
+			productName = CoreXLSX;
+		};
 		AA45F8FE2E6114F2001DAE39 /* OAuthSwift */ = {
 			isa = XCSwiftPackageProductDependency;
 			package = AA45F8FD2E6114F2001DAE39 /* XCRemoteSwiftPackageReference "OAuthSwift" */;

@@ -6,6 +6,7 @@
 //
 
 import AppKit
+import CoreXLSX
 import Foundation
 import PDFKit
 import QuickLookThumbnailing
@@ -135,7 +136,29 @@ class DragFileManager {
             return .pdf(fileURL.pathComponents.last ?? "", doc, thumbnails, thumbnailsBase64)
         }
 
-        // 3) EVERYTHING ELSE
+        // 3) SPREADSHEETS (Excel, Numbers exports, CSV/TSV, etc.)
+        if type?.conforms(to: .spreadsheet) == true || ext == "xlsx" || ext == "xls" {
+            // get a nice Quick Look thumbnail if possible
+            let thumbnail = await quickLookThumbnail(for: fileURL, maxDimension: 1024)
+
+            if ext == "xlsx", let tsv = try? extractTSV(from: fileURL) {
+                // Return a text preview (TSV) so your UI can render/scroll like a doc
+                return .text(fileURL.lastPathComponent, tsv, thumbnail)
+            } else if ext == "csv" || ext == "tsv" {
+                if let txt = readPlainText(fileURL) {
+                    return .text(fileURL.lastPathComponent, txt, thumbnail)
+                }
+            } else {
+                // .xls or anything we don’t natively parse: still return something useful
+                let fallback =
+                    "Preview not available for \(ext.uppercased()) files.\n"
+                    + "Open the file to view it, or save as .xlsx/.csv to enable previews."
+                return .text(fileURL.lastPathComponent, fallback, thumbnail)
+            }
+        }
+
+        // 4) EVERYTHING ELSE (plain text, code, markdown, json, etc.)
+
         if let txt = readPlainText(fileURL) {
             var thumbnail: NSImage?
             if let thumb = await quickLookThumbnail(for: fileURL, maxDimension: 1024) {
@@ -199,4 +222,43 @@ class DragFileManager {
         let icon = NSWorkspace.shared.icon(forFile: url.path)
         return icon.resized(maxDimension: maxDimension)
     }
+
+    private static func extractTSV(
+        from url: URL
+    ) throws -> String {
+        guard let xlsx = XLSXFile(filepath: url.path) else {
+            throw NSError(
+                domain: "ProcessFile",
+                code: 1,
+                userInfo: [NSLocalizedDescriptionKey: "Unable to open XLSX"]
+            )
+        }
+
+        let sharedStrings = try xlsx.parseSharedStrings()
+        let worksheetPaths = try xlsx.parseWorksheetPaths()
+
+        guard let firstSheetPath = worksheetPaths.first else {
+            return ""
+        }
+
+        // ✅ No trailing closure — just get the Worksheet value
+        let ws = try xlsx.parseWorksheet(at: firstSheetPath)
+
+        var lines: [String] = []
+        let rows = ws.data?.rows ?? []
+        for row in rows {
+            var cols: [String] = []
+            for cell in row.cells {
+                if let sharedStrings = sharedStrings {
+                    // Depending on CoreXLSX version, the label may be `sharedStrings:` or unlabeled.
+                    let value = cell.stringValue(sharedStrings) ?? ""
+                    cols.append(value)
+                }
+            }
+            lines.append(cols.joined(separator: "\t"))
+        }
+
+        return lines.joined(separator: "\n")
+    }
+
 }

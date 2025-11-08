@@ -12,17 +12,20 @@ enum ChatRole {
     case user
     case assistant
     case usage
+    case file
 }
 
 enum ChatPayload: Equatable {
     case text(String)
-    case image(NSImage)
+    case image([NSImage])
     case toolUse(name: String)
+    case file(text: String, skipNextMessages: Bool)
 
     static func == (lhs: ChatPayload, rhs: ChatPayload) -> Bool {
         switch (lhs, rhs) {
         case (.text(let a), .text(let b)): return a == b
         case (.toolUse(let a), .toolUse(let b)): return a == b
+        case (.file(let a, _), .file(let b, _)): return a == b
         case (.image, .image): return false  // NSImage not Equatable; treat as unequal
         default: return false
         }
@@ -66,7 +69,7 @@ struct ChatView: View {
                         }
 
                         if !toolCall.isEmpty {
-                            ToolBubble(text: toolCall)
+                            ExtraBubble(text: toolCall)
                                 .frame(maxWidth: 500, alignment: .leading)
                         }
 
@@ -140,6 +143,9 @@ struct ChatBubble: View {
             if item.role == .usage { Spacer().frame(width: 0) }
 
             switch item.payload {
+            case .file(let name, _):
+                ExtraBubble(text: name)
+                    .frame(maxWidth: 800, alignment: .trailing)
             case .text(let text):
                 if item.role != .usage {
                     TextBubble(text: text, isUser: item.role == .user)
@@ -149,7 +155,7 @@ struct ChatBubble: View {
                 ImageBubble(image: image, isUser: item.role == .user)
                     .frame(maxWidth: 300, alignment: item.role == .user ? .trailing : .leading)
             case .toolUse(let name):
-                ToolBubble(text: "Called tool: \(name)")
+                ExtraBubble(text: "Called tool: \(name)")
                     .frame(maxWidth: 800, alignment: .leading)
             }
 
@@ -159,7 +165,7 @@ struct ChatBubble: View {
     }
 }
 
-struct ToolBubble: View {
+struct ExtraBubble: View {
     let text: String
 
     var body: some View {
@@ -192,10 +198,38 @@ struct TextBubble: View {
 }
 
 struct ImageBubble: View {
-    let image: NSImage
+    let image: [NSImage]
     let isUser: Bool
 
+    @State private var index = 0
+
     var body: some View {
+        ZStack {
+            if image.count > 2 {
+                ImageView(image: image[(index + 2) % image.count])
+                    .frame(maxWidth: .infinity, alignment: .trailing)
+                    .scaleEffect(0.6, anchor: .trailing)
+                    .offset(x: -160)
+
+            }
+
+            if image.count > 1 {
+                ImageView(image: image[(index + 1) % image.count])
+                    .frame(maxWidth: .infinity, alignment: .trailing)
+                    .scaleEffect(0.8, anchor: .trailing)
+                    .offset(x: -80)
+            }
+
+            ImageView(image: image[index % image.count])
+                .frame(maxWidth: .infinity, alignment: .trailing)
+                .scaleEffect(1, anchor: .trailing)
+                .onTapGesture {
+                    index = (index + 1) % image.count
+                }
+        }
+    }
+
+    private func ImageView(image: NSImage) -> some View {
         Image(nsImage: image)
             .resizable()
             .scaledToFit()
@@ -226,36 +260,18 @@ func formatEpoch(_ epochS: String, format: String = "MMMM, dd yyyy HH:mm") -> St
     }
 }
 
-func assistantMessages(from history: [[String: Any]]) -> String {
-    let chatItems = parseHistory(history).filter { $0.role == .assistant }
-    var messages = ""
-    let last = chatItems.last
-    if last != nil {
-        switch last!.payload {
-        case .text(let text):
-            messages += "\(text)\n\n"
-        case .image(_):
-            ()
-        case .toolUse(let name):
-            messages += "`Called tool: \(name)`\n\n"
-        }
-    }
-
-    return messages
-}
-
-func nonUsageMessages(from history: [[String: Any]]) -> [[String: Any]] {
-    var nonUsageMessages: [[String: Any]] = []
+func nonUsageFileMessages(from history: [[String: Any]]) -> [[String: Any]] {
+    var nonUsageFileMessages: [[String: Any]] = []
     for entry in history {
         guard let roleStr = entry["role"] as? String
         else { continue }
 
-        if roleStr.lowercased() == "usage" {
+        if roleStr.lowercased() == "usage" || roleStr.lowercased() == "file" {
             continue
         }
-        nonUsageMessages.append(entry)
+        nonUsageFileMessages.append(entry)
     }
-    return nonUsageMessages
+    return nonUsageFileMessages
 }
 
 func parseHistory(_ history: [[String: Any]]) -> [ChatItem] {
@@ -271,15 +287,33 @@ func parseHistory(_ history: [[String: Any]]) -> [ChatItem] {
             case "user": return .user
             case "assistant": return .assistant
             case "usage": return .usage
+            case "file": return .file
             default: return nil
             }
         }()
         guard let roleUnwrapped = role else { continue }
 
+        var userImages: [NSImage] = []
+
         for content in contents {
             guard let type = content["type"] as? String else { continue }
 
-            if roleUnwrapped == .usage {
+            if roleUnwrapped == .file {
+                switch type {
+                case "file":
+                    if let text = content["text"] as? String {
+                        let skipNextMessages = (content["skip_next_messages"] as? Bool) ?? false
+                        items.append(
+                            ChatItem(
+                                role: .file,
+                                payload: .file(text: text, skipNextMessages: skipNextMessages)
+                            )
+                        )
+                    }
+                default:
+                    break
+                }
+            } else if roleUnwrapped == .usage {
                 switch type {
                 case "text":
                     if let text = content["text"] as? String {
@@ -302,7 +336,7 @@ func parseHistory(_ history: [[String: Any]]) -> [ChatItem] {
                         let dataStr = source["data"] as? String,
                         let img = base64ToNSImage(dataStr)
                     {
-                        items.append(ChatItem(role: .user, payload: .image(img)))
+                        userImages.append(img)
                     }
                 default:
                     break
@@ -320,6 +354,11 @@ func parseHistory(_ history: [[String: Any]]) -> [ChatItem] {
                     break
                 }
             }
+        }
+
+        if userImages.count > 0 {
+            print("add image")
+            items.append(ChatItem(role: .user, payload: .image(userImages)))
         }
     }
     return items

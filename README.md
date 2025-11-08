@@ -7,12 +7,15 @@
 
 8 Nov    
 - Toast
+
 - Excel Not Work 
 - Show file content in code block
 - Show copy on hover in code block
 - Show images in horizontal scroll 
+
 - Prevent going below the screen limit 
 - Loading history takes time some times 
+
 
 9 Nov
 - Analytics 
@@ -27,6 +30,7 @@ Next
 - Support Edit title
 - Support AI Suggestions : Understand you and suggest things based on time and this
 - Show * for active tabs in sidebar
+- File drop is slow
 
 ------------------------
 

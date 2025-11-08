@@ -12,7 +12,9 @@ import SwiftUI
 struct MarkdownText: View {
     var text: String
     var noBackground = false
+
     @State private var copiedBlock: String? = nil
+    @State private var codeHover = false
 
     var body: some View {
         Markdown(text)
@@ -46,27 +48,32 @@ struct MarkdownText: View {
                     .background(noBackground ? .clear : .gray.opacity(0.25))
                     .clipShape(RoundedRectangle(cornerRadius: 8))
                     .markdownMargin(top: 0, bottom: 16)
-
-                    Button(action: {
-                        copyToClipboard(configuration.content)
-                        copiedBlock = configuration.content
-                        DispatchQueue.main.asyncAfter(deadline: .now() + 1.5) {
-                            copiedBlock = nil
+                    
+                    if codeHover {
+                        Button(action: {
+                            copyToClipboard(configuration.content)
+                            copiedBlock = configuration.content
+                            DispatchQueue.main.asyncAfter(deadline: .now() + 1.5) {
+                                copiedBlock = nil
+                            }
+                        }) {
+                            Label(
+                                copiedBlock == configuration.content ? "Copied!" : "Copy",
+                                systemImage: "doc.on.doc"
+                            )
+                            .labelStyle(.titleAndIcon)
+                            .font(.system(size: 11, weight: .medium))
+                            .padding(.horizontal, 8)
+                            .padding(.vertical, 4)
+                            .background(.ultraThinMaterial)
+                            .cornerRadius(6)
                         }
-                    }) {
-                        Label(
-                            copiedBlock == configuration.content ? "Copied!" : "Copy",
-                            systemImage: "doc.on.doc"
-                        )
-                        .labelStyle(.titleAndIcon)
-                        .font(.system(size: 11, weight: .medium))
-                        .padding(.horizontal, 8)
-                        .padding(.vertical, 4)
-                        .background(.ultraThinMaterial)
-                        .cornerRadius(6)
+                        .buttonStyle(.plain)
+                        .padding(8)
                     }
-                    .buttonStyle(.plain)
-                    .padding(8)
+                }
+                .onHover { hover in
+                    codeHover = hover
                 }
             }
             .markdownTextStyle(\.code) {
