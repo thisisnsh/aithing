@@ -382,7 +382,13 @@ struct NotchView: View {
                                 setTabActive(tabId: h.id, active: false)
                                 histories = await HistoryStore.shared.getAll(limit: 100)
                                 if isActive {
-                                    tabId = UUID().uuidString
+                                    if let history = histories.first {
+                                        tabId = history.id
+                                        createIntelligenceView(tabId: tabId)
+                                    } else {
+                                        tabId = UUID().uuidString
+                                        createIntelligenceView(tabId: tabId)
+                                    }
                                 }
                             }
                         }
@@ -562,7 +568,7 @@ extension NotchView {
             if tabs.keys.contains(tabId) {
                 tabs[tabId]?.intelligenceView
             } else {
-                Text("Some Error Occured")
+                Text("Open a tab")
             }
         }
     }

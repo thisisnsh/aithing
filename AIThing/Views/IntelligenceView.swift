@@ -34,7 +34,7 @@ struct IntelligenceView: View {
     let logger = Logger(subsystem: "com.thisisnsh.mac.AIThing", category: "IntelligenceView")
     let cornerRadius: CGFloat = 24
 
-    @State private var tabTitle: String = "New Chat"
+    @State private var tabTitle: String = ""
     @State private var inputHeight: CGFloat = 24
     private let baseHeight: CGFloat = 24
     @State private var textSize: CGFloat = 14
@@ -104,18 +104,24 @@ struct IntelligenceView: View {
 
             }
             .padding(8)
-            .task {
-                modelOutput = ""
-                displayQuery = ""
-                toolCall = ""
-                history = await HistoryStore.shared.get(id: tabId)
-                guard let history = history else { return }
-                modelInput = history.history
-                tabTitle = history.title ?? "New Chat"
+            .onAppear {
+                Task {
+                    modelOutput = ""
+                    displayQuery = ""
+                    toolCall = ""
 
-                let notification = await firestoreManager.getNotification() ?? ""
-                if !notification.isEmpty {
-                    modelOutput = notification
+                    history = await HistoryStore.shared.get(id: tabId)
+                    if let history = history {
+                        modelInput = history.history
+                        tabTitle = history.title ?? "New Chat"
+                    } else {
+                        tabTitle = "New Chat"
+                    }
+
+                    let notification = await firestoreManager.getNotification() ?? ""
+                    if !notification.isEmpty {
+                        modelOutput = notification
+                    }
                 }
             }
             .onChange(of: vm.selectedText) { text in
@@ -284,6 +290,7 @@ struct IntelligenceView: View {
                 .overlay(alignment: .topLeading) {
                     Button {
                         selectedText = ""
+                        vm.selectedText = ""
                     } label: {
                         Image(systemName: "xmark.circle")
                             .resizable()
@@ -429,7 +436,6 @@ extension IntelligenceView {
         let result = await callModel(query: trimmed)
         setTabActive(false)
 
-        await updateHistoryList()
         isThinking = false
         history = await HistoryStore.shared.get(id: tabId)
         if result {
@@ -437,6 +443,8 @@ extension IntelligenceView {
         }
         displayQuery = ""
         toolCall = ""
+
+        await updateHistoryList()
     }
 
     private func callModel(query: String) async -> Bool {
@@ -611,7 +619,7 @@ extension IntelligenceView {
                                 [
                                     "type": "file",
                                     "text": "File \(name)",
-                                    "skip_next_messages": true,
+                                    "skip_next_messages": false,
                                 ]
                             ],
                         ]
@@ -640,7 +648,7 @@ extension IntelligenceView {
                                 [
                                     "type": "file",
                                     "text": "File \(name)",
-                                    "skip_next_messages": true,
+                                    "skip_next_messages": false,
                                 ]
                             ],
                         ]

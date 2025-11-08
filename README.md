@@ -6,15 +6,9 @@
 
 
 8 Nov    
+
 - Toast
-
-- Excel Not Work 
-- Show file content in code block
-- Show copy on hover in code block
-- Show images in horizontal scroll 
-
 - Prevent going below the screen limit 
-- Loading history takes time some times 
 
 
 9 Nov

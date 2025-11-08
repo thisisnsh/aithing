@@ -62,7 +62,7 @@ struct HoverableTabButton: View {
         HStack(spacing: 8) {
             ButtonView()
             // Trash button (shown only when hovered)
-            if isDeletable, isHovered, isExpanded {
+            if isDeletable, isActive, isExpanded {
                 DeleteButtonView().padding(.trailing, 8)
             }
         }
