@@ -45,6 +45,7 @@ struct NotchView: View {
     @State private var managedModels: [ModelInfo] = []
     @State private var agents: [AgentEntry] = []
     @State private var allClientTools: [String: [[String: Any]]] = [:]
+    @State private var showMcpToolsButton = false
 
     @State private var tabId: String = ""
     @State private var tabs: [String: Tab] = [:]
@@ -234,6 +235,7 @@ struct NotchView: View {
                 managedModels = await firestoreManager.getModelInfos()
                 await loadAllClientTools()
                 await reconnectManagedAgents()
+                showMcpToolsButton = await mcpManager.getAllTools().count > 0
             }
         }
         .onChange(of: vm.refresh) { _ in
@@ -264,6 +266,7 @@ struct NotchView: View {
             managedModels = await firestoreManager.getModelInfos()
             await loadAllClientTools()
             await reconnectManagedAgents()
+            showMcpToolsButton = await mcpManager.getAllTools().count > 0
         }
         .onHover { hovering in
             hoverTask?.cancel()  // cancel any pending hover change
@@ -532,6 +535,7 @@ extension NotchView {
                 tabId: tabId,
                 allClientTools: $allClientTools,
                 managedModels: $managedModels,
+                showMcpToolsButton: $showMcpToolsButton,
                 close: { close() },
                 minimize: { minimize() },
                 expand: { maximize() },

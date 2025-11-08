@@ -21,6 +21,7 @@ struct IntelligenceView: View {
     let tabId: String
     @Binding var allClientTools: [String: [[String: Any]]]
     @Binding var managedModels: [ModelInfo]
+    @Binding var showMcpToolsButton: Bool
 
     let close: () -> Void
     let minimize: () -> Void
@@ -52,9 +53,10 @@ struct IntelligenceView: View {
     @State private var selectedText: String = ""
 
     @State private var isDropping: Bool = false
-
     @State private var showMcpTools: Bool = false
     @State private var hoverMcpTools: Bool = false
+    @State private var selectionEnabled: Bool = false
+    @State private var hoverSelectionEnabled: Bool = false
 
     // Trafic Light
     @State private var hoverRed: Bool = false
@@ -206,6 +208,7 @@ struct IntelligenceView: View {
                             index: index,
                             name: name,
                             image: image,
+                            systemName: "photo",
                             big: modelContext.count == 1,
                             onDelete: { index in
                                 modelContext.remove(at: index)
@@ -222,6 +225,7 @@ struct IntelligenceView: View {
                             index: index,
                             name: name,
                             image: images[0],
+                            systemName: "text.page",
                             big: modelContext.count == 1,
                             onDelete: { index in
                                 modelContext.remove(at: index)
@@ -238,6 +242,7 @@ struct IntelligenceView: View {
                             index: index,
                             name: name,
                             image: image,
+                            systemName: "text.alignleft",
                             big: modelContext.count == 1,
                             onDelete: { index in
                                 modelContext.remove(at: index)
@@ -267,7 +272,7 @@ struct IntelligenceView: View {
                 ContextView()
             }
 
-            if !selectedText.isEmpty {
+            if !selectedText.isEmpty, selectionEnabled {
                 ScrollView {
                     MarkdownText(text: "```\n\(selectedText)\n```", noBackground: true)
                         .font(.system(size: 12, weight: .medium, design: .monospaced))
@@ -339,24 +344,45 @@ struct IntelligenceView: View {
             .padding(.vertical, 8)
 
             HStack {
-                Button(action: { showMcpTools.toggle() }) {
+                Button(action: { selectionEnabled.toggle() }) {
                     HStack {
-                        Image(systemName: "hammer.fill")
+                        Image(systemName: selectionEnabled ? "text.redaction" : "text.alignleft")
                             .resizable()
                             .frame(width: 12, height: 12)
-                            .foregroundStyle(hoverMcpTools ? .black : .white)
+                            .foregroundStyle(hoverSelectionEnabled ? .black : .white)
 
-                        Text("MCP Tools")
+                        Text(selectionEnabled ? "Selection Enabled" : "Selection Disabled")
                             .font(.system(size: 10, weight: .medium))
-                            .foregroundStyle(hoverMcpTools ? .black : .white)
+                            .foregroundStyle(hoverSelectionEnabled ? .black : .white)
                     }
                     .padding(8)
                     .padding(.horizontal, 4)
-                    .background(hoverMcpTools ? .white : .white.opacity(0.1))
+                    .background(hoverSelectionEnabled ? .white : .white.opacity(0.1))
                     .clipShape(RoundedRectangle(cornerRadius: cornerRadius))
                 }
                 .buttonStyle(PlainButtonStyle())
-                .onHover { hoverMcpTools = $0 }
+                .onHover { hoverSelectionEnabled = $0 }
+
+                if showMcpToolsButton {
+                    Button(action: { showMcpTools.toggle() }) {
+                        HStack {
+                            Image(systemName: "hammer.fill")
+                                .resizable()
+                                .frame(width: 12, height: 12)
+                                .foregroundStyle(hoverMcpTools ? .black : .white)
+
+                            Text("MCP Tools")
+                                .font(.system(size: 10, weight: .medium))
+                                .foregroundStyle(hoverMcpTools ? .black : .white)
+                        }
+                        .padding(8)
+                        .padding(.horizontal, 4)
+                        .background(hoverMcpTools ? .white : .white.opacity(0.1))
+                        .clipShape(RoundedRectangle(cornerRadius: cornerRadius))
+                    }
+                    .buttonStyle(PlainButtonStyle())
+                    .onHover { hoverMcpTools = $0 }
+                }
 
                 Spacer()
             }
