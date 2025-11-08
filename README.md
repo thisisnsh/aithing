@@ -6,10 +6,7 @@
 
 
 8 Nov    
-
 - Toast
-- Prevent going below the screen limit 
-
 
 9 Nov
 - Analytics 

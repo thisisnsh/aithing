@@ -229,6 +229,21 @@ struct NotchView: View {
         .frame(width: width, height: height)
         .onAppear {
             close()
+            NSEvent.addLocalMonitorForEvents(matching: .keyDown) { event in
+                if event.modifierFlags.contains(.control), event.modifierFlags.contains(.option) {
+                    switch event.keyCode {
+                    case 126:  // Up arrow
+                        dragViewY(multiplier: 1)
+                        return nil
+                    case 125:  // Down arrow
+                        dragViewY(multiplier: -1)
+                        return nil
+                    default:
+                        break
+                    }
+                }
+                return event
+            }
         }
         .onChange(of: showSettings) { newValue in
             Task {
@@ -414,6 +429,8 @@ struct NotchView: View {
                 .fill(.clear)
                 .frame(width: 8)
                 .onHover { inside in
+                    if windowSize == WindowSize.chatIsExpanded { return }
+
                     resizeHoverTask?.cancel()
                     resizeHoverTask = Task { @MainActor in
                         try? await Task.sleep(nanoseconds: 150_000_000)
@@ -428,6 +445,7 @@ struct NotchView: View {
                                 }
                             )
                         }
+
                         if inside {
                             NSCursor.resizeLeftRight.set()
                         } else {
@@ -471,6 +489,8 @@ struct NotchView: View {
                 .fill(.clear)
                 .frame(height: 8)
                 .onHover { inside in
+                    if windowSize == WindowSize.chatIsExpanded { return }
+
                     resizeHoverTask?.cancel()
                     resizeHoverTask = Task { @MainActor in
                         try? await Task.sleep(nanoseconds: 150_000_000)
@@ -946,6 +966,11 @@ extension NotchView {
 
         (width, height) = updateWindowSize(windowSize)
         lastExpandedWindowSize = windowSize
+    }
+
+    private func dragViewY(multiplier: CGFloat) {
+        let offset: CGFloat = 16
+        modifyWindowTopOffset(offset * multiplier, lastExpandedWindowSize)
     }
 }
 

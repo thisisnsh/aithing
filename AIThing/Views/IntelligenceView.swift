@@ -56,6 +56,7 @@ struct IntelligenceView: View {
     @State private var showMcpTools: Bool = false
     @State private var hoverMcpTools: Bool = false
     @State private var selectionEnabled: Bool = false
+    @State private var showSelection: Bool = false
     @State private var hoverSelectionEnabled: Bool = false
 
     // Trafic Light
@@ -127,6 +128,7 @@ struct IntelligenceView: View {
             .onChange(of: vm.selectedText) { text in
                 if isTabShowing() {
                     selectedText = text
+                    showSelection = true
                 }
             }
             .onReceive(screenshotMonitor.$latestScreenshot) { ss in
@@ -278,7 +280,7 @@ struct IntelligenceView: View {
                 ContextView()
             }
 
-            if !selectedText.isEmpty, selectionEnabled, !isThinking {
+            if !selectedText.isEmpty, showSelection, selectionEnabled, !isThinking {
                 ScrollView {
                     MarkdownText(text: "```\n\(selectedText)\n```", noBackground: true)
                         .font(.system(size: 12, weight: .medium, design: .monospaced))
@@ -427,14 +429,17 @@ extension IntelligenceView {
         modelOutput = ""
         isThinking = true
         toolCall = ""
-        vm.selectedText = ""
-        selectedText = ""
         query = ""
-        selectionEnabled = false
+        showSelection = false
 
         setTabActive(true)
         let result = await callModel(query: trimmed)
         setTabActive(false)
+
+        showSelection = true
+        vm.selectedText = ""
+        selectedText = ""
+        selectionEnabled = false
 
         isThinking = false
         history = await HistoryStore.shared.get(id: tabId)

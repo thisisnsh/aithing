@@ -109,17 +109,17 @@ class AppDelegate: NSObject, NSApplicationDelegate {
 
 extension AppDelegate {
     private func setupGlobalHotKeys() {
-        upHotKey = HotKey(key: .upArrow, modifiers: [.control, .option])
-        downHotKey = HotKey(key: .downArrow, modifiers: [.control, .option])
+        //        upHotKey = HotKey(key: .upArrow, modifiers: [.control, .option])
+        //        downHotKey = HotKey(key: .downArrow, modifiers: [.control, .option])
         spaceHotKey = HotKey(key: .space, modifiers: [.control, .option])
         spaceHotKeyAnother = HotKey(key: .space, modifiers: [.control])
 
-        upHotKey?.keyDownHandler = {
-            self.modifyWindowTopOffset(offset: 16, windowSize: self.lastWindowSize)
-        }
-        downHotKey?.keyDownHandler = {
-            self.modifyWindowTopOffset(offset: -16, windowSize: self.lastWindowSize)
-        }
+        //        upHotKey?.keyDownHandler = {
+        //            self.modifyWindowTopOffset(offset: 16, windowSize: self.lastWindowSize)
+        //        }
+        //        downHotKey?.keyDownHandler = {
+        //            self.modifyWindowTopOffset(offset: -16, windowSize: self.lastWindowSize)
+        //        }
         spaceHotKey?.keyDownHandler = { self.vm.toggleDimensions() }
         spaceHotKeyAnother?.keyDownHandler = { self.vm.toggleDimensions() }
     }
@@ -217,7 +217,7 @@ extension AppDelegate {
     private func updateWindowSize(
         windowSize: WindowSize,
         offsetTopY: CGFloat = 0,
-        resetY: Bool = false
+        resetY: Bool = false,
     ) -> (
         CGFloat,
         CGFloat
@@ -244,6 +244,11 @@ extension AppDelegate {
         } else if previousTopY != 0 {
             newY = previousTopY - windowHeight + offsetTopY
             previousTopY = 0
+        }
+
+        // Do not allow out of bounds
+        if newY < screenFrame.minY || newY + windowHeight > screenFrame.maxY {
+            return (windowWidth, windowHeight)
         }
 
         floatingWindow.setFrame(
