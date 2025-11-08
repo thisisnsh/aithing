@@ -153,7 +153,7 @@ struct SettingsView: View {
             Circle()
                 .frame(width: 12, height: 12)
                 .foregroundStyle(hoverRed ? .red.opacity(0.5) : .red)
-                .onTapGesture { close() }
+                .onTapGesture { isPresented = false }
                 .onHover { hoverRed = $0 }
 
             Circle()
@@ -233,7 +233,6 @@ struct SettingsView: View {
                         .labelStyle(.iconOnly)
                 }
             }
-
             .padding(.trailing, -8)
 
         }

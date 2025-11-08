@@ -75,8 +75,13 @@ struct IntelligenceView: View {
                 Divider()
                     .padding(.horizontal, -8)
 
-                ResponseView()
-                    .padding(.vertical, -8)
+                if showMcpTools {
+                    ToolsView()
+                        .environmentObject(mcpManager)
+                } else {
+                    ResponseView()
+                        .padding(.vertical, -8)
+                }
 
                 Spacer()
 
@@ -226,7 +231,9 @@ struct IntelligenceView: View {
                     }
                 }
             }
+            .padding(.horizontal, 8)
         }
+        .padding(.horizontal, -8)
     }
 
     private func InputView() -> some View {
@@ -262,6 +269,7 @@ struct IntelligenceView: View {
                     )
                     .onChange(of: query) { _ in }
                 }
+
                 if query.isEmpty {
                     Text(
                         isThinking
@@ -283,9 +291,7 @@ struct IntelligenceView: View {
             HStack {
                 Button(
                     action: {
-                        withAnimation(.easeInOut(duration: 0.3)) {
-                            showMcpTools.toggle()
-                        }
+                        showMcpTools.toggle()
                     }
                 ) {
                     HStack {
@@ -312,7 +318,9 @@ struct IntelligenceView: View {
         .padding(8)
         .overlay(
             Group {
-                if isDropping {
+                if isThinking {
+                    AnimatedGradientBorder(cornerRadius: 8, lineWidth: 1.5, color: .white)
+                } else if isDropping {
                     AnimatedGradientBorder(cornerRadius: 8, lineWidth: 1.5, color: .blue)
                 }
             }
@@ -1050,7 +1058,7 @@ extension IntelligenceView {
             "temperature": 0.7,
             "messages": input,
             "system":
-                "Generate a concise title of no more than 18 characters. Do not include quotation marks or any extra text. Output only the title, nothing else.",
+                "Generate a concise title of no more than 18 characters. Do not include quotation marks or any extra text. Output only the title, nothing else. If you can not generate the title output \"New Chat\"",
         ]
 
         request.httpBody = try? JSONSerialization.data(withJSONObject: body)

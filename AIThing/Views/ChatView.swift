@@ -112,6 +112,9 @@ struct ChatView: View {
                 }
             }
         }
+        .onAppear {
+            setHistory(history)
+        }
         .onChange(of: history) { _ in
             setHistory(history)
         }

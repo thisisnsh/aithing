@@ -17,6 +17,13 @@ struct FilePill: View {
     @State private var onHover = false
 
     var body: some View {
+        GroupView()
+            .background(.white)
+            .cornerRadius(6)
+            .onHover { onHover = $0 }
+    }
+
+    private func GroupView() -> some View {
         Group {
             if let image = image, big {
                 VStack {
@@ -37,9 +44,7 @@ struct FilePill: View {
             }
         }
         .padding(4)
-        .background(.white)
-        .cornerRadius(6)
-        .onHover { onHover = $0 }
+
     }
 
     private func PillStack() -> some View {

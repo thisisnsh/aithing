@@ -1,0 +1,113 @@
+//
+//  ToolsView.swift
+//  AIThing
+//
+//  Created by Nishant Singh Hada on 9/13/25.
+//
+
+import MCP
+import SwiftUI
+
+struct ToolsView: View {
+    @EnvironmentObject var mcpManager: MCPManager
+
+    @State private var tools: [String: [Tool]] = [:]
+    @State private var currentClient: String = ""
+
+    var body: some View {
+        ZStack {
+            if #available(macOS 26.0, *) {
+                RoundedRectangle(cornerRadius: 8)
+                    .glassEffect(.regular.tint(.black), in: RoundedRectangle(cornerRadius: 8))
+            } else {
+                RoundedRectangle(cornerRadius: 8)
+                    .fill(.white.opacity(0.1))
+            }
+
+            if tools.isEmpty {
+                Text("No tools added yet")
+                    .foregroundColor(.secondary)
+                    .font(.system(size: 10))
+                    .padding(.horizontal, 16)
+                    .padding(.vertical, 8)
+            } else {
+                toolsView
+            }
+
+        }
+        .onAppear {
+            Task {
+                tools = await mcpManager.getAllTools()
+                currentClient = tools.keys.first ?? ""
+            }
+        }
+    }
+
+    private var toolsView: some View {
+        ScrollView {
+            VStack(alignment: .leading) {
+                ForEach(Array(tools.keys), id: \.self) { currentClient in
+                    if let currentTools = tools[currentClient] {
+                        ForEach(currentTools, id: \.self) { tool in
+                            ChatBubble(
+                                item: ChatItem(
+                                    role: .assistant,
+                                    payload: .toolUse(name: "\(tool.name):\n\n\(tool.description)")
+                                )
+                            )
+                        }
+                    } else {
+                        if tools.isEmpty {
+                            Text("Enable agents in Settings")
+                                .foregroundColor(.secondary)
+                                .font(.system(size: 10))
+                                .padding(.horizontal, 16)
+                                .padding(.vertical, 8)
+                        }
+                    }
+                }
+            }
+            .padding(.vertical, 16)
+        }
+    }
+
+}
+
+struct HoverableToolButton: View {
+    let title: String
+    let isActive: Bool
+    let action: () -> Void
+
+    @State private var isHovered = false
+
+    var body: some View {
+        HStack(spacing: 8) {
+            // Main clickable area
+            Button(action: action) {
+                Text(title)
+                    .font(.system(size: 12, weight: .medium))
+                    .lineLimit(1)
+                    .frame(maxWidth: .infinity, alignment: .leading)
+                    .padding(.vertical, 8)
+                    .padding(.horizontal, 12)
+                    .background(
+                        isActive
+                            ? Color.black.opacity(0.5)
+                            : (isHovered ? Color.black.opacity(0.1) : .clear)
+                    )
+                    .clipShape(RoundedRectangle(cornerRadius: 8))
+            }
+            .buttonStyle(.plain)
+        }
+        .padding(.horizontal, 8)
+        .onHover { hovering in
+            withAnimation(.easeInOut(duration: 0.2)) {
+                isHovered = hovering
+            }
+        }
+    }
+}
+
+extension Array {
+    fileprivate subscript(safe i: Index) -> Element? { indices.contains(i) ? self[i] : nil }
+}

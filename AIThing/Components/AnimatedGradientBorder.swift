@@ -11,6 +11,7 @@ struct AnimatedGradientBorder: View {
     let cornerRadius: CGFloat
     let lineWidth: CGFloat
     var color: Color = .white
+    var rainbow = false
 
     @State private var animate = false
 
@@ -21,13 +22,25 @@ struct AnimatedGradientBorder: View {
             RoundedRectangle(cornerRadius: cornerRadius)
                 .strokeBorder(
                     AngularGradient(
-                        gradient: Gradient(colors: [
-                            color,
-                            color.opacity(0.4),
-                            color.opacity(0.05),
-                            color.opacity(0.4),
-                            color,
-                        ]),
+                        gradient: Gradient(
+                            colors: rainbow
+                                ? [
+                                    .purple.opacity(0.4),
+                                    .indigo.opacity(0.8),
+                                    .blue.opacity(1),
+                                    .green.opacity(0.8),
+                                    .yellow.opacity(1),
+                                    .orange.opacity(0.6),
+                                    .red.opacity(0.4),
+                                ]
+                                : [
+                                    color,
+                                    color.opacity(0.4),
+                                    color.opacity(0.05),
+                                    color.opacity(0.4),
+                                    color,
+                                ]
+                        ),
                         center: .center,
                         angle: .degrees(animate ? 360 : 0)
                     ),
