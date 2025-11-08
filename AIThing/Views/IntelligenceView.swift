@@ -62,7 +62,7 @@ struct IntelligenceView: View {
         ZStack {
             if #available(macOS 26.0, *) {
                 RoundedRectangle(cornerRadius: 8)
-                    .glassEffect(.regular, in: RoundedRectangle(cornerRadius: 8))
+                    .glassEffect(.regular.tint(.black), in: RoundedRectangle(cornerRadius: 8))
             } else {
                 RoundedRectangle(cornerRadius: 8)
                     .fill(.white.opacity(0.1))
@@ -114,6 +114,19 @@ struct IntelligenceView: View {
                         }
                     }
                 }
+            }
+            .dropDestination(for: URL.self) { urls, _ in
+                Task {
+                    let results = await DragFileManager.processPaths(urls)
+                    for r in results {
+                        modelContext.append(r)
+                    }
+                }
+
+                // You can’t know yet, so just return true to accept the drop.
+                return true
+            } isTargeted: {
+                isDropping = $0
             }
         }
     }
@@ -304,19 +317,6 @@ struct IntelligenceView: View {
                 }
             }
         )
-        .dropDestination(for: URL.self) { urls, _ in
-            Task {
-                let results = await DragFileManager.processPaths(urls)
-                for r in results {
-                    modelContext.append(r)
-                }
-            }
-
-            // You can’t know yet, so just return true to accept the drop.
-            return true
-        } isTargeted: {
-            isDropping = $0
-        }
     }
 }
 

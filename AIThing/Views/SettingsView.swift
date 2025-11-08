@@ -42,7 +42,7 @@ struct SettingsView: View {
         ZStack {
             if #available(macOS 26.0, *) {
                 RoundedRectangle(cornerRadius: 8)
-                    .glassEffect(.regular, in: RoundedRectangle(cornerRadius: 8))
+                    .glassEffect(.regular.tint(.black), in: RoundedRectangle(cornerRadius: 8))
             } else {
                 RoundedRectangle(cornerRadius: 8)
                     .fill(.white.opacity(0.1))

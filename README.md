@@ -6,20 +6,27 @@
 
 
 7 Nov 
-- Animations
-- Fix System Message
-- Analytics  
+- Get Selected Text
+- Show Tools  
+
 
 8 Nov    
 - Multitasking 
-- Doc 
-- Release 2.0
+
 
 9 Nov
+- Analytics 
+- Doc & Release 2.0
+
+
+10 Nov
 - YC Apply
+
 
 BF
 - 2 hover required to open the app after closing
+- missing glass in settings 
+
 
 ------------------------
 

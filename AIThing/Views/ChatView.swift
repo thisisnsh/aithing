@@ -140,14 +140,14 @@ struct ChatBubble: View {
             case .text(let text):
                 if item.role != .usage {
                     TextBubble(text: text, isUser: item.role == .user)
-                        .frame(maxWidth: 500, alignment: item.role == .user ? .trailing : .leading)
+                        .frame(maxWidth: 800, alignment: item.role == .user ? .trailing : .leading)
                 }
             case .image(let image):
                 ImageBubble(image: image, isUser: item.role == .user)
                     .frame(maxWidth: 300, alignment: item.role == .user ? .trailing : .leading)
             case .toolUse(let name):
                 ToolBubble(text: "Called tool: \(name)")
-                    .frame(maxWidth: 500, alignment: .leading)
+                    .frame(maxWidth: 800, alignment: .leading)
             }
 
             if item.role == .user { Spacer().frame(width: 0) }
