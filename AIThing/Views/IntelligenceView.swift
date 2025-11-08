@@ -448,8 +448,7 @@ extension IntelligenceView {
                     await animateOutput(
                         content: """
                             You access has been disabled. We apologize for the inconvenience.
-
-                            Please contact help@aithing.dev.
+                            Please contact help@aithing.dev for more information.
                             """
                         ,
                         notification: true
@@ -466,7 +465,6 @@ extension IntelligenceView {
             await animateOutput(
                 content: """
                     Something went wrong. Please log out and log in again. 
-
                     Report issue at help@aithing.dev
                     """
                 ,
@@ -482,9 +480,14 @@ extension IntelligenceView {
             isThinking = false
             await animateOutput(
                 content: """
-                    Please log in to continue.
+                    ### 👋 Welcome to **AI Thing**
 
-                    Read our [Privacy Policy](https://aithing.dev/privacy)
+                    I’m your personal AI assistant — built to handle everything from simple tasks to complex automations.
+                    With multiple AI models and specialized agents, I can work in the background to get things done securely.
+
+                    **Please log in from Settings to continue.**
+
+                    [aithing.dev](https://aithing.dev) • [Privacy Policy](https://aithing.dev/privacy)                
                     """
                 ,
                 notification: true
