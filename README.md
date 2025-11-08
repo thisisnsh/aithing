@@ -6,7 +6,6 @@
 
 
 8 Nov    
-- Selection Cross Button
 - When sidebar opens increase the default width 
 - Multitasking 
 
