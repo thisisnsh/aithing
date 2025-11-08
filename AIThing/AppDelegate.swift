@@ -51,6 +51,7 @@ class AppDelegate: NSObject, NSApplicationDelegate {
     private var originalHeight: CGFloat = 600
     private var width: CGFloat = 560
     private var height: CGFloat = 600
+    private var shadowBuffer: CGFloat = 32
 
     private var previousTopY: CGFloat = 0
     private var lastWindowSize: WindowSize = .notchIsCollapsed
@@ -197,23 +198,23 @@ extension AppDelegate {
     private func getWindowSize(windowSize: WindowSize) -> (CGFloat, CGFloat) {
         switch windowSize {
         case .notchIsCollapsed:
-            return (60, 100)
+            return (60 + shadowBuffer, 100)
         case .sidebarIsCollapsed:
-            return (60, 160)
+            return (60 + shadowBuffer, 160)
         case .sidebarIsExpanded:
-            return (200, 600)
+            return (200 + shadowBuffer, 600)
         case .chatIsShownSidebarIsCollapsed:
-            return (width, height)
+            return (width + shadowBuffer, height)
         case .chatIsShownSidebarIsExpanded:
-            return (width + 200, height)
+            return (width + 200 + shadowBuffer, height)
         case .chatIsExpanded:
             if let screen = screen {
                 return (
-                    min(screen.visibleFrame.maxX * 0.5, 1000),
+                    min(screen.visibleFrame.maxX * 0.5, 1000) + shadowBuffer,
                     min(screen.visibleFrame.maxY * 0.8, 1000)
                 )
             }
-            return (860, 600)
+            return (860 + shadowBuffer, 600)
         }
     }
 

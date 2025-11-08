@@ -21,8 +21,9 @@ struct NotchView: View {
     let modifyWindowOriginalSize: () -> Void
     let modifyWindowTopOffset: (CGFloat, WindowSize) -> Void
     let gainFocus: () -> Void
-    
+
     let cornerRadiusLeft: CGFloat = 38
+    let shadowBuffer: CGFloat = 32
 
     @State private var width: CGFloat = 0
     @State private var height: CGFloat = 0
@@ -219,6 +220,7 @@ struct NotchView: View {
             .padding(.vertical, 24)
 
         }
+        .padding(.leading, shadowBuffer)
         .frame(width: width, height: height)
         .onAppear {
             close()
