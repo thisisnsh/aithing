@@ -11,6 +11,7 @@ import SwiftUI
 
 struct MarkdownText: View {
     var text: String
+    var noBackground = false
     @State private var copiedBlock: String? = nil
 
     var body: some View {
@@ -42,7 +43,7 @@ struct MarkdownText: View {
                             }
                             .padding(16)
                     }
-                    .background(.gray.opacity(0.25))
+                    .background(noBackground ? .clear : .gray.opacity(0.25))
                     .clipShape(RoundedRectangle(cornerRadius: 8))
                     .markdownMargin(top: 0, bottom: 16)
 

@@ -17,6 +17,7 @@ struct IntelligenceView: View {
     @EnvironmentObject var firestoreManager: FirestoreManager
     @StateObject var screenshotMonitor = ScreenshotMonitor()
 
+    @ObservedObject var vm: NotchVM
     let tabId: String
     @Binding var allClientTools: [String: [[String: Any]]]
     @Binding var managedModels: [ModelInfo]
@@ -29,6 +30,7 @@ struct IntelligenceView: View {
     let reconnectManagedAgents: () async -> Void
 
     let logger = Logger(subsystem: "com.thisisnsh.mac.AIThing", category: "IntelligenceView")
+    let cornerRadius: CGFloat = 24
 
     @State private var tabTitle: String = "New Chat"
     @State private var inputHeight: CGFloat = 24
@@ -61,10 +63,13 @@ struct IntelligenceView: View {
     var body: some View {
         ZStack {
             if #available(macOS 26.0, *) {
-                RoundedRectangle(cornerRadius: 8)
-                    .glassEffect(.regular.tint(.black), in: RoundedRectangle(cornerRadius: 8))
+                RoundedRectangle(cornerRadius: cornerRadius)
+                    .glassEffect(
+                        .regular.tint(.black),
+                        in: RoundedRectangle(cornerRadius: cornerRadius)
+                    )
             } else {
-                RoundedRectangle(cornerRadius: 8)
+                RoundedRectangle(cornerRadius: cornerRadius)
                     .fill(.white.opacity(0.1))
             }
 
@@ -87,11 +92,11 @@ struct IntelligenceView: View {
 
                 if #available(macOS 26.0, *) {
                     InputView()
-                        .glassEffect(.regular, in: RoundedRectangle(cornerRadius: 8))
+                        .glassEffect(.regular, in: RoundedRectangle(cornerRadius: cornerRadius - 4))
                 } else {
                     InputView()
                         .background(.white.opacity(0.1))
-                        .cornerRadius(8)
+                        .cornerRadius(cornerRadius - 4)
                 }
 
             }
@@ -109,6 +114,9 @@ struct IntelligenceView: View {
                 if !notification.isEmpty {
                     modelOutput = notification
                 }
+            }
+            .onChange(of: vm.selectedText) { text in
+                selectedText = text
             }
             .onReceive(screenshotMonitor.$latestScreenshot) { ss in
                 if let ss = ss {
@@ -181,7 +189,7 @@ struct IntelligenceView: View {
     private func ContextView() -> some View {
         ScrollView(.horizontal, showsIndicators: false) {
             HStack {
-                ForEach(modelContext.indices, id: \.self) { index in
+                ForEach(modelContext.indices.reversed(), id: \.self) { index in
                     let context = modelContext[index]
                     switch context {
                     case .image(let name, let image, _):
@@ -196,7 +204,8 @@ struct IntelligenceView: View {
                                     type: .action,
                                     primary: "file_remove"
                                 )
-                            }
+                            },
+                            cornerRadius: cornerRadius
                         )
 
                     case .pdf(let name, _, let images, _):
@@ -211,7 +220,8 @@ struct IntelligenceView: View {
                                     type: .action,
                                     primary: "file_remove"
                                 )
-                            }
+                            },
+                            cornerRadius: cornerRadius
                         )
 
                     case .text(let name, _, let image):
@@ -226,7 +236,8 @@ struct IntelligenceView: View {
                                     type: .action,
                                     primary: "file_remove"
                                 )
-                            }
+                            },
+                            cornerRadius: cornerRadius
                         )
                     }
                 }
@@ -234,12 +245,42 @@ struct IntelligenceView: View {
             .padding(.horizontal, 8)
         }
         .padding(.horizontal, -8)
+        .clipShape(
+            RoundedRectangle(
+                cornerRadius: modelContext.count == 1 ? cornerRadius - 8 : cornerRadius
+            )
+        )
     }
 
     private func InputView() -> some View {
-        VStack {
+        VStack(alignment: .leading) {
             if modelContext.count > 0 {
                 ContextView()
+            }
+
+            if !selectedText.isEmpty {
+                ScrollView {
+                    MarkdownText(text: "```\n\(selectedText)\n```", noBackground: true)
+                        .font(.system(size: 12, weight: .medium, design: .monospaced))
+                        .textSelection(.enabled)
+                }
+                .background(.white.opacity(0.1))
+                .clipShape(RoundedRectangle(cornerRadius: cornerRadius - 8))
+                .frame(minHeight: 16, maxHeight: 64)
+                .overlay(alignment: .topLeading) {
+                    Button {
+                        selectedText = ""
+                    } label: {
+                        Image(systemName: "xmark.circle.fill")
+                            .resizable()
+                            .frame(width: 12, height: 12)
+                            .foregroundStyle(.black)
+                            .padding(2)
+                            .background(.white)
+                            .clipShape(Circle())
+                    }
+                    .buttonStyle(.plain)
+                }
             }
 
             ZStack(alignment: .leading) {
@@ -286,14 +327,10 @@ struct IntelligenceView: View {
                 }
             }
             .frame(height: inputHeight)
-            .padding(.bottom, 8)
+            .padding(.vertical, 8)
 
             HStack {
-                Button(
-                    action: {
-                        showMcpTools.toggle()
-                    }
-                ) {
+                Button(action: { showMcpTools.toggle() }) {
                     HStack {
                         Image(systemName: "hammer.fill")
                             .resizable()
@@ -304,10 +341,10 @@ struct IntelligenceView: View {
                             .font(.system(size: 10, weight: .medium))
                             .foregroundStyle(hoverMcpTools ? .black : .white)
                     }
-                    .padding(4)
+                    .padding(8)
                     .padding(.horizontal, 4)
                     .background(hoverMcpTools ? .white : .white.opacity(0.1))
-                    .clipShape(RoundedRectangle(cornerRadius: 6))
+                    .clipShape(RoundedRectangle(cornerRadius: cornerRadius))
                 }
                 .buttonStyle(PlainButtonStyle())
                 .onHover { hoverMcpTools = $0 }
@@ -319,9 +356,17 @@ struct IntelligenceView: View {
         .overlay(
             Group {
                 if isThinking {
-                    AnimatedGradientBorder(cornerRadius: 8, lineWidth: 1.5, color: .white)
+                    AnimatedGradientBorder(
+                        cornerRadius: cornerRadius - 4,
+                        lineWidth: 1.5,
+                        color: .white
+                    )
                 } else if isDropping {
-                    AnimatedGradientBorder(cornerRadius: 8, lineWidth: 1.5, color: .blue)
+                    AnimatedGradientBorder(
+                        cornerRadius: cornerRadius - 4,
+                        lineWidth: 1.5,
+                        color: .blue
+                    )
                 }
             }
         )
@@ -336,11 +381,12 @@ extension IntelligenceView {
         displayQuery = trimmed
         modelOutput = ""
         isThinking = true
-        query = ""
         toolCall = ""
+        vm.selectedText = ""
 
         let result = await callModel(query: trimmed)
 
+        query = ""
         await updateHistoryList()
         isThinking = false
         history = await HistoryStore.shared.get(id: tabId)
@@ -349,6 +395,7 @@ extension IntelligenceView {
         }
         displayQuery = ""
         toolCall = ""
+        selectedText = ""
     }
 
     private func callModel(query: String) async -> Bool {

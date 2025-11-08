@@ -13,13 +13,14 @@ struct FilePill: View {
     let image: NSImage?
     let big: Bool
     let onDelete: (Int) -> Void
+    let cornerRadius: CGFloat
 
     @State private var onHover = false
 
     var body: some View {
         GroupView()
             .background(.white)
-            .cornerRadius(6)
+            .cornerRadius(image != nil && big ? cornerRadius - 8 : cornerRadius)
             .onHover { onHover = $0 }
     }
 
@@ -31,7 +32,7 @@ struct FilePill: View {
                         .resizable()
                         .aspectRatio(contentMode: .fit)
                         .frame(height: 48)
-                        .cornerRadius(6)
+                        .cornerRadius(cornerRadius - 8)
                         .overlay {
                             if onHover {
                                 DeleteButton()
@@ -41,9 +42,9 @@ struct FilePill: View {
             } else {
                 PillStack()
                     .padding(.horizontal, 4)
+                    .padding(8)
             }
         }
-        .padding(4)
 
     }
 

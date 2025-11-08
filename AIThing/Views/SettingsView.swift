@@ -16,6 +16,8 @@ struct SettingsView: View {
     let minimize: () -> Void
     let expand: () -> Void
 
+    let cornerRadius: CGFloat = 24
+
     @State private var selectedTab: SettingsTab = getSelectedTab()
     @State private var tabTitle = "Settings"
     @State private var hoverRed: Bool = false
@@ -41,10 +43,13 @@ struct SettingsView: View {
     var body: some View {
         ZStack {
             if #available(macOS 26.0, *) {
-                RoundedRectangle(cornerRadius: 8)
-                    .glassEffect(.regular.tint(.black), in: RoundedRectangle(cornerRadius: 8))
+                RoundedRectangle(cornerRadius: cornerRadius)
+                    .glassEffect(
+                        .regular.tint(.black),
+                        in: RoundedRectangle(cornerRadius: cornerRadius)
+                    )
             } else {
-                RoundedRectangle(cornerRadius: 8)
+                RoundedRectangle(cornerRadius: cornerRadius)
                     .fill(.white.opacity(0.1))
             }
 

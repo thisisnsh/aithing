@@ -21,6 +21,8 @@ struct NotchView: View {
     let modifyWindowOriginalSize: () -> Void
     let modifyWindowTopOffset: (CGFloat, WindowSize) -> Void
 
+    let cornerRadiusLeft: CGFloat = 38
+
     @State private var width: CGFloat = 0
     @State private var height: CGFloat = 0
     @State private var windowSize = WindowSize.notchIsCollapsed
@@ -102,6 +104,7 @@ struct NotchView: View {
                             .environmentObject(mcpOAuthManagers)
                         } else {
                             IntelligenceView(
+                                vm: vm,
                                 tabId: tabId,
                                 allClientTools: $allClientTools,
                                 managedModels: $managedModels,
@@ -277,41 +280,66 @@ struct NotchView: View {
     private func NotchShapeExt() -> some View {
         Group {
             if #available(macOS 26.0, *) {
-                NotchShape(width: width, height: height, cornerRadius: 16)
-                    .overlay(
-                        LinearGradient(
-                            gradient: Gradient(colors: [
-                                Color.black.opacity(showChatWindow ? 0.3 : 1.0),
-                                Color.black.opacity(1.0),
-                            ]),
-                            startPoint: .leading,
-                            endPoint: .trailing
-                        )
-                        .clipShape(
-                            NotchShape(width: width, height: height, cornerRadius: 16)
+                NotchShape(
+                    width: width,
+                    height: height,
+                    cornerRadiusLeft: showChatWindow ? cornerRadiusLeft : 16,
+                    cornerRadiusRight: 16
+                )
+                .overlay(
+                    LinearGradient(
+                        gradient: Gradient(colors: [
+                            Color.black.opacity(showChatWindow ? 0.3 : 1.0),
+                            Color.black.opacity(1.0),
+                        ]),
+                        startPoint: .leading,
+                        endPoint: .trailing
+                    )
+                    .clipShape(
+                        NotchShape(
+                            width: width,
+                            height: height,
+                            cornerRadiusLeft: showChatWindow ? cornerRadiusLeft : 16,
+                            cornerRadiusRight: 16
                         )
                     )
-                    .glassEffect(
-                        .regular.tint(.black),
-                        in: NotchShape(width: width, height: height, cornerRadius: 16)
+                )
+                .glassEffect(
+                    .regular.tint(.black),
+                    in: NotchShape(
+                        width: width,
+                        height: height,
+                        cornerRadiusLeft: showChatWindow ? cornerRadiusLeft : 16,
+                        cornerRadiusRight: 16
                     )
+                )
             } else {
-                NotchShape(width: width, height: height, cornerRadius: 16)
-                    .fill(.ultraThickMaterial)
-                    .overlay(
-                        LinearGradient(
-                            gradient: Gradient(colors: [
-                                Color.black.opacity(showChatWindow ? 0.3 : 1.0),
-                                Color.black.opacity(1.0),
-                            ]),
-                            startPoint: .leading,
-                            endPoint: .trailing
-                        )
-                        .blendMode(.overlay)
-                        .clipShape(
-                            NotchShape(width: width, height: height, cornerRadius: 16)
+                NotchShape(
+                    width: width,
+                    height: height,
+                    cornerRadiusLeft: showChatWindow ? cornerRadiusLeft : 16,
+                    cornerRadiusRight: 16
+                )
+                .fill(.ultraThickMaterial)
+                .overlay(
+                    LinearGradient(
+                        gradient: Gradient(colors: [
+                            Color.black.opacity(showChatWindow ? 0.3 : 1.0),
+                            Color.black.opacity(1.0),
+                        ]),
+                        startPoint: .leading,
+                        endPoint: .trailing
+                    )
+                    .blendMode(.overlay)
+                    .clipShape(
+                        NotchShape(
+                            width: width,
+                            height: height,
+                            cornerRadiusLeft: showChatWindow ? cornerRadiusLeft : 16,
+                            cornerRadiusRight: 16
                         )
                     )
+                )
             }
         }
     }

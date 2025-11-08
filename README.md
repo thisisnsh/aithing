@@ -5,17 +5,16 @@
 ## 2.0 
 
 
-7 Nov 
-- Get Selected Text
-- Show Tools  
-
-
 8 Nov    
+- Get Selected Text
+- Selection Cross Button
+- When sidebar opens increase the default width 
 - Multitasking 
 
 
 9 Nov
 - Analytics 
+- Verify MCPs
 - Doc & Release 2.0
 
 

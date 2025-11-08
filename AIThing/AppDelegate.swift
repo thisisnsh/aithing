@@ -12,6 +12,7 @@ import FirebaseCore
 import HotKey
 import Logging
 import OAuthSwift
+import SelectedTextKit
 import ServiceManagement
 import SwiftUI
 
@@ -28,10 +29,12 @@ final class NotchVM: ObservableObject {
     @Published var minimize = false
     @Published var open = false
     @Published var toggle = false
+    @Published var selectedText = ""
     func refreshDimensions() { refresh.toggle() }
     func minimizeDimensions() { minimize.toggle() }
     func openDimensions() { open.toggle() }
     func toggleDimensions() { toggle.toggle() }
+    func updateSelectedText(text: String) { selectedText = text }
 }
 
 // MARK: - AppDelegate
@@ -39,7 +42,9 @@ class AppDelegate: NSObject, NSApplicationDelegate {
     private var floatingWindow: NonActivatingPanel!
 
     static var allowQuit = false
-    static var screen = NSScreen.main
+    static var selectedText = ""
+
+    private var screen = NSScreen.main
 
     private var originalWidth: CGFloat = 560
     private var originalHeight: CGFloat = 600
@@ -52,6 +57,12 @@ class AppDelegate: NSObject, NSApplicationDelegate {
     private var upHotKey: HotKey?
     private var downHotKey: HotKey?
     private var spaceHotKey: HotKey?
+
+    private var selectionResetRequired = false
+    private let textManager = SelectedTextManager.shared
+    private var selectedText: String = ""
+    private var pollingTimer: DispatchSourceTimer?
+    private var mouseLocation = NSEvent.mouseLocation
 
     let vm = NotchVM()
 
@@ -73,6 +84,7 @@ class AppDelegate: NSObject, NSApplicationDelegate {
 
         FirebaseApp.configure()
 
+        startSelectionPoll()
         setupGlobalHotKeys()
         setupNotchWindow()
 
@@ -111,7 +123,7 @@ extension AppDelegate {
 
     private func setupNotchWindow() {
         // Get screen dimensions
-        guard let screen = AppDelegate.screen else { return }
+        guard let screen = screen else { return }
         let screenFrame = screen.visibleFrame
 
         // Create a borderless, floating window on the right side
@@ -185,7 +197,7 @@ extension AppDelegate {
         case .chatIsShown:
             return (width, height)
         case .chatIsExpanded:
-            if let screen = AppDelegate.screen {
+            if let screen = screen {
                 return (
                     min(screen.visibleFrame.maxX * 0.5, 1000),
                     min(screen.visibleFrame.maxY * 0.8, 1000)
@@ -207,7 +219,7 @@ extension AppDelegate {
         guard let screen = screen(for: floatingWindow) ?? currentAppScreen() else {
             return getWindowSize(windowSize: windowSize)
         }
-        AppDelegate.screen = screen
+        self.screen = screen
 
         let (windowWidth, windowHeight) = getWindowSize(windowSize: windowSize)
 
@@ -266,6 +278,60 @@ extension AppDelegate {
         if let floatingWindow = floatingWindow {
             floatingWindow.sharingType = getPreferencesShowInScreenshot() ? .readOnly : .none
         }
+    }
+}
+
+extension AppDelegate {
+    private func startSelectionPoll() {
+        pollingTimer?.cancel()
+
+        let timer = DispatchSource.makeTimerSource(queue: .main)
+        timer.schedule(deadline: .now(), repeating: 0.5)
+        timer.setEventHandler {
+            if !AXIsProcessTrusted() {
+                let opts: NSDictionary = [
+                    kAXTrustedCheckOptionPrompt.takeUnretainedValue() as NSString: true
+                ]
+                _ = AXIsProcessTrustedWithOptions(opts)
+                return
+            }
+            Task {
+                await self.setupSelection()
+            }
+        }
+        pollingTimer = timer
+        timer.resume()
+    }
+
+    private func setupSelection() async {
+        do {
+            // Try AXUI method first
+            if let text = try await textManager.getSelectedTextByAX() {
+                let sanitizedText = text.trimmingCharacters(in: .whitespacesAndNewlines)
+                if !sanitizedText.isEmpty {
+                    DispatchQueue.main.async {
+                        self.vm.updateSelectedText(text: sanitizedText)
+                    }
+                    return
+                }
+            }
+        } catch {}
+
+        do {
+            // If AXUI fails or returns empty text, try menu action copy
+            if let menuCopyText = try await textManager.getSelectedTextByMenuAction() {
+                let sanitizedText = menuCopyText.trimmingCharacters(in: .whitespacesAndNewlines)
+                if !sanitizedText.isEmpty {
+                    DispatchQueue.main.async {
+                        self.vm.updateSelectedText(text: sanitizedText)
+                    }
+                    return
+                }
+            }
+        } catch {}
+
+        selectedText = ""
+        selectionResetRequired = false
     }
 }
 
