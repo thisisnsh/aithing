@@ -6,7 +6,6 @@
 
 
 8 Nov    
-- When sidebar opens increase the default width 
 - Multitasking 
 
 
@@ -22,7 +21,8 @@
 
 BF
 - 2 hover required to open the app after closing
-- missing glass in settings 
+- Missing glass in settings 
+- Excel now work 
 
 
 ------------------------

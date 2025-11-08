@@ -18,10 +18,11 @@ import SwiftUI
 
 enum WindowSize: Int {
     case notchIsCollapsed = 0
-    case notchIsExpandedSidebarIsCollapsed = 1
-    case notchIsExpanded = 2
-    case chatIsShown = 3
-    case chatIsExpanded = 4
+    case sidebarIsCollapsed = 1
+    case sidebarIsExpanded = 2
+    case chatIsShownSidebarIsCollapsed = 3
+    case chatIsShownSidebarIsExpanded = 4
+    case chatIsExpanded = 5
 }
 
 final class NotchVM: ObservableObject {
@@ -190,12 +191,14 @@ extension AppDelegate {
         switch windowSize {
         case .notchIsCollapsed:
             return (60, 100)
-        case .notchIsExpandedSidebarIsCollapsed:
+        case .sidebarIsCollapsed:
             return (60, 160)
-        case .notchIsExpanded:
+        case .sidebarIsExpanded:
             return (200, 600)
-        case .chatIsShown:
+        case .chatIsShownSidebarIsCollapsed:
             return (width, height)
+        case .chatIsShownSidebarIsExpanded:
+            return (width + 200, height)
         case .chatIsExpanded:
             if let screen = screen {
                 return (

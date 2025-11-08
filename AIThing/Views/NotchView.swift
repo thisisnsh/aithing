@@ -26,7 +26,7 @@ struct NotchView: View {
     @State private var width: CGFloat = 0
     @State private var height: CGFloat = 0
     @State private var windowSize = WindowSize.notchIsCollapsed
-    @State private var lastExpandedWindowSize = WindowSize.notchIsExpanded
+    @State private var lastExpandedWindowSize = WindowSize.sidebarIsExpanded
     @State private var hoverTask: Task<Void, Never>?
 
     @State private var managedModels: [ModelInfo] = []
@@ -44,10 +44,10 @@ struct NotchView: View {
     @State private var expandSidebar = false
 
     private var showChatWindow: Bool {
-        windowSize.rawValue >= WindowSize.chatIsShown.rawValue
+        windowSize.rawValue >= WindowSize.chatIsShownSidebarIsCollapsed.rawValue
     }
     private var expandNotch: Bool {
-        windowSize.rawValue >= WindowSize.notchIsExpandedSidebarIsCollapsed.rawValue
+        windowSize.rawValue >= WindowSize.sidebarIsCollapsed.rawValue
     }
 
     // Resize
@@ -260,14 +260,14 @@ struct NotchView: View {
                 try? await Task.sleep(nanoseconds: 150_000_000)  // 150ms
                 guard !Task.isCancelled else { return }
 
-                if windowSize != WindowSize.chatIsShown {
+                if windowSize != WindowSize.chatIsShownSidebarIsCollapsed {
                     if hovering {
                         if windowSize == WindowSize.notchIsCollapsed {
                             open()
                         }
                     } else {
-                        if windowSize == WindowSize.notchIsExpanded
-                            || windowSize == WindowSize.notchIsExpandedSidebarIsCollapsed
+                        if windowSize == WindowSize.sidebarIsExpanded
+                            || windowSize == WindowSize.sidebarIsCollapsed
                         {
                             close()
                         }
@@ -804,14 +804,14 @@ struct NotchView: View {
         (width, height) = updateWindowSize(windowSize)
         lastExpandedWindowSize =
             expandSidebar
-            ? WindowSize.notchIsExpanded : WindowSize.notchIsExpandedSidebarIsCollapsed
+            ? WindowSize.sidebarIsExpanded : WindowSize.sidebarIsCollapsed
     }
 
     private func open() {
-        if windowSize == WindowSize.notchIsExpanded
-            || windowSize == WindowSize.notchIsExpandedSidebarIsCollapsed
+        if windowSize == WindowSize.sidebarIsExpanded
+            || windowSize == WindowSize.sidebarIsCollapsed
         {
-            windowSize = WindowSize.chatIsShown
+            windowSize = WindowSize.chatIsShownSidebarIsCollapsed
         } else {
             windowSize = lastExpandedWindowSize
         }
@@ -825,10 +825,10 @@ struct NotchView: View {
     }
 
     private func maximize() {
-        if windowSize == WindowSize.chatIsShown {
+        if windowSize == WindowSize.chatIsShownSidebarIsCollapsed {
             windowSize = WindowSize.chatIsExpanded
         } else {
-            windowSize = WindowSize.chatIsShown
+            windowSize = WindowSize.chatIsShownSidebarIsCollapsed
         }
         (width, height) = updateWindowSize(windowSize)
         lastExpandedWindowSize = windowSize
@@ -836,10 +836,14 @@ struct NotchView: View {
 
     private func sidebarToggle() {
         expandSidebar.toggle()
-        if windowSize == WindowSize.notchIsExpanded {
-            windowSize = WindowSize.notchIsExpandedSidebarIsCollapsed
-        } else if windowSize == WindowSize.notchIsExpandedSidebarIsCollapsed {
-            windowSize = WindowSize.notchIsExpanded
+        if windowSize == WindowSize.sidebarIsExpanded {
+            windowSize = WindowSize.sidebarIsCollapsed
+        } else if windowSize == WindowSize.sidebarIsCollapsed {
+            windowSize = WindowSize.sidebarIsExpanded
+        } else if windowSize == WindowSize.chatIsShownSidebarIsCollapsed {
+            windowSize = WindowSize.chatIsShownSidebarIsExpanded
+        } else if windowSize == WindowSize.chatIsShownSidebarIsExpanded {
+            windowSize = WindowSize.chatIsShownSidebarIsCollapsed
         }
         (width, height) = updateWindowSize(windowSize)
         lastExpandedWindowSize = windowSize
