@@ -58,6 +58,7 @@ class AppDelegate: NSObject, NSApplicationDelegate {
     private var upHotKey: HotKey?
     private var downHotKey: HotKey?
     private var spaceHotKey: HotKey?
+    private var spaceHotKeyAnother: HotKey?
 
     private var selectionResetRequired = false
     private let textManager = SelectedTextManager.shared
@@ -112,6 +113,7 @@ extension AppDelegate {
         upHotKey = HotKey(key: .upArrow, modifiers: [.control, .option])
         downHotKey = HotKey(key: .downArrow, modifiers: [.control, .option])
         spaceHotKey = HotKey(key: .space, modifiers: [.control, .option])
+        spaceHotKeyAnother = HotKey(key: .space, modifiers: [.control])
 
         upHotKey?.keyDownHandler = {
             self.modifyWindowTopOffset(offset: 16, windowSize: self.lastWindowSize)
@@ -120,6 +122,7 @@ extension AppDelegate {
             self.modifyWindowTopOffset(offset: -16, windowSize: self.lastWindowSize)
         }
         spaceHotKey?.keyDownHandler = { self.vm.toggleDimensions() }
+        spaceHotKeyAnother?.keyDownHandler = { self.vm.toggleDimensions() }
     }
 
     private func setupNotchWindow() {
@@ -154,7 +157,8 @@ extension AppDelegate {
                 return self.modifyWindowBaseSize(size: $0, windowSize: $1)
             },
             modifyWindowOriginalSize: { self.modifyWindowOriginalSize() },
-            modifyWindowTopOffset: { self.modifyWindowTopOffset(offset: $0, windowSize: $1) }
+            modifyWindowTopOffset: { self.modifyWindowTopOffset(offset: $0, windowSize: $1) },
+            gainFocus: { self.gainFocus() }
 
         )
         floatingWindow.contentView = FirstMouseHostingView(rootView: notchView)
@@ -165,6 +169,9 @@ extension AppDelegate {
 }
 
 extension AppDelegate {
+    private func gainFocus() {
+        floatingWindow?.gainFocus()
+    }
 
     private func modifyWindowBaseSize(size: CGSize, windowSize: WindowSize) -> (CGFloat, CGFloat) {
         let newWidth = max(560, originalWidth + size.width)

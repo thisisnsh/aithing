@@ -20,7 +20,8 @@ struct NotchView: View {
     let modifyWindowBaseSize: (CGSize, WindowSize) -> (CGFloat, CGFloat)
     let modifyWindowOriginalSize: () -> Void
     let modifyWindowTopOffset: (CGFloat, WindowSize) -> Void
-
+    let gainFocus: () -> Void
+    
     let cornerRadiusLeft: CGFloat = 38
 
     @State private var width: CGFloat = 0
@@ -817,6 +818,7 @@ struct NotchView: View {
         }
         (width, height) = updateWindowSize(windowSize)
         lastExpandedWindowSize = windowSize
+        gainFocus()
     }
 
     private func minimize() {

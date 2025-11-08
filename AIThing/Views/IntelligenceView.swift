@@ -81,7 +81,7 @@ struct IntelligenceView: View {
                     .padding(.horizontal, -8)
 
                 if showMcpTools {
-                    ToolsView()
+                    ToolsView(cornerRadius: cornerRadius - 4)
                         .environmentObject(mcpManager)
                 } else {
                     ResponseView()

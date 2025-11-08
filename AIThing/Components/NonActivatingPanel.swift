@@ -32,4 +32,11 @@ class NonActivatingPanel: NSPanel {
         self.isMovableByWindowBackground = false
         self.acceptsMouseMovedEvents = true
     }
+
+    func gainFocus() {
+        // Bring the app forward if it's not active
+        NSApp.activate(ignoringOtherApps: true)
+        // Bring this specific panel to the front and make it key
+        self.makeKeyAndOrderFront(nil)
+    }
 }
