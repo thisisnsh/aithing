@@ -6,14 +6,12 @@
 
 
 8 Nov    
-- Show * for active tabs in sidebar
 - Toast
 - Excel Not Work 
 - Show file content in code block
 - Show images in horizontal scroll 
 - Prevent going below the screen limit 
 - Selection Enabled button
-- Do not select from the app 
 
 9 Nov
 - Analytics 
@@ -27,6 +25,7 @@ Next
 - 2 hover required to open the app after closing
 - Support Edit title
 - Support AI Suggestions : Understand you and suggest things based on time and this
+- Show * for active tabs in sidebar
 
 ------------------------
 

@@ -60,7 +60,6 @@ class AppDelegate: NSObject, NSApplicationDelegate {
     private var spaceHotKey: HotKey?
     private var spaceHotKeyAnother: HotKey?
 
-    private var selectionResetRequired = false
     private let textManager = SelectedTextManager.shared
     private var selectedText: String = ""
     private var pollingTimer: DispatchSourceTimer?
@@ -290,12 +289,28 @@ extension AppDelegate {
 }
 
 extension AppDelegate {
+    /// Put any bundle IDs you want to ignore here.
+    /// Example values shown; change/remove as needed.
+    private var excludedBundleIDs: Set<String> {
+        [
+            "com.thisisnsh.mac.AIThing",
+            "com.apple.finder",
+            // add more...
+        ]
+    }
+
     private func startSelectionPoll() {
         pollingTimer?.cancel()
 
         let timer = DispatchSource.makeTimerSource(queue: .main)
         timer.schedule(deadline: .now(), repeating: 0.5)
-        timer.setEventHandler {
+
+        // Fixes: "Capture of 'self' with non-Sendable type 'AppDelegate' in a '@Sendable' closure"
+        // by capturing self weakly.
+        timer.setEventHandler { [weak self] in
+            guard let self else { return }
+
+            // Accessibility trust (prompt once as needed)
             if !AXIsProcessTrusted() {
                 let opts: NSDictionary = [
                     kAXTrustedCheckOptionPrompt.takeUnretainedValue() as NSString: true
@@ -303,43 +318,57 @@ extension AppDelegate {
                 _ = AXIsProcessTrustedWithOptions(opts)
                 return
             }
-            Task {
+
+            // Skip if the *frontmost* app is our own or excluded.
+            if let frontmostID = NSWorkspace.shared.frontmostApplication?.bundleIdentifier {
+                if frontmostID == Bundle.main.bundleIdentifier { return }
+                if self.excludedBundleIDs.contains(frontmostID) { return }
+            }
+
+            // Hop to the main actor and run the selection logic.
+            // Using [weak self] again avoids capturing a non-Sendable strong reference
+            // inside Task's @Sendable closure.
+            Task { @MainActor [weak self] in
+                guard let self else { return }
                 await self.setupSelection()
             }
         }
+
         pollingTimer = timer
         timer.resume()
     }
 
+    /// Main-actor isolate this since it touches UI state (e.g. view models).
+    @MainActor
     private func setupSelection() async {
         do {
             // Try AXUI method first
             if let text = try await textManager.getSelectedTextByAX() {
-                let sanitizedText = text.trimmingCharacters(in: .whitespacesAndNewlines)
-                if !sanitizedText.isEmpty {
-                    DispatchQueue.main.async {
-                        self.vm.updateSelectedText(text: sanitizedText)
-                    }
+                let sanitized = text.trimmingCharacters(in: .whitespacesAndNewlines)
+                if !sanitized.isEmpty {
+                    // We're on the main actor; no need to dispatch to main.
+                    vm.updateSelectedText(text: sanitized)
                     return
                 }
             }
-        } catch {}
+        } catch {
+            // You can log if useful
+        }
 
         do {
-            // If AXUI fails or returns empty text, try menu action copy
+            // Fallback: menu action copy
             if let menuCopyText = try await textManager.getSelectedTextByMenuAction() {
-                let sanitizedText = menuCopyText.trimmingCharacters(in: .whitespacesAndNewlines)
-                if !sanitizedText.isEmpty {
-                    DispatchQueue.main.async {
-                        self.vm.updateSelectedText(text: sanitizedText)
-                    }
+                let sanitized = menuCopyText.trimmingCharacters(in: .whitespacesAndNewlines)
+                if !sanitized.isEmpty {
+                    vm.updateSelectedText(text: sanitized)
                     return
                 }
             }
-        } catch {}
+        } catch {
+            // You can log if useful
+        }
 
         selectedText = ""
-        selectionResetRequired = false
     }
 }
 
