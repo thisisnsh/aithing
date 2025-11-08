@@ -206,11 +206,7 @@ struct FileBubble: View {
                 Text("\(file)")
                     .font(.system(size: 10, weight: .medium, design: .monospaced))
                     .textSelection(.enabled)
-                    .padding(8)
-                    .overlay(
-                        RoundedRectangle(cornerRadius: 8, style: .continuous)
-                            .stroke(Color.gray.opacity(0.5), lineWidth: 1)
-                    )
+                    .padding(8)                    
 
                 if !content.isEmpty {
                     Image(systemName: "chevron.down")
@@ -218,6 +214,10 @@ struct FileBubble: View {
                 }
 
             }
+            .overlay(
+                RoundedRectangle(cornerRadius: 8, style: .continuous)
+                    .stroke(Color.gray.opacity(0.5), lineWidth: 1)
+            )
             .padding(.leading, 8)
             .onTapGesture {
                 if !content.isEmpty {

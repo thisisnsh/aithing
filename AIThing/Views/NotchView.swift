@@ -969,6 +969,9 @@ extension NotchView {
     }
 
     private func dragViewY(multiplier: CGFloat) {
+        if windowSize == WindowSize.notchIsCollapsed {
+            return
+        }
         let offset: CGFloat = 16
         modifyWindowTopOffset(offset * multiplier, lastExpandedWindowSize)
     }

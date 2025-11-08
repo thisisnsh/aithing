@@ -231,7 +231,7 @@ extension AppDelegate {
         let (windowWidth, windowHeight) = getWindowSize(windowSize: windowSize)
 
         let screenFrame = screen.visibleFrame
-        let xPosition = screenFrame.maxX - windowWidth
+        var xPosition = screenFrame.maxX - windowWidth
 
         // Calculate Y position to keep top-right corner fixed
         // When expanding, we need to move the origin down
@@ -247,15 +247,23 @@ extension AppDelegate {
         }
 
         // Do not allow out of bounds
-        if newY < screenFrame.minY || newY + windowHeight > screenFrame.maxY {
-            return (windowWidth, windowHeight)
+        if newY - screenFrame.minY - shadowBuffer < windowHeight
+            || newY > screenFrame.maxY + shadowBuffer
+        {
+            xPosition = screenFrame.maxX - windowWidth
+            newY = screenFrame.midY - (windowHeight / 2)
+            floatingWindow.setFrame(
+                NSRect(x: xPosition, y: newY, width: windowWidth, height: windowHeight),
+                display: false,
+                animate: false
+            )
+        } else {
+            floatingWindow.setFrame(
+                NSRect(x: xPosition, y: newY, width: windowWidth, height: windowHeight),
+                display: false,
+                animate: false
+            )
         }
-
-        floatingWindow.setFrame(
-            NSRect(x: xPosition, y: newY, width: windowWidth, height: windowHeight),
-            display: false,
-            animate: false
-        )
 
         lastWindowSize = windowSize
 
