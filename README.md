@@ -6,7 +6,6 @@
 
 
 8 Nov    
-- Get Selected Text
 - Selection Cross Button
 - When sidebar opens increase the default width 
 - Multitasking 
