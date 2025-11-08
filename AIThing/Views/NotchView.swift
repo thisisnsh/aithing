@@ -8,6 +8,17 @@
 import SwiftUI
 import os
 
+struct Tab: Equatable {
+    let id: String
+    let intelligenceView: IntelligenceView
+    var active: Bool = true
+    var lastUpdated: Date = Date()
+
+    static func == (lhs: Tab, rhs: Tab) -> Bool {
+        lhs.id == rhs.id
+    }
+}
+
 struct NotchView: View {
     @StateObject var mcpManager = MCPManager()
     @StateObject var loginManager = LoginManager()
@@ -35,7 +46,8 @@ struct NotchView: View {
     @State private var agents: [AgentEntry] = []
     @State private var allClientTools: [String: [[String: Any]]] = [:]
 
-    @State private var tabId: String = UUID().uuidString
+    @State private var tabId: String = ""
+    @State private var tabs: [String: Tab] = [:]
     @State private var histories: [History] = []
 
     @State private var showSettings = false
@@ -105,22 +117,13 @@ struct NotchView: View {
                             .environmentObject(githubOAuthManager)
                             .environmentObject(mcpOAuthManagers)
                         } else {
-                            IntelligenceView(
-                                vm: vm,
-                                tabId: tabId,
-                                allClientTools: $allClientTools,
-                                managedModels: $managedModels,
-                                close: { close() },
-                                minimize: { minimize() },
-                                expand: { maximize() },
-                                isTabClosed: { !isTabActive(tabId: $0) },
-                                updateHistoryList: { await updateHistoryList() },
-                                reconnectManagedAgents: reconnectManagedAgents
-                            )
-                            .environmentObject(mcpManager)
-                            .environmentObject(loginManager)
-                            .environmentObject(firestoreManager)
-                            .id(tabId)
+                            if !tabId.isEmpty {
+                                getIntelligenceView(tabId: tabId)
+                                    .environmentObject(mcpManager)
+                                    .environmentObject(loginManager)
+                                    .environmentObject(firestoreManager)
+                                    .id(tabId)
+                            }
                         }
                     }
 
@@ -167,6 +170,7 @@ struct NotchView: View {
                                 open()
                                 showSettings = false
                                 tabId = UUID().uuidString
+                                createIntelligenceView(tabId: tabId)
                             },
                             deleteAction: {},
                             image: "plus.circle.fill",
@@ -241,6 +245,11 @@ struct NotchView: View {
             } else {
                 minimize()
             }
+        }
+        .onReceive(
+            Timer.publish(every: 60, on: .main, in: .common).autoconnect()
+        ) { _ in
+            removeTabs()
         }
         .task {
             switch loginManager.authState {
@@ -360,11 +369,14 @@ struct NotchView: View {
                             open()
                             showSettings = false
                             tabId = h.id
+                            createIntelligenceView(tabId: tabId)
+                            removeTabs()
                         },
                         deleteAction: {
                             Task {
                                 let isActive = tabId == h.id
                                 await HistoryStore.shared.delete(id: h.id)
+                                setTabActive(tabId: h.id, active: false)
                                 histories = await HistoryStore.shared.getAll(limit: 100)
                                 if isActive {
                                     tabId = UUID().uuidString
@@ -507,9 +519,79 @@ struct NotchView: View {
     private func Toast() -> some View {
         MarkdownText(text: toastText)
     }
+}
 
-    // MARK: AI Stuff
+// MARK: Tab Stuff
+extension NotchView {
+    private func createIntelligenceView(tabId: String) {
+        printTabs()
+        tabs[tabId] = Tab(
+            id: tabId,
+            intelligenceView: IntelligenceView(
+                vm: vm,
+                tabId: tabId,
+                allClientTools: $allClientTools,
+                managedModels: $managedModels,
+                close: { close() },
+                minimize: { minimize() },
+                expand: { maximize() },
+                isTabShowing: { isTabShowing(tabId: tabId) },
+                setTabActive: { setTabActive(tabId: tabId, active: $0) },
+                updateHistoryList: { await updateHistoryList() },
+                reconnectManagedAgents: reconnectManagedAgents
+            ),
+            active: false
+        )
+        removeTabs()
+        printTabs()
+    }
 
+    private func printTabs() {
+        //        for (id, tab) in tabs {
+        //            print("Tab ID: \(id), Active: \(tab.active), Last Updated: \(tab.lastUpdated)")
+        //            print("----")
+        //        }
+    }
+
+    private func getIntelligenceView(tabId: String) -> some View {
+        Group {
+            if tabs.keys.contains(tabId) {
+                tabs[tabId]?.intelligenceView
+            } else {
+                Text("Some Error Occured")
+            }
+        }
+    }
+
+    private func isTabShowing(tabId: String) -> Bool {
+        printTabs()
+        return tabId == self.tabId
+    }
+
+    private func setTabActive(tabId: String, active: Bool) {
+        guard var tab = tabs[tabId] else { return }
+
+        tab.active = active
+        tab.lastUpdated = Date()
+        tabs[tabId] = tab
+
+        printTabs()
+    }
+
+    // Remove tabs that are inactive for longer than 10 minutes
+    private func removeTabs() {
+        printTabs()
+        let minutes: Double = 10
+        let cutoff = Date().addingTimeInterval(-(minutes * 60))
+        tabs = tabs.filter { _, tab in
+            tab.active || tab.lastUpdated >= cutoff || tab.id == self.tabId
+        }
+        printTabs()
+    }
+}
+
+// MARK: AI Stuff
+extension NotchView {
     private func loadAllClientTools() async {
         let newAgents = getAgentEntries()
         var allMatch = true
@@ -784,8 +866,13 @@ struct NotchView: View {
             }
         }
     }
+}
 
-    // MARK: Utility
+// MARK: Utility
+extension NotchView {
+    private func updateHistoryList() async {
+        histories = await HistoryStore.shared.getAll(limit: 100)
+    }
 
     private func createTitle(for history: [[String: Any]], fallback: String) -> String {
         for entry in history {
@@ -851,14 +938,6 @@ struct NotchView: View {
         }
         (width, height) = updateWindowSize(windowSize)
         lastExpandedWindowSize = windowSize
-    }
-
-    private func isTabActive(tabId: String) -> Bool {
-        tabId == self.tabId
-    }
-
-    private func updateHistoryList() async {
-        histories = await HistoryStore.shared.getAll(limit: 100)
     }
 }
 

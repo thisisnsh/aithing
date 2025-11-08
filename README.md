@@ -6,45 +6,39 @@
 
 
 8 Nov    
-- Multitasking 
-
+- Show * for active tabs in sidebar
+- Toast
+- Excel Not Work 
+- Show file content in code block
+- Show images in horizontal scroll 
+- Prevent going below the screen limit 
+- Selection Enabled button
+- Do not select from the app 
+- Chat window size remove the case where chat window is open and side bar is open
 
 9 Nov
 - Analytics 
 - Verify MCPs
 - Doc & Release 2.0
 
-
 10 Nov
 - YC Apply
 
-
-BF
+Next
 - 2 hover required to open the app after closing
-- Missing glass in settings 
-- Excel now work 
-
+- Support Edit title
+- Support AI Suggestions : Understand you and suggest things based on time and this
 
 ------------------------
 
 ## Missing Features
 
-- Edit title
-- Generate image 
-- Audio commands 
-- Listen computer audio 
-- Live transcribe and send to AI 
-- Get max agent from firebase 
-- No Audio recording 
-- Understand you and suggest things based on time and this
-- No Elicitation 
-- Fix "AttributeGraph: cycle detected through attribute"
-- Fix Flickering Animation
-- No Markdown Select
-- Search History
-- Allow OpenAI Models 
-- Detect API key in BYOK b/w Anthropic and OpenAI
-- Change Models based on API Key 
+- Support Search History
+- Support Image Generation 
+- Support Audio  
+- Support Elicitation 
+- Support Markdown Select
+- Support OpenAI Models 
 
 ------------------------
     

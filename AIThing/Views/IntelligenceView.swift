@@ -25,7 +25,8 @@ struct IntelligenceView: View {
     let close: () -> Void
     let minimize: () -> Void
     let expand: () -> Void
-    let isTabClosed: (String) -> Bool
+    let isTabShowing: () -> Bool
+    let setTabActive: (Bool) -> Void
     let updateHistoryList: () async -> Void
     let reconnectManagedAgents: () async -> Void
 
@@ -108,7 +109,7 @@ struct IntelligenceView: View {
                 history = await HistoryStore.shared.get(id: tabId)
                 guard let history = history else { return }
                 modelInput = history.history
-                tabTitle = history.title ?? "New Chat"
+                tabTitle = tabId  // history.title ?? "New Chat"
 
                 let notification = await firestoreManager.getNotification() ?? ""
                 if !notification.isEmpty {
@@ -116,30 +117,38 @@ struct IntelligenceView: View {
                 }
             }
             .onChange(of: vm.selectedText) { text in
-                selectedText = text
+                if isTabShowing() {
+                    selectedText = text
+                }
             }
             .onReceive(screenshotMonitor.$latestScreenshot) { ss in
-                if let ss = ss {
-                    Task {
-                        let results = await DragFileManager.processPaths([ss.url])
-                        for r in results {
-                            modelContext.insert(r, at: 0)
+                if isTabShowing() {
+                    if let ss = ss {
+                        Task {
+                            let results = await DragFileManager.processPaths([ss.url])
+                            for r in results {
+                                modelContext.insert(r, at: 0)
+                            }
                         }
                     }
                 }
             }
             .dropDestination(for: URL.self) { urls, _ in
-                Task {
-                    let results = await DragFileManager.processPaths(urls)
-                    for r in results {
-                        modelContext.append(r)
+                if isTabShowing() {
+                    Task {
+                        let results = await DragFileManager.processPaths(urls)
+                        for r in results {
+                            modelContext.append(r)
+                        }
                     }
                 }
 
                 // You can’t know yet, so just return true to accept the drop.
                 return true
             } isTargeted: {
-                isDropping = $0
+                if isTabShowing() {
+                    isDropping = $0
+                }
             }
         }
     }
@@ -271,7 +280,7 @@ struct IntelligenceView: View {
                     Button {
                         selectedText = ""
                     } label: {
-                        Image(systemName: "xmark.circle.fill")
+                        Image(systemName: "xmark")
                             .resizable()
                             .frame(width: 12, height: 12)
                             .foregroundStyle(.black)
@@ -375,6 +384,8 @@ struct IntelligenceView: View {
 
 extension IntelligenceView {
     private func handleQuery() async {
+        if !isTabShowing() { return }
+
         let trimmed = query.trimmingCharacters(in: .whitespacesAndNewlines)
         guard !trimmed.isEmpty else { return }
 
@@ -384,7 +395,9 @@ extension IntelligenceView {
         toolCall = ""
         vm.selectedText = ""
 
+        setTabActive(true)
         let result = await callModel(query: trimmed)
+        setTabActive(false)
 
         query = ""
         await updateHistoryList()
@@ -498,14 +511,6 @@ extension IntelligenceView {
                 secondary: .status_failure_low,
             )
             return false
-        }
-
-        // Check if tab is alive, else return without processing
-        if isTabClosed(tabId) {
-            isThinking = false
-            logger.info("Exiting callModel for \(tabId) as it was closed")
-            AnalyticsManager.shared.customEvent(type: .tab, primary: "query_stop_on_close")
-            return true
         }
 
         do {
@@ -811,14 +816,6 @@ extension IntelligenceView {
                         }
 
                     case "content_block_delta":
-                        if isTabClosed(tabId) {
-                            isThinking = false
-                            logger.info("Exiting text_delta for \(tabId) as it was closed")
-                            AnalyticsManager.shared
-                                .customEvent(type: .tab, primary: "query_stop_on_close")
-                            return true
-                        }
-
                         guard let delta = json["delta"] as? [String: Any] else { continue }
                         guard let delta_type = delta["type"] as? String else { continue }
 
@@ -847,16 +844,6 @@ extension IntelligenceView {
                         }
 
                     case "message_delta":
-                        if isTabClosed(tabId) {
-                            isThinking = false
-                            logger.info("Exiting message_delta for \(tabId) as it was closed")
-                            AnalyticsManager.shared.customEvent(
-                                type: .tab,
-                                primary: "query_stop_on_close"
-                            )
-                            return true
-                        }
-
                         guard let delta = json["delta"] as? [String: Any] else { continue }
                         guard let delta_stop_reason = delta["stop_reason"] as? String else {
                             continue
