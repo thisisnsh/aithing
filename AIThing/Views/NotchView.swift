@@ -58,7 +58,7 @@ struct NotchView: View {
     @State private var expandSidebar = false
 
     private var showChatWindow: Bool {
-        windowSize.rawValue >= WindowSize.chatIsShownSidebarIsCollapsed.rawValue
+        windowSize.rawValue >= WindowSize.chatIsShown.rawValue
     }
     private var expandNotch: Bool {
         windowSize.rawValue >= WindowSize.sidebarIsCollapsed.rawValue
@@ -272,7 +272,7 @@ struct NotchView: View {
                 try? await Task.sleep(nanoseconds: 150_000_000)  // 150ms
                 guard !Task.isCancelled else { return }
 
-                if windowSize != WindowSize.chatIsShownSidebarIsCollapsed {
+                if windowSize != WindowSize.chatIsShown {
                     if hovering {
                         if windowSize == WindowSize.notchIsCollapsed {
                             open()
@@ -901,7 +901,7 @@ extension NotchView {
         if windowSize == WindowSize.sidebarIsExpanded
             || windowSize == WindowSize.sidebarIsCollapsed
         {
-            windowSize = WindowSize.chatIsShownSidebarIsCollapsed
+            windowSize = WindowSize.chatIsShown
         } else {
             windowSize = lastExpandedWindowSize
         }
@@ -916,10 +916,10 @@ extension NotchView {
     }
 
     private func maximize() {
-        if windowSize == WindowSize.chatIsShownSidebarIsCollapsed {
+        if windowSize == WindowSize.chatIsShown {
             windowSize = WindowSize.chatIsExpanded
         } else {
-            windowSize = WindowSize.chatIsShownSidebarIsCollapsed
+            windowSize = WindowSize.chatIsShown
         }
         (width, height) = updateWindowSize(windowSize)
         lastExpandedWindowSize = windowSize
@@ -927,15 +927,13 @@ extension NotchView {
 
     private func sidebarToggle() {
         expandSidebar.toggle()
+
         if windowSize == WindowSize.sidebarIsExpanded {
             windowSize = WindowSize.sidebarIsCollapsed
         } else if windowSize == WindowSize.sidebarIsCollapsed {
             windowSize = WindowSize.sidebarIsExpanded
-        } else if windowSize == WindowSize.chatIsShownSidebarIsCollapsed {
-            windowSize = WindowSize.chatIsShownSidebarIsExpanded
-        } else if windowSize == WindowSize.chatIsShownSidebarIsExpanded {
-            windowSize = WindowSize.chatIsShownSidebarIsCollapsed
         }
+
         (width, height) = updateWindowSize(windowSize)
         lastExpandedWindowSize = windowSize
     }

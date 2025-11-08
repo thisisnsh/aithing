@@ -20,9 +20,8 @@ enum WindowSize: Int {
     case notchIsCollapsed = 0
     case sidebarIsCollapsed = 1
     case sidebarIsExpanded = 2
-    case chatIsShownSidebarIsCollapsed = 3
-    case chatIsShownSidebarIsExpanded = 4
-    case chatIsExpanded = 5
+    case chatIsShown = 3
+    case chatIsExpanded = 4
 }
 
 final class NotchVM: ObservableObject {
@@ -203,10 +202,8 @@ extension AppDelegate {
             return (60 + shadowBuffer, 160)
         case .sidebarIsExpanded:
             return (200 + shadowBuffer, 600)
-        case .chatIsShownSidebarIsCollapsed:
+        case .chatIsShown:
             return (width + shadowBuffer, height)
-        case .chatIsShownSidebarIsExpanded:
-            return (width + 200 + shadowBuffer, height)
         case .chatIsExpanded:
             if let screen = screen {
                 return (

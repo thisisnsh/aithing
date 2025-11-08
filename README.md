@@ -14,7 +14,6 @@
 - Prevent going below the screen limit 
 - Selection Enabled button
 - Do not select from the app 
-- Chat window size remove the case where chat window is open and side bar is open
 
 9 Nov
 - Analytics 
