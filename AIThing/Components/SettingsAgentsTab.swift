@@ -129,6 +129,7 @@ struct SettingsAgentsTab: View {
                 }
                 .padding(4)
             }
+
             .onAppear {
                 Task {
                     if googleOAuthManager.enabled.count > 0 {
@@ -232,10 +233,12 @@ struct SettingsAgentsTab: View {
                                 }
                             }
                         }
+
                     }
                 }
                 .padding(4)
             }
+
         }
         .frame(maxWidth: .infinity, alignment: .leading)
     }

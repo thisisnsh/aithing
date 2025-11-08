@@ -17,6 +17,7 @@ struct SettingsView: View {
     let expand: () -> Void
 
     @State private var selectedTab: SettingsTab = getSelectedTab()
+    @State private var tabTitle = "Settings"
     @State private var hoverRed: Bool = false
     @State private var hoverYellow: Bool = false
     @State private var hoverGreen: Bool = false
@@ -38,104 +39,112 @@ struct SettingsView: View {
     @State private var usageData: Usage = Usage()
 
     var body: some View {
-        VStack {
-            TitleView()
-                .padding(8)
+        ZStack {
+            if #available(macOS 26.0, *) {
+                RoundedRectangle(cornerRadius: 8)
+                    .glassEffect(.regular, in: RoundedRectangle(cornerRadius: 8))
+            } else {
+                RoundedRectangle(cornerRadius: 8)
+                    .fill(.white.opacity(0.1))
+            }
 
-            Divider()
-                .padding(.horizontal, -8)
+            VStack {
+                TitleView()
+                    .padding(8)
 
-            ScrollView(.vertical, showsIndicators: false) {
-                VStack {
-                    switch selectedTab {
-                    case .account:
-                        SettingsAccountTab(
-                            authState: loginManager.authState,
-                            signIn: { await signIn() },
-                            signOut: { await signOut() },
-                            usageData: usageData,
-                            onHistory: {}
-                        )
+                Divider()
+                    .padding(.horizontal, -8)
 
-                    case .models:
-                        SettingsModelTab(
-                            managedModels: managedModels,
-                            modelSelected: $modelSelected,
-                            byokSelected: $byokSelected,
-                            apiKey: $apiKey,
-                            apiKeyFieldFocused: _apiKeyFieldFocused,
-                            saveModels: saveModels,
-                            bindingForModel: bindingForModel
-                        )
+                ScrollView(.vertical, showsIndicators: false) {
+                    VStack {
+                        switch selectedTab {
+                        case .account:
+                            SettingsAccountTab(
+                                authState: loginManager.authState,
+                                signIn: { await signIn() },
+                                signOut: { await signOut() },
+                                usageData: usageData,
+                                onHistory: {}
+                            )
 
-                    case .agents:
-                        SettingsAgentsTab(
-                            agents: $agents,
-                            addAgentEntry: addAgentEntry,
-                            saveAgents: saveAgents,
-                            deleteAgent: deleteAgent
-                        )
-                        .environmentObject(googleOAuthManager)
-                        .environmentObject(gitHubOAuthManager)
-                        .environmentObject(mcpOAuthManagers)
+                        case .models:
+                            SettingsModelTab(
+                                managedModels: managedModels,
+                                modelSelected: $modelSelected,
+                                byokSelected: $byokSelected,
+                                apiKey: $apiKey,
+                                apiKeyFieldFocused: _apiKeyFieldFocused,
+                                saveModels: saveModels,
+                                bindingForModel: bindingForModel
+                            )
 
-                    case .preferences:
-                        SettingsPreferencesTab(
-                            preferencesShowInScreenshot: $preferencesShowInScreenshot,
-                            preferencesCaptureFullScreen: $preferencesCaptureFullScreen,
-                            setPreferencesShowInScreenshot: setPreferencesShowInScreenshot,
-                            setPreferencesCaptureFullScreen: setPreferencesCaptureFullScreen,
-                            setPanelVisibility: {}
-                        )
-                    }
-                }
-                .padding(.vertical, 16)
-            }.padding(.vertical, -8)
+                        case .agents:
+                            SettingsAgentsTab(
+                                agents: $agents,
+                                addAgentEntry: addAgentEntry,
+                                saveAgents: saveAgents,
+                                deleteAgent: deleteAgent
+                            )
+                            .environmentObject(googleOAuthManager)
+                            .environmentObject(gitHubOAuthManager)
+                            .environmentObject(mcpOAuthManagers)
 
-        }
-        .padding(8)
-        .background(.white.opacity(0.1))
-        .clipShape(RoundedRectangle(cornerRadius: 8))
-        .onDisappear {
-            saveModels()
-            saveAgents()
-        }
-        .task {
-            let managedAgents = await firestoreManager.getManagedAgents()
-            var allServerIds: [String] = []
-            for server in managedAgents {
-                if server.enabled ?? true == false { continue }
-
-                if let id = server.id {
-                    allServerIds.append(id)
-
-                    if !mcpOAuthManagers.managers.keys.contains(id) {
-                        mcpOAuthManagers.managers[id] = McpOAuthManager(server: server)
-                    }
-
-                    if let manager = mcpOAuthManagers.managers[id] {
-                        if manager.server.version != server.version {
-                            mcpOAuthManagers.managers[id] = McpOAuthManager(server: server)
+                        case .preferences:
+                            SettingsPreferencesTab(
+                                preferencesShowInScreenshot: $preferencesShowInScreenshot,
+                                preferencesCaptureFullScreen: $preferencesCaptureFullScreen,
+                                setPreferencesShowInScreenshot: setPreferencesShowInScreenshot,
+                                setPreferencesCaptureFullScreen: setPreferencesCaptureFullScreen,
+                                setPanelVisibility: {}
+                            )
                         }
                     }
+                    .padding(.vertical, 16)
+                }.padding(.vertical, -8)
 
-                    // Always update image
-                    if let image = server.image {
-                        mcpOAuthManagers.managers[id]?.server.image = image
+            }
+            .padding(8)
+            .onDisappear {
+                saveModels()
+                saveAgents()
+            }
+            .task {
+                let managedAgents = await firestoreManager.getManagedAgents()
+                var allServerIds: [String] = []
+                for server in managedAgents {
+                    if server.enabled ?? true == false { continue }
+
+                    if let id = server.id {
+                        allServerIds.append(id)
+
+                        if !mcpOAuthManagers.managers.keys.contains(id) {
+                            mcpOAuthManagers.managers[id] = McpOAuthManager(server: server)
+                        }
+
+                        if let manager = mcpOAuthManagers.managers[id] {
+                            if manager.server.version != server.version {
+                                mcpOAuthManagers.managers[id] = McpOAuthManager(server: server)
+                            }
+                        }
+
+                        // Always update image
+                        if let image = server.image {
+                            mcpOAuthManagers.managers[id]?.server.image = image
+                        }
                     }
                 }
-            }
-            for key in mcpOAuthManagers.managers.keys {
-                if !allServerIds.contains(key) {
-                    mcpOAuthManagers.managers.removeValue(forKey: key)
+                for key in mcpOAuthManagers.managers.keys {
+                    if !allServerIds.contains(key) {
+                        mcpOAuthManagers.managers.removeValue(forKey: key)
+                    }
                 }
-            }
 
-            await getUsageData()
-            AnalyticsManager.shared.screenView(
-                screenName: "settings_view",
-                screenClass: "settings_view"
-            )
+                await getUsageData()
+                AnalyticsManager.shared.screenView(
+                    screenName: "settings_view",
+                    screenClass: "settings_view"
+                )
+            }
         }
     }
 
@@ -159,7 +168,7 @@ struct SettingsView: View {
                 .onTapGesture { expand() }
                 .onHover { hoverGreen = $0 }
 
-            Text("Settings")
+            Text(tabTitle)
                 .font(.system(size: 12, weight: .medium))
                 .foregroundStyle(.white)
                 .padding(.leading, 8)
@@ -172,6 +181,7 @@ struct SettingsView: View {
                     setSelectedTab(value: selectedTab)
                     saveModels()
                     saveAgents()
+                    tabTitle = "Accounts"
                     AnalyticsManager.shared.screenView(
                         screenName: "account",
                         screenClass: "settings_view"
@@ -185,6 +195,7 @@ struct SettingsView: View {
                     setSelectedTab(value: selectedTab)
                     saveModels()
                     saveAgents()
+                    tabTitle = "Models"
                     AnalyticsManager.shared.screenView(
                         screenName: "models",
                         screenClass: "settings_view"
@@ -198,6 +209,7 @@ struct SettingsView: View {
                     setSelectedTab(value: selectedTab)
                     saveModels()
                     saveAgents()
+                    tabTitle = "Agents"
                     AnalyticsManager.shared.screenView(
                         screenName: "agents",
                         screenClass: "settings_view"
@@ -211,6 +223,7 @@ struct SettingsView: View {
                     setSelectedTab(value: selectedTab)
                     saveModels()
                     saveAgents()
+                    tabTitle = "Preferenfces"
                     AnalyticsManager.shared.screenView(
                         screenName: "preferences",
                         screenClass: "settings_view"
@@ -220,7 +233,9 @@ struct SettingsView: View {
                         .labelStyle(.iconOnly)
                 }
             }
+
             .padding(.trailing, -8)
+
         }
         .frame(height: 16)
     }

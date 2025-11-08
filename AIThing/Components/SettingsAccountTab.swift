@@ -62,7 +62,6 @@ struct SettingsAccountTab: View {
                     dimmedRow(icon: "apple", text: "Apple", trailing: "Coming Soon")
                     Divider()
                     dimmedRow(icon: "github", text: "GitHub", trailing: "Coming Soon")
-
                 }
                 .padding(4)
             }
@@ -138,6 +137,7 @@ struct SettingsAccountTab: View {
                 }
                 .padding(4)
             }
+
         }
         .frame(maxWidth: .infinity, alignment: .leading)
     }

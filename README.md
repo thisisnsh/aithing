@@ -4,9 +4,6 @@
 
 ## 2.0 
 
-hover fix 
-global shortcuts
-scroll animation chat view
 
 7 Nov 
 - Animations

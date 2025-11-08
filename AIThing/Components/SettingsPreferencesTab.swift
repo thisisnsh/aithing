@@ -153,6 +153,7 @@ struct SettingsPreferencesTab: View {
                 }
                 .padding(4)
             }
+
         }
         .frame(maxWidth: .infinity, alignment: .leading)
     }

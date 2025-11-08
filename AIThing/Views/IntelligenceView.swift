@@ -59,43 +59,59 @@ struct IntelligenceView: View {
     @State private var hoverGreen: Bool = false
 
     var body: some View {
-        VStack {
-            TitleView()
-                .padding(8)
-
-            Divider()
-                .padding(.horizontal, -8)
-
-            ResponseView()
-                .padding(.vertical, -8)
-
-            Spacer()
-
-            InputView()
-        }
-        .padding(8)
-        .background(.white.opacity(0.1))
-        .cornerRadius(8)
-        .task {
-            modelOutput = ""
-            displayQuery = ""
-            toolCall = ""
-            history = await HistoryStore.shared.get(id: tabId)
-            guard let history = history else { return }
-            modelInput = history.history
-            tabTitle = history.title ?? "New Chat"
-
-            let notification = await firestoreManager.getNotification() ?? ""
-            if !notification.isEmpty {
-                modelOutput = notification
+        ZStack {
+            if #available(macOS 26.0, *) {
+                RoundedRectangle(cornerRadius: 8)
+                    .glassEffect(.regular, in: RoundedRectangle(cornerRadius: 8))
+            } else {
+                RoundedRectangle(cornerRadius: 8)
+                    .fill(.white.opacity(0.1))
             }
-        }
-        .onReceive(screenshotMonitor.$latestScreenshot) { ss in
-            if let ss = ss {
-                Task {
-                    let results = await DragFileManager.processPaths([ss.url])
-                    for r in results {
-                        modelContext.insert(r, at: 0)
+
+            VStack {
+                TitleView()
+                    .padding(8)
+
+                Divider()
+                    .padding(.horizontal, -8)
+
+                ResponseView()
+                    .padding(.vertical, -8)
+
+                Spacer()
+
+                if #available(macOS 26.0, *) {
+                    InputView()
+                        .glassEffect(.regular, in: RoundedRectangle(cornerRadius: 8))
+                } else {
+                    InputView()
+                        .background(.white.opacity(0.1))
+                        .cornerRadius(8)
+                }
+
+            }
+            .padding(8)
+            .task {
+                modelOutput = ""
+                displayQuery = ""
+                toolCall = ""
+                history = await HistoryStore.shared.get(id: tabId)
+                guard let history = history else { return }
+                modelInput = history.history
+                tabTitle = history.title ?? "New Chat"
+
+                let notification = await firestoreManager.getNotification() ?? ""
+                if !notification.isEmpty {
+                    modelOutput = notification
+                }
+            }
+            .onReceive(screenshotMonitor.$latestScreenshot) { ss in
+                if let ss = ss {
+                    Task {
+                        let results = await DragFileManager.processPaths([ss.url])
+                        for r in results {
+                            modelContext.insert(r, at: 0)
+                        }
                     }
                 }
             }
@@ -233,7 +249,6 @@ struct IntelligenceView: View {
                     )
                     .onChange(of: query) { _ in }
                 }
-
                 if query.isEmpty {
                     Text(
                         isThinking
@@ -282,7 +297,6 @@ struct IntelligenceView: View {
             }
         }
         .padding(8)
-        .background(.white.opacity(0.1))
         .overlay(
             Group {
                 if isDropping {
@@ -290,7 +304,6 @@ struct IntelligenceView: View {
                 }
             }
         )
-        .cornerRadius(8)
         .dropDestination(for: URL.self) { urls, _ in
             Task {
                 let results = await DragFileManager.processPaths(urls)

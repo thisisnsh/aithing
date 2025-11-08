@@ -49,6 +49,8 @@ struct NotchView: View {
     }
 
     // Resize
+    @State private var showResizeX = false
+    @State private var showResizeY = false
     @State private var smoothedY: CGFloat = 0
     @State private var smoothedX: CGFloat = 0
     @State private var smoothedDragY: CGFloat = 0
@@ -69,8 +71,7 @@ struct NotchView: View {
 
     var body: some View {
         ZStack {
-            NotchShape(width: width, height: height, cornerRadius: 16)
-                .fill(.black)
+            NotchShapeExt()
 
             HStack(spacing: 0) {
                 if showChatWindow {
@@ -273,6 +274,48 @@ struct NotchView: View {
         }
     }
 
+    private func NotchShapeExt() -> some View {
+        Group {
+            if #available(macOS 26.0, *) {
+                NotchShape(width: width, height: height, cornerRadius: 16)
+                    .overlay(
+                        LinearGradient(
+                            gradient: Gradient(colors: [
+                                Color.black.opacity(showChatWindow ? 0.3 : 1.0),
+                                Color.black.opacity(1.0),
+                            ]),
+                            startPoint: .leading,
+                            endPoint: .trailing
+                        )
+                        .clipShape(
+                            NotchShape(width: width, height: height, cornerRadius: 16)
+                        )
+                    )
+                    .glassEffect(
+                        .regular.tint(.black),
+                        in: NotchShape(width: width, height: height, cornerRadius: 16)
+                    )
+            } else {
+                NotchShape(width: width, height: height, cornerRadius: 16)
+                    .fill(.ultraThickMaterial)
+                    .overlay(
+                        LinearGradient(
+                            gradient: Gradient(colors: [
+                                Color.black.opacity(showChatWindow ? 0.3 : 1.0),
+                                Color.black.opacity(1.0),
+                            ]),
+                            startPoint: .leading,
+                            endPoint: .trailing
+                        )
+                        .blendMode(.overlay)
+                        .clipShape(
+                            NotchShape(width: width, height: height, cornerRadius: 16)
+                        )
+                    )
+            }
+        }
+    }
+
     private func Sidebar() -> some View {
         ScrollView(.vertical, showsIndicators: false) {
             LazyVStack(alignment: .leading, spacing: 0) {
@@ -314,82 +357,120 @@ struct NotchView: View {
     }
 
     private func ResizeViewX() -> some View {
-        Rectangle()
-            .fill(.black)
-            .frame(width: 8)
-            .onHover { inside in
-                resizeHoverTask?.cancel()
-                resizeHoverTask = Task { @MainActor in
-                    try? await Task.sleep(nanoseconds: 150_000_000)
-                    guard !Task.isCancelled else { return }
-                    if inside {
-                        NSCursor.resizeLeftRight.set()
-                    } else {
-                        NSCursor.arrow.set()
-                    }
-                }
-            }
-            .gesture(
-                DragGesture(minimumDistance: 0)
-                    .onChanged { value in
-                        NSCursor.resizeLeftRight.set()
-                        let rawX = value.translation.width * -1
-                        smoothedX += (rawX - smoothedX) * alpha
-                        let roundedX = (smoothedX / pixelStep).rounded() * pixelStep
-                        if roundedX != lastAppliedX {
-                            lastAppliedX = roundedX
-                            let size = CGSize(width: roundedX, height: 0)
-                            (width, height) = modifyWindowBaseSize(size, lastExpandedWindowSize)
+        ZStack {
+            RoundedRectangle(cornerRadius: 8)
+                .fill(.clear)
+                .frame(width: 8)
+                .onHover { inside in
+                    resizeHoverTask?.cancel()
+                    resizeHoverTask = Task { @MainActor in
+                        try? await Task.sleep(nanoseconds: 150_000_000)
+                        guard !Task.isCancelled else { return }
+                        if inside {
+                            showResizeX = inside
+                        } else {
+                            DispatchQueue.main.asyncAfter(
+                                deadline: .now() + 3,
+                                execute: {
+                                    showResizeX = inside
+                                }
+                            )
+                        }
+                        if inside {
+                            NSCursor.resizeLeftRight.set()
+                        } else {
+                            NSCursor.arrow.set()
                         }
                     }
-                    .onEnded { _ in
-                        smoothedX = 0
-                        lastAppliedX = 0
-                        modifyWindowOriginalSize()
-                        NSCursor.arrow.set()
-                    }
-            )
-            .padding(.vertical, 32)
+                }
+
+            RoundedRectangle(cornerRadius: 8)
+                .fill(.white.opacity(0.3))
+                .padding(.horizontal, 2)
+                .frame(width: 8, height: 64)
+                .opacity(showResizeX ? 1 : 0)
+                .gesture(
+                    DragGesture(minimumDistance: 0)
+                        .onChanged { value in
+                            NSCursor.resizeLeftRight.set()
+                            let rawX = value.translation.width * -1
+                            smoothedX += (rawX - smoothedX) * alpha
+                            let roundedX = (smoothedX / pixelStep).rounded() * pixelStep
+                            if roundedX != lastAppliedX {
+                                lastAppliedX = roundedX
+                                let size = CGSize(width: roundedX, height: 0)
+                                (width, height) = modifyWindowBaseSize(size, lastExpandedWindowSize)
+                            }
+                        }
+                        .onEnded { _ in
+                            smoothedX = 0
+                            lastAppliedX = 0
+                            modifyWindowOriginalSize()
+                            NSCursor.arrow.set()
+                        }
+                )
+        }
+        .padding(.vertical, 32)
     }
 
     private func ResizeViewY() -> some View {
-        Rectangle()
-            .fill(.black)
-            .frame(height: 8)
-            .onHover { inside in
-                resizeHoverTask?.cancel()
-                resizeHoverTask = Task { @MainActor in
-                    try? await Task.sleep(nanoseconds: 150_000_000)
-                    guard !Task.isCancelled else { return }
-                    if inside {
-                        NSCursor.resizeUpDown.set()
-                    } else {
-                        NSCursor.arrow.set()
-                    }
-                }
-            }
-            .gesture(
-                DragGesture(minimumDistance: 0)
-                    .onChanged { value in
-                        NSCursor.resizeUpDown.set()
-                        let rawY = value.translation.height
-                        smoothedY += (rawY - smoothedY) * alpha
-                        let roundedY = (smoothedY / pixelStep).rounded() * pixelStep
-                        if roundedY != lastAppliedY {
-                            lastAppliedY = roundedY
-                            let size = CGSize(width: 0, height: roundedY)
-                            (width, height) = modifyWindowBaseSize(size, lastExpandedWindowSize)
+        ZStack {
+            RoundedRectangle(cornerRadius: 8)
+                .fill(.clear)
+                .frame(height: 8)
+                .onHover { inside in
+                    resizeHoverTask?.cancel()
+                    resizeHoverTask = Task { @MainActor in
+                        try? await Task.sleep(nanoseconds: 150_000_000)
+                        guard !Task.isCancelled else { return }
+                        if inside {
+                            showResizeY = inside
+                        } else {
+                            DispatchQueue.main.asyncAfter(
+                                deadline: .now() + 3,
+                                execute: {
+                                    showResizeY = inside
+                                }
+                            )
+                        }
+
+                        if inside {
+                            NSCursor.resizeUpDown.set()
+                        } else {
+                            NSCursor.arrow.set()
                         }
                     }
-                    .onEnded { _ in
-                        smoothedY = 0
-                        lastAppliedY = 0
-                        modifyWindowOriginalSize()
-                        NSCursor.arrow.set()
-                    }
-            )
-            .padding(.bottom, -8)
-            .padding(.horizontal, 32)
+                }
+
+            RoundedRectangle(cornerRadius: 8)
+                .fill(.white.opacity(0.3))
+                .padding(.vertical, 2)
+                .frame(width: 64, height: 8)
+                .opacity(showResizeY ? 1 : 0)
+                .gesture(
+                    DragGesture(minimumDistance: 0)
+                        .onChanged { value in
+                            NSCursor.resizeUpDown.set()
+                            let rawY = value.translation.height
+                            smoothedY += (rawY - smoothedY) * alpha
+                            let roundedY = (smoothedY / pixelStep).rounded() * pixelStep
+                            if roundedY != lastAppliedY {
+                                lastAppliedY = roundedY
+                                let size = CGSize(width: 0, height: roundedY)
+                                (width, height) = modifyWindowBaseSize(size, lastExpandedWindowSize)
+                            }
+                        }
+                        .onEnded { _ in
+                            smoothedY = 0
+                            lastAppliedY = 0
+                            modifyWindowOriginalSize()
+                            NSCursor.arrow.set()
+                        }
+                )
+
+        }
+        .padding(.horizontal, 32)
+        .padding(.bottom, -8)
     }
 
     private func Toast() -> some View {
