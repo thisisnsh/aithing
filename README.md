@@ -5,11 +5,13 @@
 ## 2.0 
 
 
-9 Nov
-- Doc & Release 2.0
-
 10 Nov
 - YC Apply
+    - Fill application 
+    - Record demo video     
+- Write Doc 
+- Release 2.0
+
 
 Next
 - 2 hover required to open the app after closing

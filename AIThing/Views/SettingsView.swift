@@ -185,7 +185,7 @@ struct SettingsView: View {
                     setSelectedTab(value: selectedTab)
                     saveModels()
                     saveAgents()
-                    tabTitle = "Accounts"
+                    tabTitle = "Account"
                     AnalyticsManager.shared.screenView(screenName: .SettingsAccountsTab)
                 }) {
                     Label("Account", systemImage: "person.fill")
