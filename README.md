@@ -5,10 +5,8 @@
 ## 2.0 
 
 
-8 Nov    
-- Toast
-
 9 Nov
+- Text on 26.0
 - Analytics 
 - Verify MCPs
 - Doc & Release 2.0

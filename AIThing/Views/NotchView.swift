@@ -228,6 +228,16 @@ struct NotchView: View {
             }
             .padding(.vertical, 24)
 
+            if showToast {
+                Toast()
+                    .onAppear {
+                        DispatchQueue.main.asyncAfter(deadline: .now() + 2) {
+                            self.showToast.toggle()
+                        }
+                    }
+                    .frame(maxHeight: .infinity, alignment: .top)
+                    .padding(32)
+            }
         }
         .padding(.leading, shadowBuffer)
         .frame(width: width, height: height)
@@ -550,7 +560,26 @@ struct NotchView: View {
     }
 
     private func Toast() -> some View {
-        MarkdownText(text: toastText)
+        Group {
+            if #available(macOS 26.0, *) {
+                MarkdownText(text: toastText)
+                    .padding(16)
+                    .glassEffect(.regular, in: RoundedRectangle(cornerRadius: 32))
+                    .overlay {
+                        RoundedRectangle(cornerRadius: 32, style: .continuous)
+                            .stroke(toastColor.opacity(0.5), lineWidth: 1)
+                    }
+            } else {
+                MarkdownText(text: toastText)
+                    .padding(16)
+                    .background(.white.opacity(0.1))
+                    .clipShape(RoundedRectangle(cornerRadius: 32))
+                    .overlay {
+                        RoundedRectangle(cornerRadius: 32, style: .continuous)
+                            .stroke(toastColor.opacity(0.5), lineWidth: 1)
+                    }
+            }
+        }
     }
 }
 
@@ -974,6 +1003,11 @@ extension NotchView {
 
     private func dragViewY(multiplier: CGFloat) {
         if windowSize == WindowSize.notchIsCollapsed {
+            return
+        }
+        if windowSize == WindowSize.chatIsExpanded {
+            toastText = "Can not reposition AI Thing when it is expanded."
+            showToast = true
             return
         }
         let offset: CGFloat = 16
