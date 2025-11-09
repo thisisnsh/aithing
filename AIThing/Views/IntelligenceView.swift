@@ -118,6 +118,11 @@ struct IntelligenceView: View {
                         tabTitle = history.title ?? "New Chat"
                     } else {
                         tabTitle = "New Chat"
+
+                        let greeting = await firestoreManager.getGreeting() ?? ""
+                        if !greeting.isEmpty {
+                            modelOutput = greeting
+                        }
                     }
 
                     let notification = await firestoreManager.getNotification() ?? ""

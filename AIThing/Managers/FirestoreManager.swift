@@ -174,6 +174,32 @@ class FirestoreManager: ObservableObject {
         }
     }
 
+    func getGreeting() async -> String? {
+        do {
+            let snapshot = try await db.collection("System").document("Configs-2.0").getDocument()
+            guard let data = snapshot.data() else { return nil }
+            guard let greeting = data["greeting"] as? String else { return nil }
+            AnalyticsManager.shared.customEvent(
+                view: .FirebaseManager,
+                primary: .firebase,
+                secondary: "get_greeting",
+                sev: .info
+            )
+            return greeting
+        } catch {
+            AnalyticsManager.shared.customEvent(
+                view: .FirebaseManager,
+                primary: .firebase,
+                secondary: "get_greeting",
+                sev: .error
+            )
+            logger.error(
+                "[FirestoreManager] Error fetching greeting: \(error.localizedDescription)"
+            )
+            return nil
+        }
+    }
+    
     // MARK: Others
 
     private func _getProfile(user: AppUser) async -> Profile? {

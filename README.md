@@ -6,7 +6,6 @@
 
 
 9 Nov
-- Support Default AI Suggestions
 - Doc & Release 2.0
 
 10 Nov
