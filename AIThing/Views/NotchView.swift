@@ -185,6 +185,10 @@ struct NotchView: View {
                             isActive: false,
                             action: {
                                 open()
+                                if tabId.isEmpty {
+                                    tabId = UUID().uuidString
+                                    createIntelligenceView(tabId: tabId)
+                                }
                                 expandSidebar = false
                                 showSettings.toggle()
                             },

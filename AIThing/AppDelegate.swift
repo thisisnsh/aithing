@@ -246,28 +246,72 @@ extension AppDelegate {
             previousTopY = 0
         }
 
-        // Do not allow out of bounds
-        if newY - screenFrame.minY - shadowBuffer < windowHeight
-            || newY > screenFrame.maxY + shadowBuffer
-        {
-            xPosition = screenFrame.maxX - windowWidth
-            newY = screenFrame.midY - (windowHeight / 2)
-            floatingWindow.setFrame(
-                NSRect(x: xPosition, y: newY, width: windowWidth, height: windowHeight),
-                display: false,
-                animate: false
-            )
-        } else {
-            floatingWindow.setFrame(
-                NSRect(x: xPosition, y: newY, width: windowWidth, height: windowHeight),
-                display: false,
-                animate: false
-            )
+        floatingWindow.setFrame(
+            NSRect(x: xPosition, y: newY, width: windowWidth, height: windowHeight),
+            display: false,
+            animate: false
+        )
+
+        let outOfBoundsEdges = outOfBoundsEdges()
+        if !outOfBoundsEdges.isEmpty {
+            if outOfBoundsEdges.contains(.top) {
+                floatingWindow.setFrame(
+                    NSRect(
+                        x: xPosition,
+                        y: screenFrame.maxY - windowHeight,
+                        width: windowWidth,
+                        height: windowHeight
+                    ),
+                    display: false,
+                    animate: false
+                )
+            } else if outOfBoundsEdges.contains(.bottom) {
+                floatingWindow.setFrame(
+                    NSRect(
+                        x: xPosition,
+                        y: screenFrame.minY,
+                        width: windowWidth,
+                        height: windowHeight
+                    ),
+                    display: false,
+                    animate: false
+                )
+            }
         }
 
         lastWindowSize = windowSize
-
         return (windowWidth, windowHeight)
+    }
+
+    enum OutOfBoundsEdge: String {
+        case left
+        case right
+        case top
+        case bottom
+    }
+
+    private func outOfBoundsEdges() -> Set<OutOfBoundsEdge> {
+        var edges = Set<OutOfBoundsEdge>()
+        guard let screen = floatingWindow.screen ?? self.screen else { return edges }
+
+        let windowFrame = floatingWindow.frame
+        let screenFrame = screen.visibleFrame
+
+        // Compare window edges to screen bounds
+        if windowFrame.minX < screenFrame.minX {
+            edges.insert(.left)
+        }
+        if windowFrame.maxX > screenFrame.maxX {
+            edges.insert(.right)
+        }
+        if windowFrame.minY < screenFrame.minY {
+            edges.insert(.bottom)
+        }
+        if windowFrame.maxY > screenFrame.maxY {
+            edges.insert(.top)
+        }
+
+        return edges
     }
 
     /// Screen that the given window is currently showing on.
