@@ -228,15 +228,16 @@ struct NotchView: View {
             }
             .padding(.vertical, 24)
 
-            if showToast {
+            if showToast, showChatWindow {
                 Toast()
                     .onAppear {
                         DispatchQueue.main.asyncAfter(deadline: .now() + 2) {
                             self.showToast.toggle()
                         }
                     }
-                    .frame(maxHeight: .infinity, alignment: .top)
-                    .padding(32)
+                    .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
+                    .padding(.vertical, 32)
+                    .padding(.horizontal, 16)
             }
         }
         .padding(.leading, shadowBuffer)
@@ -593,18 +594,18 @@ struct NotchView: View {
             if #available(macOS 26.0, *) {
                 MarkdownText(text: toastText)
                     .padding(16)
-                    .glassEffect(.regular, in: RoundedRectangle(cornerRadius: 32))
+                    .glassEffect(.regular, in: RoundedRectangle(cornerRadius: 24))
                     .overlay {
-                        RoundedRectangle(cornerRadius: 32, style: .continuous)
+                        RoundedRectangle(cornerRadius: 24, style: .continuous)
                             .stroke(toastColor.opacity(0.5), lineWidth: 1)
                     }
             } else {
                 MarkdownText(text: toastText)
                     .padding(16)
                     .background(.white.opacity(0.1))
-                    .clipShape(RoundedRectangle(cornerRadius: 32))
+                    .clipShape(RoundedRectangle(cornerRadius: 24))
                     .overlay {
-                        RoundedRectangle(cornerRadius: 32, style: .continuous)
+                        RoundedRectangle(cornerRadius: 24, style: .continuous)
                             .stroke(toastColor.opacity(0.5), lineWidth: 1)
                     }
             }

@@ -15,6 +15,7 @@ struct ToolsView: View {
 
     @State private var tools: [String: [Tool]] = [:]
     @State private var currentClient: String = ""
+    @State private var toolsText = "Loading tools..."
 
     var body: some View {
         ZStack {
@@ -30,7 +31,7 @@ struct ToolsView: View {
             }
 
             if tools.isEmpty {
-                Text("No tools added yet")
+                Text(toolsText)
                     .foregroundColor(.secondary)
                     .font(.system(size: 10))
                     .padding(.horizontal, 16)
@@ -45,6 +46,9 @@ struct ToolsView: View {
             Task {
                 tools = await mcpManager.getAllTools()
                 currentClient = tools.keys.first ?? ""
+                if tools.isEmpty {
+                    toolsText = "No tools added yet"
+                }
                 AnalyticsManager.shared
                     .customEvent(
                         view: .ToolsView,
@@ -65,9 +69,16 @@ struct ToolsView: View {
                             ChatBubble(
                                 item: ChatItem(
                                     role: .assistant,
-                                    payload: .toolUse(name: "\(tool.name):\n\n\(tool.description)")
+                                    payload:
+                                        .file(
+                                            text: "\(currentClient): \(tool.name)",
+                                            skipNextMessages: false,
+                                            content: tool.description
+                                        )
                                 )
                             )
+                            .padding(.leading, -24)
+                            .padding(.trailing, 8)
                         }
                     } else {
                         if tools.isEmpty {

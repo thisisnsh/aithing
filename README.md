@@ -6,7 +6,7 @@
 
 
 9 Nov
-- Review MCP Add Workflow 
+- Support Default AI Suggestions
 - Doc & Release 2.0
 
 10 Nov
@@ -40,6 +40,7 @@ Anthropic
 Zapier
 https://mcp.zapier.com/api/mcp/mcp
 <zapier-basic-auth>
+https://mcp.zapier.com/authorize?client_id=<zapier-client-id>&redirect_uri=http://127.0.0.1:62326/callback&response_type=code&scope=profile%20email&state=F21AAA44-0643-4C90-824F-482C8FCFD27A
 
 GitHub
 https://api.githubcopilot.com/mcp/ 

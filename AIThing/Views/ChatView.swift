@@ -136,7 +136,7 @@ struct ChatBubble: View {
             switch item.payload {
             case .file(let name, _, let content):
                 FileBubble(file: name, content: content)
-                    .frame(maxWidth: 800, alignment: .trailing)
+                    .frame(maxWidth: 800, alignment: item.role == .file ? .trailing : .leading)
             case .text(let text):
                 if item.role != .usage {
                     TextBubble(text: text, isUser: item.role == .user)
@@ -150,6 +150,7 @@ struct ChatBubble: View {
                     .frame(maxWidth: 800, alignment: .leading)
             }
 
+            if item.role == .file { Spacer().frame(width: 0) }
             if item.role == .user { Spacer().frame(width: 0) }
         }
         .frame(maxWidth: .infinity, alignment: item.role == .user ? .trailing : .leading)
@@ -185,6 +186,8 @@ struct TextBubble: View {
                 RoundedRectangle(cornerRadius: 8, style: .continuous)
                     .fill(isUser ? Color.gray.opacity(0.1) : Color.clear)
             )
+            .padding(.leading, isUser ? 32 : 0)
+            .padding(.trailing, isUser ? 0 : 32)
     }
 }
 
@@ -204,6 +207,7 @@ struct FileBubble: View {
                     RoundedRectangle(cornerRadius: 8, style: .continuous)
                         .stroke(Color.gray.opacity(0.5), lineWidth: 1)
                 )
+                .padding(.leading, 32)
         } else {
             HStack {
                 Text("\(file)")
@@ -220,7 +224,7 @@ struct FileBubble: View {
                 RoundedRectangle(cornerRadius: 8, style: .continuous)
                     .stroke(Color.gray.opacity(0.5), lineWidth: 1)
             )
-            .padding(.leading, 8)
+            .padding(.leading, 32)
             .onTapGesture {
                 if !content.isEmpty {
                     showContent = true
