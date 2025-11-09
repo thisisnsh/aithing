@@ -295,7 +295,7 @@ class GithubOAuthManager: ObservableObject {
 
     func additionalScopes() -> [String] {
         if enabled.isEmpty { return [] }
-        
+
         var s = Set(enabled.flatMap { toolScopesMap[$0] ?? [] })
 
         // Default
@@ -303,12 +303,19 @@ class GithubOAuthManager: ObservableObject {
         s.insert(GithubOAuthScopes.readOrg)
         s.insert(GithubOAuthScopes.userEmail)
 
+        AnalyticsManager.shared.customEvent(
+            view: .GithubOAuthManager,
+            primary: .scope,
+            secondary: s.formatted(),
+            sev: .info
+        )
+
         return Array(s)
     }
 
     func enabledCapabilities() -> [String] {
         if enabled.isEmpty { return [] }
-        
+
         var s = enabled.flatMap { toolCapabilities[$0] ?? [] }
         // Default
         s.append(contentsOf: [

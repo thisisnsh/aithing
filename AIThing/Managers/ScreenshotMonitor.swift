@@ -86,9 +86,10 @@ class ScreenshotMonitor: ObservableObject {
             }
         } catch {
             AnalyticsManager.shared.customEvent(
-                type: .error,
-                primary: "screenshot_read_failure",
-                secondary: .status_failure_high
+                view: .ScreenshotMonitor,
+                primary: .function,
+                secondary: "getScreenshotDirectory",
+                sev: .error
             )
         }
 

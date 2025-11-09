@@ -38,10 +38,19 @@ struct SettingsPreferencesTab: View {
                         Toggle(
                             "",
                             isOn: Binding(
-                                get: { cacheMessage },
+                                get: {
+                                    cacheMessage
+                                },
                                 set: { value in
                                     cacheMessage = value
                                     setCacheMessages(value: value)
+                                    AnalyticsManager.shared
+                                        .customEvent(
+                                            view: .SettingsPreferencesTab,
+                                            primary: .cacheEnabled,
+                                            secondary: "\(value)",
+                                            sev: .info
+                                        )
                                 }
                             )
                         )
@@ -72,6 +81,13 @@ struct SettingsPreferencesTab: View {
                                 outputToken = 1024
                             }
                             setOutputToken(value: outputToken)
+                            AnalyticsManager.shared
+                                .customEvent(
+                                    view: .SettingsPreferencesTab,
+                                    primary: .outputToken,
+                                    secondary: "\(outputToken)",
+                                    sev: .info
+                                )
                         }) {
                             Image(systemName: "minus")
                                 .frame(width: 16, height: 16)
@@ -92,6 +108,13 @@ struct SettingsPreferencesTab: View {
                                 outputToken = 102400
                             }
                             setOutputToken(value: outputToken)
+                            AnalyticsManager.shared
+                                .customEvent(
+                                    view: .SettingsPreferencesTab,
+                                    primary: .outputToken,
+                                    secondary: "\(outputToken)",
+                                    sev: .info
+                                )
                         }) {
                             Image(systemName: "plus")
                                 .frame(width: 16, height: 16)
@@ -119,20 +142,13 @@ struct SettingsPreferencesTab: View {
                         onChange: { newValue in
                             setPreferencesShowInScreenshot(newValue)
                             setPanelVisibility()
-
-                            if newValue {
-                                AnalyticsManager.shared.customEvent(
-                                    type: .action,
-                                    primary: "preference_show_in_screenshot",
-                                    secondary: .value_true
+                            AnalyticsManager.shared
+                                .customEvent(
+                                    view: .SettingsPreferencesTab,
+                                    primary: .showInScreenshot,
+                                    secondary: "\(newValue)",
+                                    sev: .info
                                 )
-                            } else {
-                                AnalyticsManager.shared.customEvent(
-                                    type: .action,
-                                    primary: "preference_show_in_screenshot",
-                                    secondary: .value_false
-                                )
-                            }
                         }
                     )
                     Divider()

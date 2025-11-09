@@ -106,6 +106,7 @@ struct IntelligenceView: View {
             }
             .padding(8)
             .onAppear {
+                AnalyticsManager.shared.screenView(screenName: .IntelligenceView)
                 Task {
                     modelOutput = ""
                     displayQuery = ""
@@ -138,6 +139,13 @@ struct IntelligenceView: View {
                             let results = await DragFileManager.processPaths([ss.url])
                             for r in results {
                                 modelContext.insert(r, at: 0)
+                                AnalyticsManager.shared
+                                    .customEvent(
+                                        view: .IntelligenceView,
+                                        primary: .file,
+                                        secondary: "screenshot",
+                                        sev: .info
+                                    )
                             }
                         }
                     }
@@ -149,6 +157,13 @@ struct IntelligenceView: View {
                         let results = await DragFileManager.processPaths(urls)
                         for r in results {
                             modelContext.append(r)
+                            AnalyticsManager.shared
+                                .customEvent(
+                                    view: .IntelligenceView,
+                                    primary: .file,
+                                    secondary: "add",
+                                    sev: .info
+                                )
                         }
                     }
                 }
@@ -220,10 +235,13 @@ struct IntelligenceView: View {
                             big: modelContext.count == 1,
                             onDelete: { index in
                                 modelContext.remove(at: index)
-                                AnalyticsManager.shared.customEvent(
-                                    type: .action,
-                                    primary: "file_remove"
-                                )
+                                AnalyticsManager.shared
+                                    .customEvent(
+                                        view: .IntelligenceView,
+                                        primary: .file,
+                                        secondary: "remove",
+                                        sev: .info
+                                    )
                             },
                             cornerRadius: cornerRadius
                         )
@@ -237,10 +255,13 @@ struct IntelligenceView: View {
                             big: false,
                             onDelete: { index in
                                 modelContext.remove(at: index)
-                                AnalyticsManager.shared.customEvent(
-                                    type: .action,
-                                    primary: "file_remove"
-                                )
+                                AnalyticsManager.shared
+                                    .customEvent(
+                                        view: .IntelligenceView,
+                                        primary: .file,
+                                        secondary: "remove",
+                                        sev: .info
+                                    )
                             },
                             cornerRadius: cornerRadius
                         )
@@ -254,10 +275,13 @@ struct IntelligenceView: View {
                             big: false,
                             onDelete: { index in
                                 modelContext.remove(at: index)
-                                AnalyticsManager.shared.customEvent(
-                                    type: .action,
-                                    primary: "file_remove"
-                                )
+                                AnalyticsManager.shared
+                                    .customEvent(
+                                        view: .IntelligenceView,
+                                        primary: .file,
+                                        secondary: "remove",
+                                        sev: .info
+                                    )
                             },
                             cornerRadius: cornerRadius
                         )
@@ -293,6 +317,13 @@ struct IntelligenceView: View {
                     Button {
                         selectedText = ""
                         vm.selectedText = ""
+                        AnalyticsManager.shared
+                            .customEvent(
+                                view: .IntelligenceView,
+                                primary: .selection,
+                                secondary: "remove",
+                                sev: .info
+                            )
                     } label: {
                         Image(systemName: "xmark.circle")
                             .resizable()
@@ -354,7 +385,16 @@ struct IntelligenceView: View {
             .padding(.vertical, 8)
 
             HStack {
-                Button(action: { selectionEnabled.toggle() }) {
+                Button(action: {
+                    selectionEnabled.toggle()
+                    AnalyticsManager.shared
+                        .customEvent(
+                            view: .IntelligenceView,
+                            primary: .selection,
+                            secondary: "\(selectionEnabled)",
+                            sev: .info
+                        )
+                }) {
                     HStack {
                         Image(systemName: selectionEnabled ? "text.redaction" : "text.alignleft")
                             .resizable()
@@ -432,9 +472,23 @@ extension IntelligenceView {
         query = ""
         showSelection = false
 
+        AnalyticsManager.shared.customEvent(
+            view: .IntelligenceView,
+            primary: .query,
+            secondary: "start",
+            sev: .info
+        )
+
         setTabActive(true)
         let result = await callModel(query: trimmed)
         setTabActive(false)
+
+        AnalyticsManager.shared.customEvent(
+            view: .IntelligenceView,
+            primary: .query,
+            secondary: "end",
+            sev: .info
+        )
 
         showSelection = true
         vm.selectedText = ""
@@ -465,11 +519,13 @@ extension IntelligenceView {
                 ,
                 notification: true
             )
-            AnalyticsManager.shared.customEvent(
-                type: .error,
-                primary: "breakglass_enabled",
-                secondary: .status_failure_low,
-            )
+            AnalyticsManager.shared
+                .customEvent(
+                    view: .IntelligenceView,
+                    primary: .query,
+                    secondary: "breakglass",
+                    sev: .error
+                )
             return false
         }
 
@@ -484,11 +540,13 @@ extension IntelligenceView {
                 ,
                 notification: true
             )
-            AnalyticsManager.shared.customEvent(
-                type: .error,
-                primary: "version_expired",
-                secondary: .status_failure_low,
-            )
+            AnalyticsManager.shared
+                .customEvent(
+                    view: .IntelligenceView,
+                    primary: .query,
+                    secondary: "version expired",
+                    sev: .error
+                )
             return false
         }
 
@@ -507,6 +565,13 @@ extension IntelligenceView {
                         ,
                         notification: true
                     )
+                    AnalyticsManager.shared
+                        .customEvent(
+                            view: .IntelligenceView,
+                            primary: .query,
+                            secondary: "version blocked",
+                            sev: .error
+                        )
                     return false
                 }
 
@@ -524,11 +589,13 @@ extension IntelligenceView {
                 ,
                 notification: true
             )
-            AnalyticsManager.shared.customEvent(
-                type: .error,
-                primary: "profile_fetch",
-                secondary: .status_failure_high,
-            )
+            AnalyticsManager.shared
+                .customEvent(
+                    view: .IntelligenceView,
+                    primary: .query,
+                    secondary: "profile error",
+                    sev: .error
+                )
             return false
         default:
             isThinking = false
@@ -546,11 +613,13 @@ extension IntelligenceView {
                 ,
                 notification: true
             )
-            AnalyticsManager.shared.customEvent(
-                type: .error,
-                primary: "query_without_login",
-                secondary: .status_failure_low,
-            )
+            AnalyticsManager.shared
+                .customEvent(
+                    view: .IntelligenceView,
+                    primary: .query,
+                    secondary: "no login",
+                    sev: .error
+                )
             return false
         }
 
@@ -567,10 +636,18 @@ extension IntelligenceView {
         let model = getModel()
 
         AnalyticsManager.shared.customEvent(
-            type: .model,
-            primary: model,
-            secondary: .byok_model
+            view: .IntelligenceView,
+            primary: .model,
+            secondary: "model",
+            sev: .info
         )
+        AnalyticsManager.shared
+            .customEvent(
+                view: .IntelligenceView,
+                primary: .count,
+                secondary: "\(modelTools.count)",
+                sev: .info
+            )
 
         guard let apiKey = getAnthropicAPIKey(), !apiKey.isEmpty
         else {
@@ -592,11 +669,13 @@ extension IntelligenceView {
                 ,
                 notification: true
             )
-            AnalyticsManager.shared.customEvent(
-                type: .error,
-                primary: "missing_api_key",
-                secondary: .status_failure_low
-            )
+            AnalyticsManager.shared
+                .customEvent(
+                    view: .IntelligenceView,
+                    primary: .query,
+                    secondary: "no api key",
+                    sev: .error
+                )
             return false
         }
 
@@ -616,7 +695,12 @@ extension IntelligenceView {
                 switch modelContext[i] {
                 case .image(let name, _, let base64):
                     fileCount += 1
-                    AnalyticsManager.shared.customEvent(type: .tab, primary: "file_upload_image")
+                    AnalyticsManager.shared.customEvent(
+                        view: .IntelligenceView,
+                        primary: .file,
+                        secondary: "use image",
+                        sev: .info
+                    )
                     modelInput.append(
                         [
                             "role": "file",
@@ -670,8 +754,10 @@ extension IntelligenceView {
                         ])
                     }
                     AnalyticsManager.shared.customEvent(
-                        type: .tab,
-                        primary: "file_upload_pdf_page"
+                        view: .IntelligenceView,
+                        primary: .file,
+                        secondary: "use pdf",
+                        sev: .info
                     )
                     modelInput.append(
                         [
@@ -681,7 +767,12 @@ extension IntelligenceView {
                     )
                 case .text(let name, let text, _):
                     fileCount += 1
-                    AnalyticsManager.shared.customEvent(type: .tab, primary: "file_upload_text")
+                    AnalyticsManager.shared.customEvent(
+                        view: .IntelligenceView,
+                        primary: .file,
+                        secondary: "use text",
+                        sev: .info
+                    )
                     modelInput.append(
                         [
                             "role": "file",
@@ -709,6 +800,12 @@ extension IntelligenceView {
             }
 
             if !selectedText.isEmpty, selectionEnabled {
+                AnalyticsManager.shared.customEvent(
+                    view: .IntelligenceView,
+                    primary: .file,
+                    secondary: "use selection",
+                    sev: .info
+                )
                 modelInput.append(
                     [
                         "role": "file",
@@ -765,7 +862,7 @@ extension IntelligenceView {
         let costAgent = costPerQuery * modelAgentCount
         let _ = costPerQuery + costAgent + costFile
 
-        logger.debug("api key: \(apiKey)")
+        // logger.debug("api key: \(apiKey)")
         logger.debug("model: \(model)")
         logger.debug("max tokens: \(getOutputToken())")
         logger.debug("messages: \(String(describing: body["messages"]))")
@@ -784,11 +881,13 @@ extension IntelligenceView {
                     content: "Invalid response\n\nReport issue at help@aithing.dev",
                     notification: true
                 )
-                AnalyticsManager.shared.customEvent(
-                    type: .error,
-                    primary: "response_invalid",
-                    secondary: .status_failure_high,
-                )
+                AnalyticsManager.shared
+                    .customEvent(
+                        view: .IntelligenceView,
+                        primary: .query,
+                        secondary: "invalid response",
+                        sev: .error
+                    )
                 return false
             }
 
@@ -808,22 +907,26 @@ extension IntelligenceView {
                         ,
                         notification: true
                     )
-                    AnalyticsManager.shared.customEvent(
-                        type: .error,
-                        primary: "response_rate_limit",
-                        secondary: .status_failure_low
-                    )
+                    AnalyticsManager.shared
+                        .customEvent(
+                            view: .IntelligenceView,
+                            primary: .query,
+                            secondary: "rate limit reached",
+                            sev: .error
+                        )
                 } else {
                     await animateOutput(
                         content:
                             "Error \(httpResponse.statusCode)\n\(error)\n\nReport issue at help@aithing.dev",
                         notification: true
                     )
-                    AnalyticsManager.shared.customEvent(
-                        type: .error,
-                        primary: "response_failure",
-                        secondary: .status_failure_high,
-                    )
+                    AnalyticsManager.shared
+                        .customEvent(
+                            view: .IntelligenceView,
+                            primary: .query,
+                            secondary: "error response",
+                            sev: .error
+                        )
                 }
                 return false
             }
@@ -850,11 +953,13 @@ extension IntelligenceView {
                 ])
 
             } else {
-                AnalyticsManager.shared.customEvent(
-                    type: .error,
-                    primary: "cost_not_calculated",
-                    secondary: .status_failure_high,
-                )
+                AnalyticsManager.shared
+                    .customEvent(
+                        view: .IntelligenceView,
+                        primary: .query,
+                        secondary: "usage not calculated",
+                        sev: .error
+                    )
             }
 
             modelContext.removeAll()
@@ -986,14 +1091,13 @@ extension IntelligenceView {
                                 input: finalToolUseInputParam
                             )
 
-                            AnalyticsManager.shared.customEvent(
-                                type: .tab,
-                                primary: "query_tool_called"
-                            )
-                            AnalyticsManager.shared.customEvent(
-                                type: .tool,
-                                primary: finalToolUseName,
-                            )
+                            AnalyticsManager.shared
+                                .customEvent(
+                                    view: .IntelligenceView,
+                                    primary: .tool,
+                                    secondary: finalToolUseName,
+                                    sev: .info
+                                )
 
                             logger.debug("Call tool: \(finalToolUseName)")
                             logger.debug("Tool input: \(finalToolUseInputParam)")
@@ -1027,6 +1131,13 @@ extension IntelligenceView {
                 isThinking = false
                 modelOutput =
                     "Error streaming response: \(error.localizedDescription)\n\nReport issue at help@aithing.dev"
+                AnalyticsManager.shared
+                    .customEvent(
+                        view: .IntelligenceView,
+                        primary: .query,
+                        secondary: "error streaming",
+                        sev: .error
+                    )
             }
             return false
         }

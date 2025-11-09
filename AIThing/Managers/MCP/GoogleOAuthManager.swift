@@ -191,6 +191,12 @@ class GoogleOAuthManager: ObservableObject {
         for b in GoogleScopeGroups.base {
             s.insert(b)
         }
+        AnalyticsManager.shared.customEvent(
+            view: .GoogleOAuthManager,
+            primary: .scope,
+            secondary: s.formatted(),
+            sev: .info
+        )
         return Array(s)
     }
 

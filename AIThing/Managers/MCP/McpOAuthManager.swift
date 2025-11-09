@@ -114,6 +114,13 @@ final class McpOAuthManager: ObservableObject, Identifiable {
         do {
             try await getWellKnownUrls()
 
+            AnalyticsManager.shared.customEvent(
+                view: .McpOAuthManager,
+                primary: .url,
+                secondary: server.url,
+                sev: .info
+            )
+
             if refresh {
                 if let user = self.user {
                     if tokenIsValid(user) {

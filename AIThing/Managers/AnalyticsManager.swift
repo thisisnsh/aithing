@@ -44,45 +44,86 @@ final class AnalyticsManager {
         Analytics.logEvent(name, parameters: baseParams(params))
     }
 
+    enum CustomEventView: String {
+        case ToolsView
+        case SettingsView
+        case NotchView
+        case IntelligenceView
+        case ChatView
+
+        case SettingsAccountsTab
+        case SettingsModelTab
+        case SettingsAgentsTab
+        case SettingsPreferencesTab
+
+        case ScreenshotMonitor
+        case GithubOAuthManager
+        case GoogleOAuthManager
+        case McpOAuthManager
+        case McpManager
+        case FirebaseManager
+    }
+
     /// screen_view (manual)
     /// - Parameters:
     ///   - screenName: Name you want to appear in GA4
     ///   - screenClass: Typically the SwiftUI wrapper or host class name
-    func screenView(screenName: String, screenClass: String = "SwiftUIView") {
+    func screenView(screenName: CustomEventView, screenClass: String = "SwiftUIView") {
         log(
             AnalyticsEventScreenView,
             params: [
-                AnalyticsParameterScreenName: screenName,
+                AnalyticsParameterScreenName: screenName.rawValue,
                 AnalyticsParameterScreenClass: screenClass,
             ]
         )
     }
 
-    enum CustomEventType: String {
+    enum CustomEventPrimary: String {
+        case count
+        case function
+        case file
+        case selection
+        case query
         case model
-        case agent
-        case tab
         case tool
-        case cost
+        case scope
+        case url
+        case quit
+
+        case showInScreenshot
+        case outputToken
+        case cacheEnabled
+        case bugReport
+
         case firebase
-        case error
-        case action
+
+        case mcpInit
+        case mcpStdio
+        case mcpHTTP
+        case mcpStart
+        case mcpStop
+        case mcpReconnect
+        case mcpTools
+        case mcpCallTools
+
+        case agentAdd
+        case agentLoad
+
+        case moveUp
+        case moveDown
+        case dragLeft
+        case dragDown
+
+        case createTab
+        case activateTab
+        case removeTabs
     }
 
-    enum CustomEventSecondary: String {
-        case status_failure_high
-        case status_failure_med
-        case status_failure_low
-        case status_success
-        
-        case value_true
-        case value_false
-        
-        case reconnect_attempt
-        case reconnect_success
-        
-        case byok_model
-        case managed_model
+    enum CustomEventSev: String {
+        case debug
+        case info
+        case error
+        case exception
     }
 
     /// custom_event
@@ -92,16 +133,17 @@ final class AnalyticsManager {
     ///   - type: type [ model, agent, tab, tool, cost, firebase, error]
     ///
     func customEvent(
-        type: CustomEventType,
-        primary: String,
-        secondary: CustomEventSecondary = .status_success
+        view: CustomEventView,
+        primary: CustomEventPrimary,
+        secondary: String,
+        sev: CustomEventSev,
     ) {
         log(
-            "custom_event",
+            "custom_\(view)",
             params: [
-                "type": type.rawValue,
-                "primary": primary,
-                "secondary": secondary.rawValue,
+                "primary": primary.rawValue,
+                "secondary": secondary,
+                "severity": sev.rawValue,
             ]
         )
     }
@@ -111,22 +153,18 @@ final class AnalyticsManager {
         log(AnalyticsEventAppOpen, params: nil)
     }
 
+    enum LoginMethod: String {
+        case google
+    }
+
     /// login
     /// - Parameter method: e.g., "email", "apple", "google"
-    func login(method: String) {
+    func login(method: LoginMethod) {
         log(
             AnalyticsEventLogin,
             params: [
-                AnalyticsParameterMethod: method
+                AnalyticsParameterMethod: method.rawValue
             ]
-        )
-    }
-
-    /// custom_app_quit
-    func customAppQuit() {
-        log(
-            "custom_app_quit",
-            params: [:]
         )
     }
 }

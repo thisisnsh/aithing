@@ -50,16 +50,18 @@ class FirestoreManager: ObservableObject {
             guard let data = snapshot.data() else { return false }
             guard let breakglass = data["breakglass"] as? Bool else { return false }
             AnalyticsManager.shared.customEvent(
-                type: .firebase,
-                primary: "get_breakglass",
-                secondary: .status_success
+                view: .FirebaseManager,
+                primary: .firebase,
+                secondary: "get_breakglass",
+                sev: .info
             )
             return breakglass
         } catch {
             AnalyticsManager.shared.customEvent(
-                type: .firebase,
-                primary: "get_breakglass",
-                secondary: .status_failure_high
+                view: .FirebaseManager,
+                primary: .firebase,
+                secondary: "get_breakglass",
+                sev: .error
             )
             logger.error(
                 "[FirestoreManager] Error fetching breakglass: \(error.localizedDescription)"
@@ -74,16 +76,18 @@ class FirestoreManager: ObservableObject {
             guard let data = snapshot.data() else { return false }
             guard let expired = data["expired"] as? Bool else { return false }
             AnalyticsManager.shared.customEvent(
-                type: .firebase,
-                primary: "get_expired",
-                secondary: .status_success
+                view: .FirebaseManager,
+                primary: .firebase,
+                secondary: "get_expired",
+                sev: .info
             )
             return expired
         } catch {
             AnalyticsManager.shared.customEvent(
-                type: .firebase,
-                primary: "get_expired",
-                secondary: .status_failure_high
+                view: .FirebaseManager,
+                primary: .firebase,
+                secondary: "get_expired",
+                sev: .error
             )
             logger.error(
                 "[FirestoreManager] Error fetching expired: \(error.localizedDescription)"
@@ -98,16 +102,18 @@ class FirestoreManager: ObservableObject {
             guard let data = snapshot.data() else { return "" }
             guard let apiKeyAnthropic = data["apiKeyAnthropic"] as? String else { return "" }
             AnalyticsManager.shared.customEvent(
-                type: .firebase,
-                primary: "get_anthropic_api_key",
-                secondary: .status_success
+                view: .FirebaseManager,
+                primary: .firebase,
+                secondary: "get_anthropic_api_key",
+                sev: .info
             )
             return apiKeyAnthropic
         } catch {
             AnalyticsManager.shared.customEvent(
-                type: .firebase,
-                primary: "get_anthropic_api_key",
-                secondary: .status_failure_high
+                view: .FirebaseManager,
+                primary: .firebase,
+                secondary: "get_anthropic_api_key",
+                sev: .error
             )
             logger.error(
                 "[FirestoreManager] Error fetching apiKeyAnthropic: \(error.localizedDescription)"
@@ -122,16 +128,18 @@ class FirestoreManager: ObservableObject {
             guard let data = snapshot.data() else { return nil }
             guard let defaultCredits = data["defaultCredits"] as? Int else { return nil }
             AnalyticsManager.shared.customEvent(
-                type: .firebase,
-                primary: "get_default_credits",
-                secondary: .status_success
+                view: .FirebaseManager,
+                primary: .firebase,
+                secondary: "get_default_credits",
+                sev: .info
             )
             return defaultCredits
         } catch {
             AnalyticsManager.shared.customEvent(
-                type: .firebase,
-                primary: "get_default_credits",
-                secondary: .status_failure_high
+                view: .FirebaseManager,
+                primary: .firebase,
+                secondary: "get_default_credits",
+                sev: .error
             )
             logger.error(
                 "[FirestoreManager] Error fetching defaultCredits: \(error.localizedDescription)"
@@ -146,16 +154,18 @@ class FirestoreManager: ObservableObject {
             guard let data = snapshot.data() else { return nil }
             guard let notification = data["notification"] as? String else { return nil }
             AnalyticsManager.shared.customEvent(
-                type: .firebase,
-                primary: "get_notification",
-                secondary: .status_success
+                view: .FirebaseManager,
+                primary: .firebase,
+                secondary: "get_notification",
+                sev: .info
             )
             return notification
         } catch {
             AnalyticsManager.shared.customEvent(
-                type: .firebase,
-                primary: "get_notification",
-                secondary: .status_failure_high
+                view: .FirebaseManager,
+                primary: .firebase,
+                secondary: "get_notification",
+                sev: .error
             )
             logger.error(
                 "[FirestoreManager] Error fetching notification: \(error.localizedDescription)"
@@ -173,9 +183,10 @@ class FirestoreManager: ObservableObject {
             let snapshot = try await db.collection("Profiles").document(id).getDocument()
             if let profile = try? snapshot.data(as: Profile.self) {
                 AnalyticsManager.shared.customEvent(
-                    type: .firebase,
-                    primary: "get_profile",
-                    secondary: .status_success
+                    view: .FirebaseManager,
+                    primary: .firebase,
+                    secondary: "get_profile",
+                    sev: .info
                 )
                 return profile
             }
@@ -183,9 +194,10 @@ class FirestoreManager: ObservableObject {
             return nil
         } catch {
             AnalyticsManager.shared.customEvent(
-                type: .firebase,
-                primary: "get_profile",
-                secondary: .status_failure_high
+                view: .FirebaseManager,
+                primary: .firebase,
+                secondary: "get_profile",
+                sev: .error
             )
             logger.error(
                 "[FirestoreManager] Error fetching profile for ID \(id): \(error.localizedDescription)"
@@ -218,16 +230,18 @@ class FirestoreManager: ObservableObject {
         do {
             try db.collection("Profiles").document(id).setData(from: profile)
             AnalyticsManager.shared.customEvent(
-                type: .firebase,
-                primary: "create_profile",
-                secondary: .status_success
+                view: .FirebaseManager,
+                primary: .firebase,
+                secondary: "create_profile",
+                sev: .info
             )
             return profile
         } catch {
             AnalyticsManager.shared.customEvent(
-                type: .firebase,
-                primary: "create_profile",
-                secondary: .status_failure_high
+                view: .FirebaseManager,
+                primary: .firebase,
+                secondary: "create_profile",
+                sev: .error
             )
             logger.error(
                 "[FirestoreManager] Error creating profile for ID \(id): \(error.localizedDescription)"
@@ -244,15 +258,17 @@ class FirestoreManager: ObservableObject {
                 "creditsUsed": FieldValue.increment(Int64(amount))
             ])
             AnalyticsManager.shared.customEvent(
-                type: .firebase,
-                primary: "increment_credit",
-                secondary: .status_success
+                view: .FirebaseManager,
+                primary: .firebase,
+                secondary: "increment_credit",
+                sev: .info
             )
         } catch {
             AnalyticsManager.shared.customEvent(
-                type: .firebase,
-                primary: "increment_credit",
-                secondary: .status_failure_high
+                view: .FirebaseManager,
+                primary: .firebase,
+                secondary: "increment_credit",
+                sev: .error
             )
             logger.error(
                 "[FirestoreManager] Error incrementing creditsUsed by \(amount) for ID \(id): \(error.localizedDescription)"
@@ -270,15 +286,17 @@ class FirestoreManager: ObservableObject {
                 "usageData.filesAttached": FieldValue.increment(Int64(usage.filesAttached)),
             ])
             AnalyticsManager.shared.customEvent(
-                type: .firebase,
-                primary: "increment_usage",
-                secondary: .status_success
+                view: .FirebaseManager,
+                primary: .firebase,
+                secondary: "increment_usage",
+                sev: .info
             )
         } catch {
             AnalyticsManager.shared.customEvent(
-                type: .firebase,
-                primary: "increment_usage",
-                secondary: .status_failure_high
+                view: .FirebaseManager,
+                primary: .firebase,
+                secondary: "increment_usage",
+                sev: .error
             )
             logger.error(
                 "[FirestoreManager] Error incrementing usage for ID \(id): \(error.localizedDescription)"
@@ -298,9 +316,10 @@ class FirestoreManager: ObservableObject {
             }
 
             AnalyticsManager.shared.customEvent(
-                type: .firebase,
-                primary: "get_model_info",
-                secondary: .status_success
+                view: .FirebaseManager,
+                primary: .firebase,
+                secondary: "get_model_info",
+                sev: .info
             )
 
             // Sort: first by order, then by title if order is equal
@@ -312,9 +331,10 @@ class FirestoreManager: ObservableObject {
             }
         } catch {
             AnalyticsManager.shared.customEvent(
-                type: .firebase,
-                primary: "get_model_info",
-                secondary: .status_failure_high
+                view: .FirebaseManager,
+                primary: .firebase,
+                secondary: "get_model_info",
+                sev: .error
             )
             logger.error("[FirestoreManager] Error fetching models: \(error.localizedDescription)")
             return []
@@ -350,9 +370,10 @@ class FirestoreManager: ObservableObject {
                 .getDocument()
             if let agent = try? snapshot.data(as: ManagedGitHubAgent.self) {
                 AnalyticsManager.shared.customEvent(
-                    type: .firebase,
-                    primary: "get_managed_github_agent",
-                    secondary: .status_success
+                    view: .FirebaseManager,
+                    primary: .firebase,
+                    secondary: "get_managed_github_agent",
+                    sev: .info
                 )
                 return agent
             }
@@ -360,9 +381,10 @@ class FirestoreManager: ObservableObject {
             return nil
         } catch {
             AnalyticsManager.shared.customEvent(
-                type: .firebase,
-                primary: "get_managed_github_agent",
-                secondary: .status_failure_high
+                view: .FirebaseManager,
+                primary: .firebase,
+                secondary: "get_managed_github_agent",
+                sev: .error
             )
             logger.error(
                 "[FirestoreManager] Error fetching get_managed_github_agent: \(error.localizedDescription)"
@@ -389,15 +411,17 @@ class FirestoreManager: ObservableObject {
                 }
             }
             AnalyticsManager.shared.customEvent(
-                type: .firebase,
-                primary: "get_managed_agents",
-                secondary: .status_success
+                view: .FirebaseManager,
+                primary: .firebase,
+                secondary: "get_managed_agents",
+                sev: .info
             )
         } catch {
             AnalyticsManager.shared.customEvent(
-                type: .firebase,
-                primary: "get_managed_agents",
-                secondary: .status_failure_high
+                view: .FirebaseManager,
+                primary: .firebase,
+                secondary: "get_managed_agents",
+                sev: .error
             )
             logger.error(
                 "[FirestoreManager] Error fetching managed agents: \(error.localizedDescription)"
@@ -420,9 +444,10 @@ extension FirestoreManager {
                 total += credits
             } else {
                 AnalyticsManager.shared.customEvent(
-                    type: .firebase,
-                    primary: "fetch_credits_missing_plan_details",
-                    secondary: .status_failure_high
+                    view: .FirebaseManager,
+                    primary: .firebase,
+                    secondary: "fetch_credits_missing_plan_details",
+                    sev: .error
                 )
                 logger.error("[FirestoreManager] Missing PlanDetails for planId \(order.planId)")
             }
@@ -448,9 +473,10 @@ extension FirestoreManager {
             }
         } catch {
             AnalyticsManager.shared.customEvent(
-                type: .firebase,
-                primary: "fetch_credits_error_plan_details",
-                secondary: .status_failure_high
+                view: .FirebaseManager,
+                primary: .firebase,
+                secondary: "fetch_credits_error_plan_details",
+                sev: .error
             )
             logger.error(
                 "[FirestoreManager] Error fetching PlanDetails: \(error.localizedDescription)"
@@ -525,9 +551,10 @@ extension FirestoreManager {
                             return collected.sorted { $0.endDate < $1.endDate }
                         } catch {
                             AnalyticsManager.shared.customEvent(
-                                type: .firebase,
-                                primary: "fetch_credits_error_reading_orders",
-                                secondary: .status_failure_high
+                                view: .FirebaseManager,
+                                primary: .firebase,
+                                secondary: "fetch_credits_error_reading_orders",
+                                sev: .error
                             )
                             logger.error(
                                 "[FirestoreManager] Error reading /Plans/\(email)/\(planId): \(error.localizedDescription)"
@@ -577,9 +604,10 @@ extension FirestoreManager {
         }
 
         AnalyticsManager.shared.customEvent(
-            type: .firebase,
-            primary: "fetch_credits_error_decoding_date",
-            secondary: .status_failure_high
+            view: .FirebaseManager,
+            primary: .firebase,
+            secondary: "fetch_credits_error_decoding_date",
+            sev: .error
         )
         return nil
     }

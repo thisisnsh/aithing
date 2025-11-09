@@ -242,14 +242,29 @@ struct NotchView: View {
         .padding(.leading, shadowBuffer)
         .frame(width: width, height: height)
         .onAppear {
+            AnalyticsManager.shared.screenView(screenName: .NotchView)
             close()
             NSEvent.addLocalMonitorForEvents(matching: .keyDown) { event in
                 if event.modifierFlags.contains(.control), event.modifierFlags.contains(.option) {
                     switch event.keyCode {
                     case 126:  // Up arrow
+                        AnalyticsManager.shared
+                            .customEvent(
+                                view: .NotchView,
+                                primary: .moveUp,
+                                secondary: "",
+                                sev: .info
+                            )
                         dragViewY(multiplier: 1)
                         return nil
                     case 125:  // Down arrow
+                        AnalyticsManager.shared
+                            .customEvent(
+                                view: .NotchView,
+                                primary: .moveDown,
+                                secondary: "",
+                                sev: .info
+                            )
                         dragViewY(multiplier: -1)
                         return nil
                     default:
@@ -484,6 +499,13 @@ struct NotchView: View {
                                 lastAppliedX = roundedX
                                 let size = CGSize(width: roundedX, height: 0)
                                 (width, height) = modifyWindowBaseSize(size, lastExpandedWindowSize)
+                                AnalyticsManager.shared
+                                    .customEvent(
+                                        view: .NotchView,
+                                        primary: .dragLeft,
+                                        secondary: "\(roundedX)",
+                                        sev: .info
+                                    )
                             }
                         }
                         .onEnded { _ in
@@ -544,6 +566,13 @@ struct NotchView: View {
                                 lastAppliedY = roundedY
                                 let size = CGSize(width: 0, height: roundedY)
                                 (width, height) = modifyWindowBaseSize(size, lastExpandedWindowSize)
+                                AnalyticsManager.shared
+                                    .customEvent(
+                                        view: .NotchView,
+                                        primary: .dragDown,
+                                        secondary: "\(roundedY)",
+                                        sev: .info
+                                    )
                             }
                         }
                         .onEnded { _ in
@@ -607,6 +636,12 @@ extension NotchView {
         )
         removeTabs()
         printTabs()
+        AnalyticsManager.shared.customEvent(
+            view: .NotchView,
+            primary: .createTab,
+            secondary: "",
+            sev: .info
+        )
     }
 
     private func printTabs() {
@@ -639,6 +674,12 @@ extension NotchView {
         tabs[tabId] = tab
 
         printTabs()
+        AnalyticsManager.shared.customEvent(
+            view: .NotchView,
+            primary: .activateTab,
+            secondary: "\(active)",
+            sev: .info
+        )
     }
 
     // Remove tabs that are inactive for longer than 10 minutes
@@ -646,10 +687,19 @@ extension NotchView {
         printTabs()
         let minutes: Double = 10
         let cutoff = Date().addingTimeInterval(-(minutes * 60))
+        let countStart = tabs.count
         tabs = tabs.filter { _, tab in
             tab.active || tab.lastUpdated >= cutoff || tab.id == self.tabId
         }
+        let countEnd = tabs.count
         printTabs()
+        AnalyticsManager.shared
+            .customEvent(
+                view: .NotchView,
+                primary: .removeTabs,
+                secondary: "\(countStart - countEnd)",
+                sev: .info
+            )
     }
 }
 
@@ -685,11 +735,6 @@ extension NotchView {
         if !disconnectRc.isEmpty {
             toastColor = .red
             toastText = "Failed to wake up agents: \(disconnectRc)"
-            AnalyticsManager.shared.customEvent(
-                type: .agent,
-                primary: "disconnect_agents",
-                secondary: .status_failure_high
-            )
             DispatchQueue.main.asyncAfter(deadline: .now() + 2) {
                 showToast = false
                 toastColor = .white
@@ -753,9 +798,10 @@ extension NotchView {
             }
 
             AnalyticsManager.shared.customEvent(
-                type: .agent,
-                primary: primary,
-                secondary: .status_success
+                view: .NotchView,
+                primary: .agentLoad,
+                secondary: "\(name) \(primary)",
+                sev: .info
             )
 
             logger.info("Agent Name: \(name)")
@@ -775,11 +821,8 @@ extension NotchView {
         if !failure.isEmpty {
             toastColor = .red
             toastText = "Failed to wake up agents\n" + failure
-            AnalyticsManager.shared.customEvent(
-                type: .agent,
-                primary: "connect_agents",
-                secondary: .status_failure_med
-            )
+            AnalyticsManager.shared
+                .customEvent(view: .NotchView, primary: .agentLoad, secondary: failure, sev: .error)
         }
 
         DispatchQueue.main.asyncAfter(deadline: .now() + (failure.isEmpty ? 2 : 5)) {
@@ -795,12 +838,6 @@ extension NotchView {
             let clientName = "managed_google_mcp"
             var accessToken: String?
             var refreshedAccessToken: String?
-
-            AnalyticsManager.shared.customEvent(
-                type: .agent,
-                primary: clientName,
-                secondary: .reconnect_attempt
-            )
 
             if googleOAuthManager.user != nil {
                 accessToken = googleOAuthManager.user?.accessToken.tokenString
@@ -818,11 +855,6 @@ extension NotchView {
                         clientName: clientName,
                         url: "https://google.mcp.aithing.dev/mcp",
                         authToken: refreshedAccessToken!
-                    )
-                    AnalyticsManager.shared.customEvent(
-                        type: .agent,
-                        primary: clientName,
-                        secondary: .reconnect_success
                     )
                 }
             }
@@ -843,12 +875,6 @@ extension NotchView {
             var accessToken: String?
             var refreshedAccessToken: String?
 
-            AnalyticsManager.shared.customEvent(
-                type: .agent,
-                primary: clientName,
-                secondary: .reconnect_attempt
-            )
-
             if githubOAuthManager.user != nil {
                 accessToken = githubOAuthManager.user?.accessToken
                 logger.debug("AccessToken \(String(describing: accessToken))")
@@ -865,11 +891,6 @@ extension NotchView {
                         clientName: clientName,
                         url: "https://api.githubcopilot.com/mcp",
                         authToken: refreshedAccessToken!
-                    )
-                    AnalyticsManager.shared.customEvent(
-                        type: .agent,
-                        primary: clientName,
-                        secondary: .reconnect_success
                     )
                 }
             }
@@ -892,12 +913,6 @@ extension NotchView {
                 var accessToken: String?
                 var refreshedAccessToken: String?
 
-                AnalyticsManager.shared.customEvent(
-                    type: .agent,
-                    primary: clientName,
-                    secondary: .reconnect_attempt
-                )
-
                 if agentOAuthManager.user != nil {
                     accessToken = agentOAuthManager.user?.accessToken
                     logger.debug("AccessToken \(String(describing: accessToken))")
@@ -913,11 +928,6 @@ extension NotchView {
                             clientName: clientName,
                             url: agentOAuthManager.server.url,
                             authToken: refreshedAccessToken!
-                        )
-                        AnalyticsManager.shared.customEvent(
-                            type: .agent,
-                            primary: clientName,
-                            secondary: .reconnect_success
                         )
                     }
                 }
@@ -953,6 +963,12 @@ extension NotchView {
     }
 
     private func close() {
+        AnalyticsManager.shared.customEvent(
+            view: .NotchView,
+            primary: .function,
+            secondary: "close",
+            sev: .info
+        )
         windowSize = WindowSize.notchIsCollapsed
         (width, height) = updateWindowSize(windowSize)
         lastExpandedWindowSize =
@@ -961,6 +977,12 @@ extension NotchView {
     }
 
     private func open() {
+        AnalyticsManager.shared.customEvent(
+            view: .NotchView,
+            primary: .function,
+            secondary: "open",
+            sev: .info
+        )
         if windowSize == WindowSize.sidebarIsExpanded
             || windowSize == WindowSize.sidebarIsCollapsed
         {
@@ -974,11 +996,23 @@ extension NotchView {
     }
 
     private func minimize() {
+        AnalyticsManager.shared.customEvent(
+            view: .NotchView,
+            primary: .function,
+            secondary: "minimize",
+            sev: .info
+        )
         windowSize = WindowSize.notchIsCollapsed
         (width, height) = updateWindowSize(windowSize)
     }
 
     private func maximize() {
+        AnalyticsManager.shared.customEvent(
+            view: .NotchView,
+            primary: .function,
+            secondary: "maximize",
+            sev: .info
+        )
         if windowSize == WindowSize.chatIsShown {
             windowSize = WindowSize.chatIsExpanded
         } else {
@@ -989,6 +1023,12 @@ extension NotchView {
     }
 
     private func sidebarToggle() {
+        AnalyticsManager.shared.customEvent(
+            view: .NotchView,
+            primary: .function,
+            secondary: "sidebarToggle",
+            sev: .info
+        )
         expandSidebar.toggle()
 
         if windowSize == WindowSize.sidebarIsExpanded {

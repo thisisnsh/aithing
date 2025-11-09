@@ -103,6 +103,7 @@ struct ChatView: View {
             }
         }
         .onAppear {
+            AnalyticsManager.shared.screenView(screenName: .ChatView)
             setHistory(history)
         }
         .onChange(of: history?.history.count) { _ in
@@ -119,6 +120,8 @@ struct ChatView: View {
             items = []
             history = nil
         }
+        AnalyticsManager.shared
+            .customEvent(view: .ChatView, primary: .count, secondary: "\(items.count)", sev: .info)
     }
 }
 
@@ -206,14 +209,13 @@ struct FileBubble: View {
                 Text("\(file)")
                     .font(.system(size: 10, weight: .medium, design: .monospaced))
                     .textSelection(.enabled)
-                    .padding(8)                    
 
                 if !content.isEmpty {
                     Image(systemName: "chevron.down")
                         .frame(width: 10, height: 10)
                 }
-
             }
+            .padding(8)
             .overlay(
                 RoundedRectangle(cornerRadius: 8, style: .continuous)
                     .stroke(Color.gray.opacity(0.5), lineWidth: 1)

@@ -42,8 +42,8 @@ struct HoverableTabButton: View {
         } else {
             HoverView()
                 .background(isActive || isHovered ? Color.white.opacity(0.1) : .clear)
+                .clipShape(RoundedRectangle(cornerRadius: 8))
                 .padding(.horizontal, 8)
-                .cornerRadius(8)
                 .onHover { hovering in
                     hoverTask?.cancel()  // cancel any pending hover change
                     hoverTask = Task { @MainActor in

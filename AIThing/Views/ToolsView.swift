@@ -41,9 +41,17 @@ struct ToolsView: View {
 
         }
         .onAppear {
+            AnalyticsManager.shared.screenView(screenName: .ToolsView)
             Task {
                 tools = await mcpManager.getAllTools()
                 currentClient = tools.keys.first ?? ""
+                AnalyticsManager.shared
+                    .customEvent(
+                        view: .ToolsView,
+                        primary: .count,
+                        secondary: "\(tools.count)",
+                        sev: .info
+                    )
             }
         }
     }

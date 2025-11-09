@@ -138,6 +138,8 @@ struct SettingsView: View {
                         }
                     }
                 }
+                
+                // Remove mcp servers that were added before but are no longer supported
                 for key in mcpOAuthManagers.managers.keys {
                     if !allServerIds.contains(key) {
                         mcpOAuthManagers.managers.removeValue(forKey: key)
@@ -145,10 +147,7 @@ struct SettingsView: View {
                 }
 
                 await getUsageData()
-                AnalyticsManager.shared.screenView(
-                    screenName: "settings_view",
-                    screenClass: "settings_view"
-                )
+                AnalyticsManager.shared.screenView(screenName: .SettingsView)
             }
         }
     }
@@ -187,10 +186,7 @@ struct SettingsView: View {
                     saveModels()
                     saveAgents()
                     tabTitle = "Accounts"
-                    AnalyticsManager.shared.screenView(
-                        screenName: "account",
-                        screenClass: "settings_view"
-                    )
+                    AnalyticsManager.shared.screenView(screenName: .SettingsAccountsTab)
                 }) {
                     Label("Account", systemImage: "person.fill")
                         .labelStyle(.iconOnly)
@@ -201,10 +197,7 @@ struct SettingsView: View {
                     saveModels()
                     saveAgents()
                     tabTitle = "Models"
-                    AnalyticsManager.shared.screenView(
-                        screenName: "models",
-                        screenClass: "settings_view"
-                    )
+                    AnalyticsManager.shared.screenView(screenName: .SettingsModelTab)
                 }) {
                     Label("Models", systemImage: "sparkles.2")
                         .labelStyle(.iconOnly)
@@ -215,10 +208,7 @@ struct SettingsView: View {
                     saveModels()
                     saveAgents()
                     tabTitle = "Agents"
-                    AnalyticsManager.shared.screenView(
-                        screenName: "agents",
-                        screenClass: "settings_view"
-                    )
+                    AnalyticsManager.shared.screenView(screenName: .SettingsAgentsTab)
                 }) {
                     Label("Agents", systemImage: "pointer.arrow.ipad")
                         .labelStyle(.iconOnly)
@@ -229,10 +219,7 @@ struct SettingsView: View {
                     saveModels()
                     saveAgents()
                     tabTitle = "Preferenfces"
-                    AnalyticsManager.shared.screenView(
-                        screenName: "preferences",
-                        screenClass: "settings_view"
-                    )
+                    AnalyticsManager.shared.screenView(screenName: .SettingsPreferencesTab)
                 }) {
                     Label("Preferences", systemImage: "keyboard.fill")
                         .labelStyle(.iconOnly)
@@ -266,7 +253,7 @@ struct SettingsView: View {
         }
 
         await getUsageData()
-        AnalyticsManager.shared.login(method: "google")
+        AnalyticsManager.shared.login(method: .google)
     }
 
     func signOut() async {
@@ -349,7 +336,12 @@ struct SettingsView: View {
         let newAgent = AgentEntry(id: UUID(), entry: entry, isEnabled: true)
         agents.append(newAgent)
 
-        AnalyticsManager.shared.customEvent(type: .agent, primary: name, secondary: .status_success)
+        AnalyticsManager.shared.customEvent(
+            view: .SettingsView,
+            primary: .agentAdd,
+            secondary: "\(name) \(primary)",
+            sev: .info
+        )
         saveAgents()
         return ""
     }

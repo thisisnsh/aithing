@@ -6,9 +6,7 @@
 
 
 9 Nov
-- Text on 26.0
-- Analytics 
-- Verify MCPs
+- Review MCP Add Workflow 
 - Doc & Release 2.0
 
 10 Nov

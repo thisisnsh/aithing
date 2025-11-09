@@ -104,7 +104,13 @@ struct SettingsAccountTab: View {
             GroupBox(label: title(version)) {
                 VStack(alignment: .leading) {
                     Button {
-                        AnalyticsManager.shared.customAppQuit()
+                        AnalyticsManager.shared
+                            .customEvent(
+                                view: .SettingsAccountsTab,
+                                primary: .quit,
+                                secondary: "",
+                                sev: .info
+                            )
                         AppDelegate.allowQuit = true
                         NSApplication.shared.terminate(nil)
                     } label: {
@@ -130,7 +136,12 @@ struct SettingsAccountTab: View {
                     .onHover { perform in
                         if perform {
                             AnalyticsManager.shared
-                                .customEvent(type: .action, primary: "report_bug_hover")
+                                .customEvent(
+                                    view: .SettingsAccountsTab,
+                                    primary: .bugReport,
+                                    secondary: "",
+                                    sev: .info
+                                )
                         }
                     }
 
