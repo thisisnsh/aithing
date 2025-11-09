@@ -231,13 +231,12 @@ struct NotchView: View {
             if showToast, showChatWindow {
                 Toast()
                     .onAppear {
-                        DispatchQueue.main.asyncAfter(deadline: .now() + 2) {
-                            self.showToast.toggle()
+                        DispatchQueue.main.asyncAfter(deadline: .now() + 5) {
+                            self.showToast = false
                         }
                     }
-                    .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
-                    .padding(.vertical, 32)
-                    .padding(.horizontal, 16)
+                    .frame(maxHeight: .infinity, alignment: .top)
+                    .padding(32)
             }
         }
         .padding(.leading, shadowBuffer)
@@ -592,20 +591,24 @@ struct NotchView: View {
     private func Toast() -> some View {
         Group {
             if #available(macOS 26.0, *) {
-                MarkdownText(text: toastText)
-                    .padding(16)
-                    .glassEffect(.regular, in: RoundedRectangle(cornerRadius: 24))
+                Text(toastText)
+                    .font(.system(size: 10, weight: .medium, design: .monospaced))
+                    .padding(.horizontal, 16)
+                    .padding(.vertical, 8)
+                    .glassEffect(.regular, in: RoundedRectangle(cornerRadius: 32))
                     .overlay {
-                        RoundedRectangle(cornerRadius: 24, style: .continuous)
+                        RoundedRectangle(cornerRadius: 32, style: .continuous)
                             .stroke(toastColor.opacity(0.5), lineWidth: 1)
                     }
             } else {
-                MarkdownText(text: toastText)
-                    .padding(16)
+                Text(toastText)
+                    .font(.system(size: 10, weight: .medium, design: .monospaced))
+                    .padding(.horizontal, 16)
+                    .padding(.vertical, 8)
                     .background(.white.opacity(0.1))
-                    .clipShape(RoundedRectangle(cornerRadius: 24))
+                    .clipShape(RoundedRectangle(cornerRadius: 32))
                     .overlay {
-                        RoundedRectangle(cornerRadius: 24, style: .continuous)
+                        RoundedRectangle(cornerRadius: 32, style: .continuous)
                             .stroke(toastColor.opacity(0.5), lineWidth: 1)
                     }
             }
