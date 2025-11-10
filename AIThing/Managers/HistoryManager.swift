@@ -31,8 +31,7 @@ final class HistoryDocMO: NSManagedObject {
 }
 
 @MainActor
-final class HistoryStore: ObservableObject {
-    static let shared = HistoryStore()
+final class HistoryStore: ObservableObject {    
     let logger = Logger(subsystem: "com.thisisnsh.mac.AIThing", category: "HistoryStore")
 
     private init() {}

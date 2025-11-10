@@ -5,10 +5,10 @@ enum SettingsTab: String { case account, models, agents, preferences, automation
 struct SettingsView: View {
     @EnvironmentObject var loginManager: LoginManager
     @EnvironmentObject var firestoreManager: FirestoreManager
-
     @EnvironmentObject var googleOAuthManager: GoogleOAuthManager
     @EnvironmentObject var gitHubOAuthManager: GithubOAuthManager
     @EnvironmentObject var mcpOAuthManagers: McpOAuthManagers
+    @EnvironmentObject var automationManager: AutomationManager
 
     @Binding var isPresented: Bool
     @Binding var managedModels: [ModelInfo]
@@ -105,6 +105,7 @@ struct SettingsView: View {
 
                         case .automations:
                             SettingsAutomationTab()
+                                .environmentObject(automationManager)
                         }
                     }
                     .padding(.vertical, 16)

@@ -5,21 +5,34 @@
 ## 2.0 
 
 
-10 Nov
-- YC Apply
-    - Fill application 
-    - Record demo video     
+10-11 Nov
+- Automations Tab
+- Remove muliple history manager accesses      
+
+
+- Drag up & down
+- Unread message notification per chat and overall
+
+12 Nov 
+- Record demo video
 - Write Doc 
 - Release 2.0
 
+~ 
+- Support Edit title
+  
+
+17 Nov
+- Promote 2.0 
+
 
 Next
-- Support Edit title
 - Support AI Suggestions : Understand you and suggest things based on time and this
-- Show * for active tabs in sidebar
+
 
 
 ------------------------
+
 
 ## Missing Features
 
@@ -30,11 +43,14 @@ Next
 - Support Markdown Select
 - Support OpenAI Models 
 
+
 ## Not Important Bugs
 - 2 hover required to open the app after closing
 - First file drop is slow
 
+
 ------------------------
+
     
 ## Servers
  

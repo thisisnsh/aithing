@@ -20,11 +20,13 @@ struct Tab: Equatable {
 }
 
 struct NotchView: View {
-    @StateObject var mcpManager = MCPManager()
-    @StateObject var loginManager = LoginManager()
-    @StateObject var firestoreManager = FirestoreManager()
+    @StateObject private var mcpManager = MCPManager()
+    @StateObject private var loginManager = LoginManager()
+    @StateObject private var firestoreManager = FirestoreManager()
+    @StateObject private var automationManager = AutomationManager(onExecute: { _ in })
 
     let logger = Logger(subsystem: "com.thisisnsh.mac.AIThing", category: "NotchView")
+    let historyStore = HistoryStore()
 
     @ObservedObject var vm: NotchVM
     let updateWindowSize: (WindowSize) -> (CGFloat, CGFloat)
@@ -117,6 +119,7 @@ struct NotchView: View {
                             .environmentObject(googleOAuthManager)
                             .environmentObject(githubOAuthManager)
                             .environmentObject(mcpOAuthManagers)
+                            .environmentObject(automationManager)
                         } else {
                             if !tabId.isEmpty {
                                 getIntelligenceView(tabId: tabId)
@@ -244,6 +247,55 @@ struct NotchView: View {
         .onAppear {
             AnalyticsManager.shared.screenView(screenName: .NotchView)
             close()
+
+            automationManager.onExecute = { (automation: Automation) async in
+                logger.debug("Called automation: \(automation.id)")
+                var modelInput: [[String: Any]] = []
+                var modelOutput: String = ""
+                let tabId = UUID().uuidString
+                var title = ""
+                var history: [[String: Any]] = []
+
+                let _ = await callModel(
+                    tabId: tabId,
+                    query: automation.instructions,
+                    getSelectedText: { return "" },
+                    setSelectedText: { _ in },
+                    getSelectionEnabled: { return false },
+                    setSelectionEnabled: { _ in },
+                    getTabTitle: { return title },
+                    setTabTitle: { title = $0 },
+                    setDisplayQuery: { _ in },
+                    setToolCall: { _ in },
+                    getHistory: { await self.getHistory(tabId: $0) },
+                    storeHistory: {
+                        title = $1
+                        history = $2
+                    },
+                    setHistory: { _ in },
+                    setIsThinking: { _ in },
+                    getModelInput: { return modelInput },
+                    appendModelInput: { modelInput.append($0) },
+                    getModelOutput: { return modelOutput },
+                    setModelOutput: { modelOutput = $0 },
+                    animateOutput: { (_, _) async in },
+                    getAllClientTools: { return allClientTools },
+                    reconnectManagedAgents: { await self.reconnectManagedAgents() },
+                    getModelContext: { return [] },
+                    clearModelContext: {},
+                    getManagedModels: { return managedModels },
+                    firestoreManager: firestoreManager,
+                    loginManager: loginManager,
+                    mcpManager: mcpManager
+                )
+
+                if !history.isEmpty {
+                    await self.storeHistory(tabId: tabId, tabTitle: title, history: history)
+                }
+
+                await updateHistoryList()
+            }
+
             NSEvent.addLocalMonitorForEvents(matching: .keyDown) { event in
                 if event.modifierFlags.contains(.control), event.modifierFlags.contains(.option) {
                     switch event.keyCode {
@@ -305,7 +357,7 @@ struct NotchView: View {
                 AnalyticsManager.shared.setUserId(nil)
             }
 
-            histories = await HistoryStore.shared.getAll(limit: 100)
+            histories = await historyStore.getAll(limit: 100)
 
             managedModels = await firestoreManager.getModelInfos()
             await loadAllClientTools()
@@ -422,9 +474,9 @@ struct NotchView: View {
                         deleteAction: {
                             Task {
                                 let isActive = tabId == h.id
-                                await HistoryStore.shared.delete(id: h.id)
+                                await historyStore.delete(id: h.id)
                                 setTabActive(tabId: h.id, active: false)
-                                histories = await HistoryStore.shared.getAll(limit: 100)
+                                histories = await historyStore.getAll(limit: 100)
                                 if isActive {
                                     if let history = histories.first {
                                         tabId = history.id
@@ -634,7 +686,7 @@ extension NotchView {
                 isTabShowing: { isTabShowing(tabId: tabId) },
                 setTabActive: { setTabActive(tabId: tabId, active: $0) },
                 updateHistoryList: { await updateHistoryList() },
-                reconnectManagedAgents: reconnectManagedAgents
+                reconnectManagedAgents: reconnectManagedAgents,
             ),
             active: false
         )
@@ -648,12 +700,7 @@ extension NotchView {
         )
     }
 
-    private func printTabs() {
-        //        for (id, tab) in tabs {
-        //            print("Tab ID: \(id), Active: \(tab.active), Last Updated: \(tab.lastUpdated)")
-        //            print("----")
-        //        }
-    }
+    private func printTabs() {}
 
     private func getIntelligenceView(tabId: String) -> some View {
         Group {
@@ -948,7 +995,7 @@ extension NotchView {
 // MARK: Utility
 extension NotchView {
     private func updateHistoryList() async {
-        histories = await HistoryStore.shared.getAll(limit: 100)
+        histories = await historyStore.getAll(limit: 100)
     }
 
     private func createTitle(for history: [[String: Any]], fallback: String) -> String {
@@ -1056,6 +1103,14 @@ extension NotchView {
         }
         let offset: CGFloat = 16
         modifyWindowTopOffset(offset * multiplier, lastExpandedWindowSize)
+    }
+
+    private func getHistory(tabId: String) async -> History? {
+        return await historyStore.get(id: tabId)
+    }
+
+    private func storeHistory(tabId: String, tabTitle: String, history: [[String: Any]]) async {
+        await historyStore.store(id: tabId, title: tabTitle, history: history)
     }
 }
 
