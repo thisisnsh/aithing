@@ -98,3 +98,18 @@ func getByokSelected() -> Bool {
 func setByokSelected(value: Bool) {
     // No-op
 }
+
+func getAutomations() -> [Automation] {
+    if let data = UserDefaults.standard.data(forKey: "X-Automations"),
+        let decoded = try? JSONDecoder().decode([Automation].self, from: data)
+    {
+        return decoded
+    }
+    return []
+}
+
+func setAutomations(value: [Automation]) {
+    if let data = try? JSONEncoder().encode(value) {
+        UserDefaults.standard.set(data, forKey: "X-Automations")
+    }
+}

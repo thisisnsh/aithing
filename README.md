@@ -14,11 +14,10 @@
 
 
 Next
-- 2 hover required to open the app after closing
 - Support Edit title
 - Support AI Suggestions : Understand you and suggest things based on time and this
 - Show * for active tabs in sidebar
-- File drop is slow
+
 
 ------------------------
 
@@ -30,6 +29,10 @@ Next
 - Support Elicitation 
 - Support Markdown Select
 - Support OpenAI Models 
+
+## Not Important Bugs
+- 2 hover required to open the app after closing
+- First file drop is slow
 
 ------------------------
     

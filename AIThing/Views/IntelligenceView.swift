@@ -11,6 +11,12 @@ import MarkdownUI
 import SwiftUI
 import os
 
+struct Automation: Identifiable, Decodable, Encodable {
+    let id: String
+    let title: String
+    let instruction: String
+}
+
 struct IntelligenceView: View {
     @EnvironmentObject var mcpManager: MCPManager
     @EnvironmentObject var loginManager: LoginManager
@@ -52,6 +58,8 @@ struct IntelligenceView: View {
     @State private var displayQuery: String = ""
     @State private var selectedText: String = ""
 
+    @State private var automations = getAutomations()
+
     @State private var isDropping: Bool = false
     @State private var showMcpTools: Bool = false
     @State private var hoverMcpTools: Bool = false
@@ -88,21 +96,40 @@ struct IntelligenceView: View {
                     ToolsView(cornerRadius: cornerRadius - 4)
                         .environmentObject(mcpManager)
                 } else {
-                    ResponseView()
-                        .padding(.vertical, -8)
+                    ZStack {
+                        ResponseView()
+                            .padding(.vertical, -8)
+                            .frame(
+                                maxWidth: .infinity,
+                                maxHeight: .infinity,
+                                alignment: .topLeading
+                            )
+
+                        if !isThinking, modelInput.isEmpty {
+                            AutomationView()
+                                .frame(
+                                    maxWidth: .infinity,
+                                    maxHeight: .infinity,
+                                    alignment: .bottomLeading
+                                )
+                                .padding(.leading, -8)
+                        }
+                    }
                 }
 
                 Spacer()
 
                 if #available(macOS 26.0, *) {
                     InputView()
-                        .glassEffect(.regular, in: RoundedRectangle(cornerRadius: cornerRadius - 4))
+                        .glassEffect(
+                            .regular.interactive(),
+                            in: RoundedRectangle(cornerRadius: cornerRadius - 4)
+                        )
                 } else {
                     InputView()
                         .background(.white.opacity(0.1))
                         .cornerRadius(cornerRadius - 4)
                 }
-
             }
             .padding(8)
             .onAppear {
@@ -303,6 +330,55 @@ struct IntelligenceView: View {
         )
     }
 
+    private func AutomationView() -> some View {
+        VStack(alignment: .leading, spacing: 0) {
+            ForEach(Array(automations.enumerated()), id: \.offset) { index, automation in
+                HoverableTabButton(
+                    title: automation.title,
+                    isActive: true,
+                    action: {
+                        query = automation.instruction
+                    },
+                    deleteAction: {
+                        automations.remove(at: index)
+                        setAutomations(value: automations)
+                    },
+                    image: "apple.intelligence",
+                    isDeletable: true,
+                    isExpanded: true,
+                    fixedSize: true,
+                    cornerRadius: 16
+                )
+                .padding(.bottom, 4)
+            }
+            if automations.count < 7 {
+                HoverableTabButton(
+                    title: "Save Query",
+                    isActive: false,
+                    action: {
+                        if !query.isEmpty {
+                            automations
+                                .append(
+                                    Automation(
+                                        id: UUID().uuidString,
+                                        title: query.count > 32 ? "\(query.prefix(32))..." : query,
+                                        instruction: query
+                                    )
+                                )
+                            setAutomations(value: automations)
+                        }
+                    },
+                    deleteAction: {},
+                    image: "apple.writing.tools",
+                    isDeletable: false,
+                    isExpanded: true,
+                    fixedSize: true,
+                    cornerRadius: 16
+                )
+            }
+        }
+    }
+
     private func InputView() -> some View {
         VStack(alignment: .leading) {
             if modelContext.count > 0, !isThinking {
@@ -476,6 +552,7 @@ extension IntelligenceView {
         toolCall = ""
         query = ""
         showSelection = false
+        inputHeight = baseHeight
 
         AnalyticsManager.shared.customEvent(
             view: .IntelligenceView,

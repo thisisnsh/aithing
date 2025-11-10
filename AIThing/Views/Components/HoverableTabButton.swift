@@ -16,6 +16,8 @@ struct HoverableTabButton: View {
     var isDeletable: Bool = true
     var isExpanded: Bool = true
     var rotateImage: Angle = Angle(degrees: 0)
+    var fixedSize = false
+    var cornerRadius: CGFloat = 8
 
     @State private var isHovered = false
     @State private var hoverTask: Task<Void, Never>?
@@ -24,8 +26,8 @@ struct HoverableTabButton: View {
         if #available(macOS 26.0, *) {
             HoverView()
                 .glassEffect(
-                    isActive || isHovered ? .regular : .identity,
-                    in: RoundedRectangle(cornerRadius: 8)
+                    isActive || isHovered ? .regular.interactive() : .identity,
+                    in: RoundedRectangle(cornerRadius: cornerRadius)
                 )
                 .padding(.horizontal, 8)
                 .onHover { hovering in
@@ -42,7 +44,7 @@ struct HoverableTabButton: View {
         } else {
             HoverView()
                 .background(isActive || isHovered ? Color.white.opacity(0.1) : .clear)
-                .clipShape(RoundedRectangle(cornerRadius: 8))
+                .clipShape(RoundedRectangle(cornerRadius: cornerRadius))
                 .padding(.horizontal, 8)
                 .onHover { hovering in
                     hoverTask?.cancel()  // cancel any pending hover change
@@ -62,10 +64,12 @@ struct HoverableTabButton: View {
         HStack(spacing: 8) {
             ButtonView()
             // Trash button (shown only when hovered)
-            if isDeletable, isActive, isExpanded {
+            if isDeletable, isHovered, isExpanded {
                 DeleteButtonView().padding(.trailing, 8)
             }
         }
+        .contentShape(Rectangle())
+        .fixedSize(horizontal: fixedSize, vertical: false)
     }
 
     private func ButtonView() -> some View {
