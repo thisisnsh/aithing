@@ -55,6 +55,7 @@ final class AnalyticsManager {
         case SettingsModelTab
         case SettingsAgentsTab
         case SettingsPreferencesTab
+        case SettingsAutomationsTab
 
         case ScreenshotMonitor
         case GithubOAuthManager

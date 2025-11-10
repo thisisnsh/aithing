@@ -1,6 +1,6 @@
 import SwiftUI
 
-enum SettingsTab: String { case account, models, agents, preferences }
+enum SettingsTab: String { case account, models, agents, preferences, automations }
 
 struct SettingsView: View {
     @EnvironmentObject var loginManager: LoginManager
@@ -102,6 +102,9 @@ struct SettingsView: View {
                                 setPreferencesCaptureFullScreen: setPreferencesCaptureFullScreen,
                                 setPanelVisibility: {}
                             )
+
+                        case .automations:
+                            SettingsAutomationTab()
                         }
                     }
                     .padding(.vertical, 16)
@@ -138,7 +141,7 @@ struct SettingsView: View {
                         }
                     }
                 }
-                
+
                 // Remove mcp servers that were added before but are no longer supported
                 for key in mcpOAuthManagers.managers.keys {
                     if !allServerIds.contains(key) {
@@ -224,6 +227,18 @@ struct SettingsView: View {
                     Label("Preferences", systemImage: "keyboard.fill")
                         .labelStyle(.iconOnly)
                 }
+                Button(action: {
+                    selectedTab = .automations
+                    setSelectedTab(value: selectedTab)
+                    saveModels()
+                    saveAgents()
+                    tabTitle = "Automations"
+                    AnalyticsManager.shared.screenView(screenName: .SettingsAutomationsTab)
+                }) {
+                    Label("Automations", systemImage: "clock.fill")
+                        .labelStyle(.iconOnly)
+                }
+
             }
             .padding(.trailing, -8)
 

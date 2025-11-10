@@ -25,6 +25,16 @@ struct SettingsAccountTab: View {
         }
     }
 
+    private let help: [(String, String, String)] = [
+        ("Show / Hide AI Thing", "Toggle visibility", "Control (⌃) + Space"),
+        (
+            "Show / Hide AI Thing (Alternate)", "Alternate shortcut",
+            "Control (⌃) + Option (⌥) + Space"
+        ),
+        ("Move Up", "Requires AI Thing to be open", "Control (⌃) + Option (⌥) + Up Arrow (↑)"),
+        ("Move Down", "Requires AI Thing to be open", "Control (⌃) + Option (⌥) + Down Arrow (↓)"),
+    ]
+
     var body: some View {
         VStack(alignment: .leading, spacing: 16) {
             GroupBox(label: title("Login")) {
@@ -57,11 +67,6 @@ struct SettingsAccountTab: View {
                     }
                     .buttonStyle(.plain)
                     .padding(4)
-
-                    Divider()
-                    dimmedRow(icon: "apple", text: "Apple", trailing: "Coming Soon")
-                    Divider()
-                    dimmedRow(icon: "github", text: "GitHub", trailing: "Coming Soon")
                 }
                 .padding(4)
             }
@@ -145,6 +150,32 @@ struct SettingsAccountTab: View {
                         }
                     }
 
+                }
+                .padding(4)
+            }
+
+            GroupBox(label: title("Help")) {
+                VStack(alignment: .leading) {
+                    ForEach(help, id: \.0) { h in
+                        HStack {
+                            VStack(alignment: .leading) {
+                                Text(h.0)
+                                    .font(.system(size: 14, weight: .medium))
+                                Text(h.1)
+                                    .font(.system(size: 10, weight: .medium))
+                                    .opacity(0.5)
+                            }
+                            Spacer()
+                            Text(h.2)
+                                .font(.system(size: 10, weight: .medium))
+                                .opacity(0.5)
+                        }
+                        .padding(4)
+                        Divider()
+                    }
+                    Text("Still Stuck? Check https://aithing.dev")
+                        .font(.system(size: 10, weight: .medium))
+                        .padding(4)
                 }
                 .padding(4)
             }
