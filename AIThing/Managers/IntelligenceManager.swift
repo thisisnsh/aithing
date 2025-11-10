@@ -487,7 +487,7 @@ func callModel(
         setModelOutput("")
         setDisplayQuery("")
         setToolCall("")
-        setHistory(getHistory(tabId))
+        setHistory(await getHistory(tabId))
 
         var finalResponse = ""
         var finalToolUseInputParam = ""

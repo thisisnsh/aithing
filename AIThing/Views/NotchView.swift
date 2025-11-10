@@ -687,6 +687,8 @@ extension NotchView {
                 setTabActive: { setTabActive(tabId: tabId, active: $0) },
                 updateHistoryList: { await updateHistoryList() },
                 reconnectManagedAgents: reconnectManagedAgents,
+                getHistory: { return await getHistory(tabId: $0) },
+                storeHistory: { await storeHistory(tabId: $0, tabTitle: $1, history: $2) }
             ),
             active: false
         )

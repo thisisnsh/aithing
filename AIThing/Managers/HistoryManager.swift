@@ -33,9 +33,7 @@ final class HistoryDocMO: NSManagedObject {
 @MainActor
 final class HistoryStore: ObservableObject {    
     let logger = Logger(subsystem: "com.thisisnsh.mac.AIThing", category: "HistoryStore")
-
-    private init() {}
-
+    
     // Keep a container per id (=> one SQLite per id)
     private var containers: [String: NSPersistentContainer] = [:]
 
