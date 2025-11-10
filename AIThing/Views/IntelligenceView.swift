@@ -234,6 +234,12 @@ struct IntelligenceView: View {
                 .padding(.leading, 8)
 
             Spacer()
+
+            if let lastUpdated = history?.lastUpdated {
+                Text(formatEpoch(lastUpdated) ?? "")
+                    .foregroundColor(.secondary)
+                    .font(.system(size: 10))
+            }
         }
         .frame(height: 16)
     }
@@ -630,5 +636,16 @@ extension IntelligenceView {
 
     private func shimmerPlaceholder() -> String {
         return "▌"  // or use "…" or a flashing cursor symbol
+    }
+
+    private func formatEpoch(_ epochS: String, format: String = "MMMM, dd yyyy HH:mm") -> String? {
+        if let epoch = Double(epochS) {
+            let date = Date(timeIntervalSince1970: epoch)
+            let formatter = DateFormatter()
+            formatter.dateFormat = format
+            return formatter.string(from: date)
+        } else {
+            return nil
+        }
     }
 }

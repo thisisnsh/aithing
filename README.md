@@ -13,12 +13,14 @@
 - Drag up & down
 - Unread message notification per chat and overall
 
+
 12 Nov 
 - Record demo video
 - Write Doc 
 - Release 2.0
 
-~ 
+
+13 Nov
 - Support Edit title
   
 

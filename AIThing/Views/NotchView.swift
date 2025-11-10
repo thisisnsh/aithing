@@ -59,6 +59,7 @@ struct NotchView: View {
     @State private var toastColor: Color = .yellow
     @State private var hoverSidebar = false
     @State private var expandSidebar = false
+    @State private var previousExpandSidebar = false
 
     private var showChatWindow: Bool {
         windowSize.rawValue >= WindowSize.chatIsShown.rawValue
@@ -145,20 +146,18 @@ struct NotchView: View {
                                 .frame(height: 32)
                         }
 
-                        if expandNotch, !showSettings {
-                            if expandSidebar {
-                                Spacer()
+                        if expandNotch, expandSidebar {
+                            Spacer()
 
-                                Image(systemName: "rectangle.grid.3x1.fill")
-                                    .resizable()
-                                    .frame(width: 14, height: 14)
-                                    .padding(8)
-                                    .background(hoverSidebar ? Color.white.opacity(0.1) : .clear)
-                                    .cornerRadius(8)
-                                    .onHover { hoverSidebar = $0 }
-                                    .onTapGesture { sidebarToggle() }
-                                    .rotationEffect(Angle(degrees: 270))
-                            }
+                            Image(systemName: "rectangle.grid.3x1.fill")
+                                .resizable()
+                                .frame(width: 14, height: 14)
+                                .padding(8)
+                                .background(hoverSidebar ? Color.white.opacity(0.1) : .clear)
+                                .cornerRadius(8)
+                                .onHover { hoverSidebar = $0 }
+                                .onTapGesture { sidebarToggle() }
+                                .rotationEffect(Angle(degrees: 270))
                         }
                     }
                     .padding(.top, 8)
@@ -192,7 +191,6 @@ struct NotchView: View {
                                     tabId = UUID().uuidString
                                     createIntelligenceView(tabId: tabId)
                                 }
-                                expandSidebar = false
                                 showSettings.toggle()
                             },
                             deleteAction: {},
@@ -201,7 +199,7 @@ struct NotchView: View {
                             isExpanded: expandSidebar
                         )
 
-                        if !expandSidebar, !showSettings {
+                        if !expandSidebar {
                             HoverableTabButton(
                                 title: "Expand Sidebar",
                                 isActive: false,

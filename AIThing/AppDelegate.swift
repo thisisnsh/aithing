@@ -46,9 +46,9 @@ class AppDelegate: NSObject, NSApplicationDelegate {
 
     private var screen = NSScreen.main
 
-    private var originalWidth: CGFloat = 560
+    private var originalWidth: CGFloat = 660
     private var originalHeight: CGFloat = 600
-    private var width: CGFloat = 560
+    private var width: CGFloat = 660
     private var height: CGFloat = 600
     private var shadowBuffer: CGFloat = 32
 
@@ -231,7 +231,7 @@ extension AppDelegate {
         let (windowWidth, windowHeight) = getWindowSize(windowSize: windowSize)
 
         let screenFrame = screen.visibleFrame
-        var xPosition = screenFrame.maxX - windowWidth
+        let xPosition = screenFrame.maxX - windowWidth
 
         // Calculate Y position to keep top-right corner fixed
         // When expanding, we need to move the origin down
