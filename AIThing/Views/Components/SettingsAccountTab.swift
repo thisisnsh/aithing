@@ -31,8 +31,6 @@ struct SettingsAccountTab: View {
             "Show / Hide AI Thing (Alternate)", "Alternate shortcut",
             "Control (⌃) + Option (⌥) + Space"
         ),
-        ("Move Up", "Requires AI Thing to be open", "Control (⌃) + Option (⌥) + Up Arrow (↑)"),
-        ("Move Down", "Requires AI Thing to be open", "Control (⌃) + Option (⌥) + Down Arrow (↓)"),
     ]
 
     var body: some View {

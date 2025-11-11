@@ -30,11 +30,13 @@ final class NotchVM: ObservableObject {
     @Published var open = false
     @Published var toggle = false
     @Published var selectedText = ""
+    @Published var move = false
     func refreshDimensions() { refresh.toggle() }
     func minimizeDimensions() { minimize.toggle() }
     func openDimensions() { open.toggle() }
     func toggleDimensions() { toggle.toggle() }
     func updateSelectedText(text: String) { selectedText = text }
+    func toggleMove() { move.toggle() }
 }
 
 // MARK: - AppDelegate
@@ -43,8 +45,6 @@ class AppDelegate: NSObject, NSApplicationDelegate {
 
     static var allowQuit = false
     static var selectedText = ""
-
-    private var screen = NSScreen.main
 
     private var originalWidth: CGFloat = 660
     private var originalHeight: CGFloat = 600
@@ -83,6 +83,14 @@ class AppDelegate: NSObject, NSApplicationDelegate {
             object: nil
         )
 
+        NotificationCenter.default.addObserver(
+            forName: NSNotification.Name("NonActivatingPanelDidMove"),
+            object: floatingWindow,
+            queue: .main
+        ) { notification in
+            self.vm.toggleMove()
+        }
+
         FirebaseApp.configure()
 
         startSelectionPoll()
@@ -109,24 +117,15 @@ class AppDelegate: NSObject, NSApplicationDelegate {
 
 extension AppDelegate {
     private func setupGlobalHotKeys() {
-        //        upHotKey = HotKey(key: .upArrow, modifiers: [.control, .option])
-        //        downHotKey = HotKey(key: .downArrow, modifiers: [.control, .option])
         spaceHotKey = HotKey(key: .space, modifiers: [.control, .option])
         spaceHotKeyAnother = HotKey(key: .space, modifiers: [.control])
-
-        //        upHotKey?.keyDownHandler = {
-        //            self.modifyWindowTopOffset(offset: 16, windowSize: self.lastWindowSize)
-        //        }
-        //        downHotKey?.keyDownHandler = {
-        //            self.modifyWindowTopOffset(offset: -16, windowSize: self.lastWindowSize)
-        //        }
         spaceHotKey?.keyDownHandler = { self.vm.toggleDimensions() }
         spaceHotKeyAnother?.keyDownHandler = { self.vm.toggleDimensions() }
     }
 
     private func setupNotchWindow() {
         // Get screen dimensions
-        guard let screen = screen else { return }
+        guard let screen = NSScreen.main else { return }
         let screenFrame = screen.visibleFrame
 
         // Create a borderless, floating window on the right side
@@ -157,7 +156,9 @@ extension AppDelegate {
             },
             modifyWindowOriginalSize: { self.modifyWindowOriginalSize() },
             modifyWindowTopOffset: { self.modifyWindowTopOffset(offset: $0, windowSize: $1) },
-            gainFocus: { self.gainFocus() }
+            gainFocus: { self.gainFocus() },
+            isTouchingRightEdge: { return self.isTouchingRightEdge() },
+            windowMoveable: { self.windowMoveable($0) }
 
         )
         floatingWindow.contentView = FirstMouseHostingView(rootView: notchView)
@@ -168,6 +169,10 @@ extension AppDelegate {
 }
 
 extension AppDelegate {
+    private func windowMoveable(_ value: Bool) {
+        floatingWindow?.isMovableByWindowBackground = value
+    }
+
     private func gainFocus() {
         floatingWindow?.gainFocus()
     }
@@ -204,7 +209,7 @@ extension AppDelegate {
         case .chatIsShown:
             return (width + shadowBuffer, height)
         case .chatIsExpanded:
-            if let screen = screen {
+            if let screen = NSScreen.main {
                 return (
                     min(screen.visibleFrame.maxX * 0.5, 1000) + shadowBuffer,
                     min(screen.visibleFrame.maxY * 0.8, 1000)
@@ -223,10 +228,9 @@ extension AppDelegate {
         CGFloat
     ) {
         // Calculate new position to keep top-right corner fixed
-        guard let screen = screen(for: floatingWindow) ?? currentAppScreen() else {
+        guard let screen = floatingWindow.screen ?? NSScreen.main else {
             return getWindowSize(windowSize: windowSize)
         }
-        self.screen = screen
 
         let (windowWidth, windowHeight) = getWindowSize(windowSize: windowSize)
 
@@ -292,7 +296,7 @@ extension AppDelegate {
 
     private func outOfBoundsEdges() -> Set<OutOfBoundsEdge> {
         var edges = Set<OutOfBoundsEdge>()
-        guard let screen = floatingWindow.screen ?? self.screen else { return edges }
+        guard let screen = floatingWindow.screen ?? NSScreen.main else { return edges }
 
         let windowFrame = floatingWindow.frame
         let screenFrame = screen.visibleFrame
@@ -314,26 +318,13 @@ extension AppDelegate {
         return edges
     }
 
-    /// Screen that the given window is currently showing on.
-    /// Prefers NSWindow.screen; falls back to largest-intersection if nil.
-    private func screen(for window: NSWindow) -> NSScreen? {
-        if let s = window.screen { return s }  // where AppKit says the window is
-        // Fallback: pick the screen with the largest overlap with the window frame
-        let f = window.frame
-        return NSScreen.screens
-            .map {
-                ($0, f.intersection($0.visibleFrame).width * f.intersection($0.visibleFrame).height)
-            }
-            .max(by: { $0.1 < $1.1 })?.0
-    }
+    private func isTouchingRightEdge() -> Bool {
+        guard let screen = floatingWindow.screen ?? NSScreen.main else { return false }
+        let windowFrame = floatingWindow.frame
+        let screenFrame = screen.visibleFrame
 
-    private func currentAppScreen() -> NSScreen? {
-        if let w = NSApp.keyWindow ?? NSApp.mainWindow
-            ?? NSApp.windows.first(where: { $0.isVisible })
-        {
-            return screen(for: w)
-        }
-        return nil
+        // Check if the window's right edge is at or beyond the screen's right edge
+        return windowFrame.maxX >= screenFrame.maxX
     }
 
     /// Sets the panel visibility in screenshots based on user preferences

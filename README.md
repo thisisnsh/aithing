@@ -6,7 +6,6 @@
 
 
 11 Nov
-- Drag up & down
 - Unread message notification per chat and overall
 
 

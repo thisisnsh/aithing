@@ -12,6 +12,7 @@ struct NotchShape: Shape {
     let height: CGFloat
     let cornerRadiusLeft: CGFloat
     let cornerRadiusRight: CGFloat
+    let circularNotch: Bool
 
     func path(in rect: CGRect) -> Path {
         let notchW = min(width, rect.width)
@@ -31,11 +32,19 @@ struct NotchShape: Shape {
 
         var p = Path()
 
-        p.move(to: CGPoint(x: tr.x, y: tr.y))
-        p.addQuadCurve(
-            to: CGPoint(x: tr.x - cornerRadiusRight, y: tr.y + cornerRadiusRight),
-            control: CGPoint(x: tr.x, y: tr.y + cornerRadiusRight)
-        )
+        if circularNotch {
+            p.move(to: CGPoint(x: tr.x, y: tr.y + cornerRadiusLeft + cornerRadiusRight))
+            p.addQuadCurve(
+                to: CGPoint(x: tr.x - cornerRadiusLeft, y: tr.y + cornerRadiusRight),
+                control: CGPoint(x: tr.x, y: tr.y + cornerRadiusRight)
+            )
+        } else {
+            p.move(to: CGPoint(x: tr.x, y: tr.y))
+            p.addQuadCurve(
+                to: CGPoint(x: tr.x - cornerRadiusRight, y: tr.y + cornerRadiusRight),
+                control: CGPoint(x: tr.x, y: tr.y + cornerRadiusRight)
+            )
+        }
 
         p.addLine(to: CGPoint(x: tl.x + cornerRadiusLeft, y: tl.y + cornerRadiusRight))
         p.addQuadCurve(
@@ -49,13 +58,22 @@ struct NotchShape: Shape {
             control: CGPoint(x: bl.x, y: bl.y - cornerRadiusRight)
         )
 
-        p.addLine(to: CGPoint(x: br.x - cornerRadiusRight, y: br.y - cornerRadiusRight))
-        p.addQuadCurve(
-            to: CGPoint(x: br.x, y: br.y),
-            control: CGPoint(x: br.x, y: br.y - cornerRadiusRight)
-        )
+        if circularNotch {
+            p.addLine(to: CGPoint(x: br.x - cornerRadiusLeft, y: br.y - cornerRadiusRight))
+            p.addQuadCurve(
+                to: CGPoint(x: br.x, y: br.y - cornerRadiusLeft - cornerRadiusRight),
+                control: CGPoint(x: br.x, y: br.y - cornerRadiusRight)
+            )
+            p.addLine(to: CGPoint(x: tr.x, y: tr.y + cornerRadiusLeft + cornerRadiusLeft))
+        } else {
+            p.addLine(to: CGPoint(x: br.x - cornerRadiusRight, y: br.y - cornerRadiusRight))
+            p.addQuadCurve(
+                to: CGPoint(x: br.x, y: br.y),
+                control: CGPoint(x: br.x, y: br.y - cornerRadiusRight)
+            )
+            p.addLine(to: CGPoint(x: tr.x, y: tr.y))
+        }
 
-        p.addLine(to: CGPoint(x: tr.x, y: tr.y))
         p.closeSubpath()
 
         return p

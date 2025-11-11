@@ -34,6 +34,8 @@ struct NotchView: View {
     let modifyWindowOriginalSize: () -> Void
     let modifyWindowTopOffset: (CGFloat, WindowSize) -> Void
     let gainFocus: () -> Void
+    let isTouchingRightEdge: () -> Bool
+    let windowMoveable: (Bool) -> Void
 
     let cornerRadiusLeft: CGFloat = 38
     let shadowBuffer: CGFloat = 32
@@ -43,6 +45,7 @@ struct NotchView: View {
     @State private var windowSize = WindowSize.notchIsCollapsed
     @State private var lastExpandedWindowSize = WindowSize.sidebarIsExpanded
     @State private var hoverTask: Task<Void, Never>?
+    @State private var circularNotch = false
 
     @State private var managedModels: [ModelInfo] = []
     @State private var agents: [AgentEntry] = []
@@ -53,6 +56,7 @@ struct NotchView: View {
     @State private var tabs: [String: Tab] = [:]
     @State private var histories: [History] = []
 
+    @State private var showDragIcon = false
     @State private var showSettings = false
     @State private var showToast = false
     @State private var toastText = ""
@@ -239,6 +243,20 @@ struct NotchView: View {
                     .frame(maxHeight: .infinity, alignment: .top)
                     .padding(32)
             }
+
+            if showDragIcon {
+                Image(systemName: "square.grid.3x2.fill")
+                    .resizable()
+                    .scaledToFit()
+                    .frame(height: 8)
+                    .shadow(radius: 4)
+                    .onHover { hover in
+                        windowMoveable(hover)
+                    }
+                    .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topTrailing)
+                    .padding(.horizontal, 24)
+            }
+
         }
         .padding(.leading, shadowBuffer)
         .frame(width: width, height: height)
@@ -293,36 +311,6 @@ struct NotchView: View {
 
                 await updateHistoryList()
             }
-
-            NSEvent.addLocalMonitorForEvents(matching: .keyDown) { event in
-                if event.modifierFlags.contains(.control), event.modifierFlags.contains(.option) {
-                    switch event.keyCode {
-                    case 126:  // Up arrow
-                        AnalyticsManager.shared
-                            .customEvent(
-                                view: .NotchView,
-                                primary: .moveUp,
-                                secondary: "",
-                                sev: .info
-                            )
-                        dragViewY(multiplier: 1)
-                        return nil
-                    case 125:  // Down arrow
-                        AnalyticsManager.shared
-                            .customEvent(
-                                view: .NotchView,
-                                primary: .moveDown,
-                                secondary: "",
-                                sev: .info
-                            )
-                        dragViewY(multiplier: -1)
-                        return nil
-                    default:
-                        break
-                    }
-                }
-                return event
-            }
         }
         .onChange(of: showSettings) { newValue in
             Task {
@@ -341,6 +329,9 @@ struct NotchView: View {
             } else {
                 minimize()
             }
+        }
+        .onChange(of: vm.move) { _ in
+            circularNotch = !isTouchingRightEdge()
         }
         .onReceive(
             Timer.publish(every: 60, on: .main, in: .common).autoconnect()
@@ -369,6 +360,8 @@ struct NotchView: View {
                 try? await Task.sleep(nanoseconds: 150_000_000)  // 150ms
                 guard !Task.isCancelled else { return }
 
+                showDragIcon = hovering
+
                 if windowSize != WindowSize.chatIsShown {
                     if hovering {
                         if windowSize == WindowSize.notchIsCollapsed {
@@ -393,7 +386,8 @@ struct NotchView: View {
                     width: width,
                     height: height,
                     cornerRadiusLeft: showChatWindow ? cornerRadiusLeft : 16,
-                    cornerRadiusRight: 16
+                    cornerRadiusRight: 16,
+                    circularNotch: circularNotch
                 )
                 .overlay(
                     LinearGradient(
@@ -409,7 +403,8 @@ struct NotchView: View {
                             width: width,
                             height: height,
                             cornerRadiusLeft: showChatWindow ? cornerRadiusLeft : 16,
-                            cornerRadiusRight: 16
+                            cornerRadiusRight: 16,
+                            circularNotch: circularNotch
                         )
                     )
                 )
@@ -419,7 +414,8 @@ struct NotchView: View {
                         width: width,
                         height: height,
                         cornerRadiusLeft: showChatWindow ? cornerRadiusLeft : 16,
-                        cornerRadiusRight: 16
+                        cornerRadiusRight: 16,
+                        circularNotch: circularNotch
                     )
                 )
             } else {
@@ -427,7 +423,8 @@ struct NotchView: View {
                     width: width,
                     height: height,
                     cornerRadiusLeft: showChatWindow ? cornerRadiusLeft : 16,
-                    cornerRadiusRight: 16
+                    cornerRadiusRight: 16,
+                    circularNotch: circularNotch
                 )
                 .fill(.ultraThickMaterial)
                 .overlay(
@@ -445,7 +442,8 @@ struct NotchView: View {
                             width: width,
                             height: height,
                             cornerRadiusLeft: showChatWindow ? cornerRadiusLeft : 16,
-                            cornerRadiusRight: 16
+                            cornerRadiusRight: 16,
+                            circularNotch: circularNotch
                         )
                     )
                 )
@@ -557,6 +555,7 @@ struct NotchView: View {
                                         sev: .info
                                     )
                             }
+
                         }
                         .onEnded { _ in
                             smoothedX = 0
