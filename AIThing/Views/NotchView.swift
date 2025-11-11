@@ -248,7 +248,7 @@ struct NotchView: View {
                 Image(systemName: "square.grid.3x2.fill")
                     .resizable()
                     .scaledToFit()
-                    .frame(height: 8)
+                    .frame(width: 12)
                     .shadow(radius: 4)
                     .onHover { hover in
                         windowMoveable(hover)

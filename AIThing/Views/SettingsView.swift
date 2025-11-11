@@ -170,12 +170,6 @@ struct SettingsView: View {
                 .onTapGesture { minimize() }
                 .onHover { hoverYellow = $0 }
 
-            Circle()
-                .frame(width: 12, height: 12)
-                .foregroundStyle(hoverGreen ? .green.opacity(0.5) : .green)
-                .onTapGesture { expand() }
-                .onHover { hoverGreen = $0 }
-
             Text(tabTitle)
                 .font(.system(size: 12, weight: .medium))
                 .foregroundStyle(.white)
