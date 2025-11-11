@@ -127,7 +127,7 @@ private struct AutomationRow: View {
     var body: some View {
         HStack {
             if isHovered {
-                Button(action: onRemove) { Image(systemName: "trash.fill").foregroundStyle(.red) }
+                Button(action: onRemove) { Image(systemName: "trash.fill") }
                     .clipShape(Circle())
             }
 

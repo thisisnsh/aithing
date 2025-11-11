@@ -240,7 +240,7 @@ struct AgentRow: View {
     var body: some View {
         HStack(alignment: .center) {
             if isHovered {
-                Button(action: delete) { Image(systemName: "trash.fill").foregroundStyle(.red) }
+                Button(action: delete) { Image(systemName: "trash.fill") }
                     .clipShape(Circle())
 
             }
