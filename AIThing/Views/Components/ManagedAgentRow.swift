@@ -235,8 +235,16 @@ struct AgentRow: View {
     let toggle: (Bool) -> Void
     let delete: () -> Void
 
+    @State private var isHovered = false
+
     var body: some View {
         HStack(alignment: .center) {
+            if isHovered {
+                Button(action: delete) { Image(systemName: "trash.fill").foregroundStyle(.red) }
+                    .clipShape(Circle())
+
+            }
+
             VStack(alignment: .leading, spacing: 2) {
                 switch agent.entry {
                 case .url(let name, let url):
@@ -257,11 +265,14 @@ struct AgentRow: View {
                 .toggleStyle(.switch)
                 .tint(.black)
                 .scaleEffect(0.7)
-
-            Button(action: delete) { Image(systemName: "trash") }
-                .buttonStyle(.borderless)
         }
         .padding(4)
+        .contentShape(Rectangle())
+        .onHover { hover in
+            withAnimation {
+                isHovered = hover
+            }
+        }
     }
 }
 

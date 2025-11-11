@@ -65,7 +65,9 @@ class AutomationManager: ObservableObject {
         enabled: Bool
     ) {
         // Remove existing automation with same id if exists
+        var ind = 0
         if let index = automations.firstIndex(where: { $0.id == id }) {
+            ind = index
             automations.remove(at: index)
             cancelTimer(for: id)
         }
@@ -79,7 +81,7 @@ class AutomationManager: ObservableObject {
             enabled: enabled
         )
 
-        automations.append(automation)
+        automations.insert(automation, at: ind)
         saveAutomations()
         scheduleAutomation(automation)
     }

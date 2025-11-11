@@ -116,16 +116,6 @@ struct SettingsAgentsTab: View {
                             .foregroundStyle(.secondary)
                         }
                     }
-
-                    Text(
-                        """
-                        Need help? Visit the [Troubleshooting](https://aithing.dev/errors/agent-troubleshooting) page.
-                        Request more Managed Agents via help@aithing.dev.
-                        """
-                    )
-                    .font(.system(size: 10, weight: .medium))
-                    .padding(.vertical, 4)
-                    .foregroundStyle(.secondary)
                 }
                 .padding(4)
             }
@@ -217,10 +207,9 @@ struct SettingsAgentsTab: View {
                                     Text("+ Add Agent")
                                         .font(.system(size: 12, weight: .medium))
                                         .frame(maxWidth: .infinity)
-                                        .frame(height: 24)
-                                        .padding(.horizontal, 12)
+                                        .frame(height: 32)
                                         .background(Color.black.opacity(0.2))
-                                        .clipShape(RoundedRectangle(cornerRadius: 4))
+                                        .clipShape(RoundedRectangle(cornerRadius: 16))
                                 }
                                 .buttonStyle(.plain)
                                 .padding(4)
@@ -257,9 +246,9 @@ private struct AddAgentForm: View {
                 Button {
                     agentType = "global"
                 } label: {
-                    Text("Global")
+                    Text("Remote Server")
                         .font(.system(size: 12, weight: .medium))
-                        .frame(height: 24)
+                        .frame(height: 32)
                         .frame(maxWidth: .infinity)
                         .background(
                             agentType == "global"
@@ -277,9 +266,9 @@ private struct AddAgentForm: View {
                 Button {
                     agentType = "local"
                 } label: {
-                    Text("Local")
+                    Text("Stdio Server")
                         .font(.system(size: 12, weight: .medium))
-                        .frame(height: 24)
+                        .frame(height: 32)
                         .frame(maxWidth: .infinity)
                         .background(
                             agentType == "local"
@@ -292,7 +281,8 @@ private struct AddAgentForm: View {
                 .buttonStyle(.plain)
                 .frame(maxWidth: .infinity)
             }
-            .clipShape(RoundedRectangle(cornerRadius: 4))
+            .background(Color.black.opacity(0.2))
+            .clipShape(RoundedRectangle(cornerRadius: 16))
             .padding(.bottom, 8)
 
             HStack {
@@ -301,9 +291,9 @@ private struct AddAgentForm: View {
                     .frame(width: 100, alignment: .leading)
                 TextField("Agent Name", text: $agentName)
                     .padding(.horizontal, 8)
-                    .frame(height: 24)
+                    .frame(height: 32)
                     .background(Color.black.opacity(0.2))
-                    .clipShape(RoundedRectangle(cornerRadius: 4))
+                    .clipShape(RoundedRectangle(cornerRadius: 16))
                     .font(.system(size: 12, weight: .medium))
                     .textFieldStyle(.plain)
             }
@@ -319,9 +309,9 @@ private struct AddAgentForm: View {
                     text: $agentPrimary
                 )
                 .padding(.horizontal, 8)
-                .frame(height: 24)
+                .frame(height: 32)
                 .background(Color.black.opacity(0.2))
-                .clipShape(RoundedRectangle(cornerRadius: 4))
+                .clipShape(RoundedRectangle(cornerRadius: 16))
                 .font(.system(size: 12, weight: .medium))
                 .textFieldStyle(.plain)
             }
@@ -337,9 +327,9 @@ private struct AddAgentForm: View {
                         text: $agentSecondary
                     )
                     .padding(.horizontal, 8)
-                    .frame(height: 24)
+                    .frame(height: 32)
                     .background(Color.black.opacity(0.2))
-                    .clipShape(RoundedRectangle(cornerRadius: 4))
+                    .clipShape(RoundedRectangle(cornerRadius: 16))
                     .font(.system(size: 12, weight: .medium))
                     .textFieldStyle(.plain)
                 }
@@ -354,9 +344,9 @@ private struct AddAgentForm: View {
                         text: $agentSecondary
                     )
                     .padding(.horizontal, 8)
-                    .frame(height: 24)
+                    .frame(height: 32)
                     .background(Color.black.opacity(0.2))
-                    .clipShape(RoundedRectangle(cornerRadius: 4))
+                    .clipShape(RoundedRectangle(cornerRadius: 16))
                     .font(.system(size: 12, weight: .medium))
                     .textFieldStyle(.plain)
                 }

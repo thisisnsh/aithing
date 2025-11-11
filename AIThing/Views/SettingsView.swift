@@ -195,6 +195,8 @@ struct SettingsView: View {
                     Label("Account", systemImage: "person.fill")
                         .labelStyle(.iconOnly)
                 }
+                .padding(.leading, 8)
+
                 Button(action: {
                     selectedTab = .models
                     setSelectedTab(value: selectedTab)
@@ -239,9 +241,9 @@ struct SettingsView: View {
                     Label("Automations", systemImage: "clock.fill")
                         .labelStyle(.iconOnly)
                 }
-
+                .padding(.trailing, 8)
             }
-
+            .cornerRadius(16)
         }
         .frame(height: 16)
     }

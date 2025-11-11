@@ -5,11 +5,7 @@
 ## 2.0 
 
 
-10-11 Nov
-- Automations Tab
-- Remove muliple history manager accesses      
-
-
+11 Nov
 - Drag up & down
 - Unread message notification per chat and overall
 
