@@ -63,6 +63,7 @@ struct IntelligenceView: View {
     @State private var selectedText: String = ""
 
     @State private var savedQueries = getSavedQueries()
+    @State private var showSavedQueries: Bool = false
 
     @State private var isDropping: Bool = false
     @State private var showMcpTools: Bool = false
@@ -109,7 +110,7 @@ struct IntelligenceView: View {
                                 alignment: .topLeading
                             )
 
-                        if !isThinking, modelInput.isEmpty {
+                        if !isThinking, showSavedQueries {
                             SaveQueryView()
                                 .frame(
                                     maxWidth: .infinity,
@@ -135,29 +136,34 @@ struct IntelligenceView: View {
                         .cornerRadius(cornerRadius - 4)
                 }
             }
+            .id(tabId)
             .padding(8)
             .onAppear {
                 AnalyticsManager.shared.screenView(screenName: .IntelligenceView)
-                Task {
-                    history = await getHistory(tabId)
-                    if let history = history {
-                        modelInput = history.history
-                        tabTitle = history.title ?? "New Chat"
-                    } else {
-                        tabTitle = "New Chat"
+            }
+            .task {
+                history = await getHistory(tabId)
+                if let history = history {
+                    modelInput = history.history
+                    tabTitle = history.title ?? "New Chat"
+                } else {
+                    tabTitle = "New Chat"
 
-                        let greeting = await firestoreManager.getGreeting() ?? ""
-                        if !greeting.isEmpty {
-                            modelOutput = greeting
-                        }
+                    let greeting = await firestoreManager.getGreeting() ?? ""
+                    if !greeting.isEmpty {
+                        modelOutput = greeting
                     }
+                }
 
-                    let notification = await firestoreManager.getNotification() ?? ""
-                    if !notification.isEmpty {
-                        modelOutput = notification
-                    }
+                let notification = await firestoreManager.getNotification() ?? ""
+                if !notification.isEmpty {
+                    modelOutput = notification
+                }
 
-                    await setUnseen(tabId, false)
+                await setUnseen(tabId, false)
+
+                if modelInput.isEmpty {
+                    showSavedQueries = true
                 }
             }
             .onChange(of: currentTabId) { _ in

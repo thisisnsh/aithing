@@ -169,6 +169,7 @@ final class HistoryStore: ObservableObject {
                 req.predicate = NSPredicate(format: "id == %@", id)
                 req.fetchLimit = 1
                 guard let mo = try ctx.fetch(req).first else { return false }
+                guard mo.unseen != unseen else { return false }
                 mo.unseen = unseen
                 // Do NOT modify lastUpdated here; this is a view-state flag.
                 try ctx.save()

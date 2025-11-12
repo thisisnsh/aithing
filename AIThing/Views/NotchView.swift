@@ -271,6 +271,47 @@ struct NotchView: View {
         .onAppear {
             AnalyticsManager.shared.screenView(screenName: .NotchView)
             close()
+        }
+        .onChange(of: showSettings) { newValue in
+            Task {
+                managedModels = await firestoreManager.getModelInfos()
+                await loadAllClientTools()
+                await reconnectManagedAgents()
+                showMcpToolsButton = await mcpManager.getAllTools().count > 0
+            }
+        }
+        .onChange(of: vm.refresh) { _ in
+            (width, height) = updateWindowSize(lastExpandedWindowSize)
+        }
+        .onChange(of: vm.toggle) { _ in
+            if windowSize == WindowSize.notchIsCollapsed {
+                open()
+            } else {
+                minimize()
+            }
+        }
+        .onChange(of: vm.move) { _ in
+            circularNotch = !isTouchingRightEdge()
+        }
+        .onReceive(
+            Timer.publish(every: 60, on: .main, in: .common).autoconnect()
+        ) { _ in
+            removeTabs()
+        }
+        .task {
+            switch loginManager.authState {
+            case .signedIn(let user):
+                AnalyticsManager.shared.setUserId(user.uid)
+            default:
+                AnalyticsManager.shared.setUserId(nil)
+            }
+
+            histories = await historyStore.getAll(limit: 100)
+
+            managedModels = await firestoreManager.getModelInfos()
+            await loadAllClientTools()
+            await reconnectManagedAgents()
+            showMcpToolsButton = await mcpManager.getAllTools().count > 0
 
             automationManager.onExecute = { (automation: Automation) async in
                 logger.debug("Called automation: \(automation.id)")
@@ -324,47 +365,6 @@ struct NotchView: View {
 
                 await updateHistoryList()
             }
-        }
-        .onChange(of: showSettings) { newValue in
-            Task {
-                managedModels = await firestoreManager.getModelInfos()
-                await loadAllClientTools()
-                await reconnectManagedAgents()
-                showMcpToolsButton = await mcpManager.getAllTools().count > 0
-            }
-        }
-        .onChange(of: vm.refresh) { _ in
-            (width, height) = updateWindowSize(lastExpandedWindowSize)
-        }
-        .onChange(of: vm.toggle) { _ in
-            if windowSize == WindowSize.notchIsCollapsed {
-                open()
-            } else {
-                minimize()
-            }
-        }
-        .onChange(of: vm.move) { _ in
-            circularNotch = !isTouchingRightEdge()
-        }
-        .onReceive(
-            Timer.publish(every: 60, on: .main, in: .common).autoconnect()
-        ) { _ in
-            removeTabs()
-        }
-        .task {
-            switch loginManager.authState {
-            case .signedIn(let user):
-                AnalyticsManager.shared.setUserId(user.uid)
-            default:
-                AnalyticsManager.shared.setUserId(nil)
-            }
-
-            histories = await historyStore.getAll(limit: 100)
-
-            managedModels = await firestoreManager.getModelInfos()
-            await loadAllClientTools()
-            await reconnectManagedAgents()
-            showMcpToolsButton = await mcpManager.getAllTools().count > 0
         }
         .onHover { hovering in
             hoverTask?.cancel()  // cancel any pending hover change
@@ -682,7 +682,9 @@ struct NotchView: View {
 // MARK: Tab Stuff
 extension NotchView {
     private func createIntelligenceView(tabId: String) {
-        printTabs()
+        if tabs.keys.contains(tabId) {
+            return
+        }
         tabs[tabId] = Tab(
             id: tabId,
             intelligenceView: IntelligenceView(
@@ -706,7 +708,6 @@ extension NotchView {
             active: false
         )
         removeTabs()
-        printTabs()
         AnalyticsManager.shared.customEvent(
             view: .NotchView,
             primary: .createTab,
@@ -715,7 +716,11 @@ extension NotchView {
         )
     }
 
-    private func printTabs() {}
+    private func printTabs() {
+        for tab in tabs.keys {
+            print(tab)
+        }
+    }
 
     private func getIntelligenceView(tabId: String) -> some View {
         Group {
@@ -728,7 +733,6 @@ extension NotchView {
     }
 
     private func isTabShowing(tabId: String) -> Bool {
-        printTabs()
         return tabId == self.tabId
     }
 
@@ -739,7 +743,6 @@ extension NotchView {
         tab.lastUpdated = Date()
         tabs[tabId] = tab
 
-        printTabs()
         AnalyticsManager.shared.customEvent(
             view: .NotchView,
             primary: .activateTab,
@@ -750,7 +753,6 @@ extension NotchView {
 
     // Remove tabs that are inactive for longer than 10 minutes
     private func removeTabs() {
-        printTabs()
         let minutes: Double = 10
         let cutoff = Date().addingTimeInterval(-(minutes * 60))
         let countStart = tabs.count
@@ -758,7 +760,6 @@ extension NotchView {
             tab.active || tab.lastUpdated >= cutoff || tab.id == self.tabId
         }
         let countEnd = tabs.count
-        printTabs()
         AnalyticsManager.shared
             .customEvent(
                 view: .NotchView,
@@ -1012,12 +1013,6 @@ extension NotchView {
     private func updateHistoryList() async {
         histories = await historyStore.getAll(limit: 100)
         unseen = histories.contains(where: { $0.unseen == true })
-        //        print("----")
-        //        for h in histories {
-        //            print(h.id, h.unseen)
-        //        }
-        //        print(unseen)
-        //        print("----")
     }
 
     private func createTitle(for history: [[String: Any]], fallback: String) -> String {
@@ -1141,8 +1136,9 @@ extension NotchView {
     }
 
     private func setUnseen(id: String, unseen: Bool) async {
-        await historyStore.setUnseen(id: tabId, unseen: unseen)
-        await updateHistoryList()
+        if await historyStore.setUnseen(id: tabId, unseen: unseen) {
+            await updateHistoryList()
+        }
     }
 }
 
