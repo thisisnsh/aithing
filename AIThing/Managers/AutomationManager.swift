@@ -202,9 +202,6 @@ class AutomationManager: ObservableObject {
     private func executeAutomation(_ automation: Automation) {
         if !automation.enabled { return }
 
-        print("Executing automation: \(automation.id)")
-        print("Executed at: \(Date())")
-
         // Call the parent's callback function
         Task {
             await onExecute?(automation)

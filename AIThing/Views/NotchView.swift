@@ -55,6 +55,7 @@ struct NotchView: View {
     @State private var tabId: String = ""
     @State private var tabs: [String: Tab] = [:]
     @State private var histories: [History] = []
+    @State private var unseen = false
 
     @State private var showDragIcon = false
     @State private var showSettings = false
@@ -144,10 +145,17 @@ struct NotchView: View {
                 VStack(alignment: expandSidebar ? .leading : .center, spacing: 0) {
                     HStack {
                         if !expandNotch || expandSidebar {
-                            LogoShape()
-                                .fill(.white)
-                                .scaledToFit()
-                                .frame(height: 32)
+                            ZStack(alignment: .topLeading) {
+                                LogoShape()
+                                    .fill(.white)
+                                    .scaledToFit()
+                                    .frame(height: 32)
+
+                                if unseen {
+                                    Circle().fill(.red)
+                                        .frame(width: 4, height: 4)
+                                }
+                            }
                         }
 
                         if expandNotch, expandSidebar {
@@ -306,7 +314,12 @@ struct NotchView: View {
                 )
 
                 if !history.isEmpty {
-                    await self.storeHistory(tabId: tabId, tabTitle: title, history: history)
+                    await self.storeHistory(
+                        tabId: tabId,
+                        tabTitle: title,
+                        history: history,
+                        unseen: true
+                    )
                 }
 
                 await updateHistoryList()
@@ -483,7 +496,8 @@ struct NotchView: View {
                                     }
                                 }
                             }
-                        }
+                        },
+                        notification: h.unseen
                     )
                 }
 
@@ -674,6 +688,7 @@ extension NotchView {
             intelligenceView: IntelligenceView(
                 vm: vm,
                 tabId: tabId,
+                currentTabId: $tabId,
                 allClientTools: $allClientTools,
                 managedModels: $managedModels,
                 showMcpToolsButton: $showMcpToolsButton,
@@ -685,7 +700,8 @@ extension NotchView {
                 updateHistoryList: { await updateHistoryList() },
                 reconnectManagedAgents: reconnectManagedAgents,
                 getHistory: { return await getHistory(tabId: $0) },
-                storeHistory: { await storeHistory(tabId: $0, tabTitle: $1, history: $2) }
+                storeHistory: { await storeHistory(tabId: $0, tabTitle: $1, history: $2) },
+                setUnseen: { await setUnseen(id: $0, unseen: $1) }
             ),
             active: false
         )
@@ -995,6 +1011,13 @@ extension NotchView {
 extension NotchView {
     private func updateHistoryList() async {
         histories = await historyStore.getAll(limit: 100)
+        unseen = histories.contains(where: { $0.unseen == true })
+        //        print("----")
+        //        for h in histories {
+        //            print(h.id, h.unseen)
+        //        }
+        //        print(unseen)
+        //        print("----")
     }
 
     private func createTitle(for history: [[String: Any]], fallback: String) -> String {
@@ -1108,8 +1131,18 @@ extension NotchView {
         return await historyStore.get(id: tabId)
     }
 
-    private func storeHistory(tabId: String, tabTitle: String, history: [[String: Any]]) async {
-        await historyStore.store(id: tabId, title: tabTitle, history: history)
+    private func storeHistory(
+        tabId: String,
+        tabTitle: String,
+        history: [[String: Any]],
+        unseen: Bool? = nil
+    ) async {
+        await historyStore.store(id: tabId, title: tabTitle, history: history, unseen: unseen)
+    }
+
+    private func setUnseen(id: String, unseen: Bool) async {
+        await historyStore.setUnseen(id: tabId, unseen: unseen)
+        await updateHistoryList()
     }
 }
 

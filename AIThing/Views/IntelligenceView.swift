@@ -25,6 +25,7 @@ struct IntelligenceView: View {
 
     @ObservedObject var vm: NotchVM
     let tabId: String
+    @Binding var currentTabId: String
     @Binding var allClientTools: [String: [[String: Any]]]
     @Binding var managedModels: [ModelInfo]
     @Binding var showMcpToolsButton: Bool
@@ -38,6 +39,7 @@ struct IntelligenceView: View {
     let reconnectManagedAgents: () async -> Void
     let getHistory: (String) async -> History?
     let storeHistory: (String, String, [[String: Any]]) async -> Void
+    let setUnseen: (String, Bool) async -> Void
 
     let logger = Logger(subsystem: "com.thisisnsh.mac.AIThing", category: "IntelligenceView")
     let cornerRadius: CGFloat = 24
@@ -153,6 +155,15 @@ struct IntelligenceView: View {
                     let notification = await firestoreManager.getNotification() ?? ""
                     if !notification.isEmpty {
                         modelOutput = notification
+                    }
+
+                    await setUnseen(tabId, false)
+                }
+            }
+            .onChange(of: currentTabId) { _ in
+                Task {
+                    if currentTabId == tabId {
+                        await setUnseen(tabId, false)
                     }
                 }
             }
@@ -590,6 +601,11 @@ extension IntelligenceView {
         )
 
         setTabActive(false)
+        if !isTabShowing() {
+            await setUnseen(tabId, true)
+        } else {
+            await setUnseen(tabId, false)
+        }
 
         AnalyticsManager.shared.customEvent(
             view: .IntelligenceView,

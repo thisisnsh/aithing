@@ -15,10 +15,11 @@ struct History: Identifiable, Equatable {
     let lastUpdated: String  // epoch seconds as String
     let title: String?
     let history: [[String: Any]]
+    let unseen: Bool
 
     static func == (lhs: History, rhs: History) -> Bool {
         lhs.id == rhs.id && lhs.lastUpdated == rhs.lastUpdated && lhs.title == rhs.title
-            && lhs.history.count == rhs.history.count
+            && lhs.history.count == rhs.history.count && lhs.unseen == rhs.unseen
     }
 }
 
@@ -28,18 +29,21 @@ final class HistoryDocMO: NSManagedObject {
     @NSManaged var lastUpdated: Double  // epoch seconds
     @NSManaged var title: String?
     @NSManaged var json: Data  // JSON for [[String: Any]]
+    @NSManaged var unseen: Bool  // (defaults to false via model)
 }
 
 @MainActor
-final class HistoryStore: ObservableObject {    
+final class HistoryStore: ObservableObject {
     let logger = Logger(subsystem: "com.thisisnsh.mac.AIThing", category: "HistoryStore")
-    
+
     // Keep a container per id (=> one SQLite per id)
     private var containers: [String: NSPersistentContainer] = [:]
 
     /// Idempotent: inserts when new, updates when existing. lastUpdated is set to now (epoch).
     @discardableResult
-    func store(id: String, title: String? = nil, history: [[String: Any]]) async -> Bool {
+    func store(id: String, title: String? = nil, history: [[String: Any]], unseen: Bool? = nil)
+        async -> Bool
+    {
         guard JSONSerialization.isValidJSONObject(history) else {
             log("store invalid JSON for id=\(id)")
             return false
@@ -57,6 +61,11 @@ final class HistoryStore: ObservableObject {
                 } else {
                     mo = HistoryDocMO(context: ctx)
                     mo.id = id
+                    if let unseen = unseen {
+                        mo.unseen = unseen
+                    } else {
+                        mo.unseen = false
+                    }
                 }
                 mo.title = title
                 mo.lastUpdated = Date().timeIntervalSince1970
@@ -89,11 +98,13 @@ final class HistoryStore: ObservableObject {
                     let obj =
                         (try? JSONSerialization.jsonObject(with: mo.json, options: []))
                         as? [[String: Any]] ?? []
+                    let unseen = (mo.value(forKey: "unseen") as? Bool) ?? false
                     let hist = History(
                         id: mo.id,
                         lastUpdated: String(Int64(mo.lastUpdated)),
                         title: mo.title,
-                        history: obj
+                        history: obj,
+                        unseen: unseen
                     )
                     return [hist]
                 } catch {
@@ -132,15 +143,39 @@ final class HistoryStore: ObservableObject {
                 let obj =
                     (try? JSONSerialization.jsonObject(with: mo.json, options: []))
                     as? [[String: Any]] ?? []
+                let unseen = (mo.value(forKey: "unseen") as? Bool) ?? false
                 return History(
                     id: mo.id,
                     lastUpdated: String(Int64(mo.lastUpdated)),
                     title: mo.title,
-                    history: obj
+                    history: obj,
+                    unseen: unseen
                 )
             } catch {
                 self.log("get failed for id=\(id): \(error)")
                 return nil
+            }
+        }
+    }
+
+    /// Set the unseen flag for a given history id.
+    @discardableResult
+    func setUnseen(id: String, unseen: Bool) async -> Bool {
+        guard let container = await container(for: id) else { return false }
+        let ctx = container.newBackgroundContext()
+        return await ctx.perform {
+            do {
+                let req = NSFetchRequest<HistoryDocMO>(entityName: "HistoryDoc")
+                req.predicate = NSPredicate(format: "id == %@", id)
+                req.fetchLimit = 1
+                guard let mo = try ctx.fetch(req).first else { return false }
+                mo.unseen = unseen
+                // Do NOT modify lastUpdated here; this is a view-state flag.
+                try ctx.save()
+                return true
+            } catch {
+                self.log("setUnseen failed for id=\(id): \(error)")
+                return false
             }
         }
     }
@@ -246,7 +281,14 @@ final class HistoryStore: ObservableObject {
         json.isOptional = false
         json.allowsExternalBinaryDataStorage = true
 
-        entity.properties = [id, lastUpdated, title, json]
+        // unseen flag with default false
+        let unseen = NSAttributeDescription()
+        unseen.name = "unseen"
+        unseen.attributeType = .booleanAttributeType
+        unseen.isOptional = false
+        unseen.defaultValue = false
+
+        entity.properties = [id, lastUpdated, title, json, unseen]
         entity.uniquenessConstraints = [["id"]]
 
         let modelEntities = [entity]

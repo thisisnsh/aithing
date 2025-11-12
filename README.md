@@ -5,19 +5,16 @@
 ## 2.0 
 
 
-11 Nov
-- Unread message notification per chat and overall
-
 
 12 Nov 
-- Record demo video
-- Write Doc 
-- Release 2.0
-
+- Write Doc
 
 13 Nov
+- Record demo video
+- Release 2.0
+
+14 Nov
 - Support Edit title
-  
 
 17 Nov
 - Promote 2.0 
