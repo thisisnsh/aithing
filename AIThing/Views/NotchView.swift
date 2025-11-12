@@ -240,6 +240,7 @@ struct NotchView: View {
                 .frame(width: expandNotch ? (expandSidebar ? 200 : 60) : 60)
             }
             .padding(.vertical, 24)
+            .padding(.bottom, expandSidebar ? -16 : 0)
 
             if showToast, showChatWindow {
                 Toast()
