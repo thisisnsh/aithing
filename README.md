@@ -5,10 +5,6 @@
 ## 2.0 
 
 
-13 Nov
-- Release 2.0
-
-
 17 Nov
 - Record demo video
 - Promote 2.0 
