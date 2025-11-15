@@ -405,6 +405,8 @@ struct NotchView: View {
                     cornerRadiusRight: 16,
                     circularNotch: circularNotch
                 )
+                .stroke(Color.gray.opacity(0.5), lineWidth: 1)
+                .offset(x: 1)
                 .overlay(
                     LinearGradient(
                         gradient: Gradient(colors: [
@@ -443,6 +445,8 @@ struct NotchView: View {
                     circularNotch: circularNotch
                 )
                 .fill(.ultraThickMaterial)
+                .shadow(color: .gray.opacity(0.5), radius: 4)
+                .offset(x: 1)
                 .overlay(
                     LinearGradient(
                         gradient: Gradient(colors: [
