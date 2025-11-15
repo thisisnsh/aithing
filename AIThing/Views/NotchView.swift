@@ -199,7 +199,7 @@ struct NotchView: View {
 
                         HoverableTabButton(
                             title: "Settings",
-                            isActive: false,
+                            isActive: showSettings,
                             action: {
                                 open()
                                 if tabId.isEmpty {
@@ -235,6 +235,7 @@ struct NotchView: View {
                             }
 
                             Sidebar()
+                                .padding(.bottom, expandSidebar ? -16 : 0)
                         }
                     }
 
@@ -243,7 +244,6 @@ struct NotchView: View {
                 .frame(width: expandNotch ? (expandSidebar ? 200 : 60) : 60)
             }
             .padding(.vertical, 24)
-            .padding(.bottom, expandSidebar ? -16 : 0)
 
             if showToast, showChatWindow {
                 Toast()
@@ -480,7 +480,7 @@ struct NotchView: View {
                         title: expandSidebar
                             ? (h.title ?? createTitle(for: h.history, fallback: "Session #\(i + 1)"))
                             : "ABC",
-                        isActive: (tabId == h.id),
+                        isActive: (tabId == h.id) && !showSettings,
                         action: {
                             open()
                             showSettings = false
