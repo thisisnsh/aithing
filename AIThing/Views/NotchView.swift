@@ -36,6 +36,8 @@ struct NotchView: View {
     let gainFocus: () -> Void
     let isTouchingRightEdge: () -> Bool
     let windowMoveable: (Bool) -> Void
+    let startSelectionPoll: () -> Void
+    let stopSelectionPoll: () -> Void
 
     let cornerRadiusLeft: CGFloat = 38
     let shadowBuffer: CGFloat = 32
@@ -704,7 +706,9 @@ extension NotchView {
                 reconnectManagedAgents: reconnectManagedAgents,
                 getHistory: { return await getHistory(tabId: $0) },
                 storeHistory: { await storeHistory(tabId: $0, tabTitle: $1, history: $2) },
-                setUnseen: { await setUnseen(id: $0, unseen: $1) }
+                setUnseen: { await setUnseen(id: $0, unseen: $1) },
+                startSelectionPoll: { self.startSelectionPoll() },
+                stopSelectionPoll: { self.stopSelectionPoll() }
             ),
             active: false
         )

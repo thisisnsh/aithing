@@ -93,7 +93,6 @@ class AppDelegate: NSObject, NSApplicationDelegate {
 
         FirebaseApp.configure()
 
-        startSelectionPoll()
         setupGlobalHotKeys()
         setupNotchWindow()
 
@@ -158,8 +157,9 @@ extension AppDelegate {
             modifyWindowTopOffset: { self.modifyWindowTopOffset(offset: $0, windowSize: $1) },
             gainFocus: { self.gainFocus() },
             isTouchingRightEdge: { return self.isTouchingRightEdge() },
-            windowMoveable: { self.windowMoveable($0) }
-
+            windowMoveable: { self.windowMoveable($0) },
+            startSelectionPoll: { self.startSelectionPoll() },
+            stopSelectionPoll: { self.stopSelectionPoll() }
         )
         floatingWindow.contentView = FirstMouseHostingView(rootView: notchView)
         floatingWindow.makeKeyAndOrderFront(nil)
@@ -345,6 +345,10 @@ extension AppDelegate {
             "com.apple.finder",
             // add more...
         ]
+    }
+
+    private func stopSelectionPoll() {
+        pollingTimer?.cancel()
     }
 
     private func startSelectionPoll() {

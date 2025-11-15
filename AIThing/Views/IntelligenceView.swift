@@ -40,6 +40,8 @@ struct IntelligenceView: View {
     let getHistory: (String) async -> History?
     let storeHistory: (String, String, [[String: Any]]) async -> Void
     let setUnseen: (String, Bool) async -> Void
+    let startSelectionPoll: () -> Void
+    let stopSelectionPoll: () -> Void
 
     let logger = Logger(subsystem: "com.thisisnsh.mac.AIThing", category: "IntelligenceView")
     let cornerRadius: CGFloat = 24
@@ -179,6 +181,15 @@ struct IntelligenceView: View {
                     showSelection = true
                 }
             }
+            .onChange(of: selectionEnabled) { _ in
+                if selectionEnabled {
+                    startSelectionPoll()
+                } else {
+                    selectedText = ""
+                    vm.selectedText = ""
+                    stopSelectionPoll()
+                }
+            }
             .onReceive(screenshotMonitor.$latestScreenshot) { ss in
                 if isTabShowing() {
                     if let ss = ss {
@@ -230,13 +241,19 @@ struct IntelligenceView: View {
             Circle()
                 .frame(width: 12, height: 12)
                 .foregroundStyle(hoverRed ? .red.opacity(0.5) : .red)
-                .onTapGesture { close() }
+                .onTapGesture {
+                    selectionEnabled = false
+                    close()
+                }
                 .onHover { hoverRed = $0 }
 
             Circle()
                 .frame(width: 12, height: 12)
                 .foregroundStyle(hoverYellow ? .yellow.opacity(0.5) : .yellow)
-                .onTapGesture { minimize() }
+                .onTapGesture {
+                    selectionEnabled = false
+                    minimize()
+                }
                 .onHover { hoverYellow = $0 }
 
             Text(tabTitle)
@@ -495,15 +512,21 @@ struct IntelligenceView: View {
                         Image(systemName: selectionEnabled ? "text.redaction" : "text.alignleft")
                             .resizable()
                             .frame(width: 12, height: 12)
-                            .foregroundStyle(hoverSelectionEnabled ? .black : .white)
+                            .foregroundStyle(
+                                hoverSelectionEnabled || selectionEnabled ? .black : .white
+                            )
 
                         Text(selectionEnabled ? "Selection Enabled" : "Selection Disabled")
                             .font(.system(size: 10, weight: .medium))
-                            .foregroundStyle(hoverSelectionEnabled ? .black : .white)
+                            .foregroundStyle(
+                                hoverSelectionEnabled || selectionEnabled ? .black : .white
+                            )
                     }
                     .padding(8)
                     .padding(.horizontal, 4)
-                    .background(hoverSelectionEnabled ? .white : .white.opacity(0.1))
+                    .background(
+                        hoverSelectionEnabled || selectionEnabled ? .white : .white.opacity(0.1)
+                    )
                     .clipShape(RoundedRectangle(cornerRadius: cornerRadius))
                 }
                 .buttonStyle(PlainButtonStyle())
@@ -566,6 +589,7 @@ extension IntelligenceView {
         query = ""
         showSelection = false
         inputHeight = baseHeight
+        showSavedQueries = false
 
         AnalyticsManager.shared.customEvent(
             view: .IntelligenceView,

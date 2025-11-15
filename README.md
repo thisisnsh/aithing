@@ -5,22 +5,18 @@
 ## 2.0 
 
 
-
-12 Nov 
-- Write Doc
-
 13 Nov
-- Record demo video
 - Release 2.0
 
-14 Nov
-- Support Edit title
 
 17 Nov
+- Record demo video
 - Promote 2.0 
 
 
 Next
+- Appcasting! 
+- Support Edit title
 - Support AI Suggestions : Understand you and suggest things based on time and this
 
 
