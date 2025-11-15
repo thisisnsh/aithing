@@ -11,15 +11,6 @@ struct SettingsAutomationTab: View {
     @EnvironmentObject var automationManager: AutomationManager
 
     @State private var automations: [Automation] = []
-    @State private var title: String = ""
-    @State private var instructions: String = ""
-    @State private var executeTime: Date = Date()
-    @State private var recurrence: Automation.Recurrence = Automation.Recurrence(
-        minutes: 0,
-        hours: 0,
-        days: 0
-    )
-    @State private var enabled: Bool = true
 
     let maxAutomationCount = 10
 
@@ -78,35 +69,9 @@ struct SettingsAutomationTab: View {
                 VStack(alignment: .leading) {
                     if automations.count < maxAutomationCount {
                         GroupBox {
-                            VStack(alignment: .leading, spacing: 0) {
-                                AddAutomationForm(
-                                    title: $title,
-                                    instructions: $instructions,
-                                    executeTime: $executeTime,
-                                    recurrence: $recurrence,
-                                )
-
-                                Button {
-                                    automationManager.createAutomation(
-                                        id: UUID().uuidString,
-                                        title: title,
-                                        instructions: instructions,
-                                        executeTime: executeTime,
-                                        recurrence: recurrence,
-                                        enabled: true
-                                    )
-                                    automations = automationManager.listAutomations()
-                                } label: {
-                                    Text("+ Add Automation")
-                                        .font(.system(size: 12, weight: .medium))
-                                        .frame(maxWidth: .infinity)
-                                        .frame(height: 32)
-                                        .background(Color.black.opacity(0.2))
-                                        .clipShape(RoundedRectangle(cornerRadius: 16))
-                                }
-                                .buttonStyle(.plain)
-                                .padding(4)
-                            }
+                            AddAutomationForm(
+                                automations: $automations,
+                            ).environmentObject(automationManager)
                         }
                     }
                 }
@@ -134,15 +99,13 @@ private struct AutomationRow: View {
             VStack(alignment: .leading, spacing: 2) {
                 RowTitle(automation.title)
                 RowSub(automation.instructions)
-                HStack {
-                    Text("Executes: \(automation.executeTime, style: .time)")
-                        .font(.system(size: 10, weight: .medium))
-                        .opacity(0.5)
-                    if !automation.recurrence.isOneOff {
-                        RowSub(" Recurs every: \(recurrenceString(automation.recurrence))")
-                    } else {
-                        RowSub(" One-time")
-                    }
+                Text("Executes: \(automation.executeTime)")
+                    .font(.system(size: 10, weight: .medium))
+                    .opacity(0.5)
+                if !automation.recurrence.isOneOff {
+                    RowSub("Recurs every: \(recurrenceString(automation.recurrence))")
+                } else {
+                    RowSub("One-time")
                 }
             }
 
@@ -184,10 +147,18 @@ private struct AutomationRow: View {
 }
 
 private struct AddAutomationForm: View {
-    @Binding var title: String
-    @Binding var instructions: String
-    @Binding var executeTime: Date
-    @Binding var recurrence: Automation.Recurrence
+    @EnvironmentObject var automationManager: AutomationManager
+
+    @Binding var automations: [Automation]
+
+    @State private var title: String = ""
+    @State private var instructions: String = ""
+    @State private var executeTime: Date = Date()
+    @State private var recurrence: Automation.Recurrence = Automation.Recurrence(
+        minutes: 0,
+        hours: 0,
+        days: 0
+    )
 
     @State private var executeTimeString: String = ""
 
@@ -287,6 +258,41 @@ private struct AddAutomationForm: View {
             }
             .padding(.bottom, 8)
             .fixedSize(horizontal: true, vertical: false)
+
+            Button {
+                validateDate()
+                validateTime()
+
+                automationManager.createAutomation(
+                    id: UUID().uuidString,
+                    title: title,
+                    instructions: instructions,
+                    executeTime: executeTime,
+                    recurrence: recurrence,
+                    enabled: true
+                )
+                automations = automationManager.listAutomations()
+
+                title = ""
+                instructions = ""
+                executeTime = Date()
+                recurrence = Automation.Recurrence(minutes: 0, hours: 0, days: 0)
+
+                executeTimeString = ""
+
+                days = "0"
+                hours = "0"
+                minutes = "0"
+            } label: {
+                Text("+ Add Automation")
+                    .font(.system(size: 12, weight: .medium))
+                    .frame(maxWidth: .infinity)
+                    .frame(height: 32)
+                    .background(Color.black.opacity(0.2))
+                    .clipShape(RoundedRectangle(cornerRadius: 16))
+            }
+            .buttonStyle(.plain)
+            .padding(4)
         }
         .padding(4)
         .onAppear {
