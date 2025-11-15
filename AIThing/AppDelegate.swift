@@ -31,6 +31,7 @@ final class NotchVM: ObservableObject {
     @Published var toggle = false
     @Published var selectedText = ""
     @Published var move = false
+
     func refreshDimensions() { refresh.toggle() }
     func minimizeDimensions() { minimize.toggle() }
     func openDimensions() { open.toggle() }
@@ -102,7 +103,6 @@ class AppDelegate: NSObject, NSApplicationDelegate {
 
     @objc private func handleScreenChange() {
         _ = updateWindowSize(windowSize: lastWindowSize, resetY: true)
-        vm.refreshDimensions()
     }
 
     func application(_ application: NSApplication, open urls: [URL]) {
