@@ -159,7 +159,8 @@ extension AppDelegate {
             isTouchingRightEdge: { return self.isTouchingRightEdge() },
             windowMoveable: { self.windowMoveable($0) },
             startSelectionPoll: { self.startSelectionPoll() },
-            stopSelectionPoll: { self.stopSelectionPoll() }
+            stopSelectionPoll: { self.stopSelectionPoll() },
+            setPanelVisibility: { self.setPanelVisibility() }
         )
         floatingWindow.contentView = FirstMouseHostingView(rootView: notchView)
         floatingWindow.makeKeyAndOrderFront(nil)

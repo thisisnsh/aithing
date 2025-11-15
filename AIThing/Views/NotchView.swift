@@ -38,6 +38,7 @@ struct NotchView: View {
     let windowMoveable: (Bool) -> Void
     let startSelectionPoll: () -> Void
     let stopSelectionPoll: () -> Void
+    let setPanelVisibility: () -> Void
 
     let cornerRadiusLeft: CGFloat = 38
     let shadowBuffer: CGFloat = 32
@@ -120,7 +121,7 @@ struct NotchView: View {
                                     minimize()
                                 },
                                 expand: { maximize() },
-
+                                setPanelVisibility: { self.setPanelVisibility() }
                             )
                             .environmentObject(loginManager)
                             .environmentObject(firestoreManager)

@@ -15,6 +15,7 @@ struct SettingsView: View {
     let close: () -> Void
     let minimize: () -> Void
     let expand: () -> Void
+    let setPanelVisibility: () -> Void
 
     let cornerRadius: CGFloat = 24
 
@@ -100,7 +101,7 @@ struct SettingsView: View {
                                 preferencesCaptureFullScreen: $preferencesCaptureFullScreen,
                                 setPreferencesShowInScreenshot: setPreferencesShowInScreenshot,
                                 setPreferencesCaptureFullScreen: setPreferencesCaptureFullScreen,
-                                setPanelVisibility: {}
+                                setPanelVisibility: setPanelVisibility,
                             )
 
                         case .automations:
