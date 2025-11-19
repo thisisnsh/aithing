@@ -40,6 +40,7 @@ struct IntelligenceView: View {
     let getHistory: (String) async -> History?
     let storeHistory: (String, String, [[String: Any]]) async -> Void
     let setUnseen: (String, Bool) async -> Void
+    let setTitle: (String, String) async -> Void
     let startSelectionPoll: () -> Void
     let stopSelectionPoll: () -> Void
 
@@ -50,6 +51,7 @@ struct IntelligenceView: View {
     @State private var inputHeight: CGFloat = 24
     private let baseHeight: CGFloat = 24
     @State private var textSize: CGFloat = 14
+    @FocusState private var isFocused: Bool
 
     @State private var isThinking: Bool = false
     @State private var isThinkingBlinking: Bool = false
@@ -256,10 +258,20 @@ struct IntelligenceView: View {
                 }
                 .onHover { hoverYellow = $0 }
 
-            Text(tabTitle)
+            TextField("Enter Title", text: $tabTitle)
+                .focused($isFocused)
+                .onSubmit {
+                    isFocused = false
+                    Task {
+                        if !tabTitle.isEmpty, tabTitle.count < 64 {
+                            await setTitle(tabId, tabTitle)
+                        }
+                    }
+                }
                 .font(.system(size: 12, weight: .medium))
                 .foregroundStyle(.white)
                 .padding(.leading, 8)
+                .textFieldStyle(.plain)
 
             Spacer()
 

@@ -710,6 +710,7 @@ extension NotchView {
                 getHistory: { return await getHistory(tabId: $0) },
                 storeHistory: { await storeHistory(tabId: $0, tabTitle: $1, history: $2) },
                 setUnseen: { await setUnseen(id: $0, unseen: $1) },
+                setTitle: { await setTitle(id: $0, title: $1) },
                 startSelectionPoll: { self.startSelectionPoll() },
                 stopSelectionPoll: { self.stopSelectionPoll() }
             ),
@@ -1145,6 +1146,12 @@ extension NotchView {
 
     private func setUnseen(id: String, unseen: Bool) async {
         if await historyStore.setUnseen(id: tabId, unseen: unseen) {
+            await updateHistoryList()
+        }
+    }
+
+    private func setTitle(id: String, title: String) async {
+        if await historyStore.setTitle(id: tabId, title: title) {
             await updateHistoryList()
         }
     }

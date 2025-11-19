@@ -5,7 +5,6 @@
 ## 2.0 
 
 Wednesday
-- Support Edit title
 - Pick the app option 
  
 Thursday 

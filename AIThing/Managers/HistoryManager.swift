@@ -181,6 +181,29 @@ final class HistoryStore: ObservableObject {
         }
     }
 
+    /// Set the title for a given history id.
+    @discardableResult
+    func setTitle(id: String, title: String) async -> Bool {
+        guard let container = await container(for: id) else { return false }
+        let ctx = container.newBackgroundContext()
+        return await ctx.perform {
+            do {
+                let req = NSFetchRequest<HistoryDocMO>(entityName: "HistoryDoc")
+                req.predicate = NSPredicate(format: "id == %@", id)
+                req.fetchLimit = 1
+                guard let mo = try ctx.fetch(req).first else { return false }
+                guard mo.title != title else { return false }
+                mo.title = title
+                // Do NOT modify lastUpdated here; this is a view-state flag.
+                try ctx.save()
+                return true
+            } catch {
+                self.log("setTitle failed for id=\(id): \(error)")
+                return false
+            }
+        }
+    }
+
     /// Remove a single id (deletes its SQLite file).
     @discardableResult
     func delete(id: String) async -> Bool {
