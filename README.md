@@ -4,17 +4,26 @@
 
 ## 2.0 
 
+Wednesday
+- Support Edit title
+- Pick the app option 
+ 
+Thursday 
+- Selection UX 
+- Context UX
 
-17 Nov
+Friday
+- Appcasting
+
+Saturday 
 - Record demo video
 - Promote 2.0 
 
+Sunday
+- PH Pre-Release
 
-Next
-- Appcasting! 
-- Support Edit title
-- Support AI Suggestions : Understand you and suggest things based on time and this
-
+Monday 
+- PH Release
 
 
 ------------------------
@@ -22,15 +31,17 @@ Next
 
 ## Missing Features
 
-- Support Search History
 - Support Image Generation 
 - Support Audio  
+- Support Search History
 - Support Elicitation 
 - Support Markdown Select
 - Support OpenAI Models 
+- Support AI Suggestions
 
 
 ## Not Important Bugs
+
 - 2 hover required to open the app after closing
 - First file drop is slow
 

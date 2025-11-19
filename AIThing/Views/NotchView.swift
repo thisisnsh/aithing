@@ -477,8 +477,8 @@ struct NotchView: View {
                     HoverableTabButton(
                         title: expandSidebar
                             ? (h.title ?? createTitle(for: h.history, fallback: "Session #\(i + 1)"))
-                            : "ABC",
-                        isActive: (tabId == h.id) && !showSettings,
+                            : "",
+                        isActive: (tabId == h.id) && !showSettings && showChatWindow,
                         action: {
                             open()
                             showSettings = false
