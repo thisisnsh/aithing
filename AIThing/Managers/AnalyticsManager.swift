@@ -63,6 +63,7 @@ final class AnalyticsManager {
         case McpOAuthManager
         case McpManager
         case FirebaseManager
+        case IntelligenceManager
     }
 
     /// screen_view (manual)

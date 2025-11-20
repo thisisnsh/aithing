@@ -4,7 +4,8 @@
 <dict>
     <key>NSAccessibilityUsageDescription</key>
     <string>AI Thing needs accessibility access to detect text selection and show the floating window at the cursor location.</string>
-	
+    <key>NSScreenCaptureUsageDescription</key>
+    <string>This app needs screen recording permission to capture screenshots.</string>
     <key>CFBundleURLTypes</key>
 	<array>
 		<dict>

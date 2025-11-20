@@ -11,6 +11,7 @@ import Foundation
 func callModel(
     tabId: String,
     query: String,
+    getAppContextBase64: () -> AppContextModel?,
     getSelectedText: () -> String,
     setSelectedText: (String) -> Void,
     getSelectionEnabled: () -> Bool,
@@ -50,7 +51,7 @@ func callModel(
         )
         AnalyticsManager.shared
             .customEvent(
-                view: .IntelligenceView,
+                view: .IntelligenceManager,
                 primary: .query,
                 secondary: "breakglass",
                 sev: .error
@@ -70,7 +71,7 @@ func callModel(
         )
         AnalyticsManager.shared
             .customEvent(
-                view: .IntelligenceView,
+                view: .IntelligenceManager,
                 primary: .query,
                 secondary: "version expired",
                 sev: .error
@@ -94,7 +95,7 @@ func callModel(
                 )
                 AnalyticsManager.shared
                     .customEvent(
-                        view: .IntelligenceView,
+                        view: .IntelligenceManager,
                         primary: .query,
                         secondary: "version blocked",
                         sev: .error
@@ -117,7 +118,7 @@ func callModel(
         )
         AnalyticsManager.shared
             .customEvent(
-                view: .IntelligenceView,
+                view: .IntelligenceManager,
                 primary: .query,
                 secondary: "profile error",
                 sev: .error
@@ -140,7 +141,7 @@ func callModel(
         )
         AnalyticsManager.shared
             .customEvent(
-                view: .IntelligenceView,
+                view: .IntelligenceManager,
                 primary: .query,
                 secondary: "no login",
                 sev: .error
@@ -155,20 +156,19 @@ func callModel(
 
     // Load latest tools
     await reconnectManagedAgents()
-    let modelAgentCount = getAllClientTools().keys.count
     let modelTools = getAllClientTools().values.flatMap { $0 }
 
     let model = getModel()
 
     AnalyticsManager.shared.customEvent(
-        view: .IntelligenceView,
+        view: .IntelligenceManager,
         primary: .model,
         secondary: "model",
         sev: .info
     )
     AnalyticsManager.shared
         .customEvent(
-            view: .IntelligenceView,
+            view: .IntelligenceManager,
             primary: .count,
             secondary: "\(modelTools.count)",
             sev: .info
@@ -195,7 +195,7 @@ func callModel(
         )
         AnalyticsManager.shared
             .customEvent(
-                view: .IntelligenceView,
+                view: .IntelligenceManager,
                 primary: .query,
                 secondary: "no api key",
                 sev: .error
@@ -221,7 +221,7 @@ func callModel(
             case .image(let name, _, let base64):
                 fileCount += 1
                 AnalyticsManager.shared.customEvent(
-                    view: .IntelligenceView,
+                    view: .IntelligenceManager,
                     primary: .file,
                     secondary: "use image",
                     sev: .info
@@ -279,7 +279,7 @@ func callModel(
                     ])
                 }
                 AnalyticsManager.shared.customEvent(
-                    view: .IntelligenceView,
+                    view: .IntelligenceManager,
                     primary: .file,
                     secondary: "use pdf",
                     sev: .info
@@ -293,7 +293,7 @@ func callModel(
             case .text(let name, let text, _):
                 fileCount += 1
                 AnalyticsManager.shared.customEvent(
-                    view: .IntelligenceView,
+                    view: .IntelligenceManager,
                     primary: .file,
                     secondary: "use text",
                     sev: .info
@@ -326,7 +326,7 @@ func callModel(
 
         if !getSelectedText().isEmpty, getSelectionEnabled() {
             AnalyticsManager.shared.customEvent(
-                view: .IntelligenceView,
+                view: .IntelligenceManager,
                 primary: .file,
                 secondary: "use selection",
                 sev: .info
@@ -355,6 +355,42 @@ func callModel(
                 ]
             )
             setSelectedText("")
+        }
+
+        if let appContext = getAppContextBase64() {
+            AnalyticsManager.shared.customEvent(
+                view: .IntelligenceManager,
+                primary: .file,
+                secondary: "use application context",
+                sev: .info
+            )
+            appendModelInput(
+                [
+                    "role": "file",
+                    "content": [
+                        [
+                            "type": "file",
+                            "text": "\(appContext.appName): \(appContext.windowName)",
+                            "skip_next_messages": false,
+                        ]
+                    ],
+                ]
+            )
+            appendModelInput(
+                [
+                    "role": "user",
+                    "content": [
+                        [
+                            "type": "image",
+                            "source": [
+                                "type": "base64",
+                                "media_type": "image/jpeg",
+                                "data": appContext.base64,
+                            ],
+                        ]
+                    ],
+                ]
+            )
         }
 
         appendModelInput(
@@ -401,7 +437,7 @@ func callModel(
             )
             AnalyticsManager.shared
                 .customEvent(
-                    view: .IntelligenceView,
+                    view: .IntelligenceManager,
                     primary: .query,
                     secondary: "invalid response",
                     sev: .error
@@ -426,7 +462,7 @@ func callModel(
                 )
                 AnalyticsManager.shared
                     .customEvent(
-                        view: .IntelligenceView,
+                        view: .IntelligenceManager,
                         primary: .query,
                         secondary: "rate limit reached",
                         sev: .error
@@ -439,7 +475,7 @@ func callModel(
                 )
                 AnalyticsManager.shared
                     .customEvent(
-                        view: .IntelligenceView,
+                        view: .IntelligenceManager,
                         primary: .query,
                         secondary: "error response",
                         sev: .error
@@ -472,7 +508,7 @@ func callModel(
         } else {
             AnalyticsManager.shared
                 .customEvent(
-                    view: .IntelligenceView,
+                    view: .IntelligenceManager,
                     primary: .query,
                     secondary: "usage not calculated",
                     sev: .error
@@ -608,7 +644,7 @@ func callModel(
 
                         AnalyticsManager.shared
                             .customEvent(
-                                view: .IntelligenceView,
+                                view: .IntelligenceManager,
                                 primary: .tool,
                                 secondary: finalToolUseName,
                                 sev: .info
@@ -632,6 +668,7 @@ func callModel(
                         let rc = await callModel(
                             tabId: tabId,
                             query: "",
+                            getAppContextBase64: { return nil },
                             getSelectedText: getSelectedText,
                             setSelectedText: setSelectedText,
                             getSelectionEnabled: getSelectionEnabled,
@@ -677,7 +714,7 @@ func callModel(
             )
             AnalyticsManager.shared
                 .customEvent(
-                    view: .IntelligenceView,
+                    view: .IntelligenceManager,
                     primary: .query,
                     secondary: "error streaming",
                     sev: .error

@@ -48,7 +48,7 @@ struct MarkdownText: View {
                     .background(noBackground ? .clear : .gray.opacity(0.25))
                     .clipShape(RoundedRectangle(cornerRadius: 8))
                     .markdownMargin(top: 0, bottom: 16)
-                    
+
                     if codeHover {
                         Button(action: {
                             copyToClipboard(configuration.content)

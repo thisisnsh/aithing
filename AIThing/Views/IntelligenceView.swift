@@ -21,6 +21,7 @@ struct IntelligenceView: View {
     @EnvironmentObject var mcpManager: MCPManager
     @EnvironmentObject var loginManager: LoginManager
     @EnvironmentObject var firestoreManager: FirestoreManager
+    @EnvironmentObject var appContext: AppContext
     @StateObject var screenshotMonitor = ScreenshotMonitor()
 
     @ObservedObject var vm: NotchVM
@@ -73,8 +74,13 @@ struct IntelligenceView: View {
     @State private var showMcpTools: Bool = false
     @State private var hoverMcpTools: Bool = false
     @State private var selectionEnabled: Bool = false
-    @State private var showSelection: Bool = false
     @State private var hoverSelectionEnabled: Bool = false
+
+    @State private var appContextEnabled: Bool = false
+    @State private var hoverAppContextEnabled: Bool = false
+    @State private var selectedAppIcon: NSImage? = nil
+    @State private var selectedAppName = ""
+    @State private var selectedWindowName = ""
 
     // Trafic Light
     @State private var hoverRed: Bool = false
@@ -94,51 +100,55 @@ struct IntelligenceView: View {
                     .fill(.white.opacity(0.1))
             }
 
-            VStack {
-                TitleView()
-                    .padding(8)
+            ZStack(alignment: .bottom) {
+                VStack {
+                    TitleView()
+                        .padding(8)
 
-                Divider()
-                    .padding(.horizontal, -8)
+                    Divider()
+                        .padding(.horizontal, -8)
 
-                if showMcpTools {
-                    ToolsView(cornerRadius: cornerRadius - 4)
-                        .environmentObject(mcpManager)
-                } else {
-                    ZStack {
-                        ResponseView()
-                            .padding(.vertical, -8)
-                            .frame(
-                                maxWidth: .infinity,
-                                maxHeight: .infinity,
-                                alignment: .topLeading
-                            )
-
-                        if !isThinking, showSavedQueries {
-                            SaveQueryView()
+                    if showMcpTools {
+                        ToolsView(cornerRadius: cornerRadius - 4)
+                            .environmentObject(mcpManager)
+                    } else {
+                        ZStack {
+                            ResponseView()
+                                .padding(.vertical, -8)
                                 .frame(
                                     maxWidth: .infinity,
                                     maxHeight: .infinity,
-                                    alignment: .bottomLeading
+                                    alignment: .topLeading
                                 )
-                                .padding(.leading, -8)
+
+                            if !isThinking, showSavedQueries {
+                                SaveQueryView()
+                                    .frame(
+                                        maxWidth: .infinity,
+                                        maxHeight: .infinity,
+                                        alignment: .bottomLeading
+                                    )
+                                    .padding(.leading, -8)
+                            }
                         }
+                    }
+
+                    Spacer()
+
+                    if #available(macOS 26.0, *) {
+                        InputView()
+                            .glassEffect(
+                                .regular.interactive(),
+                                in: RoundedRectangle(cornerRadius: cornerRadius - 4)
+                            )
+                    } else {
+                        InputView()
+                            .background(.white.opacity(0.1))
+                            .cornerRadius(cornerRadius - 4)
                     }
                 }
 
-                Spacer()
-
-                if #available(macOS 26.0, *) {
-                    InputView()
-                        .glassEffect(
-                            .regular.interactive(),
-                            in: RoundedRectangle(cornerRadius: cornerRadius - 4)
-                        )
-                } else {
-                    InputView()
-                        .background(.white.opacity(0.1))
-                        .cornerRadius(cornerRadius - 4)
-                }
+                InputOptionView()
             }
             .id(tabId)
             .padding(8)
@@ -180,16 +190,6 @@ struct IntelligenceView: View {
             .onChange(of: vm.selectedText) { text in
                 if isTabShowing() {
                     selectedText = text
-                    showSelection = true
-                }
-            }
-            .onChange(of: selectionEnabled) { _ in
-                if selectionEnabled {
-                    startSelectionPoll()
-                } else {
-                    selectedText = ""
-                    vm.selectedText = ""
-                    stopSelectionPoll()
                 }
             }
             .onReceive(screenshotMonitor.$latestScreenshot) { ss in
@@ -216,7 +216,7 @@ struct IntelligenceView: View {
                     Task {
                         let results = await DragFileManager.processPaths(urls)
                         for r in results {
-                            modelContext.append(r)
+                            modelContext.insert(r, at: 0)
                             AnalyticsManager.shared
                                 .customEvent(
                                     view: .IntelligenceView,
@@ -429,40 +429,6 @@ struct IntelligenceView: View {
                 ContextView()
             }
 
-            if !selectedText.isEmpty, showSelection, selectionEnabled, !isThinking {
-                ScrollView {
-                    MarkdownText(text: "```\n\(selectedText)\n```", noBackground: true)
-                        .font(.system(size: 12, weight: .medium, design: .monospaced))
-                        .textSelection(.enabled)
-                }
-                .background(.white.opacity(0.1))
-                .clipShape(RoundedRectangle(cornerRadius: cornerRadius - 8))
-                .frame(minHeight: 16, maxHeight: 64)
-                .overlay(alignment: .topLeading) {
-                    Button {
-                        selectedText = ""
-                        vm.selectedText = ""
-                        AnalyticsManager.shared
-                            .customEvent(
-                                view: .IntelligenceView,
-                                primary: .selection,
-                                secondary: "remove",
-                                sev: .info
-                            )
-                    } label: {
-                        Image(systemName: "xmark.circle")
-                            .resizable()
-                            .frame(width: 12, height: 12)
-                            .foregroundStyle(.black)
-                            .padding(2)
-                            .background(.white)
-                            .clipShape(Circle())
-                    }
-                    .buttonStyle(.plain)
-                    .padding(8)
-                }
-            }
-
             ZStack(alignment: .leading) {
                 if !isThinking, !isDropping {
                     InputTextView(
@@ -508,10 +474,148 @@ struct IntelligenceView: View {
             }
             .frame(height: inputHeight)
             .padding(.vertical, 8)
+            .padding(.bottom, 32)
+        }
+        .padding(8)
+        .overlay(
+            Group {
+                if isThinking {
+                    AnimatedGradientBorder(
+                        cornerRadius: cornerRadius - 4,
+                        lineWidth: 1.5,
+                        color: .white
+                    )
+                } else if isDropping {
+                    AnimatedGradientBorder(
+                        cornerRadius: cornerRadius - 4,
+                        lineWidth: 1.5,
+                        color: .blue
+                    )
+                }
+            }
+        )
+    }
 
-            HStack {
+    private func InputOptionView() -> some View {
+        VStack(alignment: .leading) {
+            if false, hoverSelectionEnabled, selectionEnabled, !selectedText.isEmpty {
+                ScrollView {
+                    Text(selectedText)
+                        .font(.system(size: 10, weight: .medium, design: .monospaced))
+                        .foregroundStyle(.black)
+                        .textSelection(.enabled)
+                        .padding(8)
+                        .textSelection(.enabled)
+                }
+                .background(.white)
+                .cornerRadius(cornerRadius - 8)
+            }
+
+            if hoverAppContextEnabled, appContextEnabled {
+                let (image, _) = getAppContextBase64()
+                if let image = image {
+                    Image(nsImage: image)
+                        .resizable()
+                        .aspectRatio(contentMode: .fit)
+                        .frame(height: 64)
+                        .cornerRadius(cornerRadius - 8)
+                        .overlay {
+                            RoundedRectangle(cornerRadius: cornerRadius - 8, style: .continuous)
+                                .stroke(Color.white, lineWidth: 2)
+                        }
+                }
+            }
+
+            HStack(alignment: .bottom) {
+                if appContextEnabled {
+                    Button(action: {
+                        appContextEnabled = false
+                        selectedAppIcon = nil
+                        selectedAppName = ""
+                        selectedWindowName = ""
+                    }) {
+                        HStack {
+                            if let icon = selectedAppIcon {
+                                Image(nsImage: icon)
+                                    .resizable()
+                                    .frame(width: 12, height: 12)
+                            }
+
+                            Text("\(selectedAppName): \(selectedWindowName)")
+                                .lineLimit(1)
+                                .font(.system(size: 10, weight: .medium))
+                                .foregroundStyle(.black)
+                        }
+                        .padding(8)
+                        .padding(.horizontal, 4)
+                        .background(.white)
+                        .clipShape(RoundedRectangle(cornerRadius: cornerRadius))
+                    }
+                    .buttonStyle(PlainButtonStyle())
+                    .onHover { hoverAppContextEnabled = $0 }
+                } else {
+                    if !appContext.appName.isEmpty || !appContext.windowName.isEmpty {
+                        Button(action: {
+                            appContextEnabled = true
+                            selectedAppIcon = appContext.appIcon
+                            selectedAppName = appContext.appName
+                            selectedWindowName = appContext.windowName
+                        }) {
+                            HStack {
+                                if let icon = appContext.appIcon {
+                                    Image(nsImage: icon)
+                                        .resizable()
+                                        .frame(width: 12, height: 12)
+                                }
+
+                                Text("\(appContext.appName) \(appContext.windowName)")
+                                    .lineLimit(1)
+                                    .font(.system(size: 10, weight: .medium))
+                                    .foregroundStyle(
+                                        hoverAppContextEnabled || appContextEnabled
+                                            ? .black : .white
+                                    )
+                            }
+                            .padding(8)
+                            .padding(.horizontal, 4)
+                            .background(
+                                hoverAppContextEnabled || appContextEnabled
+                                    ? .white : .white.opacity(0.1)
+                            )
+                            .clipShape(RoundedRectangle(cornerRadius: cornerRadius))
+                        }
+                        .buttonStyle(PlainButtonStyle())
+                        .onHover { hoverAppContextEnabled = $0 }
+                    }
+                }
+
                 Button(action: {
-                    selectionEnabled.toggle()
+                    // Accessibility trust (prompt once as needed)
+                    if !AXIsProcessTrusted() {
+                        let opts: NSDictionary = [
+                            kAXTrustedCheckOptionPrompt.takeUnretainedValue() as NSString: true
+                        ]
+                        _ = AXIsProcessTrustedWithOptions(opts)
+                        return
+                    } else {
+                        selectionEnabled.toggle()
+                    }
+
+                    if selectionEnabled {
+                        startSelectionPoll()
+                    } else {
+                        selectedText = ""
+                        vm.selectedText = ""
+                        stopSelectionPoll()
+                        AnalyticsManager.shared
+                            .customEvent(
+                                view: .IntelligenceView,
+                                primary: .selection,
+                                secondary: "remove",
+                                sev: .info
+                            )
+                    }
+
                     AnalyticsManager.shared
                         .customEvent(
                             view: .IntelligenceView,
@@ -521,14 +625,17 @@ struct IntelligenceView: View {
                         )
                 }) {
                     HStack {
-                        Image(systemName: selectionEnabled ? "text.redaction" : "text.alignleft")
-                            .resizable()
-                            .frame(width: 12, height: 12)
-                            .foregroundStyle(
-                                hoverSelectionEnabled || selectionEnabled ? .black : .white
-                            )
+                        Image(
+                            systemName: selectionEnabled
+                                ? "text.redaction" : "text.alignleft"
+                        )
+                        .resizable()
+                        .frame(width: 12, height: 12)
+                        .foregroundStyle(
+                            hoverSelectionEnabled || selectionEnabled ? .black : .white
+                        )
 
-                        Text(selectionEnabled ? "Selection Enabled" : "Selection Disabled")
+                        Text("Text Selection")
                             .font(.system(size: 10, weight: .medium))
                             .foregroundStyle(
                                 hoverSelectionEnabled || selectionEnabled ? .black : .white
@@ -569,23 +676,6 @@ struct IntelligenceView: View {
             }
         }
         .padding(8)
-        .overlay(
-            Group {
-                if isThinking {
-                    AnimatedGradientBorder(
-                        cornerRadius: cornerRadius - 4,
-                        lineWidth: 1.5,
-                        color: .white
-                    )
-                } else if isDropping {
-                    AnimatedGradientBorder(
-                        cornerRadius: cornerRadius - 4,
-                        lineWidth: 1.5,
-                        color: .blue
-                    )
-                }
-            }
-        )
     }
 }
 
@@ -599,7 +689,6 @@ extension IntelligenceView {
         isThinking = true
         toolCall = ""
         query = ""
-        showSelection = false
         inputHeight = baseHeight
         showSavedQueries = false
 
@@ -615,6 +704,7 @@ extension IntelligenceView {
         let result = await callModel(
             tabId: tabId,
             query: trimmed,
+            getAppContextBase64: { return getAppContextBase64() },
             getSelectedText: { return selectedText },
             setSelectedText: { selectedText = $0 },
             getSelectionEnabled: { return selectionEnabled },
@@ -656,7 +746,6 @@ extension IntelligenceView {
             sev: .info
         )
 
-        showSelection = true
         vm.selectedText = ""
         selectedText = ""
         selectionEnabled = false
@@ -670,6 +759,27 @@ extension IntelligenceView {
         toolCall = ""
 
         await updateHistoryList()
+    }
+
+    private func getAppContextBase64() -> AppContextModel? {
+        if !appContextEnabled || selectedAppName.isEmpty || selectedWindowName.isEmpty {
+            return nil
+        }
+
+        if let image = captureWindow(
+            appName: selectedAppName,
+            windowTitle: selectedWindowName
+        ) {
+            let thumb = image.resized(maxDimension: 1024)
+            guard let data = thumb.jpegData() else { return (nil, nil) }
+            return AppContextModel(
+                appName: selectedAppName,
+                windowName: selectedWindowName,
+                base64: data.base64EncodedString()
+            )
+        }
+
+        return nil
     }
 
     private func animateOutput(content: String, notification: Bool) async {

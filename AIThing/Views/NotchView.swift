@@ -25,6 +25,8 @@ struct NotchView: View {
     @StateObject private var firestoreManager = FirestoreManager()
     @StateObject private var automationManager = AutomationManager(onExecute: { _ in })
 
+    @EnvironmentObject var appContext: AppContext
+
     let logger = Logger(subsystem: "com.thisisnsh.mac.AIThing", category: "NotchView")
     let historyStore = HistoryStore()
 
@@ -135,6 +137,7 @@ struct NotchView: View {
                                     .environmentObject(mcpManager)
                                     .environmentObject(loginManager)
                                     .environmentObject(firestoreManager)
+                                    .environmentObject(appContext)
                                     .id(tabId)
                             }
                         }
@@ -276,7 +279,7 @@ struct NotchView: View {
             AnalyticsManager.shared.screenView(screenName: .NotchView)
             close()
         }
-        .onChange(of: showSettings) { newValue in
+        .onChange(of: showSettings) { _ in
             Task {
                 managedModels = await firestoreManager.getModelInfos()
                 await loadAllClientTools()
@@ -328,6 +331,7 @@ struct NotchView: View {
                 let _ = await callModel(
                     tabId: tabId,
                     query: automation.instructions,
+                    getAppContextBase64: { return nil },
                     getSelectedText: { return "" },
                     setSelectedText: { _ in },
                     getSelectionEnabled: { return false },

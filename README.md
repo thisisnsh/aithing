@@ -4,13 +4,8 @@
 
 ## 2.0 
 
-Wednesday
-- Pick the app option 
  
 Thursday 
-- Selection UX 
-- Context UX
-
 Friday
 - Appcasting
 

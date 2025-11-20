@@ -67,6 +67,7 @@ class AppDelegate: NSObject, NSApplicationDelegate {
     private var mouseLocation = NSEvent.mouseLocation
 
     let vm = NotchVM()
+    let appContext = AppContext()
 
     func applicationDidFinishLaunching(_ notification: Notification) {
         NSApp.setActivationPolicy(.accessory)  // background-style app
@@ -81,6 +82,13 @@ class AppDelegate: NSObject, NSApplicationDelegate {
             self,
             selector: #selector(handleScreenChange),
             name: NSApplication.didChangeScreenParametersNotification,
+            object: nil
+        )
+
+        NSWorkspace.shared.notificationCenter.addObserver(
+            self,
+            selector: #selector(appDidActivate),
+            name: NSWorkspace.didActivateApplicationNotification,
             object: nil
         )
 
@@ -103,6 +111,12 @@ class AppDelegate: NSObject, NSApplicationDelegate {
 
     @objc private func handleScreenChange() {
         _ = updateWindowSize(windowSize: lastWindowSize, resetY: true)
+    }
+
+    @objc func appDidActivate(_ note: Notification) {
+        DispatchQueue.main.async {
+            self.appContext.refresh()
+        }
     }
 
     func application(_ application: NSApplication, open urls: [URL]) {
@@ -162,6 +176,8 @@ extension AppDelegate {
             stopSelectionPoll: { self.stopSelectionPoll() },
             setPanelVisibility: { self.setPanelVisibility() }
         )
+        .environmentObject(appContext)
+
         floatingWindow.contentView = FirstMouseHostingView(rootView: notchView)
         floatingWindow.makeKeyAndOrderFront(nil)
 
@@ -355,6 +371,15 @@ extension AppDelegate {
     private func startSelectionPoll() {
         pollingTimer?.cancel()
 
+        // Accessibility trust (prompt once as needed)
+        if !AXIsProcessTrusted() {
+            let opts: NSDictionary = [
+                kAXTrustedCheckOptionPrompt.takeUnretainedValue() as NSString: true
+            ]
+            _ = AXIsProcessTrustedWithOptions(opts)
+            return
+        }
+
         let timer = DispatchSource.makeTimerSource(queue: .main)
         timer.schedule(deadline: .now(), repeating: 0.5)
 
@@ -362,15 +387,6 @@ extension AppDelegate {
         // by capturing self weakly.
         timer.setEventHandler { [weak self] in
             guard let self else { return }
-
-            // Accessibility trust (prompt once as needed)
-            if !AXIsProcessTrusted() {
-                let opts: NSDictionary = [
-                    kAXTrustedCheckOptionPrompt.takeUnretainedValue() as NSString: true
-                ]
-                _ = AXIsProcessTrustedWithOptions(opts)
-                return
-            }
 
             // Skip if the *frontmost* app is our own or excluded.
             if let frontmostID = NSWorkspace.shared.frontmostApplication?.bundleIdentifier {
