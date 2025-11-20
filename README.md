@@ -6,6 +6,8 @@
 
  
 Thursday 
+- Bug: All screenshot not working 
+
 Friday
 - Appcasting
 

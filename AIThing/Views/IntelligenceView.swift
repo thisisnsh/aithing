@@ -498,26 +498,13 @@ struct IntelligenceView: View {
 
     private func InputOptionView() -> some View {
         VStack(alignment: .leading) {
-            if false, hoverSelectionEnabled, selectionEnabled, !selectedText.isEmpty {
-                ScrollView {
-                    Text(selectedText)
-                        .font(.system(size: 10, weight: .medium, design: .monospaced))
-                        .foregroundStyle(.black)
-                        .textSelection(.enabled)
-                        .padding(8)
-                        .textSelection(.enabled)
-                }
-                .background(.white)
-                .cornerRadius(cornerRadius - 8)
-            }
-
             if hoverAppContextEnabled, appContextEnabled {
-                let (image, _) = getAppContextBase64()
-                if let image = image {
-                    Image(nsImage: image)
+                let appContext = getAppContextBase64()
+                if let appContext = appContext {
+                    Image(nsImage: appContext.screenshot)
                         .resizable()
                         .aspectRatio(contentMode: .fit)
-                        .frame(height: 64)
+                        .frame(height: 128)
                         .cornerRadius(cornerRadius - 8)
                         .overlay {
                             RoundedRectangle(cornerRadius: cornerRadius - 8, style: .continuous)
@@ -771,10 +758,11 @@ extension IntelligenceView {
             windowTitle: selectedWindowName
         ) {
             let thumb = image.resized(maxDimension: 1024)
-            guard let data = thumb.jpegData() else { return (nil, nil) }
+            guard let data = thumb.jpegData() else { return nil }
             return AppContextModel(
                 appName: selectedAppName,
                 windowName: selectedWindowName,
+                screenshot: thumb,
                 base64: data.base64EncodedString()
             )
         }

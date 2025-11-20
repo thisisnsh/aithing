@@ -34,7 +34,7 @@ struct FilePill: View {
 
             DeleteButton()
         }
-        .padding(4)
+        .padding(.trailing, 4)
         .padding(8)
         .background(.white)
         .cornerRadius(cornerRadius)
