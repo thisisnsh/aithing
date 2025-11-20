@@ -137,6 +137,7 @@ struct IntelligenceView: View {
 
                     if #available(macOS 26.0, *) {
                         InputView()
+                            .clipShape(RoundedRectangle(cornerRadius: cornerRadius - 4))
                             .glassEffect(
                                 .regular.interactive(),
                                 in: RoundedRectangle(cornerRadius: cornerRadius - 4)
@@ -144,7 +145,7 @@ struct IntelligenceView: View {
                     } else {
                         InputView()
                             .background(.white.opacity(0.1))
-                            .cornerRadius(cornerRadius - 4)
+                            .clipShape(RoundedRectangle(cornerRadius: cornerRadius - 4))
                     }
                 }
 
@@ -263,7 +264,7 @@ struct IntelligenceView: View {
                 .onSubmit {
                     isFocused = false
                     Task {
-                        if !tabTitle.isEmpty, tabTitle.count < 64 {
+                        if !tabTitle.isEmpty, tabTitle.count < 64, tabTitle != "New Chat" {
                             await setTitle(tabId, tabTitle)
                         }
                     }
@@ -367,11 +368,6 @@ struct IntelligenceView: View {
             .padding(.horizontal, 8)
         }
         .padding(.horizontal, -8)
-        .clipShape(
-            RoundedRectangle(
-                cornerRadius: modelContext.count == 1 ? cornerRadius - 8 : cornerRadius
-            )
-        )
     }
 
     private func SaveQueryView() -> some View {
@@ -424,7 +420,7 @@ struct IntelligenceView: View {
     }
 
     private func InputView() -> some View {
-        VStack(alignment: .leading) {
+        VStack(alignment: .leading, spacing: 0) {
             if modelContext.count > 0, !isThinking {
                 ContextView()
             }

@@ -22,21 +22,21 @@ struct FilePill: View {
         HStack {
             Image(systemName: systemName)
                 .resizable()
-                .frame(width: 10, height: 10)
-                .foregroundStyle(.black)
+                .frame(width: 12, height: 12)
+                .foregroundStyle(onHover ? .black : .white)
                 .padding(.leading, 4)
+                .padding(.top, -2)
 
             Text(name)
                 .lineLimit(1)
                 .font(.system(size: 10, weight: .medium))
-                .foregroundStyle(.black)
-                .frame(maxWidth: 100)
+                .foregroundStyle(onHover ? .black : .white)
 
             DeleteButton()
         }
         .padding(.trailing, 4)
         .padding(8)
-        .background(.white)
+        .background(onHover ? .white : .white.opacity(0.1))
         .cornerRadius(cornerRadius)
         .onHover { onHover = $0 }
     }
