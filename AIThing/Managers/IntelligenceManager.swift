@@ -370,7 +370,8 @@ func callModel(
                     "content": [
                         [
                             "type": "file",
-                            "text": "\(appContext.appName): \(appContext.windowName)",
+                            "text":
+                                "\(appContext.appName)\(appContext.windowName.count > 0 ? ": " : "")\(appContext.windowName)",
                             "skip_next_messages": false,
                         ]
                     ],

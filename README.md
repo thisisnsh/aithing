@@ -6,10 +6,10 @@
 
  
 Thursday 
-- Bug: All screenshot not working 
+- Appcasting
 
 Friday
-- Appcasting
+- 
 
 Saturday 
 - Record demo video

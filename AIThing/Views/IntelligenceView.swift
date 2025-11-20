@@ -524,10 +524,12 @@ struct IntelligenceView: View {
                                     .frame(width: 12, height: 12)
                             }
 
-                            Text("\(selectedAppName): \(selectedWindowName)")
-                                .lineLimit(1)
-                                .font(.system(size: 10, weight: .medium))
-                                .foregroundStyle(.black)
+                            Text(
+                                "\(selectedAppName)\(selectedWindowName.count > 0 ? ": " : "")\(selectedWindowName)"
+                            )
+                            .lineLimit(1)
+                            .font(.system(size: 10, weight: .medium))
+                            .foregroundStyle(.black)
                         }
                         .padding(8)
                         .padding(.horizontal, 4)
@@ -537,12 +539,20 @@ struct IntelligenceView: View {
                     .buttonStyle(PlainButtonStyle())
                     .onHover { hoverAppContextEnabled = $0 }
                 } else {
-                    if !appContext.appName.isEmpty || !appContext.windowName.isEmpty {
+                    if !appContext.appName.isEmpty {
                         Button(action: {
-                            appContextEnabled = true
                             selectedAppIcon = appContext.appIcon
                             selectedAppName = appContext.appName
                             selectedWindowName = appContext.windowName
+                            appContextEnabled = true
+
+                            // Check if screenshot can not be taken disable the button
+                            if getAppContextBase64() == nil {
+                                appContextEnabled = false
+                                selectedAppIcon = nil
+                                selectedAppName = ""
+                                selectedWindowName = ""
+                            }
                         }) {
                             HStack {
                                 if let icon = appContext.appIcon {
@@ -551,13 +561,15 @@ struct IntelligenceView: View {
                                         .frame(width: 12, height: 12)
                                 }
 
-                                Text("\(appContext.appName) \(appContext.windowName)")
-                                    .lineLimit(1)
-                                    .font(.system(size: 10, weight: .medium))
-                                    .foregroundStyle(
-                                        hoverAppContextEnabled || appContextEnabled
-                                            ? .black : .white
-                                    )
+                                Text(
+                                    "\(appContext.appName)\(appContext.windowName.count > 0 ? ": " : "")\(appContext.windowName)"
+                                )
+                                .lineLimit(1)
+                                .font(.system(size: 10, weight: .medium))
+                                .foregroundStyle(
+                                    hoverAppContextEnabled || appContextEnabled
+                                        ? .black : .white
+                                )
                             }
                             .padding(8)
                             .padding(.horizontal, 4)
@@ -745,7 +757,7 @@ extension IntelligenceView {
     }
 
     private func getAppContextBase64() -> AppContextModel? {
-        if !appContextEnabled || selectedAppName.isEmpty || selectedWindowName.isEmpty {
+        if !appContextEnabled || selectedAppName.isEmpty {
             return nil
         }
 
