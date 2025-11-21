@@ -45,7 +45,7 @@ final class HistoryStore: ObservableObject {
         async -> Bool
     {
         guard JSONSerialization.isValidJSONObject(history) else {
-            log("store invalid JSON for id=\(id)")
+            self.logger.debug("store invalid JSON for id=\(id)")
             return false
         }
         guard let container = await container(for: id) else { return false }
@@ -74,7 +74,7 @@ final class HistoryStore: ObservableObject {
                 try ctx.save()
                 return true
             } catch {
-                self.log("store failed for id=\(id): \(error)")
+                self.logger.error("store failed for id=\(id): \(error)")
                 return false
             }
         }
@@ -88,6 +88,7 @@ final class HistoryStore: ObservableObject {
         for url in urls {
             // open container for this file's id (derived from filename)
             let id = Self.idFromStoreURL(url)
+            guard Self.storeExists(for: id) else { continue }
             guard let container = await container(for: id) else { continue }
             let ctx = container.viewContext
             let items: [History] = await ctx.perform {
@@ -108,7 +109,7 @@ final class HistoryStore: ObservableObject {
                     )
                     return [hist]
                 } catch {
-                    self.log("getAll fetch failed for id=\(id): \(error)")
+                    self.logger.error("getAll fetch failed for id=\(id): \(error)")
                     return []
                 }
             }
@@ -132,6 +133,7 @@ final class HistoryStore: ObservableObject {
 
     /// Fetch a single History by id.
     func get(id: String) async -> History? {
+        guard Self.storeExists(for: id) else { return nil }
         guard let container = await container(for: id) else { return nil }
         let ctx = container.viewContext
         return await ctx.perform {
@@ -152,7 +154,7 @@ final class HistoryStore: ObservableObject {
                     unseen: unseen
                 )
             } catch {
-                self.log("get failed for id=\(id): \(error)")
+                self.logger.error("get failed for id=\(id): \(error)")
                 return nil
             }
         }
@@ -161,6 +163,7 @@ final class HistoryStore: ObservableObject {
     /// Set the unseen flag for a given history id.
     @discardableResult
     func setUnseen(id: String, unseen: Bool) async -> Bool {
+        guard Self.storeExists(for: id) else { return false }
         guard let container = await container(for: id) else { return false }
         let ctx = container.newBackgroundContext()
         return await ctx.perform {
@@ -175,7 +178,7 @@ final class HistoryStore: ObservableObject {
                 try ctx.save()
                 return true
             } catch {
-                self.log("setUnseen failed for id=\(id): \(error)")
+                self.logger.error("setUnseen failed for id=\(id): \(error)")
                 return false
             }
         }
@@ -184,6 +187,7 @@ final class HistoryStore: ObservableObject {
     /// Set the title for a given history id.
     @discardableResult
     func setTitle(id: String, title: String) async -> Bool {
+        guard Self.storeExists(for: id) else { return false }
         guard let container = await container(for: id) else { return false }
         let ctx = container.newBackgroundContext()
         return await ctx.perform {
@@ -198,7 +202,7 @@ final class HistoryStore: ObservableObject {
                 try ctx.save()
                 return true
             } catch {
-                self.log("setTitle failed for id=\(id): \(error)")
+                self.logger.error("setTitle failed for id=\(id): \(error)")
                 return false
             }
         }
@@ -215,7 +219,9 @@ final class HistoryStore: ObservableObject {
         }
         let psc = container.persistentStoreCoordinator
         if let store = psc.persistentStores.first {
-            do { try psc.remove(store) } catch { log("remove store failed: \(error)") }
+            do { try psc.remove(store) } catch {
+                self.logger.debug("remove store failed: \(error)")
+            }
         }
         Self.deleteStoreFiles(for: id)
         containers.removeValue(forKey: id)
@@ -246,7 +252,7 @@ final class HistoryStore: ObservableObject {
 
         let url = Self.storeURL(for: id)
         do { try Self.ensureParentDir(url) } catch {
-            log("ensure dir failed: \(error)")
+            self.logger.debug("ensure dir failed: \(error)")
             return nil
         }
 
@@ -267,7 +273,7 @@ final class HistoryStore: ObservableObject {
             }
         }
         if !ok {
-            log("load store failed for id=\(id): \(String(describing: loadError))")
+            self.logger.debug("load store failed for id=\(id): \(String(describing: loadError))")
             return nil
         }
         c.viewContext.automaticallyMergesChangesFromParent = true
@@ -376,5 +382,8 @@ final class HistoryStore: ObservableObject {
         return name.components(separatedBy: invalid).joined(separator: "_")
     }
 
-    private func log(_ msg: String) { NSLog("[HistoryStore] \(msg)") }
+    private static func storeExists(for id: String) -> Bool {
+        let url = storeURL(for: id)
+        return FileManager.default.fileExists(atPath: url.path)
+    }
 }
