@@ -23,20 +23,21 @@ struct FilePill: View {
             Image(systemName: systemName)
                 .resizable()
                 .frame(width: 12, height: 12)
-                .foregroundStyle(onHover ? .black : .white)
+                .foregroundStyle(.black)
                 .padding(.leading, 4)
                 .padding(.top, -2)
 
             Text(name)
                 .lineLimit(1)
                 .font(.system(size: 10, weight: .medium))
-                .foregroundStyle(onHover ? .black : .white)
+                .foregroundStyle(.black)
+                .frame(maxWidth: 164)
 
             DeleteButton()
         }
         .padding(.trailing, 4)
         .padding(8)
-        .background(onHover ? .white : .white.opacity(0.1))
+        .background(.white)
         .cornerRadius(cornerRadius)
         .onHover { onHover = $0 }
     }

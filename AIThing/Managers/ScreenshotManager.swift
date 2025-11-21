@@ -34,7 +34,7 @@ func captureWindow(appName: String, windowTitle: String? = nil) -> NSImage? {
             let layer = info[kCGWindowLayer as String] as? Int
         else { return nil }
 
-        if let title = windowTitle {
+        if let title = windowTitle, !title.isEmpty {
             let name = (info[kCGWindowName as String] as? String) ?? ""
             if name != title { return nil }
         }

@@ -7,6 +7,7 @@
  
 Thursday 
 - Appcasting
+- empty history on new tab
 
 Friday
 - 

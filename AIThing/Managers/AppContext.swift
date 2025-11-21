@@ -25,11 +25,7 @@ class AppContext: ObservableObject {
         let context = getAppContext()
 
         self.appName = context.appName
-        if context.windowTitle.count > 32 {
-            self.windowName = String(context.windowTitle.prefix(32) + "...")
-        } else {
-            self.windowName = context.windowTitle
-        }
+        self.windowName = context.windowTitle
         self.appIcon = context.appIcon
     }
 

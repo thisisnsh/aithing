@@ -47,7 +47,7 @@ struct ToolsView: View {
                 tools = await mcpManager.getAllTools()
                 currentClient = tools.keys.first ?? ""
                 if tools.isEmpty {
-                    toolsText = "No tools added yet"
+                    toolsText = "Enable agents in Settings"
                 }
                 AnalyticsManager.shared
                     .customEvent(
