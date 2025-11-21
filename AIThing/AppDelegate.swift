@@ -14,6 +14,7 @@ import Logging
 import OAuthSwift
 import SelectedTextKit
 import ServiceManagement
+import Sparkle
 import SwiftUI
 
 enum WindowSize: Int {
@@ -44,7 +45,6 @@ final class NotchVM: ObservableObject {
 class AppDelegate: NSObject, NSApplicationDelegate {
     private var floatingWindow: NonActivatingPanel!
 
-    static var allowQuit = false
     static var selectedText = ""
 
     private var originalWidth: CGFloat = 660
@@ -68,6 +68,11 @@ class AppDelegate: NSObject, NSApplicationDelegate {
 
     let vm = NotchVM()
     let appContext = AppContext()
+    let updaterController = SPUStandardUpdaterController(
+        startingUpdater: true,
+        updaterDelegate: nil,
+        userDriverDelegate: nil
+    )
 
     func applicationDidFinishLaunching(_ notification: Notification) {
         NSApp.setActivationPolicy(.accessory)  // background-style app
@@ -124,7 +129,7 @@ class AppDelegate: NSObject, NSApplicationDelegate {
     }
 
     func applicationShouldTerminate(_ sender: NSApplication) -> NSApplication.TerminateReply {
-        return AppDelegate.allowQuit ? .terminateNow : .terminateCancel
+        return .terminateNow
     }
 }
 
@@ -161,6 +166,7 @@ extension AppDelegate {
         // Create the SwiftUI view
         let notchView = NotchView(
             vm: vm,
+            updater: updaterController.updater,
             updateWindowSize: {
                 return self.updateWindowSize(windowSize: $0)
             },

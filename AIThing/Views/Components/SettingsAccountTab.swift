@@ -104,54 +104,6 @@ struct SettingsAccountTab: View {
                 .padding(4)
             }
 
-            GroupBox(label: title(version)) {
-                VStack(alignment: .leading) {
-                    Button {
-                        AnalyticsManager.shared
-                            .customEvent(
-                                view: .SettingsAccountsTab,
-                                primary: .quit,
-                                secondary: "",
-                                sev: .info
-                            )
-                        AppDelegate.allowQuit = true
-                        NSApplication.shared.terminate(nil)
-                    } label: {
-                        HStack {
-                            Text("Quit").font(.system(size: 14, weight: .medium))
-                        }
-                    }
-                    .buttonStyle(.plain)
-                    .padding(4)
-
-                    Divider()
-
-                    Link(
-                        "Report Bug",
-                        destination: URL(
-                            string:
-                                "mailto:help@aithing.dev?subject=Bug Report \(Date())&body=Description:\nPlease describe the issue.\n\nScreenshot:\n(Optional) Attach a screenshot. Make sure 'Show in Screenshot' is enabled in Settings."
-                        )!
-                    )
-                    .buttonStyle(.plain)
-                    .font(.system(size: 14, weight: .medium))
-                    .padding(4)
-                    .onHover { perform in
-                        if perform {
-                            AnalyticsManager.shared
-                                .customEvent(
-                                    view: .SettingsAccountsTab,
-                                    primary: .bugReport,
-                                    secondary: "",
-                                    sev: .info
-                                )
-                        }
-                    }
-
-                }
-                .padding(4)
-            }
-
             GroupBox(label: title("Help")) {
                 VStack(alignment: .leading) {
                     ForEach(help, id: \.0) { h in
@@ -176,6 +128,35 @@ struct SettingsAccountTab: View {
                         .padding(4)
                 }
                 .padding(4)
+            }
+
+            GroupBox(label: title(version)) {
+                VStack(alignment: .leading) {
+                    Link(
+                        "Report Bug",
+                        destination: URL(
+                            string:
+                                "mailto:help@aithing.dev?subject=Bug Report \(Date())&body=Description:\nPlease describe the issue.\n\nScreenshot:\n(Optional) Attach a screenshot. Make sure 'Show in Screenshot' is enabled in Settings."
+                        )!
+                    )
+                    .buttonStyle(.plain)
+                    .font(.system(size: 14, weight: .medium))
+                    .padding(4)
+                    .onHover { perform in
+                        if perform {
+                            AnalyticsManager.shared
+                                .customEvent(
+                                    view: .SettingsAccountsTab,
+                                    primary: .bugReport,
+                                    secondary: "",
+                                    sev: .info
+                                )
+                        }
+                    }
+
+                }
+                .padding(4)
+                .frame(maxWidth: .infinity, alignment: .leading)
             }
 
         }

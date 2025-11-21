@@ -5,6 +5,7 @@
 //  Created by Nishant Singh Hada on 10/31/25.
 //
 
+import Sparkle
 import SwiftUI
 import os
 
@@ -31,6 +32,7 @@ struct NotchView: View {
     let historyStore = HistoryStore()
 
     @ObservedObject var vm: NotchVM
+    let updater: SPUUpdater
     let updateWindowSize: (WindowSize) -> (CGFloat, CGFloat)
     let modifyWindowBaseSize: (CGSize, WindowSize) -> (CGFloat, CGFloat)
     let modifyWindowOriginalSize: () -> Void
@@ -123,7 +125,8 @@ struct NotchView: View {
                                     minimize()
                                 },
                                 expand: { maximize() },
-                                setPanelVisibility: { self.setPanelVisibility() }
+                                setPanelVisibility: { self.setPanelVisibility() },
+                                updater: updater
                             )
                             .environmentObject(loginManager)
                             .environmentObject(firestoreManager)

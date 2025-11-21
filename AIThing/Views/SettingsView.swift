@@ -1,3 +1,4 @@
+import Sparkle
 import SwiftUI
 
 enum SettingsTab: String { case account, models, agents, preferences, automations }
@@ -16,7 +17,7 @@ struct SettingsView: View {
     let minimize: () -> Void
     let expand: () -> Void
     let setPanelVisibility: () -> Void
-
+    let updater: SPUUpdater
     let cornerRadius: CGFloat = 24
 
     @State private var selectedTab: SettingsTab = getSelectedTab()
@@ -178,6 +179,8 @@ struct SettingsView: View {
 
             Spacer()
 
+            CheckForUpdatesView(updater: updater)
+            
             ControlGroup {
                 Button(action: {
                     selectedTab = .account

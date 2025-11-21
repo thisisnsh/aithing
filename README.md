@@ -4,15 +4,13 @@
 
 ## 2.0 
 
- 
-Thursday 
-- Appcasting
 
 Friday
-- 
-
-Saturday 
+- Appcasting Test
 - Record demo video
+
+Saturday
+- Release 
 - Promote 2.0 
 
 Sunday
@@ -77,6 +75,8 @@ https://docs.google.com/spreadsheets/d/<spreadsheet-id>
 https://chatgpt.com/g/g-p-6873dd743bb48191b8a269cab99e4c01-ai-thing/c/688ff3cc-7be8-8329-9fed-0be50ddd3485
 
 ```
+change bundle version in info.plist
+change bundle version in settings
 export version=<version>
 
 spctl --assess --type execute --verbose AIThing.app 
@@ -117,5 +117,8 @@ codesign -dv --verbose=4 AIThing-$version.dmg 2>&1 | grep -E 'Authority|TeamIden
 ------------------------
 
 
+## Useful 
 
+scp -i ~/.ssh/id_rsa logo.png root@159.89.183.84:/var/www/html
+ssh -i ~/.ssh/id_rsa.pub  root@159.89.183.84
 
