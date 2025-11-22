@@ -5,19 +5,73 @@
 ## 2.0 
 
 
-Friday
-- Appcasting Test
-- Record demo video
-
 Saturday
-- Release 
-- Promote 2.0 
+- Release
+- Record demo video
+    - ai thing is an ai right-hand to notch up your workflows 
+    - literally because it is a notch that sits near your right hand 
+    
+    - you can connect to many agents at once 
+    - either from this list, or add your own agents 
+    - and perform one of tasks like ...   
+    
+    - create an event to meet jess at 5pm tomorrow
+    
+    - or create recurring automations like 
+    
+    - summaize all unread emails every day 9am 
+    - for this demo, explain any random concept in ai to a kid every 5mins  
+    
+    - till we wait for this automation to kick in 
+    - we can ask it to 
+    
+    - analyse the sales in this sheet
+    - using the app context it knows what this is and you can view what this is 
+    - no continuous screen grabs, and if the screen is used as context, you can review before it leaves your system 
+        
+    - while it does that ... in parallel we can ... 
+    
+    - get all bug reports from today and create github issues in this repo
+    - and... give me speaking points from this paper for the class 
+    
+    - all the conversations, tokens and secrets are stored locally on your system 
+    - all the files, images used in the conversation are encoded and used just during the conversation 
+    
+    - we could do more complex things like ... 
+    
+    - summarize the responses in this form    
+    - create the doc with the summary 
+    - send a thank you email to whoever responded
 
+    - (coming back to analysis ...) 
+    - send email to jess@aithing.dev about the analysis
+    - create the tasks to meet jess and discuss about analysis
+         
+    - (well this is the only ai thing you need for your work)    
+
+
+- Promote graphics 
+    - summarize unread emails daily 9am
+    - give me talking points for these papers
+    - create draft email for all emails from clients about recent outage
+    - remove all junk emails daily 12pm
+    - summarize all feedback emails every friday 9am
+    - analyse the sales in this sheet 
+    - what is forest tree search?
+
+    
 Sunday
-- PH Pre-Release
+- PH Pre-Release for Wednesday
 
-Monday 
+
+Wednesday 
 - PH Release
+- Promote 2.0 on Reddit  
+- Email people about the new release who emailed you before
+
+
+Tuesday
+- Google Server Stats
 
 
 ------------------------

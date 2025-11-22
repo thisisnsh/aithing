@@ -749,7 +749,7 @@ extension NotchView {
     }
 
     private func isTabShowing(tabId: String) -> Bool {
-        return tabId == self.tabId
+        return tabId == self.tabId && showChatWindow
     }
 
     private func setTabActive(tabId: String, active: Bool) {

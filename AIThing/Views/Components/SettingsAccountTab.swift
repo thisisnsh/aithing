@@ -123,7 +123,7 @@ struct SettingsAccountTab: View {
                         .padding(4)
                         Divider()
                     }
-                    Text("Still Stuck? Check https://aithing.dev")
+                    Text("Stuck? Check https://aithing.dev")
                         .font(.system(size: 10, weight: .medium))
                         .padding(4)
                 }
