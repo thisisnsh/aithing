@@ -94,7 +94,7 @@ struct InputTextView: NSViewRepresentable {
 
             // Handle @ or \command tracking
             // let pattern = ##"[@\\#]([a-zA-Z]+)"##
-            let pattern = #"(?i)(?<!\w)@(?:this|selected|here)(?!\w)"#
+            let pattern = #"(?i)(?<!\w)@(?:aithing)(?!\w)"#
             let regex = try? NSRegularExpression(pattern: pattern)
             let nsrange = NSRange(parent.text.startIndex..<parent.text.endIndex, in: parent.text)
 
@@ -141,7 +141,7 @@ struct InputTextView: NSViewRepresentable {
                 ]
             )
 
-            let pattern = #"(?i)(?<!\w)@(?:this|selected|here)(?!\w)"#
+            let pattern = #"(?i)(?<!\w)@(?:aithing)(?!\w)"#
             if let regex = try? NSRegularExpression(pattern: pattern) {
                 // Get the full range of the text for regex matching
                 let nsrange = NSRange(fullText.startIndex..<fullText.endIndex, in: fullText)
@@ -149,7 +149,10 @@ struct InputTextView: NSViewRepresentable {
                 // Find all matches of the pattern in the text
                 for match in regex.matches(in: fullText, range: nsrange) {
                     // Use monospaced font for matched text
-                    let monoFont = NSFont.monospacedSystemFont(ofSize: parent.size - 2, weight: .medium)
+                    let monoFont = NSFont.monospacedSystemFont(
+                        ofSize: parent.size - 2,
+                        weight: .medium
+                    )
 
                     // Calculate baseline shift to visually center it with the base font
                     let baselineShift = (baseFont.capHeight - monoFont.capHeight) / 2

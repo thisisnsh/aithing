@@ -30,6 +30,7 @@ struct NotchView: View {
 
     let logger = Logger(subsystem: "com.thisisnsh.mac.AIThing", category: "NotchView")
     let historyStore = HistoryStore()
+    let aiThingMcpManager = AIThingMCPManager()
 
     @ObservedObject var vm: NotchVM
     let updater: SPUUpdater
@@ -141,6 +142,7 @@ struct NotchView: View {
                                     .environmentObject(loginManager)
                                     .environmentObject(firestoreManager)
                                     .environmentObject(appContext)
+                                    .environmentObject(automationManager)
                                     .id(tabId)
                             }
                         }
@@ -362,7 +364,9 @@ struct NotchView: View {
                     getManagedModels: { return managedModels },
                     firestoreManager: firestoreManager,
                     loginManager: loginManager,
-                    mcpManager: mcpManager
+                    mcpManager: mcpManager,
+                    automationManager: automationManager,
+                    aiThingMcpManager: aiThingMcpManager
                 )
 
                 if !history.isEmpty {

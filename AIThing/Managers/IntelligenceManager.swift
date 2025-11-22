@@ -37,6 +37,8 @@ func callModel(
     firestoreManager: FirestoreManager,
     loginManager: LoginManager,
     mcpManager: MCPManager,
+    automationManager: AutomationManager,
+    aiThingMcpManager: AIThingMCPManager
 ) async -> Bool {
     // Check if version is breakglassed
     if await firestoreManager.getBreakglass() {
@@ -155,8 +157,13 @@ func callModel(
     } catch {}
 
     // Load latest tools
-    await reconnectManagedAgents()
-    let modelTools = getAllClientTools().values.flatMap { $0 }
+    var modelTools: [[String: Any]] = []
+    if query.contains("@aithing") {
+        modelTools = aiThingMcpManager.getTools()
+    } else {
+        await reconnectManagedAgents()
+        modelTools = getAllClientTools().values.flatMap { $0 }
+    }
 
     let model = getModel()
 
@@ -634,14 +641,23 @@ func callModel(
                         ])
 
                         setToolCall("Calling tool: \(finalToolUseName)...")
-                        let result = await mcpManager.callTools(
-                            clientName: getClientName(
-                                toolName: finalToolUseName,
-                                allClientTools: getAllClientTools()
-                            ),
-                            name: finalToolUseName,
-                            input: finalToolUseInputParam
-                        )
+                        var result: [[String: Any]] = []
+                        if finalToolUseName.starts(with: "aithing_") {
+                            result = await aiThingMcpManager.callTools(
+                                name: finalToolUseName,
+                                input: finalToolUseInputParam,
+                                automationManager: automationManager
+                            )
+                        } else {
+                            result = await mcpManager.callTools(
+                                clientName: getClientName(
+                                    toolName: finalToolUseName,
+                                    allClientTools: getAllClientTools()
+                                ),
+                                name: finalToolUseName,
+                                input: finalToolUseInputParam
+                            )
+                        }
 
                         AnalyticsManager.shared
                             .customEvent(
@@ -695,6 +711,8 @@ func callModel(
                             firestoreManager: firestoreManager,
                             loginManager: loginManager,
                             mcpManager: mcpManager,
+                            automationManager: automationManager,
+                            aiThingMcpManager: aiThingMcpManager
                         )
                         return rc
 
@@ -727,7 +745,7 @@ func callModel(
 }
 
 private func buildQuery(query: String) -> String {
-    return query
+    return query.replacingOccurrences(of: "@aithing ", with: "")
 }
 
 private func getClientName(toolName: String, allClientTools: [String: [[String: Any]]]) -> String {

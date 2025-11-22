@@ -22,6 +22,7 @@ struct IntelligenceView: View {
     @EnvironmentObject var loginManager: LoginManager
     @EnvironmentObject var firestoreManager: FirestoreManager
     @EnvironmentObject var appContext: AppContext
+    @EnvironmentObject var automationManager: AutomationManager
     @StateObject var screenshotMonitor = ScreenshotMonitor()
 
     @ObservedObject var vm: NotchVM
@@ -47,6 +48,7 @@ struct IntelligenceView: View {
 
     let logger = Logger(subsystem: "com.thisisnsh.mac.AIThing", category: "IntelligenceView")
     let cornerRadius: CGFloat = 24
+    let aiThingMcpManager = AIThingMCPManager()
 
     @State private var tabTitle: String = ""
     @State private var inputHeight: CGFloat = 24
@@ -772,7 +774,9 @@ extension IntelligenceView {
             getManagedModels: { return managedModels },
             firestoreManager: firestoreManager,
             loginManager: loginManager,
-            mcpManager: mcpManager
+            mcpManager: mcpManager,
+            automationManager: automationManager,
+            aiThingMcpManager: aiThingMcpManager
         )
 
         setTabActive(false)
