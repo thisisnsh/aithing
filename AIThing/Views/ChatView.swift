@@ -98,8 +98,21 @@ struct ChatView: View {
                     }
 
                     Divider().opacity(0).id("Bottom")
+                        .padding(.bottom, 64)
                 }
                 .padding(.vertical, 16)
+                .onChange(of: items.count) { _ in
+                    scrollToBottom(proxy)
+                }
+                .onChange(of: modelOutput) { _ in
+                    scrollToBottom(proxy)
+                }
+                .onChange(of: query) { _ in
+                    scrollToBottom(proxy)
+                }
+                .onAppear {
+                    scrollToBottom(proxy)
+                }
             }
         }
         .onAppear {
@@ -109,6 +122,10 @@ struct ChatView: View {
         .onChange(of: history?.history.count) { _ in
             setHistory(history)
         }
+    }
+
+    func scrollToBottom(_ proxy: ScrollViewProxy) {
+        proxy.scrollTo("Bottom", anchor: .bottom)
     }
 
     private func setHistory(_ newHistory: History?) {

@@ -8,6 +8,7 @@
 
 /* Begin PBXBuildFile section */
 		AA04A4B22EBFF62000482561 /* CoreXLSX in Frameworks */ = {isa = PBXBuildFile; productRef = AA04A4B12EBFF62000482561 /* CoreXLSX */; };
+		AA2145F12ED267C10077EE69 /* Complex.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA2145F02ED267C10077EE69 /* Complex.swift */; };
 		AA45F8FF2E6114F2001DAE39 /* OAuthSwift in Frameworks */ = {isa = PBXBuildFile; productRef = AA45F8FE2E6114F2001DAE39 /* OAuthSwift */; };
 		AA476E432E4D4813006F62F8 /* FirebaseFirestore in Frameworks */ = {isa = PBXBuildFile; productRef = AA476E422E4D4813006F62F8 /* FirebaseFirestore */; };
 		AA89AC282E888E73000EBE24 /* SelectedTextKit in Frameworks */ = {isa = PBXBuildFile; productRef = AA89AC272E888E73000EBE24 /* SelectedTextKit */; };
@@ -39,6 +40,7 @@
 /* End PBXContainerItemProxy section */
 
 /* Begin PBXFileReference section */
+		AA2145F02ED267C10077EE69 /* Complex.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Complex.swift; sourceTree = "<group>"; };
 		AAF11CCB2E22DE1500E2743E /* AIThing.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = AIThing.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		AAF11CD92E22DE1700E2743E /* AIThingTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = AIThingTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 		AAF11CE32E22DE1700E2743E /* AIThingUITests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = AIThingUITests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
@@ -103,6 +105,7 @@
 			isa = PBXGroup;
 			children = (
 				AAF11D0B2E22F5AB00E2743E /* README.md */,
+				AA2145F02ED267C10077EE69 /* Complex.swift */,
 				AAF11CCD2E22DE1500E2743E /* AIThing */,
 				AAF11CDC2E22DE1700E2743E /* AIThingTests */,
 				AAF11CE62E22DE1700E2743E /* AIThingUITests */,
@@ -287,6 +290,7 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				AA2145F12ED267C10077EE69 /* Complex.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

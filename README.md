@@ -8,8 +8,8 @@
 Saturday
 - Release
 - Record demo video
-    - ai thing is an ai right-hand to notch up your workflows 
-    - literally because it is a notch that sits near your right hand 
+    - ====> ai thing is an ai right-hand to notch up your workflows 
+    - ====> literally because it is a notch that sits near your right hand 
     
     - you can connect to many agents at once 
     - either from this list, or add your own agents 
@@ -50,7 +50,45 @@ Saturday
     - (well this is the only ai thing you need for your work)    
 
 
-- Promote graphics 
+-------------
+
+- hover over ai thing
+- click on the plus icon 
+
+- what is income statement?
+- modify that from millions to billions
+
+- [minimize using keyboard shortcut]
+- put the summary of the change in a google doc and email the doc to help@aithing.dev to review
+- [show doc] 
+- [show email]
+
+- [change model to sonnet]
+
+- [new tab] summaize unread emails
+- @aithing create automation to do that daily at 9am 
+- [show automation]
+- [modify title]
+
+- give me 5 talking points
+- [grab a photo on page 3] explain this 
+
+- [enable selection] convert this code from swift to python  
+
+
+- [show ai models]
+- [show ai agents] 
+
+
+
+
+
+
+
+    
+Sunday
+- PH Pre-Release for Wednesday
+- Promotion graphics 
     - summarize unread emails daily 9am
     - give me talking points for these papers
     - create draft email for all emails from clients about recent outage
@@ -58,10 +96,6 @@ Saturday
     - summarize all feedback emails every friday 9am
     - analyse the sales in this sheet 
     - what is forest tree search?
-
-    
-Sunday
-- PH Pre-Release for Wednesday
 
 
 Wednesday 
@@ -72,7 +106,9 @@ Wednesday
 
 Tuesday
 - Google Server Stats
-
+- Persist MCP Servers
+- Speed up reconnection of MCP Servers
+- Chat not updated
 
 ------------------------
 

@@ -20,11 +20,81 @@ struct Tab: Equatable {
     }
 }
 
+class ModelContext: ObservableObject {
+    @Published var tabTitles: [String: String] = [:]
+    @Published var tabHistories: [String: History] = [:]
+    @Published var tabToolCalls: [String: String] = [:]
+    @Published var tabQueries: [String: String] = [:]
+    @Published var tabOutputs: [String: String] = [:]
+    @Published var tabInputs: [String: [[String: Any]]] = [:]
+    @Published var tabIsThinking: [String: Bool] = [:]
+
+    func bindingForTabTitles(_ key: String) -> Binding<String> {
+        Binding<String>(
+            get: { self.tabTitles[key, default: ""] },
+            set: { self.tabTitles[key] = $0 }
+        )
+    }
+
+    func bindingForTabHistories(_ key: String) -> Binding<History?> {
+        Binding<History?>(
+            get: { self.tabHistories[key] },
+            set: { self.tabHistories[key] = $0 }
+        )
+    }
+
+    func bindingForTabToolCalls(_ key: String) -> Binding<String> {
+        Binding<String>(
+            get: { self.tabToolCalls[key, default: ""] },
+            set: { self.tabToolCalls[key] = $0 }
+        )
+    }
+
+    func bindingForTabQueries(_ key: String) -> Binding<String> {
+        Binding<String>(
+            get: { self.tabQueries[key, default: ""] },
+            set: { self.tabQueries[key] = $0 }
+        )
+    }
+
+    func bindingForTabOutputs(_ key: String) -> Binding<String> {
+        Binding<String>(
+            get: { self.tabOutputs[key, default: ""] },
+            set: { self.tabOutputs[key] = $0 }
+        )
+    }
+
+    func bindingForTabInputs(_ key: String) -> Binding<[[String: Any]]> {
+        Binding<[[String: Any]]>(
+            get: { self.tabInputs[key, default: []] },
+            set: { self.tabInputs[key] = $0 }
+        )
+    }
+
+    func bindingForTabIsThinking(_ key: String) -> Binding<Bool> {
+        Binding<Bool>(
+            get: { self.tabIsThinking[key, default: false] },
+            set: { self.tabIsThinking[key] = $0 }
+        )
+    }
+
+    func removeValue(forKey: String) {
+        tabTitles.removeValue(forKey: forKey)
+        tabHistories.removeValue(forKey: forKey)
+        tabToolCalls.removeValue(forKey: forKey)
+        tabQueries.removeValue(forKey: forKey)
+        tabOutputs.removeValue(forKey: forKey)
+        tabInputs.removeValue(forKey: forKey)
+        tabIsThinking.removeValue(forKey: forKey)
+    }
+}
+
 struct NotchView: View {
     @StateObject private var mcpManager = MCPManager()
     @StateObject private var loginManager = LoginManager()
     @StateObject private var firestoreManager = FirestoreManager()
     @StateObject private var automationManager = AutomationManager(onExecute: { _ in })
+    @StateObject private var context: ModelContext = ModelContext()
 
     @EnvironmentObject var appContext: AppContext
 
@@ -63,7 +133,7 @@ struct NotchView: View {
     @State private var tabId: String = ""
     @State private var tabs: [String: Tab] = [:]
     @State private var histories: [History] = []
-    @State private var unseen = false
+    @State private var unseen: Bool = false
 
     @State private var showDragIcon = false
     @State private var showSettings = false
@@ -143,6 +213,7 @@ struct NotchView: View {
                                     .environmentObject(firestoreManager)
                                     .environmentObject(appContext)
                                     .environmentObject(automationManager)
+                                    .environmentObject(context)
                                     .id(tabId)
                             }
                         }
@@ -269,7 +340,7 @@ struct NotchView: View {
                     .resizable()
                     .scaledToFit()
                     .frame(width: 12)
-                    .shadow(radius: 4)
+                    .shadow(color: .black, radius: 4)
                     .onHover { hover in
                         windowMoveable(hover)
                     }
@@ -279,6 +350,7 @@ struct NotchView: View {
 
         }
         .padding(.leading, shadowBuffer)
+        .padding(.vertical, shadowBuffer)
         .frame(width: width, height: height)
         .onAppear {
             AnalyticsManager.shared.screenView(screenName: .NotchView)
@@ -288,7 +360,7 @@ struct NotchView: View {
             Task {
                 managedModels = await firestoreManager.getModelInfos()
                 await loadAllClientTools()
-                await reconnectManagedAgents()
+                await reconnectManagedAgents(fullRefresh: true)
                 showMcpToolsButton = await mcpManager.getAllTools().count > 0
             }
         }
@@ -322,13 +394,11 @@ struct NotchView: View {
 
             managedModels = await firestoreManager.getModelInfos()
             await loadAllClientTools()
-            await reconnectManagedAgents()
+            await reconnectManagedAgents(fullRefresh: true)
             showMcpToolsButton = await mcpManager.getAllTools().count > 0
 
             automationManager.onExecute = { (automation: Automation) async in
                 logger.debug("Called automation: \(automation.id)")
-                var modelInput: [[String: Any]] = []
-                var modelOutput: String = ""
                 let tabId = UUID().uuidString
                 var title = ""
                 var history: [[String: Any]] = []
@@ -341,32 +411,25 @@ struct NotchView: View {
                     setSelectedText: { _ in },
                     getSelectionEnabled: { return false },
                     setSelectionEnabled: { _ in },
-                    getTabTitle: { return title },
-                    setTabTitle: { title = $0 },
                     setDisplayQuery: { _ in },
-                    setToolCall: { _ in },
                     getHistory: { await self.getHistory(tabId: $0) },
                     storeHistory: {
                         title = $1
                         history = $2
                     },
-                    setHistory: { _ in },
-                    setIsThinking: { _ in },
-                    getModelInput: { return modelInput },
-                    appendModelInput: { modelInput.append($0) },
-                    getModelOutput: { return modelOutput },
-                    setModelOutput: { modelOutput = $0 },
                     animateOutput: { (_, _) async in },
                     getAllClientTools: { return allClientTools },
                     reconnectManagedAgents: { await self.reconnectManagedAgents() },
                     getModelContext: { return [] },
                     clearModelContext: {},
                     getManagedModels: { return managedModels },
+                    updateHistoryList: { await updateHistoryList() },
                     firestoreManager: firestoreManager,
                     loginManager: loginManager,
                     mcpManager: mcpManager,
                     automationManager: automationManager,
-                    aiThingMcpManager: aiThingMcpManager
+                    aiThingMcpManager: aiThingMcpManager,
+                    context: context
                 )
 
                 if !history.isEmpty {
@@ -512,6 +575,7 @@ struct NotchView: View {
                                         createIntelligenceView(tabId: tabId)
                                     }
                                 }
+                                unseen = histories.contains(where: { $0.unseen == true })
                             }
                         },
                         notification: h.unseen
@@ -717,7 +781,7 @@ extension NotchView {
                 isTabShowing: { isTabShowing(tabId: tabId) },
                 setTabActive: { setTabActive(tabId: tabId, active: $0) },
                 updateHistoryList: { await updateHistoryList() },
-                reconnectManagedAgents: reconnectManagedAgents,
+                reconnectManagedAgents: { await reconnectManagedAgents(fullRefresh: false) },
                 getHistory: { return await getHistory(tabId: $0) },
                 storeHistory: { await storeHistory(tabId: $0, tabTitle: $1, history: $2) },
                 setUnseen: { await setUnseen(id: $0, unseen: $1) },
@@ -776,9 +840,15 @@ extension NotchView {
         let minutes: Double = 10
         let cutoff = Date().addingTimeInterval(-(minutes * 60))
         let countStart = tabs.count
-        tabs = tabs.filter { _, tab in
-            tab.active || tab.lastUpdated >= cutoff || tab.id == self.tabId
+
+        let tabsToRemove = tabs.filter { _, tab in
+            !tab.active && tab.lastUpdated < cutoff && tab.id != self.tabId
         }
+        for t in tabsToRemove.keys {
+            tabs.removeValue(forKey: t)
+            context.removeValue(forKey: t)
+        }
+
         let countEnd = tabs.count
         AnalyticsManager.shared
             .customEvent(
@@ -918,20 +988,24 @@ extension NotchView {
         }
     }
 
-    private func reconnectManagedAgents() async {
+    private func reconnectManagedAgents(fullRefresh: Bool = false) async {
         var enabledClients: [String] = []
 
         if googleOAuthManager.enabled.count > 0 {
             let clientName = "managed_google_mcp"
             var accessToken: String?
             var refreshedAccessToken: String?
+            var refreshNeeded = true
 
             if googleOAuthManager.user != nil {
                 accessToken = googleOAuthManager.user?.accessToken.tokenString
                 logger.debug("AccessToken \(String(describing: accessToken))")
+                if let date = googleOAuthManager.user?.accessToken.expirationDate, !fullRefresh {
+                    refreshNeeded = Date().addingTimeInterval(10 * 60) >= date
+                }
             }
 
-            if let user = await googleOAuthManager.generateToken(refresh: true) {
+            if let user = await googleOAuthManager.generateToken(refresh: true), refreshNeeded {
                 refreshedAccessToken = user.accessToken.tokenString
                 // If token has been refreshed OR client does not exist
                 logger.debug("RefreshedAccessToken \(String(describing: refreshedAccessToken))")
@@ -946,12 +1020,15 @@ extension NotchView {
                 }
             }
 
-            let tools = await mcpManager.getTools(
-                clientName: clientName,
-                filter: googleOAuthManager.enabledCapabilities()
-            )
-            allClientTools[clientName] = tools
-            logger.debug("Google Enabled Capabilities: \(tools)")
+            if fullRefresh {
+                let tools = await mcpManager.getTools(
+                    clientName: clientName,
+                    filter: googleOAuthManager.enabledCapabilities()
+                )
+                allClientTools[clientName] = tools
+                logger.debug("Google Enabled Capabilities: \(tools)")
+            }
+
             enabledClients.append(clientName)
         } else {
             allClientTools.removeValue(forKey: "managed_google_mcp")
@@ -961,13 +1038,18 @@ extension NotchView {
             let clientName = "managed_github_mcp"
             var accessToken: String?
             var refreshedAccessToken: String?
+            var refreshNeeded = true
 
             if githubOAuthManager.user != nil {
                 accessToken = githubOAuthManager.user?.accessToken
                 logger.debug("AccessToken \(String(describing: accessToken))")
+                if let date = githubOAuthManager.user?.expiresAt, !fullRefresh {
+                    // Token will expire in next 10 minutes
+                    refreshNeeded = Date().addingTimeInterval(10 * 60) >= date
+                }
             }
 
-            if let user = await githubOAuthManager.generateToken(refresh: true) {
+            if let user = await githubOAuthManager.generateToken(refresh: true), refreshNeeded {
                 refreshedAccessToken = user.accessToken
                 // If token has been refreshed OR client does not exist
                 logger.debug("RefreshedAccessToken \(String(describing: refreshedAccessToken))")
@@ -981,12 +1063,16 @@ extension NotchView {
                     )
                 }
             }
-            let tools = await mcpManager.getTools(
-                clientName: clientName,
-                filter: githubOAuthManager.enabledCapabilities()
-            )
-            allClientTools[clientName] = tools
-            logger.debug("Github Enabled Capabilities: \(tools)")
+
+            if fullRefresh {
+                let tools = await mcpManager.getTools(
+                    clientName: clientName,
+                    filter: githubOAuthManager.enabledCapabilities()
+                )
+                allClientTools[clientName] = tools
+                logger.debug("Github Enabled Capabilities: \(tools)")
+            }
+
             enabledClients.append(clientName)
         } else {
             allClientTools.removeValue(forKey: "managed_github_mcp")
@@ -999,12 +1085,18 @@ extension NotchView {
             if agentOAuthManager.enabled {
                 var accessToken: String?
                 var refreshedAccessToken: String?
+                var refreshNeeded = true
 
                 if agentOAuthManager.user != nil {
                     accessToken = agentOAuthManager.user?.accessToken
                     logger.debug("AccessToken \(String(describing: accessToken))")
+                    if let date = agentOAuthManager.user?.expiresAt, !fullRefresh {
+                        // Token will expire in next 10 minutes
+                        refreshNeeded = Date().addingTimeInterval(10 * 60) >= date
+                    }
                 }
-                if let user = await agentOAuthManager.generateToken(refresh: true) {
+
+                if let user = await agentOAuthManager.generateToken(refresh: true), refreshNeeded {
                     refreshedAccessToken = user.accessToken
                     // If token has been refreshed OR client does not exist
                     logger.debug("RefreshedAccessToken \(String(describing: refreshedAccessToken))")
@@ -1018,8 +1110,12 @@ extension NotchView {
                         )
                     }
                 }
-                let tools = await mcpManager.getTools(clientName: clientName, filter: [])
-                allClientTools[clientName] = tools
+
+                if fullRefresh {
+                    let tools = await mcpManager.getTools(clientName: clientName, filter: [])
+                    allClientTools[clientName] = tools
+                }
+
                 enabledClients.append(clientName)
             } else {
                 allClientTools.removeValue(forKey: clientName)
@@ -1156,13 +1252,13 @@ extension NotchView {
     }
 
     private func setUnseen(id: String, unseen: Bool) async {
-        if await historyStore.setUnseen(id: tabId, unseen: unseen) {
+        if await historyStore.setUnseen(id: id, unseen: unseen) {
             await updateHistoryList()
         }
     }
 
     private func setTitle(id: String, title: String) async {
-        if await historyStore.setTitle(id: tabId, title: title) {
+        if await historyStore.setTitle(id: id, title: title) {
             await updateHistoryList()
         }
     }

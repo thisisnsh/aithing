@@ -23,6 +23,8 @@ struct IntelligenceView: View {
     @EnvironmentObject var firestoreManager: FirestoreManager
     @EnvironmentObject var appContext: AppContext
     @EnvironmentObject var automationManager: AutomationManager
+    @EnvironmentObject var context: ModelContext
+
     @StateObject var screenshotMonitor = ScreenshotMonitor()
 
     @ObservedObject var vm: NotchVM
@@ -50,24 +52,15 @@ struct IntelligenceView: View {
     let cornerRadius: CGFloat = 24
     let aiThingMcpManager = AIThingMCPManager()
 
-    @State private var tabTitle: String = ""
     @State private var inputHeight: CGFloat = 24
     private let baseHeight: CGFloat = 24
     @State private var textSize: CGFloat = 14
     @FocusState private var isFocused: Bool
 
-    @State private var isThinking: Bool = false
     @State private var isThinkingBlinking: Bool = false
-
-    @State private var history: History?
-    @State private var modelInput: [[String: Any]] = []
-    @State private var modelOutput: String = ""
-    @State private var modelContext: [DroppedContent] = []
-    @State private var toolCall: String = ""
-
-    @State private var query: String = ""
     @State private var displayQuery: String = ""
     @State private var selectedText: String = ""
+    @State private var modelContext: [DroppedContent] = []
 
     @State private var savedQueries = getSavedQueries()
     @State private var showSavedQueries: Bool = false
@@ -88,6 +81,31 @@ struct IntelligenceView: View {
     @State private var hoverRed: Bool = false
     @State private var hoverYellow: Bool = false
     @State private var hoverGreen: Bool = false
+
+    var modelInput: [[String: Any]] {
+        set { context.tabInputs[tabId] = newValue }
+        get { context.tabInputs[tabId, default: []] }
+    }
+    var modelOutput: String {
+        set { context.tabOutputs[tabId] = newValue }
+        get { context.tabOutputs[tabId, default: ""] }
+    }
+    var query: String {
+        set { context.tabQueries[tabId] = newValue }
+        get { context.tabQueries[tabId, default: ""] }
+    }
+    var isThinking: Bool {
+        set { context.tabIsThinking[tabId] = newValue }
+        get { context.tabIsThinking[tabId, default: false] }
+    }
+    var toolCall: String {
+        set { context.tabToolCalls[tabId] = newValue }
+        get { context.tabToolCalls[tabId, default: ""] }
+    }
+    var tabTitle: String {
+        set { context.tabTitles[tabId] = newValue }
+        get { context.tabTitles[tabId, default: "New Chat"] }
+    }
 
     var body: some View {
         ZStack {
@@ -169,22 +187,22 @@ struct IntelligenceView: View {
                 AnalyticsManager.shared.screenView(screenName: .IntelligenceView)
             }
             .task {
-                history = await getHistory(tabId)
-                if let history = history {
-                    modelInput = history.history
-                    tabTitle = history.title ?? "New Chat"
+                context.tabHistories[tabId] = await getHistory(tabId)
+                if let history = context.tabHistories[tabId] {
+                    context.tabInputs[tabId, default: []] = history.history
+                    context.tabTitles[tabId] = history.title ?? "New Chat"
                 } else {
-                    tabTitle = "New Chat"
+                    context.tabTitles[tabId] = "New Chat"
 
                     let greeting = await firestoreManager.getGreeting() ?? ""
                     if !greeting.isEmpty {
-                        modelOutput = greeting
+                        context.tabOutputs[tabId, default: ""] = greeting
                     }
                 }
 
                 let notification = await firestoreManager.getNotification() ?? ""
                 if !notification.isEmpty {
-                    modelOutput = notification
+                    context.tabOutputs[tabId, default: ""] = notification
                 }
 
                 await setUnseen(tabId, false)
@@ -203,6 +221,13 @@ struct IntelligenceView: View {
             .onChange(of: vm.selectedText) { text in
                 if isTabShowing() {
                     selectedText = text
+                }
+            }
+            .onChange(of: selectionEnabled) { _ in
+                if selectionEnabled {
+                    startSelectionPoll()
+                } else {
+                    stopSelectionPoll()
                 }
             }
             .onReceive(screenshotMonitor.$latestScreenshot) { ss in
@@ -271,7 +296,7 @@ struct IntelligenceView: View {
                 }
                 .onHover { hoverYellow = $0 }
 
-            TextField("Enter Title", text: $tabTitle)
+            TextField("Enter Title", text: context.bindingForTabTitles(tabId))
                 .focused($isFocused)
                 .onSubmit {
                     isFocused = false
@@ -288,7 +313,7 @@ struct IntelligenceView: View {
 
             Spacer()
 
-            if let lastUpdated = history?.lastUpdated {
+            if let lastUpdated = context.tabHistories[tabId]?.lastUpdated {
                 Text(formatEpoch(lastUpdated) ?? "")
                     .foregroundColor(.secondary)
                     .font(.system(size: 10))
@@ -299,13 +324,13 @@ struct IntelligenceView: View {
 
     private func ResponseView() -> some View {
         ChatView(
-            history: $history,
-            isThinking: $isThinking,
+            history: context.bindingForTabHistories(tabId),
+            isThinking: context.bindingForTabIsThinking(tabId),
             isThinkingBlinking: $isThinkingBlinking,
             textSize: $textSize,
             query: $displayQuery,
-            modelOutput: $modelOutput,
-            toolCall: $toolCall
+            modelOutput: context.bindingForTabOutputs(tabId),
+            toolCall: context.bindingForTabToolCalls(tabId)
         )
     }
 
@@ -316,7 +341,7 @@ struct IntelligenceView: View {
                     title: savedQuery.title,
                     isActive: true,
                     action: {
-                        query = savedQuery.instruction
+                        context.tabQueries[tabId, default: ""] = savedQuery.instruction
                     },
                     deleteAction: {
                         savedQueries.remove(at: index)
@@ -363,7 +388,7 @@ struct IntelligenceView: View {
             ZStack(alignment: .leading) {
                 if !isThinking, !isDropping {
                     InputTextView(
-                        text: $query,
+                        text: context.bindingForTabQueries(tabId),
                         seenCommands: .constant([]),
                         size: $textSize,
                         isNotEditable: isThinking || isDropping,
@@ -385,15 +410,13 @@ struct IntelligenceView: View {
                             }
                         }
                     )
-                    .onChange(of: query) { _ in }
                 }
 
                 if query.isEmpty {
                     Text(
                         isThinking
                             ? "Thinking..."
-                            : (isDropping
-                                ? "Drop files here..." : "Ask anything on AI Thing...")
+                            : (isDropping ? "Drop files here..." : "Ask anything on AI Thing...")
                     )
                     .foregroundColor(isDropping ? .blue : .white.opacity(0.6))
                     .font(.system(size: textSize, weight: .medium))
@@ -582,12 +605,9 @@ struct IntelligenceView: View {
                             selectionEnabled.toggle()
                         }
 
-                        if selectionEnabled {
-                            startSelectionPoll()
-                        } else {
+                        if !selectionEnabled {
                             selectedText = ""
                             vm.selectedText = ""
-                            stopSelectionPoll()
                             AnalyticsManager.shared
                                 .customEvent(
                                     view: .IntelligenceView,
@@ -709,7 +729,9 @@ struct IntelligenceView: View {
 
 extension IntelligenceView {
     private func handleQuery() async {
-        let trimmed = query.trimmingCharacters(in: .whitespacesAndNewlines)
+        let trimmed = query.trimmingCharacters(
+            in: .whitespacesAndNewlines
+        )
         guard !trimmed.isEmpty else { return }
 
         var appContextBase64: AppContextModel? = nil
@@ -730,10 +752,10 @@ extension IntelligenceView {
         }
 
         displayQuery = trimmed
-        modelOutput = ""
-        isThinking = true
-        toolCall = ""
-        query = ""
+        context.tabOutputs[tabId, default: ""] = ""
+        context.tabIsThinking[tabId, default: false] = true
+        context.tabToolCalls[tabId, default: ""] = ""
+        context.tabQueries[tabId, default: ""] = ""
         inputHeight = baseHeight
         showSavedQueries = false
 
@@ -754,29 +776,22 @@ extension IntelligenceView {
             setSelectedText: { selectedText = $0 },
             getSelectionEnabled: { return selectionEnabled },
             setSelectionEnabled: { selectionEnabled = $0 },
-            getTabTitle: { return tabTitle },
-            setTabTitle: { tabTitle = $0 },
             setDisplayQuery: { displayQuery = $0 },
-            setToolCall: { toolCall = $0 },
-            getHistory: { return await self.getHistory($0) },
+            getHistory: { await getHistory($0) },
             storeHistory: { await storeHistory($0, $1, $2) },
-            setHistory: { history = $0 },
-            setIsThinking: { isThinking = $0 },
-            getModelInput: { return modelInput },
-            appendModelInput: { modelInput.append($0) },
-            getModelOutput: { return modelOutput },
-            setModelOutput: { modelOutput = $0 },
             animateOutput: { await self.animateOutput(content: $0, notification: $1) },
             getAllClientTools: { return allClientTools },
             reconnectManagedAgents: { await self.reconnectManagedAgents() },
             getModelContext: { return modelContext },
             clearModelContext: { modelContext.removeAll() },
             getManagedModels: { return managedModels },
+            updateHistoryList: { await updateHistoryList() },
             firestoreManager: firestoreManager,
             loginManager: loginManager,
             mcpManager: mcpManager,
             automationManager: automationManager,
-            aiThingMcpManager: aiThingMcpManager
+            aiThingMcpManager: aiThingMcpManager,
+            context: context
         )
 
         setTabActive(false)
@@ -785,6 +800,12 @@ extension IntelligenceView {
         } else {
             await setUnseen(tabId, false)
         }
+
+        appContext.refresh()
+        appContextEnabled = false
+        selectedAppIcon = nil
+        selectedAppName = ""
+        selectedWindowName = ""
 
         AnalyticsManager.shared.customEvent(
             view: .IntelligenceView,
@@ -797,20 +818,19 @@ extension IntelligenceView {
         selectedText = ""
         selectionEnabled = false
 
-        isThinking = false
-        history = await getHistory(tabId)
+        context.tabIsThinking[tabId, default: false] = false
+        context.tabHistories[tabId] = await getHistory(tabId)
         if result {
-            modelOutput = ""
+            context.tabOutputs[tabId, default: ""] = ""
         }
         displayQuery = ""
-        toolCall = ""
+        context.tabToolCalls[tabId, default: ""] = ""
 
         await updateHistoryList()
     }
 
     private func getAppContextBase64(appName: String, windowName: String?) -> AppContextModel? {
         if !appContextEnabled || appName.isEmpty {
-            print("nishant3")
             return nil
         }
 
@@ -820,7 +840,6 @@ extension IntelligenceView {
         ) {
             let thumb = image.resized(maxDimension: 1024)
             guard let data = thumb.jpegData() else {
-                print("nishant1")
                 return nil
             }
             return AppContextModel(
@@ -831,7 +850,6 @@ extension IntelligenceView {
             )
         }
 
-        print("nishant2")
         return nil
     }
 
@@ -840,13 +858,13 @@ extension IntelligenceView {
         for text in content.split(separator: " ") {
             partial += String(text) + " "
             await MainActor.run {
-                modelOutput = partial + " " + shimmerPlaceholder()
+                context.tabOutputs[tabId, default: ""] = partial + " " + shimmerPlaceholder()
             }
             do {
                 try await Task.sleep(for: .milliseconds(10))
             } catch {}
         }
-        modelOutput = partial
+        context.tabOutputs[tabId, default: ""] = partial
     }
 
     private func shimmerPlaceholder() -> String {

@@ -153,7 +153,7 @@ extension AppDelegate {
 
         floatingWindow = NonActivatingPanel(
             contentRect: NSRect(
-                x: xPosition,
+                x: xPosition + 2,
                 y: yPosition,
                 width: windowWidth,
                 height: windowHeight
@@ -224,21 +224,21 @@ extension AppDelegate {
     private func getWindowSize(windowSize: WindowSize) -> (CGFloat, CGFloat) {
         switch windowSize {
         case .notchIsCollapsed:
-            return (60 + shadowBuffer, 100)
+            return (60 + shadowBuffer, 100 + shadowBuffer + shadowBuffer)
         case .sidebarIsCollapsed:
-            return (60 + shadowBuffer, 160)
+            return (60 + shadowBuffer, 160 + shadowBuffer + shadowBuffer)
         case .sidebarIsExpanded:
-            return (200 + shadowBuffer, 600)
+            return (200 + shadowBuffer, 600 + shadowBuffer + shadowBuffer)
         case .chatIsShown:
-            return (width + shadowBuffer, height)
+            return (width + shadowBuffer, height + shadowBuffer + shadowBuffer)
         case .chatIsExpanded:
             if let screen = NSScreen.main {
                 return (
                     min(screen.visibleFrame.maxX * 0.5, 1000) + shadowBuffer,
-                    min(screen.visibleFrame.maxY * 0.8, 1000)
+                    min(screen.visibleFrame.maxY * 0.8, 1000) + shadowBuffer + shadowBuffer
                 )
             }
-            return (860 + shadowBuffer, 600)
+            return (860 + shadowBuffer, 600 + shadowBuffer + shadowBuffer)
         }
     }
 
@@ -274,7 +274,7 @@ extension AppDelegate {
         }
 
         floatingWindow.setFrame(
-            NSRect(x: xPosition, y: newY, width: windowWidth, height: windowHeight),
+            NSRect(x: xPosition + 2, y: newY, width: windowWidth, height: windowHeight),
             display: false,
             animate: false
         )
@@ -284,7 +284,7 @@ extension AppDelegate {
             if outOfBoundsEdges.contains(.top) {
                 floatingWindow.setFrame(
                     NSRect(
-                        x: xPosition,
+                        x: xPosition + 2,
                         y: screenFrame.maxY - windowHeight,
                         width: windowWidth,
                         height: windowHeight
@@ -295,7 +295,7 @@ extension AppDelegate {
             } else if outOfBoundsEdges.contains(.bottom) {
                 floatingWindow.setFrame(
                     NSRect(
-                        x: xPosition,
+                        x: xPosition + 2,
                         y: screenFrame.minY,
                         width: windowWidth,
                         height: windowHeight

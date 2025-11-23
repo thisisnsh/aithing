@@ -64,6 +64,9 @@ class AutomationManager: ObservableObject {
         recurrence: Automation.Recurrence,
         enabled: Bool
     ) {
+        AnalyticsManager.shared
+            .customEvent(view: .AutomationManager, primary: .create, secondary: title, sev: .info)
+
         // Remove existing automation with same id if exists
         var ind = 0
         if let index = automations.firstIndex(where: { $0.id == id }) {

@@ -16,69 +16,69 @@ func callModel(
     setSelectedText: (String) -> Void,
     getSelectionEnabled: () -> Bool,
     setSelectionEnabled: (Bool) -> Void,
-    getTabTitle: () -> String,
-    setTabTitle: (String) -> Void,
     setDisplayQuery: (String) -> Void,
-    setToolCall: (String) -> Void,
     getHistory: (String) async -> History?,
     storeHistory: (String, String, [[String: Any]]) async -> Void,
-    setHistory: (History?) -> Void,
-    setIsThinking: (Bool) -> Void,
-    getModelInput: () -> [[String: Any]],
-    appendModelInput: ([String: Any]) -> Void,
-    getModelOutput: () -> String,
-    setModelOutput: (String) -> Void,
     animateOutput: (String, Bool) async -> Void,
     getAllClientTools: () -> [String: [[String: Any]]],
     reconnectManagedAgents: () async -> Void,
     getModelContext: () -> [DroppedContent],
     clearModelContext: () -> Void,
     getManagedModels: () -> [ModelInfo],
+    updateHistoryList: () async -> Void,
     firestoreManager: FirestoreManager,
     loginManager: LoginManager,
     mcpManager: MCPManager,
     automationManager: AutomationManager,
-    aiThingMcpManager: AIThingMCPManager
+    aiThingMcpManager: AIThingMCPManager,
+    context: ModelContext
 ) async -> Bool {
-    // Check if version is breakglassed
-    if await firestoreManager.getBreakglass() {
-        setIsThinking(false)
-        await animateOutput(
-            """
-            This version has been disabled due to an internal issue.
-            We apologize for the inconvenience. The app will be re-enabled soon.
-            For updates, please contact help@aithing.dev.
-            """,
-            true
-        )
-        AnalyticsManager.shared
-            .customEvent(
-                view: .IntelligenceManager,
-                primary: .query,
-                secondary: "breakglass",
-                sev: .error
+    if !query.isEmpty {
+        // Check if version is breakglassed
+        if await firestoreManager.getBreakglass() {
+            context.tabIsThinking[tabId] = false
+            await animateOutput(
+                """
+                This version has been disabled due to an internal issue.
+                We apologize for the inconvenience. The app will be re-enabled soon.
+                For updates, please contact help@aithing.dev.
+                """,
+                true
             )
-        return false
-    }
+            AnalyticsManager.shared
+                .customEvent(
+                    view: .IntelligenceManager,
+                    primary: .query,
+                    secondary: "breakglass",
+                    sev: .error
+                )
+            return false
+        }
 
-    // Check if version is expired
-    if await firestoreManager.getExpired() {
-        setIsThinking(false)
-        await animateOutput(
-            """
-            Current version has expired.
-            Please [upgrade the version](https://aithing.dev/upgrade) to enjoy new features and continue using the app.
-            """,
-            true
-        )
-        AnalyticsManager.shared
-            .customEvent(
-                view: .IntelligenceManager,
-                primary: .query,
-                secondary: "version expired",
-                sev: .error
+        // Check if version is expired
+        if await firestoreManager.getExpired() {
+            context.tabIsThinking[tabId] = false
+            await animateOutput(
+                """
+                Current version has expired.
+                Please [upgrade the version](https://aithing.dev/upgrade) to enjoy new features and continue using the app.
+                """,
+                true
             )
-        return false
+            AnalyticsManager.shared
+                .customEvent(
+                    view: .IntelligenceManager,
+                    primary: .query,
+                    secondary: "version expired",
+                    sev: .error
+                )
+            return false
+        }
+
+        do {
+            // Sleeping just to complete debounce on typing
+            try await Task.sleep(nanoseconds: 200_000_000)
+        } catch {}
     }
 
     var appUser: AppUser?
@@ -87,7 +87,7 @@ func callModel(
         if let profile = await firestoreManager.getProfile(user: user) {
             // Check if profile is blocked
             if profile.blocked {
-                setIsThinking(false)
+                context.tabIsThinking[tabId] = false
                 await animateOutput(
                     """
                     You access has been disabled. We apologize for the inconvenience.
@@ -110,7 +110,7 @@ func callModel(
             break
         }
 
-        setIsThinking(false)
+        context.tabIsThinking[tabId] = false
         await animateOutput(
             """
             Something went wrong. Please log out and log in again. 
@@ -127,7 +127,7 @@ func callModel(
             )
         return false
     default:
-        setIsThinking(false)
+        context.tabIsThinking[tabId] = false
         await animateOutput(
             """
             ### 👋 Welcome to **AI Thing**
@@ -151,18 +151,14 @@ func callModel(
         return false
     }
 
-    do {
-        // Sleeping just to complete debounce on typing
-        try await Task.sleep(nanoseconds: 200_000_000)
-    } catch {}
-
     // Load latest tools
     var modelTools: [[String: Any]] = []
-    if query.contains("@aithing") {
+    if query.starts(with: "@aithing") {
         modelTools = aiThingMcpManager.getTools()
     } else {
         await reconnectManagedAgents()
         modelTools = getAllClientTools().values.flatMap { $0 }
+        modelTools.append(contentsOf: aiThingMcpManager.getTools())
     }
 
     let model = getModel()
@@ -185,7 +181,7 @@ func callModel(
     else {
         let modelTitle = getModelTitle(getModel(), all: getManagedModels())
 
-        setIsThinking(false)
+        context.tabIsThinking[tabId] = false
         await animateOutput(
             """
             API key not found.
@@ -233,7 +229,7 @@ func callModel(
                     secondary: "use image",
                     sev: .info
                 )
-                appendModelInput(
+                context.tabInputs[tabId, default: []].append(
                     [
                         "role": "file",
                         "content": [
@@ -245,7 +241,7 @@ func callModel(
                         ],
                     ]
                 )
-                appendModelInput(
+                context.tabInputs[tabId, default: []].append(
                     [
                         "role": "user",
                         "content": [
@@ -262,7 +258,7 @@ func callModel(
                 )
             case .pdf(let name, _, _, let base64s):
                 fileCount += 1
-                appendModelInput(
+                context.tabInputs[tabId, default: []].append(
                     [
                         "role": "file",
                         "content": [
@@ -291,7 +287,7 @@ func callModel(
                     secondary: "use pdf",
                     sev: .info
                 )
-                appendModelInput(
+                context.tabInputs[tabId, default: []].append(
                     [
                         "role": "user",
                         "content": content,
@@ -305,7 +301,7 @@ func callModel(
                     secondary: "use text",
                     sev: .info
                 )
-                appendModelInput(
+                context.tabInputs[tabId, default: []].append(
                     [
                         "role": "file",
                         "content": [
@@ -317,7 +313,7 @@ func callModel(
                         ],
                     ]
                 )
-                appendModelInput(
+                context.tabInputs[tabId, default: []].append(
                     [
                         "role": "user",
                         "content": [
@@ -338,7 +334,7 @@ func callModel(
                 secondary: "use selection",
                 sev: .info
             )
-            appendModelInput(
+            context.tabInputs[tabId, default: []].append(
                 [
                     "role": "file",
                     "content": [
@@ -350,7 +346,7 @@ func callModel(
                     ],
                 ]
             )
-            appendModelInput(
+            context.tabInputs[tabId, default: []].append(
                 [
                     "role": "user",
                     "content": [
@@ -371,7 +367,7 @@ func callModel(
                 secondary: "use application context",
                 sev: .info
             )
-            appendModelInput(
+            context.tabInputs[tabId, default: []].append(
                 [
                     "role": "file",
                     "content": [
@@ -384,7 +380,7 @@ func callModel(
                     ],
                 ]
             )
-            appendModelInput(
+            context.tabInputs[tabId, default: []].append(
                 [
                     "role": "user",
                     "content": [
@@ -401,7 +397,7 @@ func callModel(
             )
         }
 
-        appendModelInput(
+        context.tabInputs[tabId, default: []].append(
             [
                 "role": "user",
                 "content": [
@@ -417,7 +413,7 @@ func callModel(
         "max_tokens": getOutputToken(),
         "temperature": 0.7,
         "messages": addCacheBlock(
-            input: nonUsageFileMessages(from: getModelInput()),
+            input: nonUsageFileMessages(from: context.tabInputs[tabId, default: []]),
             isMessage: true
         ),
         "tools": addCacheBlock(input: modelTools),
@@ -438,7 +434,7 @@ func callModel(
 
         guard let httpResponse = response as? HTTPURLResponse
         else {
-            setIsThinking(false)
+            context.tabIsThinking[tabId] = false
             await animateOutput(
                 "Invalid response\n\nReport issue at help@aithing.dev",
                 true
@@ -454,7 +450,7 @@ func callModel(
         }
 
         if httpResponse.statusCode != 200 {
-            setIsThinking(false)
+            context.tabIsThinking[tabId] = false
             var error = ""
             for try await line in stream.lines {
                 error += line
@@ -499,7 +495,7 @@ func callModel(
                 filesAttached: fileCount
             )
             await firestoreManager.incrementUsage(user: appUser, usage: usage)
-            appendModelInput([
+            context.tabInputs[tabId, default: []].append([
                 "role": "usage",
                 "content": [
                     [
@@ -526,12 +522,17 @@ func callModel(
         clearModelContext()
 
         // Store the current input
-        await storeHistory(tabId, getTabTitle(), getModelInput())
+        await storeHistory(
+            tabId,
+            context.tabTitles[tabId, default: ""],
+            context.tabInputs[tabId, default: []]
+        )
         // Fetch and display it
-        setModelOutput("")
+        context.tabOutputs[tabId] = ""
         setDisplayQuery("")
-        setToolCall("")
-        setHistory(await getHistory(tabId))
+        context.tabToolCalls[tabId] = ""
+        context.tabHistories[tabId] = await getHistory(tabId)
+        await updateHistoryList()
 
         var finalResponse = ""
         var finalToolUseInputParam = ""
@@ -576,10 +577,10 @@ func callModel(
                     switch delta_type {
                     case "text_delta":
                         guard let text = delta["text"] as? String else { continue }
-                        setIsThinking(false)
+                        context.tabIsThinking[tabId] = false
                         finalResponse += String(text)
                         await MainActor.run {
-                            setModelOutput(finalResponse + " " + shimmerPlaceholder())
+                            context.tabOutputs[tabId] = (finalResponse + " " + shimmerPlaceholder())
                         }
 
                     case "input_json_delta":
@@ -594,7 +595,7 @@ func callModel(
 
                 case "content_block_stop":
                     await MainActor.run {
-                        setModelOutput(finalResponse)
+                        context.tabOutputs[tabId] = (finalResponse)
                     }
 
                 case "message_delta":
@@ -603,30 +604,41 @@ func callModel(
                         continue
                     }
 
-                    if !getModelOutput().isEmpty {
-                        appendModelInput([
-                            "role": "assistant",
-                            "content": [["text": getModelOutput(), "type": "text"]],
-                        ])
-
-                        setTabTitle(
-                            await createTitle(
-                                query: getModelOutput(),
-                                model: model,
-                                apiKey: apiKey,
-                                tabTitle: getTabTitle(),
-                                firestoreManager: firestoreManager
-                            )
+                    if !context.tabOutputs[tabId, default: ""].isEmpty {
+                        context.tabInputs[tabId, default: []].append(
+                            [
+                                "role": "assistant",
+                                "content": [
+                                    [
+                                        "text": context.tabOutputs[tabId, default: ""],
+                                        "type": "text",
+                                    ]
+                                ],
+                            ]
                         )
 
-                        await storeHistory(tabId, getTabTitle(), getModelInput())
+                        context.tabTitles[tabId] =
+                            await createTitle(
+                                query: query,
+                                response: context.tabOutputs[tabId, default: ""],
+                                model: model,
+                                apiKey: apiKey,
+                                tabTitle: context.tabTitles[tabId, default: ""],
+                                firestoreManager: firestoreManager
+                            )
+
+                        await storeHistory(
+                            tabId,
+                            context.tabTitles[tabId, default: ""],
+                            context.tabInputs[tabId, default: []]
+                        )
                     }
 
                     switch delta_stop_reason {
                     case "max_tokens":
                         continue
                     case "tool_use":
-                        appendModelInput([
+                        context.tabInputs[tabId, default: []].append([
                             "role": "assistant",
                             "content": [
                                 [
@@ -640,10 +652,10 @@ func callModel(
                             ],
                         ])
 
-                        setToolCall("Calling tool: \(finalToolUseName)...")
+                        context.tabToolCalls[tabId] = ("Calling tool: \(finalToolUseName)...")
                         var result: [[String: Any]] = []
                         if finalToolUseName.starts(with: "aithing_") {
-                            result = await aiThingMcpManager.callTools(
+                            result = aiThingMcpManager.callTools(
                                 name: finalToolUseName,
                                 input: finalToolUseInputParam,
                                 automationManager: automationManager
@@ -671,7 +683,7 @@ func callModel(
                         logger.debug("Tool input: \(finalToolUseInputParam)")
                         logger.debug("Tool output: \(result)")
 
-                        appendModelInput([
+                        context.tabInputs[tabId, default: []].append([
                             "role": "user",
                             "content": [
                                 [
@@ -690,29 +702,22 @@ func callModel(
                             setSelectedText: setSelectedText,
                             getSelectionEnabled: getSelectionEnabled,
                             setSelectionEnabled: setSelectionEnabled,
-                            getTabTitle: getTabTitle,
-                            setTabTitle: setTabTitle,
                             setDisplayQuery: setDisplayQuery,
-                            setToolCall: setToolCall,
                             getHistory: getHistory,
                             storeHistory: storeHistory,
-                            setHistory: setHistory,
-                            setIsThinking: setIsThinking,
-                            getModelInput: getModelInput,
-                            appendModelInput: appendModelInput,
-                            getModelOutput: getModelOutput,
-                            setModelOutput: setModelOutput,
                             animateOutput: animateOutput,
                             getAllClientTools: getAllClientTools,
                             reconnectManagedAgents: reconnectManagedAgents,
                             getModelContext: getModelContext,
                             clearModelContext: clearModelContext,
                             getManagedModels: getManagedModels,
+                            updateHistoryList: updateHistoryList,
                             firestoreManager: firestoreManager,
                             loginManager: loginManager,
                             mcpManager: mcpManager,
                             automationManager: automationManager,
-                            aiThingMcpManager: aiThingMcpManager
+                            aiThingMcpManager: aiThingMcpManager,
+                            context: context
                         )
                         return rc
 
@@ -727,10 +732,9 @@ func callModel(
         }
     } catch {
         await MainActor.run {
-            setIsThinking(false)
-            setModelOutput(
-                "Error streaming response: \(error.localizedDescription)\n\nReport issue at help@aithing.dev"
-            )
+            context.tabIsThinking[tabId] = false
+            context.tabOutputs[tabId] =
+                ("Error streaming response: \(error.localizedDescription)\n\nReport issue at help@aithing.dev")
             AnalyticsManager.shared
                 .customEvent(
                     view: .IntelligenceManager,
@@ -854,11 +858,15 @@ private func buildSystemMessages() -> [[String: Any]] {
 
 private func createTitle(
     query: String,
+    response: String,
     model: String,
     apiKey: String,
     tabTitle: String,
     firestoreManager: FirestoreManager,
 ) async -> String {
+    if query.isEmpty {
+        return tabTitle
+    }
     if !tabTitle.isEmpty && tabTitle != "New Chat" {
         return tabTitle
     }
@@ -882,11 +890,27 @@ private func createTitle(
     request.setValue("\(apiKey)", forHTTPHeaderField: "x-api-key")
     request.setValue("extended-cache-ttl-2025-04-11", forHTTPHeaderField: "anthropic-beta")
 
+    let prompt = """
+        Create a title based on the user query and the AI’s first response.
+        The title must contain exactly three words, each using alphanumeric characters only.
+        Spaces between words are allowed. The title must not be a question.
+        Output only the title.                
+
+        User Query:
+        \(buildQuery(query: query))
+
+        AI First Response:
+        \(response)    
+        """
+
     let input = [
         [
             "role": "user",
             "content": [
-                ["type": "text", "text": buildQuery(query: query)]
+                [
+                    "type": "text",
+                    "text": prompt,
+                ]
             ],
         ]
     ]
@@ -894,12 +918,13 @@ private func createTitle(
     let body: [String: Any] = [
         "model": model,
         "stream": false,
-        "max_tokens": 10,
+        "max_tokens": 32,
         "temperature": 0.7,
         "messages": input,
-        "system":
-            "Generate a concise title of no more than 18 characters. Do not include quotation marks or any extra text. Output only the title, nothing else. If you can not generate the title output \"New Chat\"",
     ]
+
+    print(input)
+    print(body)
 
     request.httpBody = try? JSONSerialization.data(withJSONObject: body)
 

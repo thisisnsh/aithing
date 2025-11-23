@@ -64,6 +64,7 @@ final class AnalyticsManager {
         case McpManager
         case FirebaseManager
         case IntelligenceManager
+        case AutomationManager
     }
 
     /// screen_view (manual)
@@ -91,6 +92,7 @@ final class AnalyticsManager {
         case scope
         case url
         case quit
+        case create
 
         case showInScreenshot
         case outputToken
