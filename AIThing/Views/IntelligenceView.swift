@@ -62,9 +62,10 @@ struct IntelligenceView: View {
     @State private var selectedText: String = ""
     @State private var modelContext: [DroppedContent] = []
     @State private var defaultHistory: History? = nil
-
+    @State private var query: String = ""
     @State private var savedQueries = getSavedQueries()
     @State private var showSavedQueries: Bool = false
+    @State private var localModelOutput: String = ""
 
     @State private var isDropping: Bool = false
     @State private var showMcpTools: Bool = false
@@ -86,10 +87,6 @@ struct IntelligenceView: View {
     var modelOutput: String {
         set { context.tabOutputs[tabId] = newValue }
         get { context.tabOutputs[tabId, default: ""] }
-    }
-    var query: String {
-        set { context.tabQueries[tabId] = newValue }
-        get { context.tabQueries[tabId, default: ""] }
     }
     var isThinking: Bool {
         set { context.tabIsThinking[tabId] = newValue }
@@ -202,6 +199,9 @@ struct IntelligenceView: View {
                 }
 
                 await setUnseen(tabId, false)
+            }
+            .onChange(of: isThinking) { _ in
+                showSavedQueries = false
             }
             .onChange(of: currentTabId) { _ in
                 Task {
@@ -321,6 +321,7 @@ struct IntelligenceView: View {
             isThinkingBlinking: $isThinkingBlinking,
             textSize: $textSize,
             query: $displayQuery,
+            localModelOutput: $localModelOutput,
             modelOutput: context.bindingForTabOutputs(tabId),
             toolCall: context.bindingForTabToolCalls(tabId)
         )
@@ -332,9 +333,7 @@ struct IntelligenceView: View {
                 HoverableTabButton(
                     title: savedQuery.title,
                     isActive: true,
-                    action: {
-                        context.tabQueries[tabId] = savedQuery.instruction
-                    },
+                    action: { query = savedQuery.instruction },
                     deleteAction: {
                         savedQueries.remove(at: index)
                         setSavedQueries(value: savedQueries)
@@ -380,7 +379,7 @@ struct IntelligenceView: View {
             ZStack(alignment: .leading) {
                 if !isThinking, !isDropping {
                     InputTextView(
-                        text: context.bindingForTabQueries(tabId),
+                        text: $query,
                         seenCommands: .constant([]),
                         size: $textSize,
                         isNotEditable: isThinking || isDropping,
@@ -407,7 +406,7 @@ struct IntelligenceView: View {
                 if query.isEmpty {
                     Text(
                         isThinking
-                            ? "Thinking..."
+                            ? "Responding..."
                             : (isDropping ? "Drop files here..." : "Ask anything on AI Thing...")
                     )
                     .foregroundColor(isDropping ? .blue : .white.opacity(0.6))
@@ -419,7 +418,7 @@ struct IntelligenceView: View {
                 }
 
                 // MCP Tool Button
-                if query.isEmpty {
+                if query.isEmpty, !isThinking {
                     Button(action: { showMcpTools.toggle() }) {
                         HStack(spacing: 4) {
                             Image(systemName: "hammer.fill")
@@ -748,7 +747,7 @@ extension IntelligenceView {
         context.tabOutputs[tabId] = ""
         context.tabIsThinking[tabId] = true
         context.tabToolCalls[tabId] = ""
-        context.tabQueries[tabId] = ""
+        query = ""
         inputHeight = baseHeight
         showSavedQueries = false
 
@@ -779,6 +778,7 @@ extension IntelligenceView {
             clearModelContext: { modelContext.removeAll() },
             getManagedModels: { return managedModels },
             updateHistoryList: { await updateHistoryList() },
+            setLocalModelOutput: { localModelOutput = $0 },
             firestoreManager: firestoreManager,
             loginManager: loginManager,
             mcpManager: mcpManager,

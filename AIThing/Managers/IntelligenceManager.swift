@@ -26,6 +26,7 @@ func callModel(
     clearModelContext: () -> Void,
     getManagedModels: () -> [ModelInfo],
     updateHistoryList: () async -> Void,
+    setLocalModelOutput: (String) -> Void,
     firestoreManager: FirestoreManager,
     loginManager: LoginManager,
     mcpManager: MCPManager,
@@ -579,9 +580,7 @@ func callModel(
                     case "text_delta":
                         guard let text = delta["text"] as? String else { continue }
                         finalResponse += String(text)
-                        await MainActor.run {
-                            context.tabOutputs[tabId] = (finalResponse + " " + shimmerPlaceholder())
-                        }
+                        setLocalModelOutput(finalResponse + " " + shimmerPlaceholder())
 
                     case "input_json_delta":
                         guard let partial_json = delta["partial_json"] as? String else {
@@ -594,9 +593,8 @@ func callModel(
                     }
 
                 case "content_block_stop":
-                    await MainActor.run {
-                        context.tabOutputs[tabId] = (finalResponse)
-                    }
+                    setLocalModelOutput("")
+                    context.tabOutputs[tabId] = (finalResponse)
 
                 case "message_delta":
                     guard let delta = json["delta"] as? [String: Any] else { continue }
@@ -617,15 +615,18 @@ func callModel(
                             ]
                         )
 
-                        context.tabTitles[tabId] =
-                            await createTitle(
-                                query: query,
-                                response: context.tabOutputs[tabId, default: ""],
-                                model: model,
-                                apiKey: apiKey,
-                                tabTitle: context.tabTitles[tabId, default: ""],
-                                firestoreManager: firestoreManager
-                            )
+                        let tabTitle = context.tabTitles[tabId, default: ""]
+                        if !query.isEmpty && (tabTitle.isEmpty || tabTitle == "New Chat") {
+                            context.tabTitles[tabId] =
+                                await createTitle(
+                                    query: query,
+                                    response: context.tabOutputs[tabId, default: ""],
+                                    model: model,
+                                    apiKey: apiKey,
+                                    tabTitle: context.tabTitles[tabId, default: ""],
+                                    firestoreManager: firestoreManager
+                                )
+                        }
 
                         await storeHistory(
                             tabId,
@@ -712,6 +713,7 @@ func callModel(
                             clearModelContext: clearModelContext,
                             getManagedModels: getManagedModels,
                             updateHistoryList: updateHistoryList,
+                            setLocalModelOutput: setLocalModelOutput,
                             firestoreManager: firestoreManager,
                             loginManager: loginManager,
                             mcpManager: mcpManager,
@@ -731,18 +733,18 @@ func callModel(
             }
         }
     } catch {
-        await MainActor.run {
-            context.tabIsThinking[tabId] = false
-            context.tabOutputs[tabId] =
-                ("Error streaming response: \(error.localizedDescription)\n\nReport issue at help@aithing.dev")
-            AnalyticsManager.shared
-                .customEvent(
-                    view: .IntelligenceManager,
-                    primary: .query,
-                    secondary: "error streaming",
-                    sev: .error
-                )
-        }
+        context.tabIsThinking[tabId] = false
+        setLocalModelOutput("")
+        context.tabOutputs[tabId] =
+            ("Error streaming response: \(error.localizedDescription)\n\nReport issue at help@aithing.dev")
+        AnalyticsManager.shared
+            .customEvent(
+                view: .IntelligenceManager,
+                primary: .query,
+                secondary: "error streaming",
+                sev: .error
+            )
+
         return false
     }
     context.tabIsThinking[tabId] = false
@@ -818,7 +820,8 @@ private func buildSystemMessages() -> [[String: Any]] {
                 """
             ## Identity  
             - Your name is **AI Thing**.  
-            - You are an AI tool with a special abilities. 
+            - You are an AI assistant with a special abilities. 
+            - You can answer any simple or complex questions.
             - You can handle simple, complex or repetitive tasks in background.                
             - You have multiple AI models and agents that users can use for their tasks. 
             - You are secure and store all data locally. 

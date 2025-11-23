@@ -24,9 +24,8 @@ class ModelContext: ObservableObject {
     @Published var tabTitles: [String: String] = [:]
     @Published var tabHistories: [String: History] = [:]
     @Published var tabToolCalls: [String: String] = [:]
-    @Published var tabQueries: [String: String] = [:]
     @Published var tabOutputs: [String: String] = [:]
-    @Published var tabInputs: [String: [[String: Any]]] = [:]
+    var tabInputs: [String: [[String: Any]]] = [:]
     @Published var tabIsThinking: [String: Bool] = [:]
 
     func bindingForTabTitles(_ key: String) -> Binding<String> {
@@ -47,13 +46,6 @@ class ModelContext: ObservableObject {
         Binding<String>(
             get: { self.tabToolCalls[key, default: ""] },
             set: { self.tabToolCalls[key] = $0 }
-        )
-    }
-
-    func bindingForTabQueries(_ key: String) -> Binding<String> {
-        Binding<String>(
-            get: { self.tabQueries[key, default: ""] },
-            set: { self.tabQueries[key] = $0 }
         )
     }
 
@@ -82,7 +74,6 @@ class ModelContext: ObservableObject {
         tabTitles.removeValue(forKey: forKey)
         tabHistories.removeValue(forKey: forKey)
         tabToolCalls.removeValue(forKey: forKey)
-        tabQueries.removeValue(forKey: forKey)
         tabOutputs.removeValue(forKey: forKey)
         tabInputs.removeValue(forKey: forKey)
         tabIsThinking.removeValue(forKey: forKey)
@@ -424,6 +415,7 @@ struct NotchView: View {
                     clearModelContext: {},
                     getManagedModels: { return managedModels },
                     updateHistoryList: { await updateHistoryList() },
+                    setLocalModelOutput: { _ in },
                     firestoreManager: firestoreManager,
                     loginManager: loginManager,
                     mcpManager: mcpManager,
