@@ -55,7 +55,7 @@ Saturday
 - hover over ai thing
 - click on the plus icon 
 
-- what is income statement?
+- explain income statement briefly
 - modify that from millions to billions
 - DO NOT WAITTTTTT
 
@@ -109,7 +109,6 @@ Tuesday
 - Google Server Stats
 - Persist MCP Servers
 - Speed up reconnection of MCP Servers
-- Chat not updated
 
 ------------------------
 

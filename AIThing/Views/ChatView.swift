@@ -44,7 +44,6 @@ struct ChatView: View {
     @Binding var isThinkingBlinking: Bool
     @Binding var textSize: CGFloat
     @Binding var query: String
-    @Binding var localModelOutput: String
     @Binding var modelOutput: String
     @Binding var toolCall: String
 
@@ -69,14 +68,7 @@ struct ChatView: View {
                     }
 
                     // Temporary Output
-                    if !localModelOutput.isEmpty {
-                        ChatBubble(
-                            item: ChatItem(
-                                role: .assistant,
-                                payload: ChatPayload.text(localModelOutput)
-                            )
-                        )
-                    } else if !modelOutput.isEmpty {
+                    if !modelOutput.isEmpty {
                         ChatBubble(
                             item: ChatItem(
                                 role: .assistant,

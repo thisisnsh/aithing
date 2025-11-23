@@ -20,74 +20,13 @@ struct Tab: Equatable {
     }
 }
 
-class ModelContext: ObservableObject {
-    @Published var tabTitles: [String: String] = [:]
-    @Published var tabHistories: [String: History] = [:]
-    @Published var tabToolCalls: [String: String] = [:]
-    @Published var tabOutputs: [String: String] = [:]
-    var tabInputs: [String: [[String: Any]]] = [:]
-    @Published var tabIsThinking: [String: Bool] = [:]
-
-    func bindingForTabTitles(_ key: String) -> Binding<String> {
-        Binding<String>(
-            get: { self.tabTitles[key, default: ""] },
-            set: { self.tabTitles[key] = $0 }
-        )
-    }
-
-    func bindingForTabHistories(_ key: String) -> Binding<History?> {
-        Binding<History?>(
-            get: { self.tabHistories[key] },
-            set: { self.tabHistories[key] = $0 }
-        )
-    }
-
-    func bindingForTabToolCalls(_ key: String) -> Binding<String> {
-        Binding<String>(
-            get: { self.tabToolCalls[key, default: ""] },
-            set: { self.tabToolCalls[key] = $0 }
-        )
-    }
-
-    func bindingForTabOutputs(_ key: String) -> Binding<String> {
-        Binding<String>(
-            get: { self.tabOutputs[key, default: ""] },
-            set: { self.tabOutputs[key] = $0 }
-        )
-    }
-
-    func bindingForTabInputs(_ key: String) -> Binding<[[String: Any]]> {
-        Binding<[[String: Any]]>(
-            get: { self.tabInputs[key, default: []] },
-            set: { self.tabInputs[key] = $0 }
-        )
-    }
-
-    func bindingForTabIsThinking(_ key: String) -> Binding<Bool> {
-        Binding<Bool>(
-            get: { self.tabIsThinking[key, default: false] },
-            set: { self.tabIsThinking[key] = $0 }
-        )
-    }
-
-    func removeValue(forKey: String) {
-        tabTitles.removeValue(forKey: forKey)
-        tabHistories.removeValue(forKey: forKey)
-        tabToolCalls.removeValue(forKey: forKey)
-        tabOutputs.removeValue(forKey: forKey)
-        tabInputs.removeValue(forKey: forKey)
-        tabIsThinking.removeValue(forKey: forKey)
-    }
-}
-
 struct NotchView: View {
+    @EnvironmentObject var appContext: AppContext
+
     @StateObject private var mcpManager = MCPManager()
     @StateObject private var loginManager = LoginManager()
     @StateObject private var firestoreManager = FirestoreManager()
     @StateObject private var automationManager = AutomationManager(onExecute: { _ in })
-    @StateObject private var context: ModelContext = ModelContext()
-
-    @EnvironmentObject var appContext: AppContext
 
     let logger = Logger(subsystem: "com.thisisnsh.mac.AIThing", category: "NotchView")
     let historyStore = HistoryStore()
@@ -204,7 +143,6 @@ struct NotchView: View {
                                     .environmentObject(firestoreManager)
                                     .environmentObject(appContext)
                                     .environmentObject(automationManager)
-                                    .environmentObject(context)
                                     .id(tabId)
                             }
                         }
@@ -390,6 +328,8 @@ struct NotchView: View {
 
             automationManager.onExecute = { (automation: Automation) async in
                 logger.debug("Called automation: \(automation.id)")
+                var modelInput: [[String: Any]] = []
+                var modelOutput: String = ""
                 let tabId = UUID().uuidString
                 var title = ""
                 var history: [[String: Any]] = []
@@ -402,26 +342,33 @@ struct NotchView: View {
                     setSelectedText: { _ in },
                     getSelectionEnabled: { return false },
                     setSelectionEnabled: { _ in },
+                    getTabTitle: { return title },
+                    setTabTitle: { title = $0 },
                     setDisplayQuery: { _ in },
+                    setToolCall: { _ in },
                     getHistory: { await self.getHistory(tabId: $0) },
                     storeHistory: {
                         title = $1
                         history = $2
                     },
+                    setHistory: { _ in },
+                    setIsThinking: { _ in },
+                    getModelInput: { return modelInput },
+                    appendModelInput: { modelInput.append($0) },
+                    getModelOutput: { return modelOutput },
+                    setModelOutput: { modelOutput = $0 },
                     animateOutput: { (_, _) async in },
                     getAllClientTools: { return allClientTools },
                     reconnectManagedAgents: { await self.reconnectManagedAgents() },
                     getModelContext: { return [] },
                     clearModelContext: {},
                     getManagedModels: { return managedModels },
-                    updateHistoryList: { await updateHistoryList() },
-                    setLocalModelOutput: { _ in },
+                    updateHistoryList: updateHistoryList,
                     firestoreManager: firestoreManager,
                     loginManager: loginManager,
                     mcpManager: mcpManager,
                     automationManager: automationManager,
-                    aiThingMcpManager: aiThingMcpManager,
-                    context: context
+                    aiThingMcpManager: aiThingMcpManager
                 )
 
                 if !history.isEmpty {
@@ -832,13 +779,8 @@ extension NotchView {
         let minutes: Double = 10
         let cutoff = Date().addingTimeInterval(-(minutes * 60))
         let countStart = tabs.count
-
-        let tabsToRemove = tabs.filter { _, tab in
-            !tab.active && tab.lastUpdated < cutoff && tab.id != self.tabId
-        }
-        for t in tabsToRemove.keys {
-            tabs.removeValue(forKey: t)
-            context.removeValue(forKey: t)
+        tabs = tabs.filter { _, tab in
+            tab.active || tab.lastUpdated >= cutoff || tab.id == self.tabId
         }
 
         let countEnd = tabs.count

@@ -16,9 +16,18 @@ func callModel(
     setSelectedText: (String) -> Void,
     getSelectionEnabled: () -> Bool,
     setSelectionEnabled: (Bool) -> Void,
+    getTabTitle: () -> String,
+    setTabTitle: (String) -> Void,
     setDisplayQuery: (String) -> Void,
+    setToolCall: (String) -> Void,
     getHistory: (String) async -> History?,
     storeHistory: (String, String, [[String: Any]]) async -> Void,
+    setHistory: (History?) -> Void,
+    setIsThinking: (Bool) -> Void,
+    getModelInput: () -> [[String: Any]],
+    appendModelInput: ([String: Any]) -> Void,
+    getModelOutput: () -> String,
+    setModelOutput: (String) -> Void,
     animateOutput: (String, Bool) async -> Void,
     getAllClientTools: () -> [String: [[String: Any]]],
     reconnectManagedAgents: () async -> Void,
@@ -26,19 +35,17 @@ func callModel(
     clearModelContext: () -> Void,
     getManagedModels: () -> [ModelInfo],
     updateHistoryList: () async -> Void,
-    setLocalModelOutput: (String) -> Void,
     firestoreManager: FirestoreManager,
     loginManager: LoginManager,
     mcpManager: MCPManager,
     automationManager: AutomationManager,
-    aiThingMcpManager: AIThingMCPManager,
-    context: ModelContext
+    aiThingMcpManager: AIThingMCPManager
 ) async -> Bool {
-    context.tabIsThinking[tabId] = true
+    setIsThinking(true)
     if !query.isEmpty {
         // Check if version is breakglassed
         if await firestoreManager.getBreakglass() {
-            context.tabIsThinking[tabId] = false
+            setIsThinking(false)
             await animateOutput(
                 """
                 This version has been disabled due to an internal issue.
@@ -59,7 +66,7 @@ func callModel(
 
         // Check if version is expired
         if await firestoreManager.getExpired() {
-            context.tabIsThinking[tabId] = false
+            setIsThinking(false)
             await animateOutput(
                 """
                 Current version has expired.
@@ -89,7 +96,7 @@ func callModel(
         if let profile = await firestoreManager.getProfile(user: user) {
             // Check if profile is blocked
             if profile.blocked {
-                context.tabIsThinking[tabId] = false
+                setIsThinking(false)
                 await animateOutput(
                     """
                     You access has been disabled. We apologize for the inconvenience.
@@ -112,7 +119,7 @@ func callModel(
             break
         }
 
-        context.tabIsThinking[tabId] = false
+        setIsThinking(false)
         await animateOutput(
             """
             Something went wrong. Please log out and log in again. 
@@ -129,7 +136,7 @@ func callModel(
             )
         return false
     default:
-        context.tabIsThinking[tabId] = false
+        setIsThinking(false)
         await animateOutput(
             """
             ### 👋 Welcome to **AI Thing**
@@ -183,7 +190,7 @@ func callModel(
     else {
         let modelTitle = getModelTitle(getModel(), all: getManagedModels())
 
-        context.tabIsThinking[tabId] = false
+        setIsThinking(false)
         await animateOutput(
             """
             API key not found.
@@ -231,7 +238,7 @@ func callModel(
                     secondary: "use image",
                     sev: .info
                 )
-                context.tabInputs[tabId, default: []].append(
+                appendModelInput(
                     [
                         "role": "file",
                         "content": [
@@ -243,7 +250,7 @@ func callModel(
                         ],
                     ]
                 )
-                context.tabInputs[tabId, default: []].append(
+                appendModelInput(
                     [
                         "role": "user",
                         "content": [
@@ -260,7 +267,7 @@ func callModel(
                 )
             case .pdf(let name, _, _, let base64s):
                 fileCount += 1
-                context.tabInputs[tabId, default: []].append(
+                appendModelInput(
                     [
                         "role": "file",
                         "content": [
@@ -289,7 +296,7 @@ func callModel(
                     secondary: "use pdf",
                     sev: .info
                 )
-                context.tabInputs[tabId, default: []].append(
+                appendModelInput(
                     [
                         "role": "user",
                         "content": content,
@@ -303,7 +310,7 @@ func callModel(
                     secondary: "use text",
                     sev: .info
                 )
-                context.tabInputs[tabId, default: []].append(
+                appendModelInput(
                     [
                         "role": "file",
                         "content": [
@@ -315,7 +322,7 @@ func callModel(
                         ],
                     ]
                 )
-                context.tabInputs[tabId, default: []].append(
+                appendModelInput(
                     [
                         "role": "user",
                         "content": [
@@ -336,7 +343,7 @@ func callModel(
                 secondary: "use selection",
                 sev: .info
             )
-            context.tabInputs[tabId, default: []].append(
+            appendModelInput(
                 [
                     "role": "file",
                     "content": [
@@ -348,7 +355,7 @@ func callModel(
                     ],
                 ]
             )
-            context.tabInputs[tabId, default: []].append(
+            appendModelInput(
                 [
                     "role": "user",
                     "content": [
@@ -369,7 +376,7 @@ func callModel(
                 secondary: "use application context",
                 sev: .info
             )
-            context.tabInputs[tabId, default: []].append(
+            appendModelInput(
                 [
                     "role": "file",
                     "content": [
@@ -382,7 +389,7 @@ func callModel(
                     ],
                 ]
             )
-            context.tabInputs[tabId, default: []].append(
+            appendModelInput(
                 [
                     "role": "user",
                     "content": [
@@ -399,7 +406,7 @@ func callModel(
             )
         }
 
-        context.tabInputs[tabId, default: []].append(
+        appendModelInput(
             [
                 "role": "user",
                 "content": [
@@ -415,7 +422,7 @@ func callModel(
         "max_tokens": getOutputToken(),
         "temperature": 0.7,
         "messages": addCacheBlock(
-            input: nonUsageFileMessages(from: context.tabInputs[tabId, default: []]),
+            input: nonUsageFileMessages(from: getModelInput()),
             isMessage: true
         ),
         "tools": addCacheBlock(input: modelTools),
@@ -436,7 +443,7 @@ func callModel(
 
         guard let httpResponse = response as? HTTPURLResponse
         else {
-            context.tabIsThinking[tabId] = false
+            setIsThinking(false)
             await animateOutput(
                 "Invalid response\n\nReport issue at help@aithing.dev",
                 true
@@ -452,7 +459,7 @@ func callModel(
         }
 
         if httpResponse.statusCode != 200 {
-            context.tabIsThinking[tabId] = false
+            setIsThinking(false)
             var error = ""
             for try await line in stream.lines {
                 error += line
@@ -497,7 +504,7 @@ func callModel(
                 filesAttached: fileCount
             )
             await firestoreManager.incrementUsage(user: appUser, usage: usage)
-            context.tabInputs[tabId, default: []].append([
+            appendModelInput([
                 "role": "usage",
                 "content": [
                     [
@@ -524,16 +531,12 @@ func callModel(
         clearModelContext()
 
         // Store the current input
-        await storeHistory(
-            tabId,
-            context.tabTitles[tabId, default: ""],
-            context.tabInputs[tabId, default: []]
-        )
+        await storeHistory(tabId, getTabTitle(), getModelInput())
         // Fetch and display it
-        context.tabOutputs[tabId] = ""
+        setModelOutput("")
         setDisplayQuery("")
-        context.tabToolCalls[tabId] = ""
-        context.tabHistories[tabId] = await getHistory(tabId)
+        setToolCall("")
+        setHistory(await getHistory(tabId))
         await updateHistoryList()
 
         var finalResponse = ""
@@ -580,7 +583,9 @@ func callModel(
                     case "text_delta":
                         guard let text = delta["text"] as? String else { continue }
                         finalResponse += String(text)
-                        setLocalModelOutput(finalResponse + " " + shimmerPlaceholder())
+                        await MainActor.run {
+                            setModelOutput(finalResponse + " " + shimmerPlaceholder())
+                        }
 
                     case "input_json_delta":
                         guard let partial_json = delta["partial_json"] as? String else {
@@ -593,8 +598,9 @@ func callModel(
                     }
 
                 case "content_block_stop":
-                    setLocalModelOutput("")
-                    context.tabOutputs[tabId] = (finalResponse)
+                    await MainActor.run {
+                        setModelOutput(finalResponse)
+                    }
 
                 case "message_delta":
                     guard let delta = json["delta"] as? [String: Any] else { continue }
@@ -602,44 +608,34 @@ func callModel(
                         continue
                     }
 
-                    if !context.tabOutputs[tabId, default: ""].isEmpty {
-                        context.tabInputs[tabId, default: []].append(
-                            [
-                                "role": "assistant",
-                                "content": [
-                                    [
-                                        "text": context.tabOutputs[tabId, default: ""],
-                                        "type": "text",
-                                    ]
-                                ],
-                            ]
-                        )
+                    if !getModelOutput().isEmpty {
+                        appendModelInput([
+                            "role": "assistant",
+                            "content": [["text": getModelOutput(), "type": "text"]],
+                        ])
 
-                        let tabTitle = context.tabTitles[tabId, default: ""]
+                        let tabTitle = getTabTitle()
                         if !query.isEmpty && (tabTitle.isEmpty || tabTitle == "New Chat") {
-                            context.tabTitles[tabId] =
+                            setTabTitle(
                                 await createTitle(
                                     query: query,
-                                    response: context.tabOutputs[tabId, default: ""],
+                                    response: getModelOutput(),
                                     model: model,
                                     apiKey: apiKey,
-                                    tabTitle: context.tabTitles[tabId, default: ""],
+                                    tabTitle: getTabTitle(),
                                     firestoreManager: firestoreManager
                                 )
+                            )
                         }
 
-                        await storeHistory(
-                            tabId,
-                            context.tabTitles[tabId, default: ""],
-                            context.tabInputs[tabId, default: []]
-                        )
+                        await storeHistory(tabId, getTabTitle(), getModelInput())
                     }
 
                     switch delta_stop_reason {
                     case "max_tokens":
                         continue
                     case "tool_use":
-                        context.tabInputs[tabId, default: []].append([
+                        appendModelInput([
                             "role": "assistant",
                             "content": [
                                 [
@@ -653,7 +649,7 @@ func callModel(
                             ],
                         ])
 
-                        context.tabToolCalls[tabId] = ("Calling tool: \(finalToolUseName)...")
+                        setToolCall("Calling tool: \(finalToolUseName)...")
                         var result: [[String: Any]] = []
                         if finalToolUseName.starts(with: "aithing_") {
                             result = aiThingMcpManager.callTools(
@@ -684,7 +680,7 @@ func callModel(
                         logger.debug("Tool input: \(finalToolUseInputParam)")
                         logger.debug("Tool output: \(result)")
 
-                        context.tabInputs[tabId, default: []].append([
+                        appendModelInput([
                             "role": "user",
                             "content": [
                                 [
@@ -703,9 +699,18 @@ func callModel(
                             setSelectedText: setSelectedText,
                             getSelectionEnabled: getSelectionEnabled,
                             setSelectionEnabled: setSelectionEnabled,
+                            getTabTitle: getTabTitle,
+                            setTabTitle: setTabTitle,
                             setDisplayQuery: setDisplayQuery,
+                            setToolCall: setToolCall,
                             getHistory: getHistory,
                             storeHistory: storeHistory,
+                            setHistory: setHistory,
+                            setIsThinking: setIsThinking,
+                            getModelInput: getModelInput,
+                            appendModelInput: appendModelInput,
+                            getModelOutput: getModelOutput,
+                            setModelOutput: setModelOutput,
                             animateOutput: animateOutput,
                             getAllClientTools: getAllClientTools,
                             reconnectManagedAgents: reconnectManagedAgents,
@@ -713,13 +718,11 @@ func callModel(
                             clearModelContext: clearModelContext,
                             getManagedModels: getManagedModels,
                             updateHistoryList: updateHistoryList,
-                            setLocalModelOutput: setLocalModelOutput,
                             firestoreManager: firestoreManager,
                             loginManager: loginManager,
                             mcpManager: mcpManager,
                             automationManager: automationManager,
-                            aiThingMcpManager: aiThingMcpManager,
-                            context: context
+                            aiThingMcpManager: aiThingMcpManager
                         )
                         return rc
 
@@ -733,10 +736,10 @@ func callModel(
             }
         }
     } catch {
-        context.tabIsThinking[tabId] = false
-        setLocalModelOutput("")
-        context.tabOutputs[tabId] =
-            ("Error streaming response: \(error.localizedDescription)\n\nReport issue at help@aithing.dev")
+        setIsThinking(false)
+        setModelOutput(
+            "Error streaming response: \(error.localizedDescription)\n\nReport issue at help@aithing.dev"
+        )
         AnalyticsManager.shared
             .customEvent(
                 view: .IntelligenceManager,
@@ -747,7 +750,7 @@ func callModel(
 
         return false
     }
-    context.tabIsThinking[tabId] = false
+    setIsThinking(false)
     return true
 }
 
