@@ -61,6 +61,7 @@ struct IntelligenceView: View {
     @State private var displayQuery: String = ""
     @State private var selectedText: String = ""
     @State private var modelContext: [DroppedContent] = []
+    @State private var defaultHistory: History? = nil
 
     @State private var savedQueries = getSavedQueries()
     @State private var showSavedQueries: Bool = false
@@ -82,10 +83,6 @@ struct IntelligenceView: View {
     @State private var hoverYellow: Bool = false
     @State private var hoverGreen: Bool = false
 
-    var modelInput: [[String: Any]] {
-        set { context.tabInputs[tabId] = newValue }
-        get { context.tabInputs[tabId, default: []] }
-    }
     var modelOutput: String {
         set { context.tabOutputs[tabId] = newValue }
         get { context.tabOutputs[tabId, default: ""] }
@@ -189,27 +186,22 @@ struct IntelligenceView: View {
             .task {
                 context.tabHistories[tabId] = await getHistory(tabId)
                 if let history = context.tabHistories[tabId] {
-                    context.tabInputs[tabId, default: []] = history.history
                     context.tabTitles[tabId] = history.title ?? "New Chat"
                 } else {
                     context.tabTitles[tabId] = "New Chat"
-
+                    showSavedQueries = true
                     let greeting = await firestoreManager.getGreeting() ?? ""
                     if !greeting.isEmpty {
-                        context.tabOutputs[tabId, default: ""] = greeting
+                        context.tabOutputs[tabId] = greeting
                     }
                 }
 
                 let notification = await firestoreManager.getNotification() ?? ""
                 if !notification.isEmpty {
-                    context.tabOutputs[tabId, default: ""] = notification
+                    context.tabOutputs[tabId] = notification
                 }
 
                 await setUnseen(tabId, false)
-
-                if modelInput.isEmpty {
-                    showSavedQueries = true
-                }
             }
             .onChange(of: currentTabId) { _ in
                 Task {
@@ -341,7 +333,7 @@ struct IntelligenceView: View {
                     title: savedQuery.title,
                     isActive: true,
                     action: {
-                        context.tabQueries[tabId, default: ""] = savedQuery.instruction
+                        context.tabQueries[tabId] = savedQuery.instruction
                     },
                     deleteAction: {
                         savedQueries.remove(at: index)
@@ -752,10 +744,11 @@ extension IntelligenceView {
         }
 
         displayQuery = trimmed
-        context.tabOutputs[tabId, default: ""] = ""
-        context.tabIsThinking[tabId, default: false] = true
-        context.tabToolCalls[tabId, default: ""] = ""
-        context.tabQueries[tabId, default: ""] = ""
+        context.tabInputs[tabId] = context.tabHistories[tabId]?.history ?? []
+        context.tabOutputs[tabId] = ""
+        context.tabIsThinking[tabId] = true
+        context.tabToolCalls[tabId] = ""
+        context.tabQueries[tabId] = ""
         inputHeight = baseHeight
         showSavedQueries = false
 
@@ -818,13 +811,13 @@ extension IntelligenceView {
         selectedText = ""
         selectionEnabled = false
 
-        context.tabIsThinking[tabId, default: false] = false
-        context.tabHistories[tabId] = await getHistory(tabId)
+        context.tabIsThinking[tabId] = false
         if result {
-            context.tabOutputs[tabId, default: ""] = ""
+            context.tabOutputs[tabId] = ""
         }
         displayQuery = ""
-        context.tabToolCalls[tabId, default: ""] = ""
+        context.tabToolCalls[tabId] = ""
+        context.tabHistories[tabId] = await getHistory(tabId)
 
         await updateHistoryList()
     }
@@ -858,13 +851,13 @@ extension IntelligenceView {
         for text in content.split(separator: " ") {
             partial += String(text) + " "
             await MainActor.run {
-                context.tabOutputs[tabId, default: ""] = partial + " " + shimmerPlaceholder()
+                context.tabOutputs[tabId] = partial + " " + shimmerPlaceholder()
             }
             do {
                 try await Task.sleep(for: .milliseconds(10))
             } catch {}
         }
-        context.tabOutputs[tabId, default: ""] = partial
+        context.tabOutputs[tabId] = partial
     }
 
     private func shimmerPlaceholder() -> String {

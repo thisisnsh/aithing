@@ -57,24 +57,25 @@ Saturday
 
 - what is income statement?
 - modify that from millions to billions
+- DO NOT WAITTTTTT
 
 - [minimize using keyboard shortcut]
-- put the summary of the change in a google doc and email the doc to help@aithing.dev to review
-- [show doc] 
-- [show email]
-
-- [change model to sonnet]
 
 - [new tab] summaize unread emails
 - @aithing create automation to do that daily at 9am 
 - [show automation]
 - [modify title]
 
+- put the summary of the change in a google doc and email the doc to help@aithing.dev to review
+- DO NOT WAITTTTTT
+
+- [show doc] 
+- [show email]
+
 - give me 5 talking points
 - [grab a photo on page 3] explain this 
 
 - [enable selection] convert this code from swift to python  
-
 
 - [show ai models]
 - [show ai agents] 

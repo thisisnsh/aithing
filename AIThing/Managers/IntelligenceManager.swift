@@ -33,6 +33,7 @@ func callModel(
     aiThingMcpManager: AIThingMCPManager,
     context: ModelContext
 ) async -> Bool {
+    context.tabIsThinking[tabId] = true
     if !query.isEmpty {
         // Check if version is breakglassed
         if await firestoreManager.getBreakglass() {
@@ -577,7 +578,6 @@ func callModel(
                     switch delta_type {
                     case "text_delta":
                         guard let text = delta["text"] as? String else { continue }
-                        context.tabIsThinking[tabId] = false
                         finalResponse += String(text)
                         await MainActor.run {
                             context.tabOutputs[tabId] = (finalResponse + " " + shimmerPlaceholder())
@@ -745,6 +745,7 @@ func callModel(
         }
         return false
     }
+    context.tabIsThinking[tabId] = false
     return true
 }
 

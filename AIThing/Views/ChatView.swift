@@ -82,21 +82,6 @@ struct ChatView: View {
                             .frame(maxWidth: 500, alignment: .leading)
                     }
 
-                    if isThinking {
-                        ChatBubble(
-                            item: ChatItem(
-                                role: .assistant,
-                                payload: ChatPayload.text("Thinking...")
-                            )
-                        )
-                        .opacity(isThinkingBlinking ? 1 : 0.4)
-                        .onAppear {
-                            withAnimation(
-                                .easeInOut(duration: 0.6).repeatForever(autoreverses: true)
-                            ) { isThinkingBlinking.toggle() }
-                        }
-                    }
-
                     Divider().opacity(0).id("Bottom")
                         .padding(.bottom, 64)
                 }
