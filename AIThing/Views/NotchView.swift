@@ -9,13 +9,12 @@ import Sparkle
 import SwiftUI
 import os
 
-struct Tab: Equatable {
+struct TabItem: Equatable {
     let id: String
-    let intelligenceView: IntelligenceView
-    var active: Bool = true
+    var active: Bool = false
     var lastUpdated: Date = Date()
 
-    static func == (lhs: Tab, rhs: Tab) -> Bool {
+    static func == (lhs: TabItem, rhs: TabItem) -> Bool {
         lhs.id == rhs.id
     }
 }
@@ -60,8 +59,8 @@ struct NotchView: View {
     @State private var allClientTools: [String: [[String: Any]]] = [:]
     @State private var showMcpToolsButton = false
 
-    @State private var tabId: String = ""
-    @State private var tabs: [String: Tab] = [:]
+    @State private var focusedTabId: String = ""
+    @State private var tabs: [String: TabItem] = [:]
     @State private var histories: [History] = []
     @State private var unseen: Bool = false
 
@@ -112,40 +111,32 @@ struct NotchView: View {
                 }
 
                 VStack(spacing: 0) {
-                    if showChatWindow {
-                        if showSettings {
-                            SettingsView(
-                                isPresented: $showSettings,
-                                managedModels: $managedModels,
-                                close: {
-                                    showSettings = false
-                                    close()
-                                },
-                                minimize: {
-                                    showSettings = false
-                                    minimize()
-                                },
-                                expand: { maximize() },
-                                setPanelVisibility: { self.setPanelVisibility() },
-                                updater: updater
-                            )
-                            .environmentObject(loginManager)
-                            .environmentObject(firestoreManager)
-                            .environmentObject(googleOAuthManager)
-                            .environmentObject(githubOAuthManager)
-                            .environmentObject(mcpOAuthManagers)
-                            .environmentObject(automationManager)
-                        } else {
-                            if !tabId.isEmpty {
-                                getIntelligenceView(tabId: tabId)
-                                    .environmentObject(mcpManager)
-                                    .environmentObject(loginManager)
-                                    .environmentObject(firestoreManager)
-                                    .environmentObject(appContext)
-                                    .environmentObject(automationManager)
-                                    .id(tabId)
-                            }
-                        }
+                    if showChatWindow && showSettings {
+                        SettingsView(
+                            isPresented: $showSettings,
+                            managedModels: $managedModels,
+                            close: {
+                                showSettings = false
+                                close()
+                            },
+                            minimize: {
+                                showSettings = false
+                                minimize()
+                            },
+                            expand: { maximize() },
+                            setPanelVisibility: { self.setPanelVisibility() },
+                            updater: updater
+                        )
+                        .environmentObject(loginManager)
+                        .environmentObject(firestoreManager)
+                        .environmentObject(googleOAuthManager)
+                        .environmentObject(githubOAuthManager)
+                        .environmentObject(mcpOAuthManagers)
+                        .environmentObject(automationManager)
+                    }
+
+                    ForEach(Array(tabs.values.enumerated()), id: \.element.id) { index, tab in
+                        tabView(tab: tab)
                     }
 
                     if showChatWindow {
@@ -195,8 +186,9 @@ struct NotchView: View {
                             action: {
                                 open()
                                 showSettings = false
-                                tabId = UUID().uuidString
-                                createIntelligenceView(tabId: tabId)
+                                let tabId = UUID().uuidString
+                                tabs[tabId] = TabItem(id: tabId)
+                                focusedTabId = tabId
                             },
                             deleteAction: {},
                             image: "plus.circle.fill",
@@ -210,9 +202,10 @@ struct NotchView: View {
                             isActive: showSettings,
                             action: {
                                 open()
-                                if tabId.isEmpty {
-                                    tabId = UUID().uuidString
-                                    createIntelligenceView(tabId: tabId)
+                                if focusedTabId.isEmpty {
+                                    let tabId = UUID().uuidString
+                                    tabs[tabId] = TabItem(id: tabId)
+                                    focusedTabId = tabId
                                 }
                                 showSettings.toggle()
                             },
@@ -331,12 +324,14 @@ struct NotchView: View {
                 var modelInput: [[String: Any]] = []
                 var modelOutput: String = ""
                 let tabId = UUID().uuidString
+                tabs[tabId] = TabItem(id: tabId)
                 var title = ""
                 var history: [[String: Any]] = []
 
                 let _ = await callModel(
                     tabId: tabId,
                     query: automation.instructions,
+                    isTabRemoved: { isTabRemoved(tabId: tabId) },
                     getAppContextBase64: { return nil },
                     getSelectedText: { return "" },
                     setSelectedText: { _ in },
@@ -491,27 +486,29 @@ struct NotchView: View {
                         title: expandSidebar
                             ? (h.title ?? createTitle(for: h.history, fallback: "Session #\(i + 1)"))
                             : "",
-                        isActive: (tabId == h.id) && !showSettings && showChatWindow,
+                        isActive: (focusedTabId == h.id) && !showSettings && showChatWindow,
                         action: {
                             open()
                             showSettings = false
-                            tabId = h.id
-                            createIntelligenceView(tabId: tabId)
+                            tabs[h.id] = TabItem(id: h.id)
+                            focusedTabId = h.id
                             removeTabs()
                         },
                         deleteAction: {
                             Task {
-                                let isActive = tabId == h.id
+                                let isActive = focusedTabId == h.id
                                 await historyStore.delete(id: h.id)
+                                tabs.removeValue(forKey: h.id)
                                 setTabActive(tabId: h.id, active: false)
                                 histories = await historyStore.getAll(limit: 100)
                                 if isActive {
                                     if let history = histories.first {
-                                        tabId = history.id
-                                        createIntelligenceView(tabId: tabId)
+                                        tabs[history.id] = TabItem(id: history.id)
+                                        focusedTabId = history.id
                                     } else {
-                                        tabId = UUID().uuidString
-                                        createIntelligenceView(tabId: tabId)
+                                        let tabId = UUID().uuidString
+                                        tabs[tabId] = TabItem(id: tabId)
+                                        focusedTabId = tabId
                                     }
                                 }
                                 unseen = histories.contains(where: { $0.unseen == true })
@@ -701,42 +698,37 @@ struct NotchView: View {
 
 // MARK: Tab Stuff
 extension NotchView {
-    private func createIntelligenceView(tabId: String) {
-        if tabs.keys.contains(tabId) {
-            return
-        }
-        tabs[tabId] = Tab(
-            id: tabId,
-            intelligenceView: IntelligenceView(
-                vm: vm,
-                tabId: tabId,
-                currentTabId: $tabId,
-                allClientTools: $allClientTools,
-                managedModels: $managedModels,
-                showMcpToolsButton: $showMcpToolsButton,
-                close: { close() },
-                minimize: { minimize() },
-                expand: { maximize() },
-                isTabShowing: { isTabShowing(tabId: tabId) },
-                setTabActive: { setTabActive(tabId: tabId, active: $0) },
-                updateHistoryList: { await updateHistoryList() },
-                reconnectManagedAgents: { await reconnectManagedAgents(fullRefresh: false) },
-                getHistory: { return await getHistory(tabId: $0) },
-                storeHistory: { await storeHistory(tabId: $0, tabTitle: $1, history: $2) },
-                setUnseen: { await setUnseen(id: $0, unseen: $1) },
-                setTitle: { await setTitle(id: $0, title: $1) },
-                startSelectionPoll: { self.startSelectionPoll() },
-                stopSelectionPoll: { self.stopSelectionPoll() }
-            ),
-            active: false
+    @ViewBuilder
+    private func tabView(tab: TabItem) -> some View {
+        IntelligenceView(
+            vm: vm,
+            tabId: tab.id,
+            currentTabId: $focusedTabId,
+            allClientTools: $allClientTools,
+            managedModels: $managedModels,
+            showMcpToolsButton: $showMcpToolsButton,
+            close: { close() },
+            minimize: { minimize() },
+            expand: { maximize() },
+            isTabShowing: { isTabShowing(tabId: tab.id) },
+            isTabRemoved: { isTabRemoved(tabId: tab.id) },
+            setTabActive: { setTabActive(tabId: tab.id, active: $0) },
+            updateHistoryList: { await updateHistoryList() },
+            reconnectManagedAgents: { await reconnectManagedAgents(fullRefresh: false) },
+            getHistory: { return await getHistory(tabId: $0) },
+            storeHistory: { await storeHistory(tabId: $0, tabTitle: $1, history: $2) },
+            setUnseen: { await setUnseen(id: $0, unseen: $1) },
+            setTitle: { await setTitle(id: $0, title: $1) },
+            startSelectionPoll: { self.startSelectionPoll() },
+            stopSelectionPoll: { self.stopSelectionPoll() }
         )
-        removeTabs()
-        AnalyticsManager.shared.customEvent(
-            view: .NotchView,
-            primary: .createTab,
-            secondary: "",
-            sev: .info
-        )
+        .opacity(showChatWindow && !showSettings && !focusedTabId.isEmpty ? 1 : 0)
+        .environmentObject(mcpManager)
+        .environmentObject(loginManager)
+        .environmentObject(firestoreManager)
+        .environmentObject(appContext)
+        .environmentObject(automationManager)
+        .id(focusedTabId)
     }
 
     private func printTabs() {
@@ -745,18 +737,12 @@ extension NotchView {
         }
     }
 
-    private func getIntelligenceView(tabId: String) -> some View {
-        Group {
-            if tabs.keys.contains(tabId) {
-                tabs[tabId]?.intelligenceView
-            } else {
-                Text("Open a tab")
-            }
-        }
+    private func isTabShowing(tabId: String) -> Bool {
+        return tabId == self.focusedTabId && showChatWindow && !showSettings
     }
 
-    private func isTabShowing(tabId: String) -> Bool {
-        return tabId == self.tabId && showChatWindow
+    private func isTabRemoved(tabId: String) -> Bool {
+        !tabs.keys.contains(tabId)
     }
 
     private func setTabActive(tabId: String, active: Bool) {
@@ -780,7 +766,7 @@ extension NotchView {
         let cutoff = Date().addingTimeInterval(-(minutes * 60))
         let countStart = tabs.count
         tabs = tabs.filter { _, tab in
-            tab.active || tab.lastUpdated >= cutoff || tab.id == self.tabId
+            tab.active || tab.lastUpdated >= cutoff || tab.id == self.focusedTabId
         }
 
         let countEnd = tabs.count

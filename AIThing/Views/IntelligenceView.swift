@@ -18,6 +18,8 @@ struct SavedQuery: Identifiable, Decodable, Encodable {
 }
 
 struct IntelligenceView: View {
+    let uniqueId = UUID().uuidString
+
     @EnvironmentObject var mcpManager: MCPManager
     @EnvironmentObject var loginManager: LoginManager
     @EnvironmentObject var firestoreManager: FirestoreManager
@@ -37,6 +39,7 @@ struct IntelligenceView: View {
     let minimize: () -> Void
     let expand: () -> Void
     let isTabShowing: () -> Bool
+    let isTabRemoved: () -> Bool
     let setTabActive: (Bool) -> Void
     let updateHistoryList: () async -> Void
     let reconnectManagedAgents: () async -> Void
@@ -91,170 +94,175 @@ struct IntelligenceView: View {
     @State private var hoverGreen: Bool = false
 
     var body: some View {
-        ZStack {
-            if #available(macOS 26.0, *) {
-                RoundedRectangle(cornerRadius: cornerRadius)
-                    .glassEffect(
-                        .regular.tint(.black),
-                        in: RoundedRectangle(cornerRadius: cornerRadius)
-                    )
-            } else {
-                RoundedRectangle(cornerRadius: cornerRadius)
-                    .fill(.white.opacity(0.1))
-            }
+        if isTabShowing() {
+            ZStack {
+                if #available(macOS 26.0, *) {
+                    RoundedRectangle(cornerRadius: cornerRadius)
+                        .glassEffect(
+                            .regular.tint(.black),
+                            in: RoundedRectangle(cornerRadius: cornerRadius)
+                        )
+                } else {
+                    RoundedRectangle(cornerRadius: cornerRadius)
+                        .fill(.white.opacity(0.1))
+                }
 
-            ZStack(alignment: .bottom) {
-                VStack {
-                    TitleView()
-                        .padding(8)
+                ZStack(alignment: .bottom) {
+                    VStack {
+                        TitleView()
+                            .padding(8)
 
-                    Divider()
-                        .padding(.horizontal, -8)
+                        Divider()
+                            .padding(.horizontal, -8)
 
-                    if showMcpTools {
-                        ToolsView(cornerRadius: cornerRadius - 4)
-                            .environmentObject(mcpManager)
-                    } else {
-                        ZStack {
-                            ResponseView()
-                                .padding(.vertical, -8)
-                                .padding(.bottom, -24)
-                                .frame(
-                                    maxWidth: .infinity,
-                                    maxHeight: .infinity,
-                                    alignment: .topLeading
-                                )
-
-                            if !isThinking, showSavedQueries {
-                                SaveQueryView()
+                        if showMcpTools {
+                            ToolsView(cornerRadius: cornerRadius - 4)
+                                .environmentObject(mcpManager)
+                        } else {
+                            ZStack {
+                                ResponseView()
+                                    .padding(.vertical, -8)
+                                    .padding(.bottom, -24)
                                     .frame(
                                         maxWidth: .infinity,
                                         maxHeight: .infinity,
-                                        alignment: .bottomLeading
+                                        alignment: .topLeading
                                     )
-                                    .padding(.leading, -8)
+
+                                if !isThinking, showSavedQueries {
+                                    SaveQueryView()
+                                        .frame(
+                                            maxWidth: .infinity,
+                                            maxHeight: .infinity,
+                                            alignment: .bottomLeading
+                                        )
+                                        .padding(.leading, -8)
+                                }
                             }
+                        }
+
+                        Spacer()
+
+                        if #available(macOS 26.0, *) {
+                            InputView()
+                                .clipShape(RoundedRectangle(cornerRadius: cornerRadius - 4))
+                                .glassEffect(
+                                    .regular.interactive(),
+                                    in: RoundedRectangle(cornerRadius: cornerRadius - 4)
+                                )
+                        } else {
+                            InputView()
+                                .background(.white.opacity(0.1))
+                                .clipShape(RoundedRectangle(cornerRadius: cornerRadius - 4))
+                        }
+
+                    }
+
+                    ContextView()
+                        .clipShape(
+                            VariableRoundedRectangle(
+                                topLeft: 0,
+                                topRight: 0,
+                                bottomLeft: cornerRadius,
+                                bottomRight: cornerRadius
+                            )
+                        )
+                }
+                .id(tabId)
+                .padding(8)
+                .onAppear {
+                    print(tabId, uniqueId)
+                    AnalyticsManager.shared.screenView(screenName: .IntelligenceView)
+                }
+                .task {
+                    history = await getHistory(tabId)
+                    if let history = history {
+                        modelInput = history.history
+                        tabTitle = history.title ?? "New Chat"
+                    } else {
+                        tabTitle = "New Chat"
+                        let greeting = await firestoreManager.getGreeting() ?? ""
+                        if !greeting.isEmpty {
+                            modelOutput = greeting
                         }
                     }
 
-                    Spacer()
+                    let notification = await firestoreManager.getNotification() ?? ""
+                    if !notification.isEmpty {
+                        modelOutput = notification
+                    }
 
-                    if #available(macOS 26.0, *) {
-                        InputView()
-                            .clipShape(RoundedRectangle(cornerRadius: cornerRadius - 4))
-                            .glassEffect(
-                                .regular.interactive(),
-                                in: RoundedRectangle(cornerRadius: cornerRadius - 4)
-                            )
+                    await setUnseen(tabId, false)
+
+                    if modelInput.isEmpty {
+                        showSavedQueries = true
+                    }
+                }
+                .onChange(of: currentTabId) { _ in
+                    Task {
+                        if currentTabId == tabId {
+                            await setUnseen(tabId, false)
+                        }
+                    }
+                }
+                .onChange(of: vm.selectedText) { text in
+                    if isTabShowing() {
+                        selectedText = text
+                    }
+                }
+                .onChange(of: selectionEnabled) { _ in
+                    if selectionEnabled {
+                        startSelectionPoll()
                     } else {
-                        InputView()
-                            .background(.white.opacity(0.1))
-                            .clipShape(RoundedRectangle(cornerRadius: cornerRadius - 4))
-                    }
-
-                }
-
-                ContextView()
-                    .clipShape(
-                        VariableRoundedRectangle(
-                            topLeft: 0,
-                            topRight: 0,
-                            bottomLeft: cornerRadius,
-                            bottomRight: cornerRadius
-                        )
-                    )
-            }
-            .id(tabId)
-            .padding(8)
-            .onAppear {
-                AnalyticsManager.shared.screenView(screenName: .IntelligenceView)
-            }
-            .task {
-                history = await getHistory(tabId)
-                if let history = history {
-                    modelInput = history.history
-                    tabTitle = history.title ?? "New Chat"
-                } else {
-                    tabTitle = "New Chat"
-                    let greeting = await firestoreManager.getGreeting() ?? ""
-                    if !greeting.isEmpty {
-                        modelOutput = greeting
+                        stopSelectionPoll()
                     }
                 }
-
-                let notification = await firestoreManager.getNotification() ?? ""
-                if !notification.isEmpty {
-                    modelOutput = notification
-                }
-
-                await setUnseen(tabId, false)
-
-                if modelInput.isEmpty {
-                    showSavedQueries = true
-                }
-            }
-            .onChange(of: currentTabId) { _ in
-                Task {
-                    if currentTabId == tabId {
-                        await setUnseen(tabId, false)
+                .onReceive(screenshotMonitor.$latestScreenshot) { ss in
+                    if isTabShowing() {
+                        if let ss = ss {
+                            Task {
+                                let results = await DragFileManager.processPaths([ss.url])
+                                for r in results {
+                                    modelContext.insert(r, at: 0)
+                                    AnalyticsManager.shared
+                                        .customEvent(
+                                            view: .IntelligenceView,
+                                            primary: .file,
+                                            secondary: "screenshot",
+                                            sev: .info
+                                        )
+                                }
+                            }
+                        }
                     }
                 }
-            }
-            .onChange(of: vm.selectedText) { text in
-                if isTabShowing() {
-                    selectedText = text
-                }
-            }
-            .onChange(of: selectionEnabled) { _ in
-                if selectionEnabled {
-                    startSelectionPoll()
-                } else {
-                    stopSelectionPoll()
-                }
-            }
-            .onReceive(screenshotMonitor.$latestScreenshot) { ss in
-                if isTabShowing() {
-                    if let ss = ss {
+                .dropDestination(for: URL.self) { urls, _ in
+                    if isTabShowing() {
                         Task {
-                            let results = await DragFileManager.processPaths([ss.url])
+                            let results = await DragFileManager.processPaths(urls)
                             for r in results {
                                 modelContext.insert(r, at: 0)
                                 AnalyticsManager.shared
                                     .customEvent(
                                         view: .IntelligenceView,
                                         primary: .file,
-                                        secondary: "screenshot",
+                                        secondary: "add",
                                         sev: .info
                                     )
                             }
                         }
                     }
-                }
-            }
-            .dropDestination(for: URL.self) { urls, _ in
-                if isTabShowing() {
-                    Task {
-                        let results = await DragFileManager.processPaths(urls)
-                        for r in results {
-                            modelContext.insert(r, at: 0)
-                            AnalyticsManager.shared
-                                .customEvent(
-                                    view: .IntelligenceView,
-                                    primary: .file,
-                                    secondary: "add",
-                                    sev: .info
-                                )
-                        }
+
+                    // You can’t know yet, so just return true to accept the drop.
+                    return true
+                } isTargeted: {
+                    if isTabShowing() {
+                        isDropping = $0
                     }
                 }
-
-                // You can’t know yet, so just return true to accept the drop.
-                return true
-            } isTargeted: {
-                if isTabShowing() {
-                    isDropping = $0
-                }
             }
+        } else {
+            Color.clear.frame(width: 0, height: 0)
         }
     }
 
@@ -751,6 +759,7 @@ extension IntelligenceView {
         let result = await callModel(
             tabId: tabId,
             query: trimmed,
+            isTabRemoved: isTabRemoved,
             getAppContextBase64: { return appContextBase64 },
             getSelectedText: { return selectedText },
             setSelectedText: { selectedText = $0 },
@@ -781,6 +790,11 @@ extension IntelligenceView {
             automationManager: automationManager,
             aiThingMcpManager: aiThingMcpManager
         )
+
+        // Close the query after tab removal
+        if isTabRemoved() {
+            return
+        }
 
         setTabActive(false)
         if !isTabShowing() {

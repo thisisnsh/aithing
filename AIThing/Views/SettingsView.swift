@@ -43,118 +43,123 @@ struct SettingsView: View {
     @State private var usageData: Usage = Usage()
 
     var body: some View {
-        ZStack {
-            if #available(macOS 26.0, *) {
-                RoundedRectangle(cornerRadius: cornerRadius)
-                    .glassEffect(
-                        .regular.tint(.black),
-                        in: RoundedRectangle(cornerRadius: cornerRadius)
-                    )
-            } else {
-                RoundedRectangle(cornerRadius: cornerRadius)
-                    .fill(.white.opacity(0.1))
-            }
+        if isPresented {
+            ZStack {
+                if #available(macOS 26.0, *) {
+                    RoundedRectangle(cornerRadius: cornerRadius)
+                        .glassEffect(
+                            .regular.tint(.black),
+                            in: RoundedRectangle(cornerRadius: cornerRadius)
+                        )
+                } else {
+                    RoundedRectangle(cornerRadius: cornerRadius)
+                        .fill(.white.opacity(0.1))
+                }
 
-            VStack {
-                TitleView()
-                    .padding(8)
+                VStack {
+                    TitleView()
+                        .padding(8)
 
-                Divider()
-                    .padding(.horizontal, -8)
+                    Divider()
+                        .padding(.horizontal, -8)
 
-                ScrollView(.vertical, showsIndicators: false) {
-                    VStack {
-                        switch selectedTab {
-                        case .account:
-                            SettingsAccountTab(
-                                authState: loginManager.authState,
-                                signIn: { await signIn() },
-                                signOut: { await signOut() },
-                                usageData: usageData,
-                                onHistory: {}
-                            )
+                    ScrollView(.vertical, showsIndicators: false) {
+                        VStack {
+                            switch selectedTab {
+                            case .account:
+                                SettingsAccountTab(
+                                    authState: loginManager.authState,
+                                    signIn: { await signIn() },
+                                    signOut: { await signOut() },
+                                    usageData: usageData,
+                                    onHistory: {}
+                                )
 
-                        case .models:
-                            SettingsModelTab(
-                                managedModels: managedModels,
-                                modelSelected: $modelSelected,
-                                byokSelected: $byokSelected,
-                                apiKey: $apiKey,
-                                apiKeyFieldFocused: _apiKeyFieldFocused,
-                                saveModels: saveModels,
-                                bindingForModel: bindingForModel
-                            )
+                            case .models:
+                                SettingsModelTab(
+                                    managedModels: managedModels,
+                                    modelSelected: $modelSelected,
+                                    byokSelected: $byokSelected,
+                                    apiKey: $apiKey,
+                                    apiKeyFieldFocused: _apiKeyFieldFocused,
+                                    saveModels: saveModels,
+                                    bindingForModel: bindingForModel
+                                )
 
-                        case .agents:
-                            SettingsAgentsTab(
-                                agents: $agents,
-                                addAgentEntry: addAgentEntry,
-                                saveAgents: saveAgents,
-                                deleteAgent: deleteAgent
-                            )
-                            .environmentObject(googleOAuthManager)
-                            .environmentObject(gitHubOAuthManager)
-                            .environmentObject(mcpOAuthManagers)
+                            case .agents:
+                                SettingsAgentsTab(
+                                    agents: $agents,
+                                    addAgentEntry: addAgentEntry,
+                                    saveAgents: saveAgents,
+                                    deleteAgent: deleteAgent
+                                )
+                                .environmentObject(googleOAuthManager)
+                                .environmentObject(gitHubOAuthManager)
+                                .environmentObject(mcpOAuthManagers)
 
-                        case .preferences:
-                            SettingsPreferencesTab(
-                                preferencesShowInScreenshot: $preferencesShowInScreenshot,
-                                preferencesCaptureFullScreen: $preferencesCaptureFullScreen,
-                                setPreferencesShowInScreenshot: setPreferencesShowInScreenshot,
-                                setPreferencesCaptureFullScreen: setPreferencesCaptureFullScreen,
-                                setPanelVisibility: setPanelVisibility,
-                            )
+                            case .preferences:
+                                SettingsPreferencesTab(
+                                    preferencesShowInScreenshot: $preferencesShowInScreenshot,
+                                    preferencesCaptureFullScreen: $preferencesCaptureFullScreen,
+                                    setPreferencesShowInScreenshot: setPreferencesShowInScreenshot,
+                                    setPreferencesCaptureFullScreen:
+                                        setPreferencesCaptureFullScreen,
+                                    setPanelVisibility: setPanelVisibility,
+                                )
 
-                        case .automations:
-                            SettingsAutomationTab()
-                                .environmentObject(automationManager)
-                        }
-                    }
-                    .padding(.vertical, 16)
-                }.padding(.vertical, -8)
-
-            }
-            .padding(8)
-            .onDisappear {
-                saveModels()
-                saveAgents()
-            }
-            .task {
-                let managedAgents = await firestoreManager.getManagedAgents()
-                var allServerIds: [String] = []
-                for server in managedAgents {
-                    if server.enabled ?? true == false { continue }
-
-                    if let id = server.id {
-                        allServerIds.append(id)
-
-                        if !mcpOAuthManagers.managers.keys.contains(id) {
-                            mcpOAuthManagers.managers[id] = McpOAuthManager(server: server)
-                        }
-
-                        if let manager = mcpOAuthManagers.managers[id] {
-                            if manager.server.version != server.version {
-                                mcpOAuthManagers.managers[id] = McpOAuthManager(server: server)
+                            case .automations:
+                                SettingsAutomationTab()
+                                    .environmentObject(automationManager)
                             }
                         }
+                        .padding(.vertical, 16)
+                    }.padding(.vertical, -8)
 
-                        // Always update image
-                        if let image = server.image {
-                            mcpOAuthManagers.managers[id]?.server.image = image
+                }
+                .padding(8)
+                .onDisappear {
+                    saveModels()
+                    saveAgents()
+                }
+                .task {
+                    let managedAgents = await firestoreManager.getManagedAgents()
+                    var allServerIds: [String] = []
+                    for server in managedAgents {
+                        if server.enabled ?? true == false { continue }
+
+                        if let id = server.id {
+                            allServerIds.append(id)
+
+                            if !mcpOAuthManagers.managers.keys.contains(id) {
+                                mcpOAuthManagers.managers[id] = McpOAuthManager(server: server)
+                            }
+
+                            if let manager = mcpOAuthManagers.managers[id] {
+                                if manager.server.version != server.version {
+                                    mcpOAuthManagers.managers[id] = McpOAuthManager(server: server)
+                                }
+                            }
+
+                            // Always update image
+                            if let image = server.image {
+                                mcpOAuthManagers.managers[id]?.server.image = image
+                            }
                         }
                     }
-                }
 
-                // Remove mcp servers that were added before but are no longer supported
-                for key in mcpOAuthManagers.managers.keys {
-                    if !allServerIds.contains(key) {
-                        mcpOAuthManagers.managers.removeValue(forKey: key)
+                    // Remove mcp servers that were added before but are no longer supported
+                    for key in mcpOAuthManagers.managers.keys {
+                        if !allServerIds.contains(key) {
+                            mcpOAuthManagers.managers.removeValue(forKey: key)
+                        }
                     }
-                }
 
-                await getUsageData()
-                AnalyticsManager.shared.screenView(screenName: .SettingsView)
+                    await getUsageData()
+                    AnalyticsManager.shared.screenView(screenName: .SettingsView)
+                }
             }
+        } else {
+            Color.clear.frame(width: 0, height: 0)
         }
     }
 
@@ -180,7 +185,7 @@ struct SettingsView: View {
             Spacer()
 
             CheckForUpdatesView(updater: updater)
-            
+
             ControlGroup {
                 Button(action: {
                     selectedTab = .account

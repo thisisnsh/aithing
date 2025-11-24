@@ -11,6 +11,7 @@ import Foundation
 func callModel(
     tabId: String,
     query: String,
+    isTabRemoved: () -> Bool,
     getAppContextBase64: () -> AppContextModel?,
     getSelectedText: () -> String,
     setSelectedText: (String) -> Void,
@@ -41,6 +42,11 @@ func callModel(
     automationManager: AutomationManager,
     aiThingMcpManager: AIThingMCPManager
 ) async -> Bool {
+    // Close the query after tab removal
+    if isTabRemoved() {
+        return true
+    }
+
     setIsThinking(true)
     if !query.isEmpty {
         // Check if version is breakglassed
@@ -694,6 +700,7 @@ func callModel(
                         let rc = await callModel(
                             tabId: tabId,
                             query: "",
+                            isTabRemoved: isTabRemoved,
                             getAppContextBase64: { return nil },
                             getSelectedText: getSelectedText,
                             setSelectedText: setSelectedText,
