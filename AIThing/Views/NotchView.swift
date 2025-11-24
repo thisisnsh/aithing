@@ -760,13 +760,13 @@ extension NotchView {
         )
     }
 
-    // Remove tabs that are inactive for longer than 10 minutes
+    // Remove tabs that are inactive for longer than 30 minutes
     private func removeTabs() {
-        let minutes: Double = 10
+        let minutes: Double = 30
         let cutoff = Date().addingTimeInterval(-(minutes * 60))
         let countStart = tabs.count
         tabs = tabs.filter { _, tab in
-            tab.active || tab.lastUpdated >= cutoff || tab.id == self.focusedTabId
+            tab.lastUpdated >= cutoff || tab.id == self.focusedTabId
         }
 
         let countEnd = tabs.count

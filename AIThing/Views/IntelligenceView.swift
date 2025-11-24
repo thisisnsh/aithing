@@ -176,6 +176,7 @@ struct IntelligenceView: View {
                 }
                 .task {
                     history = await getHistory(tabId)
+
                     if let history = history {
                         modelInput = history.history
                         tabTitle = history.title ?? "New Chat"
