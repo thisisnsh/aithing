@@ -5,18 +5,8 @@
 ## 2.0 
 
 
-Saturday
-- Release
-
-
-
-
-
-
-
-    
-Sunday
-- PH Pre-Release for Wednesday
+Tuesday
+- PH Pre-Release for Thursday
 - Promotion graphics 
     - summarize unread emails daily 9am
     - give me talking points for these papers
@@ -27,16 +17,17 @@ Sunday
     - what is forest tree search?
 
 
-Wednesday 
+Wednesday
+- Persist MCP Servers
+- Speed up reconnection of MCP Servers
+- Google Server Stats
+
+
+Thursday  
 - PH Release
 - Promote 2.0 on Reddit  
 - Email people about the new release who emailed you before
 
-
-Tuesday
-- Google Server Stats
-- Persist MCP Servers
-- Speed up reconnection of MCP Servers
 
 ------------------------
 
@@ -130,13 +121,10 @@ xcrun notarytool submit "AIThing-$version.dmg" --keychain-profile "notary-profil
 xcrun stapler staple "AIThing-$version.dmg"
 
 codesign -dv --verbose=4 AIThing-$version.dmg 2>&1 | grep -E 'Authority|TeamIdentifier|Identifier'
+
+./bin/generate_appcast ../Sparkles
+
+scp -i ~/.ssh/id_rsa * root@159.89.183.84:/var/www/html
 ```
 
 ------------------------
-
-
-## Useful 
-
-scp -i ~/.ssh/id_rsa logo.png root@159.89.183.84:/var/www/html
-ssh -i ~/.ssh/id_rsa.pub  root@159.89.183.84
-
