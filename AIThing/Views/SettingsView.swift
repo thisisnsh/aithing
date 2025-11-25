@@ -10,6 +10,7 @@ struct SettingsView: View {
     @EnvironmentObject var gitHubOAuthManager: GithubOAuthManager
     @EnvironmentObject var mcpOAuthManagers: McpOAuthManagers
     @EnvironmentObject var automationManager: AutomationManager
+    @EnvironmentObject var screenshotMonitor: ScreenshotMonitor
 
     @Binding var isPresented: Bool
     @Binding var managedModels: [ModelInfo]
@@ -106,6 +107,7 @@ struct SettingsView: View {
                                         setPreferencesCaptureFullScreen,
                                     setPanelVisibility: setPanelVisibility,
                                 )
+                                .environmentObject(screenshotMonitor)
 
                             case .automations:
                                 SettingsAutomationTab()

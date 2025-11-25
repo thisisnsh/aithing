@@ -94,6 +94,7 @@ final class AnalyticsManager {
         case quit
         case create
 
+        case useCapturedScreenshots
         case showInScreenshot
         case outputToken
         case cacheEnabled

@@ -13,8 +13,9 @@ class ScreenshotMonitor: ObservableObject {
     @Published var latestScreenshot: ScreenshotData?
 
     private var timer: Timer?
-    private let screenshotDirectory: URL
+    private var screenshotDirectory: URL?
     private var lastKnownFiles: Set<String> = []
+    private var initialized: Bool = false
 
     struct ScreenshotData: Identifiable {
         let id = UUID()
@@ -24,14 +25,33 @@ class ScreenshotMonitor: ObservableObject {
     }
 
     init() {
-        // Get the screenshot directory from system preferences
-        self.screenshotDirectory = Self.getScreenshotDirectory()
+        initialize()
+    }
 
-        // Initialize with current files
-        updateKnownFiles()
+    deinit {
+        deinitialize()
+    }
 
-        // Start monitoring
-        startMonitoring()
+    func initialize() {
+        if initialized { return }
+        if getUseCapturedScreenshots() {
+            // Get the screenshot directory from system preferences
+            screenshotDirectory = Self.getScreenshotDirectory()
+
+            // Initialize with current files
+            updateKnownFiles()
+
+            // Start monitoring
+            startMonitoring()
+
+            initialized = true
+        }
+    }
+
+    func deinitialize() {
+        if !initialized { return }
+        timer?.invalidate()
+        initialized = false
     }
 
     private static func getScreenshotDirectory() -> URL {
@@ -98,13 +118,14 @@ class ScreenshotMonitor: ObservableObject {
     }
 
     private func startMonitoring() {
-        // Check for new screenshots every 0.5 seconds
-        timer = Timer.scheduledTimer(withTimeInterval: 0.5, repeats: true) { [weak self] _ in
+        // Check for new screenshots every 1 seconds
+        timer = Timer.scheduledTimer(withTimeInterval: 1, repeats: true) { [weak self] _ in
             self?.checkForNewScreenshots()
         }
     }
 
     private func updateKnownFiles() {
+        guard let screenshotDirectory = screenshotDirectory else { return }
         guard
             let contents = try? FileManager.default.contentsOfDirectory(
                 at: screenshotDirectory,
@@ -117,6 +138,7 @@ class ScreenshotMonitor: ObservableObject {
     }
 
     private func checkForNewScreenshots() {
+        guard let screenshotDirectory = screenshotDirectory else { return }
         guard
             let contents = try? FileManager.default.contentsOfDirectory(
                 at: screenshotDirectory,
@@ -170,9 +192,5 @@ class ScreenshotMonitor: ObservableObject {
                 )
             }
         }
-    }
-
-    deinit {
-        timer?.invalidate()
     }
 }

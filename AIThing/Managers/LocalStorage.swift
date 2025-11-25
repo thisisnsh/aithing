@@ -27,6 +27,14 @@ func setCacheMessages(value: Bool) {
     UserDefaults.standard.set(value, forKey: "CacheMessages")
 }
 
+func getUseCapturedScreenshots() -> Bool {
+    UserDefaults.standard.bool(forKey: "UseCapturedScreenshots")
+}
+
+func setUseCapturedScreenshots(value: Bool) {
+    UserDefaults.standard.set(value, forKey: "UseCapturedScreenshots")
+}
+
 func getAnthropicAPIKey() -> String? {
     UserDefaults.standard.string(forKey: "AnthropicAPIKey")
 }

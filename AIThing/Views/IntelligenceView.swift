@@ -23,8 +23,7 @@ struct IntelligenceView: View {
     @EnvironmentObject var firestoreManager: FirestoreManager
     @EnvironmentObject var appContext: AppContext
     @EnvironmentObject var automationManager: AutomationManager
-
-    @StateObject var screenshotMonitor = ScreenshotMonitor()
+    @EnvironmentObject var screenshotMonitor: ScreenshotMonitor
 
     @ObservedObject var vm: NotchVM
     let tabId: String

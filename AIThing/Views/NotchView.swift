@@ -26,6 +26,7 @@ struct NotchView: View {
     @StateObject private var loginManager = LoginManager()
     @StateObject private var firestoreManager = FirestoreManager()
     @StateObject private var automationManager = AutomationManager(onExecute: { _ in })
+    @StateObject private var screenshotMonitor = ScreenshotMonitor()
 
     let logger = Logger(subsystem: "com.thisisnsh.mac.AIThing", category: "NotchView")
     let historyStore = HistoryStore()
@@ -133,6 +134,7 @@ struct NotchView: View {
                         .environmentObject(githubOAuthManager)
                         .environmentObject(mcpOAuthManagers)
                         .environmentObject(automationManager)
+                        .environmentObject(screenshotMonitor)
                     }
 
                     ForEach(Array(tabs.values.enumerated()), id: \.element.id) { index, tab in
@@ -731,6 +733,7 @@ extension NotchView {
         .environmentObject(firestoreManager)
         .environmentObject(appContext)
         .environmentObject(automationManager)
+        .environmentObject(screenshotMonitor)
         .id(focusedTabId)
     }
 

@@ -8,6 +8,8 @@
 import SwiftUI
 
 struct SettingsPreferencesTab: View {
+    @EnvironmentObject var screenshotMonitor: ScreenshotMonitor
+
     @Binding var preferencesShowInScreenshot: Bool
     @Binding var preferencesCaptureFullScreen: Bool
 
@@ -17,6 +19,7 @@ struct SettingsPreferencesTab: View {
 
     @State private var outputToken = getOutputToken()
     @State private var cacheMessage = getCacheMessages()
+    @State private var useCapturedScreenshots = getUseCapturedScreenshots()
 
     var body: some View {
         VStack(alignment: .leading, spacing: 16) {
@@ -132,12 +135,12 @@ struct SettingsPreferencesTab: View {
                 .padding(4)
             }
 
-            GroupBox(label: title("Look & Feel")) {
+            GroupBox(label: title("Preferences")) {
                 VStack(alignment: .leading) {
                     PreferenceToggleRow(
                         isOn: $preferencesShowInScreenshot,
-                        iconOn: "eye.fill",
-                        iconOff: "eye.slash.fill",
+                        iconOn: "",
+                        iconOff: "",
                         title: "Show in Screenshot",
                         onChange: { newValue in
                             setPreferencesShowInScreenshot(newValue)
@@ -154,17 +157,56 @@ struct SettingsPreferencesTab: View {
                     Divider()
 
                     HStack {
-                        Image(systemName: "paintpalette.fill")
-                            .resizable()
-                            .scaledToFit()
-                            .frame(width: 16, height: 16)
+                        VStack(alignment: .leading) {
+                            Text("Use Captured Screenshots")
+                                .font(.system(size: 14, weight: .medium))
+                            Text(
+                                "Allows you to use screenshots captured\nwhile AI Thing is open for queries. [Learn More](https://aithing.dev/features/selective-context#3-use-mac’s-native-screenshot-shortcuts)"
+                            )
+                            .font(.system(size: 10, weight: .medium))
+                            .foregroundStyle(.secondary)
+                        }
+
+                        Spacer()
+                        Toggle(
+                            "",
+                            isOn: Binding(
+                                get: {
+                                    useCapturedScreenshots
+                                },
+                                set: { value in
+                                    useCapturedScreenshots = value
+                                    setUseCapturedScreenshots(value: value)
+                                    if value {
+                                        screenshotMonitor.initialize()
+                                    } else {
+                                        screenshotMonitor.deinitialize()
+                                    }
+                                    AnalyticsManager.shared
+                                        .customEvent(
+                                            view: .SettingsPreferencesTab,
+                                            primary: .useCapturedScreenshots,
+                                            secondary: "\(value)",
+                                            sev: .info
+                                        )
+                                }
+                            )
+                        )
+                        .toggleStyle(.switch)
+                        .tint(.black)
+                        .scaleEffect(0.7)
+                    }
+                    .padding(4)
+
+                    Divider()
+
+                    HStack {
                         Text("Theme")
                             .font(.system(size: 14, weight: .medium))
                         Spacer()
                         Text("Dark Translucent")
                             .font(.system(size: 10, weight: .medium))
                     }
-                    .opacity(0.5)
                     .padding(4)
                 }
                 .padding(4)
@@ -189,10 +231,6 @@ private struct PreferenceToggleRow: View {
 
     var body: some View {
         HStack {
-            Image(systemName: isOn ? iconOn : iconOff)
-                .resizable()
-                .scaledToFit()
-                .frame(width: 16, height: 16)
             Text(title)
                 .font(.system(size: 14, weight: .medium))
             Spacer()
