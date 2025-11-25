@@ -86,11 +86,14 @@ https://chatgpt.com/g/g-p-6873dd743bb48191b8a269cab99e4c01-ai-thing/c/688ff3cc-7
 ```
 change bundle version in info.plist
 change bundle version in settings
+
 export version=<version>
 
 spctl --assess --type execute --verbose AIThing.app 
 AIThing.app: accepted
 source=Notarized Developer ID
+
+echo $version
 
 hdiutil create -volname "AIThing" \
   -srcfolder "AIThing_dmg" \
@@ -122,9 +125,16 @@ xcrun stapler staple "AIThing-$version.dmg"
 
 codesign -dv --verbose=4 AIThing-$version.dmg 2>&1 | grep -E 'Authority|TeamIdentifier|Identifier'
 
-./bin/generate_appcast ../Sparkles
+cp AIThing-$version.dmg ../Sparkles/  
+
+../Sparkle-2.8.1/bin/generate_appcast ../Sparkles
+
+cd ../Sparkles
 
 scp -i ~/.ssh/id_rsa * root@159.89.183.84:/var/www/html
+
+ssh -i ~/.ssh/id_rsa root@159.89.183.84
+
 ```
 
 ------------------------
