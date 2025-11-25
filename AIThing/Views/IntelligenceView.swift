@@ -18,8 +18,6 @@ struct SavedQuery: Identifiable, Decodable, Encodable {
 }
 
 struct IntelligenceView: View {
-    let uniqueId = UUID().uuidString
-
     @EnvironmentObject var mcpManager: MCPManager
     @EnvironmentObject var loginManager: LoginManager
     @EnvironmentObject var firestoreManager: FirestoreManager
@@ -34,6 +32,8 @@ struct IntelligenceView: View {
     @Binding var allClientTools: [String: [[String: Any]]]
     @Binding var managedModels: [ModelInfo]
     @Binding var showMcpToolsButton: Bool
+    @Binding var showToast: Bool
+    @Binding var toastText: String
 
     let close: () -> Void
     let minimize: () -> Void
@@ -87,6 +87,7 @@ struct IntelligenceView: View {
     @State private var selectedAppIcon: NSImage? = nil
     @State private var selectedAppName = ""
     @State private var selectedWindowName = ""
+    @State private var toast = ""
 
     // Trafic Light
     @State private var hoverRed: Bool = false
@@ -171,7 +172,6 @@ struct IntelligenceView: View {
                 .id(tabId)
                 .padding(8)
                 .onAppear {
-                    print(tabId, uniqueId)
                     AnalyticsManager.shared.screenView(screenName: .IntelligenceView)
                 }
                 .task {
@@ -837,10 +837,12 @@ extension IntelligenceView {
             return nil
         }
 
-        if let image = captureWindow(
+        let (image, error) = captureWindow(
             appName: appName,
             windowTitle: windowName
-        ) {
+        )
+
+        if let image = image {
             let thumb = image.resized(maxDimension: 1024)
             guard let data = thumb.jpegData() else {
                 return nil
@@ -853,6 +855,10 @@ extension IntelligenceView {
             )
         }
 
+        if let error = error {
+            toastText = error
+            showToast = true
+        }
         return nil
     }
 

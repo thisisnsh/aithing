@@ -251,6 +251,7 @@ struct NotchView: View {
                     .onAppear {
                         DispatchQueue.main.asyncAfter(deadline: .now() + 5) {
                             self.showToast = false
+                            self.toastText = ""
                         }
                     }
                     .frame(maxHeight: .infinity, alignment: .top)
@@ -707,6 +708,8 @@ extension NotchView {
             allClientTools: $allClientTools,
             managedModels: $managedModels,
             showMcpToolsButton: $showMcpToolsButton,
+            showToast: $showToast,
+            toastText: $toastText,
             close: { close() },
             minimize: { minimize() },
             expand: { maximize() },

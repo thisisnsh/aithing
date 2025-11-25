@@ -6,6 +6,7 @@
 //
 
 import AppKit
+import CoreGraphics
 
 /// Capture a screenshot of a window belonging to an app name + window title.
 /// This uses `.optionIncludingWindow`, so overlapping windows are removed.
@@ -13,7 +14,14 @@ import AppKit
 ///   - appName: The app's visible name (e.g. "Safari").
 ///   - windowTitle: The exact window title. If nil, the first matching window is chosen.
 /// - Returns: An NSImage containing the window’s image, or nil if not found.
-func captureWindow(appName: String, windowTitle: String? = nil) -> NSImage? {
+func captureWindow(appName: String, windowTitle: String? = nil) -> (NSImage?, String?) {
+    // CGPreflightScreenCaptureAccess() returns true if already allowed.
+    // If not, CGRequestScreenCaptureAccess() will show the system prompt once.
+    let hasAccess = CGPreflightScreenCaptureAccess() || CGRequestScreenCaptureAccess()
+    guard hasAccess else {
+        // User denied or settings prevent access
+        return (nil, "Allow screen capture access in Settings > Privacy > Screen Recording")
+    }
 
     // Get visible on-screen windows
     guard
@@ -22,7 +30,7 @@ func captureWindow(appName: String, windowTitle: String? = nil) -> NSImage? {
             kCGNullWindowID
         ) as? [[String: Any]]
     else {
-        return nil
+        return (nil, "Unable to get visible screen")
     }
 
     // Find the window that matches the app + title
@@ -48,7 +56,7 @@ func captureWindow(appName: String, windowTitle: String? = nil) -> NSImage? {
             return a.layer < b.layer
         }).first
     else {
-        return nil
+        return (nil, "Unable to get selected screen")
     }
 
     // Capture the window image only (ignores overlapping windows)
@@ -60,8 +68,8 @@ func captureWindow(appName: String, windowTitle: String? = nil) -> NSImage? {
             [.boundsIgnoreFraming, .bestResolution, .shouldBeOpaque]
         )
     else {
-        return nil
+        return (nil, "Unable to capture screen")
     }
 
-    return NSImage(cgImage: cgImage, size: .zero)
+    return (NSImage(cgImage: cgImage, size: .zero), nil)
 }

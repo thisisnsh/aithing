@@ -937,9 +937,6 @@ private func createTitle(
         "messages": input,
     ]
 
-    print(input)
-    print(body)
-
     request.httpBody = try? JSONSerialization.data(withJSONObject: body)
 
     do {
