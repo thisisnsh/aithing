@@ -232,6 +232,7 @@ struct IntelligenceView: View {
                                             sev: .info
                                         )
                                 }
+                                screenshotMonitor.updateKnownFiles()
                             }
                         }
                     }

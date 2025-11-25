@@ -1084,6 +1084,8 @@ extension NotchView {
         lastExpandedWindowSize =
             expandSidebar
             ? WindowSize.sidebarIsExpanded : WindowSize.sidebarIsCollapsed
+        screenshotMonitor.updateKnownFiles()
+        screenshotMonitor.close()
     }
 
     private func open() {
@@ -1103,6 +1105,8 @@ extension NotchView {
         (width, height) = updateWindowSize(windowSize)
         lastExpandedWindowSize = windowSize
         gainFocus()
+        screenshotMonitor.updateKnownFiles()
+        screenshotMonitor.open()
     }
 
     private func minimize() {
@@ -1114,6 +1118,8 @@ extension NotchView {
         )
         windowSize = WindowSize.notchIsCollapsed
         (width, height) = updateWindowSize(windowSize)
+        screenshotMonitor.updateKnownFiles()
+        screenshotMonitor.close()
     }
 
     private func maximize() {

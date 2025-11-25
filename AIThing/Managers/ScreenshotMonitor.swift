@@ -16,6 +16,7 @@ class ScreenshotMonitor: ObservableObject {
     private var screenshotDirectory: URL?
     private var lastKnownFiles: Set<String> = []
     private var initialized: Bool = false
+    private var canCheckScreenshot: Bool = false
 
     struct ScreenshotData: Identifiable {
         let id = UUID()
@@ -30,6 +31,14 @@ class ScreenshotMonitor: ObservableObject {
 
     deinit {
         deinitialize()
+    }
+
+    func open() {
+        canCheckScreenshot = true
+    }
+
+    func close() {
+        canCheckScreenshot = false
     }
 
     func initialize() {
@@ -120,11 +129,13 @@ class ScreenshotMonitor: ObservableObject {
     private func startMonitoring() {
         // Check for new screenshots every 1 seconds
         timer = Timer.scheduledTimer(withTimeInterval: 1, repeats: true) { [weak self] _ in
-            self?.checkForNewScreenshots()
+            if self?.canCheckScreenshot ?? false {
+                self?.checkForNewScreenshots()
+            }
         }
     }
 
-    private func updateKnownFiles() {
+    func updateKnownFiles() {
         guard let screenshotDirectory = screenshotDirectory else { return }
         guard
             let contents = try? FileManager.default.contentsOfDirectory(
@@ -135,6 +146,7 @@ class ScreenshotMonitor: ObservableObject {
         else { return }
 
         lastKnownFiles = Set(contents.map { $0.lastPathComponent })
+        latestScreenshot = nil
     }
 
     private func checkForNewScreenshots() {
