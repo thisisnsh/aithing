@@ -18,7 +18,7 @@ Friday
     - byok
 - Where to Promote?      
 - Promote 2.0 on Reddit  
-
+- Add notification for automation
 
 Saturday Morning
 - Promote 2.0 on Reddit  
@@ -31,8 +31,11 @@ Sunday
 
 
 Later
+
 - RAG 
 - Token Count / Savings
+- Get API Key seamlessly 
+
 
 Jan 1, 2026
 - PH Release

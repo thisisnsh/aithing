@@ -345,7 +345,10 @@ struct NotchView: View {
                     getSelectionEnabled: { return false },
                     setSelectionEnabled: { _ in },
                     getTabTitle: { return title },
-                    setTabTitle: { title = $0 },
+                    setTabTitle: {
+                        title = $0
+                        await self.setTitle(id: tabId, title: title)
+                    },
                     setDisplayQuery: { _ in },
                     setToolCall: { _ in },
                     getHistory: { await self.getHistory(tabId: $0) },
@@ -376,7 +379,6 @@ struct NotchView: View {
                         history: history,
                         unseen: true
                     )
-                    await self.setTitle(id: tabId, title: title)
                 }
 
                 await updateHistoryList()
