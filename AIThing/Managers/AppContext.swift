@@ -40,6 +40,11 @@ class AppContext: ObservableObject {
         // Get the app’s frontmost window by matching process ID
         let pid = app.processIdentifier
 
+        // Compare with your own app's bundle identifier
+        if app.bundleIdentifier == Bundle.main.bundleIdentifier {
+            return ("", "", nil)
+        }
+
         guard
             let infoList = CGWindowListCopyWindowInfo(
                 [.optionOnScreenOnly, .excludeDesktopElements],

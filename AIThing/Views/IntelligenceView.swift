@@ -558,6 +558,8 @@ struct IntelligenceView: View {
                                 .lineLimit(1)
                                 .font(.system(size: 10, weight: .medium))
                                 .foregroundStyle(.black)
+
+                                Spacer()
                             }
                             .padding(8)
                             .padding(.horizontal, 4)
@@ -603,6 +605,8 @@ struct IntelligenceView: View {
                                         hoverAppContextEnabled || appContextEnabled
                                             ? .black : .white
                                     )
+
+                                    Spacer()
                                 }
                                 .padding(8)
                                 .padding(.horizontal, 4)
