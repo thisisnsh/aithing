@@ -79,9 +79,9 @@ struct SettingsPreferencesTab: View {
                         Spacer()
 
                         Button(action: {
-                            outputToken -= 1024
-                            if outputToken <= 1024 {
-                                outputToken = 1024
+                            outputToken -= 1000
+                            if outputToken <= 1000 {
+                                outputToken = 1000
                             }
                             setOutputToken(value: outputToken)
                             AnalyticsManager.shared
@@ -106,9 +106,9 @@ struct SettingsPreferencesTab: View {
                             .padding(4)
 
                         Button(action: {
-                            outputToken += 1024
-                            if outputToken >= 102400 {
-                                outputToken = 102400
+                            outputToken += 1000
+                            if outputToken >= 64000 {
+                                outputToken = 64000
                             }
                             setOutputToken(value: outputToken)
                             AnalyticsManager.shared

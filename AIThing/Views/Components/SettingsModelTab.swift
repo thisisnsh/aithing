@@ -114,13 +114,18 @@ struct SettingsModelTab: View {
                 ) {
                     VStack(alignment: .leading) {
                         HStack {
-                            Image(icon)
-                                .resizable()
-                                .aspectRatio(contentMode: .fit)
-                                .frame(width: 16, height: 16)
                             VStack(alignment: .leading, spacing: 2) {
-                                Text(title)
-                                    .font(.system(size: 14, weight: .medium))
+                                HStack {
+                                    Image(icon)
+                                        .resizable()
+                                        .aspectRatio(contentMode: .fit)
+                                        .frame(width: 16, height: 16)
+                                    
+                                    Text(title)
+                                        .font(.system(size: 14, weight: .medium))
+                                }
+                                .padding(.bottom, 4)
+                                
                                 Text(rating)
                                     .font(.system(size: 10, weight: .medium))
                                     .opacity(0.5)
@@ -164,6 +169,13 @@ struct SettingsModelTab: View {
                     .padding(4)
                 }
 
+                Text("AI can make mistakes. Perform irreversible tasks carefully.")
+                    .font(.system(size: 10, weight: .medium))
+                    .padding(.horizontal, 12)
+                    .lineLimit(nil)
+                    .fixedSize(horizontal: false, vertical: true)
+                    .opacity(byokSelected ? 1 : 0.5)
+                
                 GroupBox {
                     VStack(alignment: .leading) {
                         HStack {

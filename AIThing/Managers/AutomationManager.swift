@@ -109,7 +109,7 @@ class AutomationManager: ObservableObject {
 
     private func saveAutomations() {
         guard let encoded = try? JSONEncoder().encode(automations) else {
-            print("Failed to encode automations")
+            logger.error("Failed to encode automations")
             return
         }
         UserDefaults.standard.set(encoded, forKey: storageKey)

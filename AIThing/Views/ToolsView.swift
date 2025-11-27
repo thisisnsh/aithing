@@ -9,46 +9,103 @@ import MCP
 import SwiftUI
 
 struct ToolsView: View {
-    @EnvironmentObject var mcpManager: MCPManager
-
     let cornerRadius: CGFloat
+    @Binding var allClientTools: [String: [[String: Any]]]
 
-    @State private var tools: [String: [Tool]] = [:]
-    @State private var currentClient: String = ""
-    @State private var toolsText = "Loading tools..."
+    @State private var tools: [String: [[String: Any]]] = [:]
+    @State private var expandedHeadings: Set<String> = []
+    @State private var expandedNames: Set<String> = []
+
+    private var sortedHeadings: [String] {
+        tools.keys.sorted()
+    }
 
     var body: some View {
-        ZStack {
-            if #available(macOS 26.0, *) {
-                RoundedRectangle(cornerRadius: cornerRadius)
-                    .glassEffect(
-                        .regular.tint(.black),
-                        in: RoundedRectangle(cornerRadius: cornerRadius)
-                    )
-            } else {
-                RoundedRectangle(cornerRadius: cornerRadius)
-                    .fill(.white.opacity(0.1))
-            }
-
+        ScrollView {
             if tools.isEmpty {
-                Text(toolsText)
-                    .foregroundColor(.secondary)
-                    .font(.system(size: 10))
-                    .padding(.horizontal, 16)
-                    .padding(.vertical, 8)
+                VStack {
+                    Text("Enable agents in Settings")
+                        .foregroundColor(.secondary)
+                        .padding()
+                }
+                .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top)
             } else {
-                toolsView
-            }
+                VStack(alignment: .leading, spacing: 12) {
+                    ForEach(sortedHeadings, id: \.self) { heading in
+                        // Top-level: heading collapsible
+                        DisclosureGroup(
+                            isExpanded: Binding(
+                                get: { expandedHeadings.contains(heading) },
+                                set: { newValue in
+                                    if newValue {
+                                        expandedHeadings.insert(heading)
+                                    } else {
+                                        expandedHeadings.remove(heading)
+                                    }
+                                }
+                            )
+                        ) {
+                            if let items = tools[heading] {
+                                VStack(alignment: .leading, spacing: 8) {
+                                    ForEach(Array(items.enumerated()), id: \.offset) {
+                                        index,
+                                        item in
+                                        let name = item["name"] as? String ?? "Unnamed"
+                                        let description = item["description"] as? String ?? ""
 
+                                        // Unique ID per name within heading
+                                        let nameID = "\(heading)-\(index)"
+
+                                        // Second level: name collapsible
+                                        DisclosureGroup(
+                                            isExpanded: Binding(
+                                                get: { expandedNames.contains(nameID) },
+                                                set: { newValue in
+                                                    if newValue {
+                                                        expandedNames.insert(nameID)
+                                                    } else {
+                                                        expandedNames.remove(nameID)
+                                                    }
+                                                }
+                                            )
+                                        ) {
+                                            if !description.isEmpty {
+                                                HStack {
+                                                    Text("\(description)")
+                                                        .font(.system(size: 12, weight: .medium))
+                                                        .foregroundColor(.secondary)
+                                                        .padding(.top, 2)
+                                                    Spacer()
+                                                }
+                                                .padding(.horizontal, 16)
+                                            }
+                                        } label: {
+                                            Text("\(name)")
+                                                .font(.system(size: 12, weight: .medium))
+                                                .bold()
+                                        }
+                                    }
+                                }
+                                .padding(.top, 4)
+                                .padding(.leading, 8)
+                            }
+                        } label: {
+                            Text(heading)
+                                .font(.system(size: 14, weight: .medium))
+                        }
+                    }
+                }
+            }
         }
+        .padding(.horizontal, 16)
+        .frame(height: 300)
         .onAppear {
             AnalyticsManager.shared.screenView(screenName: .ToolsView)
             Task {
-                tools = await mcpManager.getAllTools()
-                currentClient = tools.keys.first ?? ""
-                if tools.isEmpty {
-                    toolsText = "Enable agents in Settings"
+                for t in allClientTools.keys {
+                    tools[formatManagedString(t)] = allClientTools[t]
                 }
+
                 AnalyticsManager.shared
                     .customEvent(
                         view: .ToolsView,
@@ -60,41 +117,32 @@ struct ToolsView: View {
         }
     }
 
-    private var toolsView: some View {
-        ScrollView {
-            VStack(alignment: .leading) {
-                ForEach(Array(tools.keys), id: \.self) { currentClient in
-                    if let currentTools = tools[currentClient] {
-                        ForEach(currentTools, id: \.self) { tool in
-                            ChatBubble(
-                                item: ChatItem(
-                                    role: .assistant,
-                                    payload:
-                                        .file(
-                                            text: "\(currentClient): \(tool.name)",
-                                            skipNextMessages: false,
-                                            content: tool.description
-                                        )
-                                )
-                            )
-                            .padding(.leading, -24)
-                            .padding(.trailing, 8)
-                        }
-                    } else {
-                        if tools.isEmpty {
-                            Text("Enable agents in Settings")
-                                .foregroundColor(.secondary)
-                                .font(.system(size: 10))
-                                .padding(.horizontal, 16)
-                                .padding(.vertical, 8)
-                        }
-                    }
-                }
-            }
-            .padding(.vertical, 16)
+    func formatManagedString(_ input: String) -> String {
+        var trimmed = input
+        if !trimmed.hasPrefix("managed_") {
+            return input
         }
-    }
 
+        if trimmed == "managed_aithing_github" {
+            trimmed = "managed_github"
+        } else if trimmed == "managed_aithing_google" {
+            trimmed = "managed_google"
+        }
+
+        // 1. Remove the "managed_" prefix if it exists
+        trimmed.removeFirst("managed_".count)
+
+        // 2. Split by underscore
+        let parts = trimmed.split(separator: "_")
+
+        // 3. Capitalize each word
+        let capitalizedParts = parts.map { part in
+            part.prefix(1).uppercased() + part.dropFirst()
+        }
+
+        // 4. Join with spaces
+        return capitalizedParts.joined(separator: " ")
+    }
 }
 
 extension Array {

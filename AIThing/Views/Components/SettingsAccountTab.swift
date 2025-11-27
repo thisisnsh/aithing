@@ -104,7 +104,7 @@ struct SettingsAccountTab: View {
                 .padding(4)
             }
 
-            GroupBox(label: title("Help")) {
+            GroupBox(label: title("Shortcuts")) {
                 VStack(alignment: .leading) {
                     ForEach(help, id: \.0) { h in
                         HStack {

@@ -14,11 +14,17 @@ import os
 @MainActor
 class GoogleOAuthManager: ObservableObject {
     @Published var user: GIDGoogleUser?
-    @Published var enabled: Set<GoogleTool> = []
+    @Published var enabled: Set<GoogleTool> = getGoogleTools()
 
     let logger = Logger(subsystem: "com.thisisnsh.mac.AIThing", category: "GoogleOAuthManager")
 
+    private var generating = false
+
     func generateToken(refresh: Bool) async -> GIDGoogleUser? {
+        if generating { return nil }
+        generating = true
+        defer { generating = false }
+        
         do {
             // Refresh token if user already exists
             if refresh {
@@ -162,19 +168,6 @@ class GoogleOAuthManager: ObservableObject {
         ]
     }
 
-    enum GoogleTool: String, CaseIterable, Identifiable {
-        case gmail = "Gmail"
-        case drive = "Drive"
-        case calendar = "Calendar"
-        case docs = "Docs"
-        case sheets = "Sheets"
-        case forms = "Form"
-        case slides = "Slides"
-        case tasks = "Tasks"
-
-        var id: String { rawValue }
-    }
-
     let toolScopesMap: [GoogleTool: [String]] = [
         .gmail: GoogleScopeGroups.gmail,
         .drive: GoogleScopeGroups.drive,
@@ -190,11 +183,11 @@ class GoogleOAuthManager: ObservableObject {
         var s = Set(enabled.flatMap { toolScopesMap[$0] ?? [] })
         for b in GoogleScopeGroups.base {
             s.insert(b)
-        }
+        }        
         AnalyticsManager.shared.customEvent(
             view: .GoogleOAuthManager,
             primary: .scope,
-            secondary: s.formatted(),
+            secondary: String(describing: enabled),
             sev: .info
         )
         return Array(s)
@@ -298,5 +291,32 @@ class GoogleOAuthManager: ObservableObject {
             "clear_completed_tasks",
         ],
     ]
+}
 
+enum GoogleTool: String, CaseIterable, Identifiable, Codable {
+    case gmail = "Gmail"
+    case drive = "Drive"
+    case calendar = "Calendar"
+    case docs = "Docs"
+    case sheets = "Sheets"
+    case forms = "Form"
+    case slides = "Slides"
+    case tasks = "Tasks"
+
+    var id: String { rawValue }
+}
+
+func getGoogleTools() -> Set<GoogleTool> {
+    if let data = UserDefaults.standard.data(forKey: "GoogleTools"),
+        let decoded = try? JSONDecoder().decode(Set<GoogleTool>.self, from: data)
+    {
+        return decoded
+    }
+    return []
+}
+
+func setGoogleTools(value: Set<GoogleTool>) {
+    if let data = try? JSONEncoder().encode(value) {
+        UserDefaults.standard.set(data, forKey: "GoogleTools")
+    }
 }

@@ -2,31 +2,40 @@
 
 ------------------------ 
 
-## 2.0 
+
+Thursday
+- Release 2.0.7
+- website change
+    - remove complete free
+    - AI can make mistakes. Perform irreversible tasks carefully.
+    - create get started page
+
+Friday
+- Apple Promotion Graphic & Animation  
+    - many agents
+    - complete google suite
+    - privacy and local 
+    - byok
+- Where to Promote?      
+- Promote 2.0 on Reddit  
 
 
-Tuesday
-- PH Pre-Release for Thursday
-- Promotion graphics 
-    - summarize unread emails daily 9am
-    - give me talking points for these papers
-    - create draft email for all emails from clients about recent outage
-    - remove all junk emails daily 12pm
-    - summarize all feedback emails every friday 9am
-    - analyse the sales in this sheet 
-    - what is forest tree search?
-
-
-Wednesday
-- Persist MCP Servers
-- Speed up reconnection of MCP Servers
-- Google Server Stats
-
-
-Thursday  
-- PH Release
+Saturday Morning
 - Promote 2.0 on Reddit  
 - Email people about the new release who emailed you before
+
+
+Sunday 
+- Google Server Stats
+- Google Server Rate Limit
+
+
+Later
+- RAG 
+- Token Count / Savings
+
+Jan 1, 2026
+- PH Release
 
 
 ------------------------

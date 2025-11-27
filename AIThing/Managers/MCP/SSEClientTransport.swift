@@ -107,7 +107,7 @@ import MCP
         public func connect() async throws {
             guard !isConnected else { return }
 
-            logger.info("Connecting to SSE endpoint: \(endpoint)")
+            logger.debug("Connecting to SSE endpoint: \(endpoint)")
 
             // Start listening for server events
             streamingTask = Task { await listenForServerEvents() }
@@ -147,7 +147,7 @@ import MCP
         public func disconnect() async {
             guard isConnected else { return }
 
-            logger.info("Disconnecting from SSE endpoint")
+            logger.debug("Disconnecting from SSE endpoint")
 
             // Cancel the streaming task
             streamingTask?.cancel()
@@ -227,7 +227,7 @@ import MCP
             while !Task.isCancelled && currentAttempt < maxAttempts {
                 currentAttempt += 1
                 do {
-                    logger.info(
+                    logger.debug(
                         "Attempting SSE connection (attempt \(currentAttempt)/\(maxAttempts)) to \(endpoint)"
                     )
                     try await connectToSSEStream()
@@ -251,7 +251,7 @@ import MCP
                 } catch {
                     // Check for cancellation immediately after an error.
                     if Task.isCancelled {
-                        logger.info(
+                        logger.debug(
                             "SSE connection task cancelled after an error during attempt \(currentAttempt)."
                         )
                         lastErrorEncountered = error  // Store error that occurred before cancellation
@@ -273,12 +273,12 @@ import MCP
                                 delay = 1.0
                             }  // After 2nd attempt fails
 
-                            logger.info(
+                            logger.debug(
                                 "Waiting \(delay) seconds before next SSE connection attempt (attempt \(currentAttempt + 1))."
                             )
                             try await Task.sleep(for: .seconds(delay))
                         } catch {  // Catch cancellation of sleep
-                            logger.info("SSE connection retry sleep was cancelled.")
+                            logger.debug("SSE connection retry sleep was cancelled.")
                             // lastErrorEncountered is already set from the connection attempt.
                             // Task.isCancelled will be true, so the loop condition or post-loop check will handle it.
                             break  // Exit the retry loop.
@@ -291,7 +291,7 @@ import MCP
             if let continuation = self.connectionContinuation {
                 // This continuation is still pending; means connection never established successfully.
                 if Task.isCancelled {
-                    logger.info(
+                    logger.debug(
                         "SSE connection attempt was cancelled. Failing pending connection continuation."
                     )
                     // Use lastErrorEncountered if cancellation happened after an error, otherwise a generic cancellation error.
@@ -391,7 +391,7 @@ import MCP
             // Construct the full URL for sending messages
             if let url = constructMessageURL(from: endpoint) {
                 messageURL = url
-                logger.info("Message URL set to: \(url)")
+                logger.debug("Message URL set to: \(url)")
 
                 // Mark as connected
                 isConnected = true

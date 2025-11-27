@@ -11,76 +11,14 @@ import Foundation
 import OAuthSwift
 import os
 
-public struct McpToken: Codable, Equatable {
-    public var accessToken: String
-    public var refreshToken: String?
-    public var expiresAt: Date?
-}
-
-enum McpOAuthError: LocalizedError {
-    case cancelled
-    case invalidMcpUrl
-    case mcpUrlDecodeFailed
-    case mcpBaseUrlDecodeFailed
-    case getWellKnownUrlsFailed
-    case missingWellKnownUrls
-    case invalidRegistrationEndpoint
-    case registrationFailed
-    case invalidCallbackUrl
-    case authorizationFailed
-
-    var errorDescription: String? {
-        switch self {
-        case .cancelled:
-            return "Authorization was cancelled by the user."
-        case .invalidMcpUrl:
-            return "Invalid MCP URL."
-        case .mcpUrlDecodeFailed:
-            return "Failed to decode the MCP URL."
-        case .mcpBaseUrlDecodeFailed:
-            return "Failed to decode the MCP base URL."
-        case .getWellKnownUrlsFailed:
-            return "Unable to fetch well-known OAuth endpoints."
-        case .missingWellKnownUrls:
-            return "Missing well-known OAuth endpoints."
-        case .invalidRegistrationEndpoint:
-            return "The registration endpoint is invalid."
-        case .registrationFailed:
-            return "Dynamic client registration failed."
-        case .invalidCallbackUrl:
-            return "The callback URL is invalid."
-        case .authorizationFailed:
-            return "Authorization failed."
-        }
-    }
-}
-
-struct RegisteredClient: Codable {
-    let client_id: String
-    let client_secret: String?
-}
-
-struct WellKnownUrls: Codable {
-    let issuer: String
-    let authorization_endpoint: String
-    let token_endpoint: String
-    let registration_endpoint: String
-    let scopes_supported: [String]?
-}
-
-struct McpServer: Codable {
-    let id: String?
-    var image: String?
-    let name: String
-    let url: String
-    let version: Int?
-    let enabled: Bool?
-}
-
 @MainActor
 final class McpOAuthManagers: ObservableObject {
+    // OAuth server provided by AI Thing
     @Published var managers: [String: McpOAuthManager] = [:]
+    // OAuth server added by user
     @Published var selfManagers: [String: McpOAuthManager] = [:]
+    // OAuth server provided by AI Thing but have custom handler
+    @Published var customManagers: [String: McpServer] = [:]
 }
 
 @MainActor
@@ -108,9 +46,17 @@ final class McpOAuthManager: ObservableObject, Identifiable {
         self.forwardCallbackURL =
             "\(forwardCallbackScheme)://oauth-callback-\(server.name.lowercased().replacingOccurrences(of: " ", with: "-"))"
 
+        enabled = getMcpEnabled(clientName: server.id)
+        user = getMcpToken(clientName: server.id)
     }
 
+    private var generating = false
+    
     func generateToken(refresh: Bool) async -> McpToken? {
+        if generating { return nil }
+        generating = true
+        defer { generating = false }
+        
         do {
             try await getWellKnownUrls()
 
@@ -132,6 +78,7 @@ final class McpOAuthManager: ObservableObject, Identifiable {
                 {
                     if let renewed = try await renewAccessToken(refreshToken: rt) {
                         self.user = userFromCreds(credential: renewed.credential)
+                        setMcpToken(value: self.user, clientName: server.id)
                         return self.user
                     }
                     // fallthrough to full auth if refresh failed
@@ -151,16 +98,19 @@ final class McpOAuthManager: ObservableObject, Identifiable {
 
             let cred = try await authorizeInteractively()
             self.user = userFromCreds(credential: cred)
+            setMcpToken(value: self.user, clientName: server.id)
             return self.user
         } catch {
             logger.error("Mcp generateToken error: \(error.localizedDescription)")
             self.user = nil
+            setMcpToken(value: self.user, clientName: server.id)
             return nil
         }
     }
 
     func resetToken() {
         user = nil
+        setMcpToken(value: self.user, clientName: server.id)
     }
 }
 
@@ -360,5 +310,98 @@ extension McpOAuthManager {
             return false
         }
     }
+}
 
+enum McpOAuthError: LocalizedError {
+    case cancelled
+    case invalidMcpUrl
+    case mcpUrlDecodeFailed
+    case mcpBaseUrlDecodeFailed
+    case getWellKnownUrlsFailed
+    case missingWellKnownUrls
+    case invalidRegistrationEndpoint
+    case registrationFailed
+    case invalidCallbackUrl
+    case authorizationFailed
+
+    var errorDescription: String? {
+        switch self {
+        case .cancelled:
+            return "Authorization was cancelled by the user."
+        case .invalidMcpUrl:
+            return "Invalid MCP URL."
+        case .mcpUrlDecodeFailed:
+            return "Failed to decode the MCP URL."
+        case .mcpBaseUrlDecodeFailed:
+            return "Failed to decode the MCP base URL."
+        case .getWellKnownUrlsFailed:
+            return "Unable to fetch well-known OAuth endpoints."
+        case .missingWellKnownUrls:
+            return "Missing well-known OAuth endpoints."
+        case .invalidRegistrationEndpoint:
+            return "The registration endpoint is invalid."
+        case .registrationFailed:
+            return "Dynamic client registration failed."
+        case .invalidCallbackUrl:
+            return "The callback URL is invalid."
+        case .authorizationFailed:
+            return "Authorization failed."
+        }
+    }
+}
+
+struct RegisteredClient: Codable {
+    let client_id: String
+    let client_secret: String?
+}
+
+struct WellKnownUrls: Codable {
+    let issuer: String
+    let authorization_endpoint: String
+    let token_endpoint: String
+    let registration_endpoint: String
+    let scopes_supported: [String]?
+}
+
+struct McpServer: Codable {
+    let id: String?
+    var image: String?
+    let name: String
+    let url: String
+    let version: Int?
+    let enabled: Bool?
+    let custom: Bool?
+}
+
+func getMcpEnabled(clientName: String?) -> Bool {
+    guard let clientName = clientName else { return false }
+    return UserDefaults.standard.bool(forKey: "McpEnabled-\(clientName)")
+}
+
+func setMcpEnabled(value: Bool, clientName: String?) {
+    guard let clientName = clientName else { return }
+    UserDefaults.standard.set(value, forKey: "McpEnabled-\(clientName)")
+}
+
+public struct McpToken: Codable, Equatable {
+    public var accessToken: String
+    public var refreshToken: String?
+    public var expiresAt: Date?
+}
+
+func getMcpToken(clientName: String?) -> McpToken? {
+    guard let clientName = clientName else { return nil }
+    if let data = UserDefaults.standard.data(forKey: "McpToken-\(clientName)"),
+        let decoded = try? JSONDecoder().decode(McpToken.self, from: data)
+    {
+        return decoded
+    }
+    return nil
+}
+
+func setMcpToken(value: McpToken?, clientName: String?) {
+    guard let clientName = clientName else { return }
+    if let data = try? JSONEncoder().encode(value) {
+        UserDefaults.standard.set(data, forKey: "McpToken-\(clientName)")
+    }
 }

@@ -58,7 +58,6 @@ struct NotchView: View {
     @State private var managedModels: [ModelInfo] = []
     @State private var agents: [AgentEntry] = []
     @State private var allClientTools: [String: [[String: Any]]] = [:]
-    @State private var showMcpToolsButton = false
 
     @State private var focusedTabId: String = ""
     @State private var tabs: [String: TabItem] = [:]
@@ -67,9 +66,7 @@ struct NotchView: View {
 
     @State private var showDragIcon = false
     @State private var showSettings = false
-    @State private var showToast = false
     @State private var toastText = ""
-    @State private var toastColor: Color = .yellow
     @State private var hoverSidebar = false
     @State private var expandSidebar = false
     @State private var previousExpandSidebar = false
@@ -126,6 +123,7 @@ struct NotchView: View {
                             },
                             expand: { maximize() },
                             setPanelVisibility: { self.setPanelVisibility() },
+                            getManagedAgents: getManagedAgents,
                             updater: updater
                         )
                         .environmentObject(loginManager)
@@ -248,11 +246,10 @@ struct NotchView: View {
             }
             .padding(.vertical, 24)
 
-            if showToast, showChatWindow {
+            if !toastText.isEmpty, showChatWindow {
                 Toast()
                     .onAppear {
                         DispatchQueue.main.asyncAfter(deadline: .now() + 5) {
-                            self.showToast = false
                             self.toastText = ""
                         }
                     }
@@ -279,14 +276,18 @@ struct NotchView: View {
         .frame(width: width, height: height)
         .onAppear {
             AnalyticsManager.shared.screenView(screenName: .NotchView)
-            close()
+            close(initialClose: true)
         }
         .onChange(of: showSettings) { _ in
-            Task {
-                managedModels = await firestoreManager.getModelInfos()
-                await loadAllClientTools()
-                await reconnectManagedAgents(fullRefresh: true)
-                showMcpToolsButton = await mcpManager.getAllTools().count > 0
+            // Refresh when settings is closed
+            if !showSettings {
+                Task {
+                    managedModels = await firestoreManager.getModelInfos()
+                    let rc1 = await refreshLocalAgents()
+                    toastText = ""
+                    toastText = rc1
+                    await refreshManagedAgents()
+                }
             }
         }
         .onChange(of: vm.refresh) { _ in
@@ -318,9 +319,11 @@ struct NotchView: View {
             histories = await historyStore.getAll(limit: 100)
 
             managedModels = await firestoreManager.getModelInfos()
-            await loadAllClientTools()
-            await reconnectManagedAgents(fullRefresh: true)
-            showMcpToolsButton = await mcpManager.getAllTools().count > 0
+
+            let rc1 = await refreshLocalAgents()
+            toastText = ""
+            toastText = rc1
+            await refreshManagedAgents()
 
             automationManager.onExecute = { (automation: Automation) async in
                 logger.debug("Called automation: \(automation.id)")
@@ -334,6 +337,7 @@ struct NotchView: View {
                 let _ = await callModel(
                     tabId: tabId,
                     query: automation.instructions,
+
                     isTabRemoved: { isTabRemoved(tabId: tabId) },
                     getAppContextBase64: { return nil },
                     getSelectedText: { return "" },
@@ -345,19 +349,16 @@ struct NotchView: View {
                     setDisplayQuery: { _ in },
                     setToolCall: { _ in },
                     getHistory: { await self.getHistory(tabId: $0) },
-                    storeHistory: {
-                        title = $1
-                        history = $2
-                    },
+                    storeHistory: { history = $1 },
                     setHistory: { _ in },
                     setIsThinking: { _ in },
                     getModelInput: { return modelInput },
                     appendModelInput: { modelInput.append($0) },
                     getModelOutput: { return modelOutput },
                     setModelOutput: { modelOutput = $0 },
-                    animateOutput: { (_, _) async in },
+                    animateOutput: { (_) async in },
                     getAllClientTools: { return allClientTools },
-                    reconnectManagedAgents: { await self.reconnectManagedAgents() },
+                    getUsedTools: { return [] },
                     getModelContext: { return [] },
                     clearModelContext: {},
                     getManagedModels: { return managedModels },
@@ -372,10 +373,10 @@ struct NotchView: View {
                 if !history.isEmpty {
                     await self.storeHistory(
                         tabId: tabId,
-                        tabTitle: title,
                         history: history,
                         unseen: true
                     )
+                    await self.setTitle(id: tabId, title: title)
                 }
 
                 await updateHistoryList()
@@ -681,7 +682,7 @@ struct NotchView: View {
                     .glassEffect(.regular, in: RoundedRectangle(cornerRadius: 32))
                     .overlay {
                         RoundedRectangle(cornerRadius: 32, style: .continuous)
-                            .stroke(toastColor.opacity(0.5), lineWidth: 1)
+                            .stroke(.yellow.opacity(0.5), lineWidth: 1)
                     }
             } else {
                 Text(toastText)
@@ -692,7 +693,7 @@ struct NotchView: View {
                     .clipShape(RoundedRectangle(cornerRadius: 32))
                     .overlay {
                         RoundedRectangle(cornerRadius: 32, style: .continuous)
-                            .stroke(toastColor.opacity(0.5), lineWidth: 1)
+                            .stroke(.yellow.opacity(0.5), lineWidth: 1)
                     }
             }
         }
@@ -709,8 +710,6 @@ extension NotchView {
             currentTabId: $focusedTabId,
             allClientTools: $allClientTools,
             managedModels: $managedModels,
-            showMcpToolsButton: $showMcpToolsButton,
-            showToast: $showToast,
             toastText: $toastText,
             close: { close() },
             minimize: { minimize() },
@@ -719,9 +718,8 @@ extension NotchView {
             isTabRemoved: { isTabRemoved(tabId: tab.id) },
             setTabActive: { setTabActive(tabId: tab.id, active: $0) },
             updateHistoryList: { await updateHistoryList() },
-            reconnectManagedAgents: { await reconnectManagedAgents(fullRefresh: false) },
             getHistory: { return await getHistory(tabId: $0) },
-            storeHistory: { await storeHistory(tabId: $0, tabTitle: $1, history: $2) },
+            storeHistory: { await storeHistory(tabId: $0, history: $1) },
             setUnseen: { await setUnseen(id: $0, unseen: $1) },
             setTitle: { await setTitle(id: $0, title: $1) },
             startSelectionPoll: { self.startSelectionPoll() },
@@ -738,9 +736,7 @@ extension NotchView {
     }
 
     private func printTabs() {
-        for tab in tabs.keys {
-            print(tab)
-        }
+        logger.debug("\(tabs.keys)")
     }
 
     private func isTabShowing(tabId: String) -> Bool {
@@ -786,270 +782,6 @@ extension NotchView {
     }
 }
 
-// MARK: AI Stuff
-extension NotchView {
-    private func loadAllClientTools() async {
-        let newAgents = getAgentEntries()
-        var allMatch = true
-
-        if agents.count == newAgents.count {
-            for (i, agent) in newAgents.enumerated() {
-                let existing = agents[i]
-                if existing.id != agent.id || existing.isEnabled != agent.isEnabled {
-                    allMatch = false
-                    break
-                }
-            }
-        } else {
-            allMatch = false
-        }
-
-        if allMatch {
-            return
-        }
-
-        agents = newAgents
-        toastText = "Waking up Agents..."
-        showToast = true
-
-        var failure = ""
-
-        let disconnectRc = await mcpManager.disconnect()
-        if !disconnectRc.isEmpty {
-            toastColor = .red
-            toastText = "Failed to wake up agents: \(disconnectRc)"
-            DispatchQueue.main.asyncAfter(deadline: .now() + 2) {
-                showToast = false
-                toastColor = .white
-            }
-            return
-        }
-
-        allClientTools.removeAll()
-        mcpOAuthManagers.selfManagers.removeAll()
-
-        for agent in agents {
-            if !agent.isEnabled {
-                continue
-            }
-
-            let name: String
-            let primary: String
-            var connectRc: String = ""
-            var oauth: Bool = false
-
-            switch agent.entry {
-            case .url(let n, let url):
-                name = n
-                primary = url
-
-                // URL is oauth ready if it has well known URLs
-                oauth = await McpOAuthManager.hasWellKnownUrls(url: url)
-
-                // Skip connecting to oauth servers now, they will be connected during query
-                if oauth {
-                    mcpOAuthManagers.selfManagers[name] = McpOAuthManager(
-                        server: McpServer(
-                            id: name,
-                            image: nil,
-                            name: name,
-                            url: url,
-                            version: nil,
-                            enabled: true
-                        )
-                    )
-                    mcpOAuthManagers.selfManagers[name]?.enabled = true
-                } else {
-                    connectRc = await mcpManager.connect(clientName: name, url: url, authToken: nil)
-                }
-
-            case .urlWithToken(let n, let url, let token):
-                name = n
-                primary = url
-
-                connectRc = await mcpManager.connect(clientName: name, url: url, authToken: token)
-
-            case .command(let n, let command, let arguments):
-                name = n
-                primary = command
-
-                connectRc = await mcpManager.connect(
-                    clientName: name,
-                    command: command,
-                    args: arguments
-                )
-            }
-
-            AnalyticsManager.shared.customEvent(
-                view: .NotchView,
-                primary: .agentLoad,
-                secondary: "\(name) \(primary)",
-                sev: .info
-            )
-
-            logger.info("Agent Name: \(name)")
-            logger.info("OAuth Ready: \(oauth)")
-
-            if !oauth {
-                if connectRc.isEmpty {
-                    let tools = await mcpManager.getTools(clientName: name, filter: [])
-                    allClientTools[name] = tools
-                } else {
-                    failure += "\n\n\(name): \(connectRc)"
-                }
-            }
-
-        }
-
-        if !failure.isEmpty {
-            toastColor = .red
-            toastText = "Failed to wake up agents\n" + failure
-            AnalyticsManager.shared
-                .customEvent(view: .NotchView, primary: .agentLoad, secondary: failure, sev: .error)
-        }
-
-        DispatchQueue.main.asyncAfter(deadline: .now() + (failure.isEmpty ? 2 : 5)) {
-            showToast = false
-            toastColor = .white
-        }
-    }
-
-    private func reconnectManagedAgents(fullRefresh: Bool = false) async {
-        var enabledClients: [String] = []
-
-        if googleOAuthManager.enabled.count > 0 {
-            let clientName = "managed_google_mcp"
-            var accessToken: String?
-            var refreshedAccessToken: String?
-            var refreshNeeded = true
-
-            if googleOAuthManager.user != nil {
-                accessToken = googleOAuthManager.user?.accessToken.tokenString
-                logger.debug("AccessToken \(String(describing: accessToken))")
-                if let date = googleOAuthManager.user?.accessToken.expirationDate, !fullRefresh {
-                    refreshNeeded = Date().addingTimeInterval(10 * 60) >= date
-                }
-            }
-
-            if let user = await googleOAuthManager.generateToken(refresh: true), refreshNeeded {
-                refreshedAccessToken = user.accessToken.tokenString
-                // If token has been refreshed OR client does not exist
-                logger.debug("RefreshedAccessToken \(String(describing: refreshedAccessToken))")
-                if accessToken != refreshedAccessToken
-                    || !mcpManager.clientExists(clientName: clientName)
-                {
-                    _ = await mcpManager.reconnect(
-                        clientName: clientName,
-                        url: "https://google.mcp.aithing.dev/mcp",
-                        authToken: refreshedAccessToken!
-                    )
-                }
-            }
-
-            if fullRefresh {
-                let tools = await mcpManager.getTools(
-                    clientName: clientName,
-                    filter: googleOAuthManager.enabledCapabilities()
-                )
-                allClientTools[clientName] = tools
-                logger.debug("Google Enabled Capabilities: \(tools)")
-            }
-
-            enabledClients.append(clientName)
-        } else {
-            allClientTools.removeValue(forKey: "managed_google_mcp")
-        }
-
-        if githubOAuthManager.enabled.count > 0 {
-            let clientName = "managed_github_mcp"
-            var accessToken: String?
-            var refreshedAccessToken: String?
-            var refreshNeeded = true
-
-            if githubOAuthManager.user != nil {
-                accessToken = githubOAuthManager.user?.accessToken
-                logger.debug("AccessToken \(String(describing: accessToken))")
-                if let date = githubOAuthManager.user?.expiresAt, !fullRefresh {
-                    // Token will expire in next 10 minutes
-                    refreshNeeded = Date().addingTimeInterval(10 * 60) >= date
-                }
-            }
-
-            if let user = await githubOAuthManager.generateToken(refresh: true), refreshNeeded {
-                refreshedAccessToken = user.accessToken
-                // If token has been refreshed OR client does not exist
-                logger.debug("RefreshedAccessToken \(String(describing: refreshedAccessToken))")
-                if accessToken != refreshedAccessToken
-                    || !mcpManager.clientExists(clientName: clientName)
-                {
-                    _ = await mcpManager.reconnect(
-                        clientName: clientName,
-                        url: "https://api.githubcopilot.com/mcp",
-                        authToken: refreshedAccessToken!
-                    )
-                }
-            }
-
-            if fullRefresh {
-                let tools = await mcpManager.getTools(
-                    clientName: clientName,
-                    filter: githubOAuthManager.enabledCapabilities()
-                )
-                allClientTools[clientName] = tools
-                logger.debug("Github Enabled Capabilities: \(tools)")
-            }
-
-            enabledClients.append(clientName)
-        } else {
-            allClientTools.removeValue(forKey: "managed_github_mcp")
-        }
-
-        let keepingCurrent = mcpOAuthManagers.managers.merging(mcpOAuthManagers.selfManagers) {
-            (current, _) in current
-        }
-        for (clientName, agentOAuthManager) in keepingCurrent {
-            if agentOAuthManager.enabled {
-                var accessToken: String?
-                var refreshedAccessToken: String?
-                var refreshNeeded = true
-
-                if agentOAuthManager.user != nil {
-                    accessToken = agentOAuthManager.user?.accessToken
-                    logger.debug("AccessToken \(String(describing: accessToken))")
-                    if let date = agentOAuthManager.user?.expiresAt, !fullRefresh {
-                        // Token will expire in next 10 minutes
-                        refreshNeeded = Date().addingTimeInterval(10 * 60) >= date
-                    }
-                }
-
-                if let user = await agentOAuthManager.generateToken(refresh: true), refreshNeeded {
-                    refreshedAccessToken = user.accessToken
-                    // If token has been refreshed OR client does not exist
-                    logger.debug("RefreshedAccessToken \(String(describing: refreshedAccessToken))")
-                    if accessToken != refreshedAccessToken
-                        || !mcpManager.clientExists(clientName: clientName)
-                    {
-                        _ = await mcpManager.reconnect(
-                            clientName: clientName,
-                            url: agentOAuthManager.server.url,
-                            authToken: refreshedAccessToken!
-                        )
-                    }
-                }
-
-                if fullRefresh {
-                    let tools = await mcpManager.getTools(clientName: clientName, filter: [])
-                    allClientTools[clientName] = tools
-                }
-
-                enabledClients.append(clientName)
-            } else {
-                allClientTools.removeValue(forKey: clientName)
-            }
-        }
-    }
-}
-
 // MARK: Utility
 extension NotchView {
     private func updateHistoryList() async {
@@ -1072,7 +804,7 @@ extension NotchView {
         return fallback
     }
 
-    private func close() {
+    private func close(initialClose: Bool = false) {
         AnalyticsManager.shared.customEvent(
             view: .NotchView,
             primary: .function,
@@ -1086,6 +818,9 @@ extension NotchView {
             ? WindowSize.sidebarIsExpanded : WindowSize.sidebarIsCollapsed
         screenshotMonitor.updateKnownFiles()
         screenshotMonitor.close()
+        if !initialClose {
+            Task { await refreshManagedAgents(forceRefresh: false) }
+        }
     }
 
     private func open() {
@@ -1107,6 +842,7 @@ extension NotchView {
         gainFocus()
         screenshotMonitor.updateKnownFiles()
         screenshotMonitor.open()
+        Task { await refreshManagedAgents(forceRefresh: false) }
     }
 
     private func minimize() {
@@ -1120,6 +856,7 @@ extension NotchView {
         (width, height) = updateWindowSize(windowSize)
         screenshotMonitor.updateKnownFiles()
         screenshotMonitor.close()
+        Task { await refreshManagedAgents(forceRefresh: false) }
     }
 
     private func maximize() {
@@ -1162,8 +899,8 @@ extension NotchView {
             return
         }
         if windowSize == WindowSize.chatIsExpanded {
+            toastText = ""
             toastText = "Can not reposition AI Thing when it is expanded."
-            showToast = true
             return
         }
         let offset: CGFloat = 16
@@ -1176,11 +913,10 @@ extension NotchView {
 
     private func storeHistory(
         tabId: String,
-        tabTitle: String,
         history: [[String: Any]],
         unseen: Bool? = nil
     ) async {
-        await historyStore.store(id: tabId, title: tabTitle, history: history, unseen: unseen)
+        await historyStore.store(id: tabId, history: history, unseen: unseen)
     }
 
     private func setUnseen(id: String, unseen: Bool) async {
@@ -1192,6 +928,336 @@ extension NotchView {
     private func setTitle(id: String, title: String) async {
         if await historyStore.setTitle(id: id, title: title) {
             await updateHistoryList()
+        }
+    }
+}
+
+// MARK: AI Stuff
+extension NotchView {
+    private func refreshLocalAgents() async -> String {
+        let newAgents = getAgentEntries()
+        var allMatch = true
+
+        if agents.count == newAgents.count {
+            for (i, agent) in newAgents.enumerated() {
+                let existing = agents[i]
+                if existing.id != agent.id || existing.isEnabled != agent.isEnabled {
+                    allMatch = false
+                    break
+                }
+            }
+        } else {
+            allMatch = false
+        }
+
+        if allMatch {
+            return ""
+        }
+
+        agents = newAgents
+        allClientTools.removeAll()
+        mcpOAuthManagers.selfManagers.removeAll()
+
+        let disconnectRc = await mcpManager.disconnect()
+        if !disconnectRc.isEmpty {
+            return "Failed to stop running agents: \(disconnectRc)"
+        }
+
+        var failure = ""
+
+        for agent in agents {
+            if !agent.isEnabled {
+                continue
+            }
+
+            let name: String
+            let primary: String
+            var connectRc: String = ""
+
+            switch agent.entry {
+            case .url(let n, let url):
+                name = n
+                primary = url
+
+                // URL is oauth ready if it has well known URLs
+                // Skip connecting to oauth servers now, they will be connected later
+                let oauth = await McpOAuthManager.hasWellKnownUrls(url: url)
+                if oauth {
+                    mcpOAuthManagers.selfManagers[name] = McpOAuthManager(
+                        server: McpServer(
+                            id: name,
+                            image: nil,
+                            name: name,
+                            url: url,
+                            version: nil,
+                            enabled: true,
+                            custom: false
+                        )
+                    )
+                    mcpOAuthManagers.selfManagers[name]?.enabled = true
+                    continue
+                }
+
+                connectRc = await mcpManager.connect(clientName: name, url: url, authToken: nil)
+
+            case .urlWithToken(let n, let url, let token):
+                name = n
+                primary = url
+                connectRc = await mcpManager.connect(clientName: name, url: url, authToken: token)
+
+            case .command(let n, let command, let arguments):
+                name = n
+                primary = command
+                connectRc = await mcpManager.connect(
+                    clientName: name,
+                    command: command,
+                    args: arguments
+                )
+            }
+
+            AnalyticsManager.shared.customEvent(
+                view: .NotchView,
+                primary: .agentLoad,
+                secondary: "\(name) \(primary)",
+                sev: .info
+            )
+
+            logger.info("Added Agent: \(name)")
+
+            if connectRc.isEmpty {
+                let tools = await mcpManager.getTools(clientName: name, filter: [])
+                allClientTools[name] = tools
+            } else {
+                failure += "\n\n\(name): \(connectRc)"
+            }
+
+        }
+
+        if !failure.isEmpty {
+            AnalyticsManager.shared
+                .customEvent(view: .NotchView, primary: .agentLoad, secondary: failure, sev: .error)
+            return "Failed to start agents\n" + failure
+        }
+
+        return ""
+    }
+
+    private func getManagedAgents() async {
+        let managedAgents = await firestoreManager.getManagedAgents()
+        var allServerIds: [String] = []
+
+        for server in managedAgents {
+            if server.enabled ?? true == false { continue }
+
+            if let id = server.id {
+                allServerIds.append(id)
+
+                if server.custom ?? false {
+                    mcpOAuthManagers.customManagers[id] = server
+                    continue
+                }
+
+                if !mcpOAuthManagers.managers.keys.contains(id) {
+                    mcpOAuthManagers.managers[id] = McpOAuthManager(server: server)
+                }
+
+                if let manager = mcpOAuthManagers.managers[id] {
+                    if manager.server.version != server.version {
+                        mcpOAuthManagers.managers[id] = McpOAuthManager(server: server)
+                    }
+                }
+
+                // Always update image
+                if let image = server.image {
+                    mcpOAuthManagers.managers[id]?.server.image = image
+                }
+            }
+        }
+
+        // Remove mcp servers that were added before but are no longer supported
+        for key in mcpOAuthManagers.managers.keys {
+            if !allServerIds.contains(key) {
+                mcpOAuthManagers.managers.removeValue(forKey: key)
+            }
+        }
+        for key in mcpOAuthManagers.customManagers.keys {
+            if !allServerIds.contains(key) {
+                mcpOAuthManagers.customManagers.removeValue(forKey: key)
+            }
+        }
+    }
+
+    private func refreshManagedAgents(forceRefresh: Bool = true) async {
+        await getManagedAgents()
+
+        // Shared reconnect logic for any MCP OAuth manager.
+        func handleManager(
+            clientName: String,
+            isEnabled: Bool,
+            currentTokenAndExpiry: () -> (token: String?, expiry: Date?),
+            generateToken: @escaping () async -> String?,
+            url: @escaping () -> String,
+            capabilities: @escaping () -> [String]
+        ) async {
+            guard isEnabled else {
+                allClientTools.removeValue(forKey: clientName)
+                return
+            }
+
+            let (accessToken, expiry) = currentTokenAndExpiry()
+
+            var shouldRefreshToken = true
+            if let expiry, !forceRefresh {
+                // Token will expire in next 10 minutes
+                shouldRefreshToken = Date().addingTimeInterval(10 * 60) >= expiry
+            }
+
+            var refreshedAccessToken: String? = nil
+
+            if shouldRefreshToken, let newToken = await generateToken() {
+                refreshedAccessToken = newToken
+                logger.debug(
+                    "\(clientName) RefreshedAccessToken \(String(describing: refreshedAccessToken))"
+                )
+
+                // If token has been refreshed OR client does not exist
+                if forceRefresh || accessToken != refreshedAccessToken
+                    || !mcpManager.clientExists(clientName: clientName)
+                {
+                    _ = await mcpManager.reconnect(
+                        clientName: clientName,
+                        url: url(),
+                        authToken: newToken
+                    )
+
+                    let tools = await mcpManager.getTools(
+                        clientName: clientName,
+                        filter: capabilities()
+                    )
+                    allClientTools[clientName] = tools
+
+                    logger.info("Refreshed \(clientName) with \(tools.count) tools")
+                    logger.debug("\(clientName) Capabilities: \(tools)")
+                }
+            }
+        }
+
+        // Precompute the dynamic managers map (same as before).
+        let keepingCurrent = mcpOAuthManagers.managers.merging(mcpOAuthManagers.selfManagers) {
+            current,
+            _ in current
+        }
+
+        await withTaskGroup(of: Void.self) { group in
+            // Google
+            group.addTask {
+                let (token, expiry, capabilities) = await MainActor.run {
+                    (
+                        self.googleOAuthManager.user?.accessToken.tokenString,
+                        self.googleOAuthManager.user?.accessToken.expirationDate,
+                        self.googleOAuthManager.enabledCapabilities()
+                    )
+                }
+
+                let clientName = "managed_aithing_google"
+                guard let server = await mcpOAuthManagers.customManagers[clientName] else {
+                    await MainActor.run { _ = allClientTools.removeValue(forKey: clientName) }
+                    return
+                }
+                if server.enabled ?? false == false {
+                    await MainActor.run { _ = allClientTools.removeValue(forKey: clientName) }
+                    return
+                }
+
+                await handleManager(
+                    clientName: clientName,
+                    isEnabled: !self.googleOAuthManager.enabled.isEmpty,
+                    currentTokenAndExpiry: {
+                        self.logger.debug("Google AccessToken \(String(describing: token))")
+                        return (token, expiry)
+                    },
+                    generateToken: {
+                        guard let user = await self.googleOAuthManager.generateToken(refresh: true)
+                        else { return nil }
+                        return user.accessToken.tokenString
+                    },
+                    url: { server.url },
+                    capabilities: { capabilities }
+                )
+            }
+
+            // GitHub
+            group.addTask {
+                let (token, expiry, capabilities) = await MainActor.run {
+                    (
+                        self.githubOAuthManager.user?.accessToken,
+                        self.githubOAuthManager.user?.expiresAt,
+                        self.githubOAuthManager.enabledCapabilities()
+                    )
+                }
+
+                let clientName = "managed_aithing_github"
+                guard let server = await mcpOAuthManagers.customManagers[clientName] else {
+                    await MainActor.run { _ = allClientTools.removeValue(forKey: clientName) }
+                    return
+                }
+                if server.enabled ?? false == false {
+                    await MainActor.run { _ = allClientTools.removeValue(forKey: clientName) }
+                    return
+                }
+
+                await handleManager(
+                    clientName: clientName,
+                    isEnabled: !self.githubOAuthManager.enabled.isEmpty,
+                    currentTokenAndExpiry: {
+                        self.logger.debug("Github AccessToken \(String(describing: token))")
+                        return (token, expiry)
+                    },
+                    generateToken: {
+                        guard let user = await self.githubOAuthManager.generateToken(refresh: true)
+                        else { return nil }
+                        return user.accessToken
+                    },
+                    url: { server.url },
+                    capabilities: { capabilities }
+                )
+            }
+
+            // Other MCP OAuth managers
+            for (clientName, agentOAuthManager) in keepingCurrent {
+                let (token, expiry, url) = await MainActor.run {
+                    (
+                        agentOAuthManager.user?.accessToken,
+                        agentOAuthManager.user?.expiresAt,
+                        agentOAuthManager.server.url
+                    )
+                }
+
+                if agentOAuthManager.enabled == false {
+                    await MainActor.run { _ = allClientTools.removeValue(forKey: clientName) }
+                    return
+                }
+
+                group.addTask {
+                    await handleManager(
+                        clientName: clientName,
+                        isEnabled: agentOAuthManager.enabled,
+                        currentTokenAndExpiry: {
+                            self.logger.debug("AccessToken \(String(describing: token))")
+                            return (token, expiry)
+                        },
+                        generateToken: {
+                            guard let user = await agentOAuthManager.generateToken(refresh: true)
+                            else {
+                                return nil
+                            }
+                            return user.accessToken
+                        },
+                        url: { url },
+                        capabilities: { [] }
+                    )
+                }
+            }
         }
     }
 }

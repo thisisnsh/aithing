@@ -1,7 +1,7 @@
 import Sparkle
 import SwiftUI
 
-enum SettingsTab: String { case account, models, agents, preferences, automations }
+enum SettingsTab: String { case account = "Account", models = "Models", agents = "Agents", preferences = "Preferences", automations = "Automations" }
 
 struct SettingsView: View {
     @EnvironmentObject var loginManager: LoginManager
@@ -18,11 +18,11 @@ struct SettingsView: View {
     let minimize: () -> Void
     let expand: () -> Void
     let setPanelVisibility: () -> Void
+    let getManagedAgents: () async -> Void
     let updater: SPUUpdater
     let cornerRadius: CGFloat = 24
 
     @State private var selectedTab: SettingsTab = getSelectedTab()
-    @State private var tabTitle = "Settings"
     @State private var hoverRed: Bool = false
     @State private var hoverYellow: Bool = false
     @State private var hoverGreen: Bool = false
@@ -124,38 +124,7 @@ struct SettingsView: View {
                     saveAgents()
                 }
                 .task {
-                    let managedAgents = await firestoreManager.getManagedAgents()
-                    var allServerIds: [String] = []
-                    for server in managedAgents {
-                        if server.enabled ?? true == false { continue }
-
-                        if let id = server.id {
-                            allServerIds.append(id)
-
-                            if !mcpOAuthManagers.managers.keys.contains(id) {
-                                mcpOAuthManagers.managers[id] = McpOAuthManager(server: server)
-                            }
-
-                            if let manager = mcpOAuthManagers.managers[id] {
-                                if manager.server.version != server.version {
-                                    mcpOAuthManagers.managers[id] = McpOAuthManager(server: server)
-                                }
-                            }
-
-                            // Always update image
-                            if let image = server.image {
-                                mcpOAuthManagers.managers[id]?.server.image = image
-                            }
-                        }
-                    }
-
-                    // Remove mcp servers that were added before but are no longer supported
-                    for key in mcpOAuthManagers.managers.keys {
-                        if !allServerIds.contains(key) {
-                            mcpOAuthManagers.managers.removeValue(forKey: key)
-                        }
-                    }
-
+                    await getManagedAgents()
                     await getUsageData()
                     AnalyticsManager.shared.screenView(screenName: .SettingsView)
                 }
@@ -179,7 +148,7 @@ struct SettingsView: View {
                 .onTapGesture { minimize() }
                 .onHover { hoverYellow = $0 }
 
-            Text(tabTitle)
+            Text(selectedTab.rawValue)
                 .font(.system(size: 12, weight: .medium))
                 .foregroundStyle(.white)
                 .padding(.leading, 8)
@@ -194,7 +163,6 @@ struct SettingsView: View {
                     setSelectedTab(value: selectedTab)
                     saveModels()
                     saveAgents()
-                    tabTitle = "Account"
                     AnalyticsManager.shared.screenView(screenName: .SettingsAccountsTab)
                 }) {
                     Label("Account", systemImage: "person.fill")
@@ -207,7 +175,6 @@ struct SettingsView: View {
                     setSelectedTab(value: selectedTab)
                     saveModels()
                     saveAgents()
-                    tabTitle = "Models"
                     AnalyticsManager.shared.screenView(screenName: .SettingsModelTab)
                 }) {
                     Label("Models", systemImage: "sparkles.2")
@@ -218,7 +185,6 @@ struct SettingsView: View {
                     setSelectedTab(value: selectedTab)
                     saveModels()
                     saveAgents()
-                    tabTitle = "Agents"
                     AnalyticsManager.shared.screenView(screenName: .SettingsAgentsTab)
                 }) {
                     Label("Agents", systemImage: "pointer.arrow.ipad")
@@ -229,7 +195,6 @@ struct SettingsView: View {
                     setSelectedTab(value: selectedTab)
                     saveModels()
                     saveAgents()
-                    tabTitle = "Preferenfces"
                     AnalyticsManager.shared.screenView(screenName: .SettingsPreferencesTab)
                 }) {
                     Label("Preferences", systemImage: "keyboard.fill")
@@ -240,7 +205,6 @@ struct SettingsView: View {
                     setSelectedTab(value: selectedTab)
                     saveModels()
                     saveAgents()
-                    tabTitle = "Automations"
                     AnalyticsManager.shared.screenView(screenName: .SettingsAutomationsTab)
                 }) {
                     Label("Automations", systemImage: "clock.fill")

@@ -40,9 +40,6 @@ struct ChatItem: Identifiable, Equatable {
 
 struct ChatView: View {
     @Binding var history: History?
-    @Binding var isThinking: Bool
-    @Binding var isThinkingBlinking: Bool
-    @Binding var textSize: CGFloat
     @Binding var query: String
     @Binding var modelOutput: String
     @Binding var toolCall: String
@@ -54,8 +51,10 @@ struct ChatView: View {
             ScrollView(.vertical, showsIndicators: false) {
                 VStack(alignment: .leading, spacing: 12) {
                     ForEach(items) { item in
-                        ChatBubble(item: item)
-                            .id(item.id)
+                        if item.role != .usage {
+                            ChatBubble(item: item)
+                                .id(item.id)
+                        }
                     }
 
                     if !query.isEmpty {
@@ -113,17 +112,16 @@ struct ChatView: View {
         proxy.scrollTo("Bottom", anchor: .bottom)
     }
 
-    private func setHistory(_ newHistory: History?) {
-        if let newHistory {
-            let parsed = parseHistory(newHistory.history)
-            items = parsed
-            history = newHistory
-        } else {
-            items = []
-            history = nil
-        }
+    private func setHistory(_ history: History?) {
+        guard let history = history else { return }
+        items = parseHistory(history.history)
         AnalyticsManager.shared
-            .customEvent(view: .ChatView, primary: .count, secondary: "\(items.count)", sev: .info)
+            .customEvent(
+                view: .ChatView,
+                primary: .count,
+                secondary: "\(items.count)",
+                sev: .info
+            )
     }
 }
 

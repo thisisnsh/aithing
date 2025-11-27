@@ -41,7 +41,7 @@ final class HistoryStore: ObservableObject {
 
     /// Idempotent: inserts when new, updates when existing. lastUpdated is set to now (epoch).
     @discardableResult
-    func store(id: String, title: String? = nil, history: [[String: Any]], unseen: Bool? = nil)
+    func store(id: String, history: [[String: Any]], unseen: Bool? = nil)
         async -> Bool
     {
         guard JSONSerialization.isValidJSONObject(history) else {
@@ -61,13 +61,14 @@ final class HistoryStore: ObservableObject {
                 } else {
                     mo = HistoryDocMO(context: ctx)
                     mo.id = id
+                    mo.title = "New Chat"
                     if let unseen = unseen {
                         mo.unseen = unseen
                     } else {
                         mo.unseen = false
                     }
                 }
-                mo.title = title
+                
                 mo.lastUpdated = Date().timeIntervalSince1970
                 mo.json = try JSONSerialization.data(withJSONObject: history, options: [])
 

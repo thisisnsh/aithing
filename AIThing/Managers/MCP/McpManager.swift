@@ -248,14 +248,14 @@ class MCPManager: ObservableObject {
         // If another tab is reconnecting let it do that
         if reconnecting[clientName] ?? false {
             while reconnecting[clientName] ?? false {
-                logger.info("Let other tab reconnect: \(clientName)")
+                logger.debug("Let other tab reconnect: \(clientName)")
                 try? await Task.sleep(nanoseconds: 100_000_000)
             }
             return true
         }
 
         reconnecting[clientName] = true
-        logger.info("Reconnecting: \(clientName)")
+        logger.debug("Reconnecting: \(clientName)")
 
         if let client = clients[clientName] {
             await client.disconnect()
@@ -318,21 +318,6 @@ class MCPManager: ObservableObject {
             logger.error("Error in disconnecting: \(error.localizedDescription)")
             return error.localizedDescription
         }
-    }
-
-    func getAllTools() async -> [String: [Tool]] {
-        var tools: [String: [Tool]] = [:]
-        do {
-            for (clientName, client) in clients {
-                let (t, _) = try await client.listTools()
-                let filter = filters[clientName] ?? []
-                let filteredTools = t.filter { filter.contains($0.name) || filter.isEmpty }
-                if !filteredTools.isEmpty {
-                    tools[formatManagedString(clientName)] = filteredTools
-                }
-            }
-        } catch {}
-        return tools
     }
 
     func getTools(clientName: String, filter: [String]) async -> [[String: Any]] {
@@ -414,32 +399,4 @@ class MCPManager: ObservableObject {
             return []
         }
     }
-
-    func formatManagedString(_ input: String) -> String {
-        var trimmed = input
-        if !trimmed.hasPrefix("managed_") {
-            return input
-        }
-
-        if trimmed == "managed_github_mcp" {
-            trimmed = "managed_github"
-        } else if trimmed == "managed_google_mcp" {
-            trimmed = "managed_google"
-        }
-
-        // 1. Remove the "managed_" prefix if it exists
-        trimmed.removeFirst("managed_".count)
-
-        // 2. Split by underscore
-        let parts = trimmed.split(separator: "_")
-
-        // 3. Capitalize each word
-        let capitalizedParts = parts.map { part in
-            part.prefix(1).uppercased() + part.dropFirst()
-        }
-
-        // 4. Join with spaces
-        return capitalizedParts.joined(separator: " ")
-    }
-
 }

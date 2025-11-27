@@ -14,13 +14,14 @@ import os
 
 @MainActor
 class GithubOAuthManager: ObservableObject {
-    @Published var user: GithubUser?
-    @Published var enabled: Set<GithubTool> = []
+    @Published var user: GithubUser? = getGithubUser()
+    @Published var enabled: Set<GithubTool> = getGithubTools()
 
     let logger = Logger(subsystem: "com.thisisnsh.mac.AIThing", category: "GithubOAuthManager")
 
     private let callbackScheme = "oauth-aithing"
     private let callbackURLString = "oauth-aithing://oauth-callback-github"
+    private var generating = false
 
     private(set) var oauth: OAuth2Swift?
 
@@ -53,6 +54,10 @@ class GithubOAuthManager: ObservableObject {
     /// Generates (or refreshes) a Bearer token and returns a hydrated `GithubUser?`.
     /// - Parameter refresh: when true, tries to refresh first if a refresh token is available.
     func generateToken(refresh: Bool) async -> GithubUser? {
+        if generating { return nil }
+        generating = true
+        defer { generating = false }
+
         do {
             // Refresh token if user already exists
             if refresh {
@@ -72,6 +77,7 @@ class GithubOAuthManager: ObservableObject {
                         )
                         let merged = merge(profile: profile, credential: renewed.credential)
                         self.user = merged
+                        setGithubUser(value: self.user)
                         return merged
                     }
                     // fallthrough to full auth if refresh failed
@@ -83,16 +89,19 @@ class GithubOAuthManager: ObservableObject {
             let profile = try await fetchProfile(accessToken: cred.oauthToken)
             let merged = merge(profile: profile, credential: cred)
             self.user = merged
+            setGithubUser(value: self.user)
             return self.user
         } catch {
             logger.error("GitHub generateToken (macOS) error: \(error.localizedDescription)")
             self.user = nil
+            setGithubUser(value: nil)
             return nil
         }
     }
 
     func resetToken() {
         user = nil
+        setGithubUser(value: nil)
     }
 
     struct GithubOAuthScopes {
@@ -107,26 +116,6 @@ class GithubOAuthManager: ObservableObject {
         static let securityEvents = "security_events"
         static let gist = "gist"
         static let notifications = "notifications"
-    }
-
-    enum GithubTool: String, CaseIterable, Identifiable {
-        // default case context = "User and org context"
-        case actions = "CI/CD Workflows"
-        case codeSecurity = "Code Scanning Alerts"
-        case dependabot = "Dependabot Alerts"
-        case discussions = "Discussions"
-        // case experiments = "Experimental features"
-        case gists = "Gists"
-        case issues = "Issues"
-        case notifications = "Notifications"
-        case orgs = "Organizations"
-        case pullRequests = "Pull Requests"
-        case repos = "Repository"
-        case secretProtection = "Secret Scanning"
-        case securityAdvisories = "Security Advisories"
-        case users = "User Search"
-
-        var id: String { rawValue }
     }
 
     let toolScopesMap: [GithubTool: [String]] = [
@@ -306,7 +295,7 @@ class GithubOAuthManager: ObservableObject {
         AnalyticsManager.shared.customEvent(
             view: .GithubOAuthManager,
             primary: .scope,
-            secondary: s.formatted(),
+            secondary: String(describing: enabled),
             sev: .info
         )
 
@@ -474,6 +463,41 @@ extension GithubOAuthManager {
 
 // MARK: - Public model
 
+enum GithubTool: String, CaseIterable, Identifiable, Codable {
+    // default case context = "User and org context"
+    case actions = "CI/CD Workflows"
+    case codeSecurity = "Code Scanning Alerts"
+    case dependabot = "Dependabot Alerts"
+    case discussions = "Discussions"
+    // case experiments = "Experimental features"
+    case gists = "Gists"
+    case issues = "Issues"
+    case notifications = "Notifications"
+    case orgs = "Organizations"
+    case pullRequests = "Pull Requests"
+    case repos = "Repository"
+    case secretProtection = "Secret Scanning"
+    case securityAdvisories = "Security Advisories"
+    case users = "User Search"
+
+    var id: String { rawValue }
+}
+
+func getGithubTools() -> Set<GithubTool> {
+    if let data = UserDefaults.standard.data(forKey: "GithubTools"),
+        let decoded = try? JSONDecoder().decode(Set<GithubTool>.self, from: data)
+    {
+        return decoded
+    }
+    return []
+}
+
+func setGithubTools(value: Set<GithubTool>) {
+    if let data = try? JSONEncoder().encode(value) {
+        UserDefaults.standard.set(data, forKey: "GithubTools")
+    }
+}
+
 public struct GithubUser: Codable, Equatable {
     // Tokens
     public var accessToken: String
@@ -486,6 +510,21 @@ public struct GithubUser: Codable, Equatable {
     public var name: String?
     public var email: String?
     public var avatarURL: URL?
+}
+
+func getGithubUser() -> GithubUser? {
+    if let data = UserDefaults.standard.data(forKey: "GithubUser"),
+        let decoded = try? JSONDecoder().decode(GithubUser.self, from: data)
+    {
+        return decoded
+    }
+    return nil
+}
+
+func setGithubUser(value: GithubUser?) {
+    if let data = try? JSONEncoder().encode(value) {
+        UserDefaults.standard.set(data, forKey: "GithubUser")
+    }
 }
 
 // MARK: - Errors

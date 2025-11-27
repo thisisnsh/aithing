@@ -431,7 +431,8 @@ class FirestoreManager: ObservableObject {
                         name: server.name,
                         url: server.url,
                         version: server.version,
-                        enabled: server.enabled
+                        enabled: server.enabled,
+                        custom: server.custom,
                     )
                     result.append(s)
                 }

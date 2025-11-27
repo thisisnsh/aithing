@@ -18,24 +18,24 @@ func callModel(
     getSelectionEnabled: () -> Bool,
     setSelectionEnabled: (Bool) -> Void,
     getTabTitle: () -> String,
-    setTabTitle: (String) -> Void,
+    setTabTitle: @escaping (String) async -> Void,
     setDisplayQuery: (String) -> Void,
     setToolCall: (String) -> Void,
     getHistory: (String) async -> History?,
-    storeHistory: (String, String, [[String: Any]]) async -> Void,
+    storeHistory: (String, [[String: Any]]) async -> Void,
     setHistory: (History?) -> Void,
     setIsThinking: (Bool) -> Void,
     getModelInput: () -> [[String: Any]],
-    appendModelInput: ([String: Any]) -> Void,
+    appendModelInput: @escaping ([String: Any]) -> Void,
     getModelOutput: () -> String,
     setModelOutput: (String) -> Void,
-    animateOutput: (String, Bool) async -> Void,
+    animateOutput: (String) async -> Void,
     getAllClientTools: () -> [String: [[String: Any]]],
-    reconnectManagedAgents: () async -> Void,
+    getUsedTools: () -> [[String: Any]],
     getModelContext: () -> [DroppedContent],
     clearModelContext: () -> Void,
     getManagedModels: () -> [ModelInfo],
-    updateHistoryList: () async -> Void,
+    updateHistoryList: @escaping () async -> Void,
     firestoreManager: FirestoreManager,
     loginManager: LoginManager,
     mcpManager: MCPManager,
@@ -57,8 +57,7 @@ func callModel(
                 This version has been disabled due to an internal issue.
                 We apologize for the inconvenience. The app will be re-enabled soon.
                 For updates, please contact help@aithing.dev.
-                """,
-                true
+                """
             )
             AnalyticsManager.shared
                 .customEvent(
@@ -77,8 +76,7 @@ func callModel(
                 """
                 Current version has expired.
                 Please [upgrade the version](https://aithing.dev/upgrade) to enjoy new features and continue using the app.
-                """,
-                true
+                """
             )
             AnalyticsManager.shared
                 .customEvent(
@@ -89,11 +87,6 @@ func callModel(
                 )
             return false
         }
-
-        do {
-            // Sleeping just to complete debounce on typing
-            try await Task.sleep(nanoseconds: 200_000_000)
-        } catch {}
     }
 
     var appUser: AppUser?
@@ -108,7 +101,6 @@ func callModel(
                     You access has been disabled. We apologize for the inconvenience.
                     Please contact help@aithing.dev for more information.
                     """,
-                    true
                 )
                 AnalyticsManager.shared
                     .customEvent(
@@ -131,7 +123,6 @@ func callModel(
             Something went wrong. Please log out and log in again. 
             Report issue at help@aithing.dev
             """,
-            true
         )
         AnalyticsManager.shared
             .customEvent(
@@ -143,19 +134,7 @@ func callModel(
         return false
     default:
         setIsThinking(false)
-        await animateOutput(
-            """
-            ### 👋 Welcome to **AI Thing**
-
-            I’m your personal AI assistant — built to handle everything from simple tasks to complex automations.
-            With multiple AI models and specialized agents, I can work in the background to get things done securely.
-
-            **Please log in from Settings to continue.**
-
-            [aithing.dev](https://aithing.dev) • [Privacy Policy](https://aithing.dev/privacy)                
-            """,
-            true
-        )
+        await animateOutput("**Please log in from Settings to continue.**")
         AnalyticsManager.shared
             .customEvent(
                 view: .IntelligenceManager,
@@ -166,14 +145,14 @@ func callModel(
         return false
     }
 
-    // Load latest tools
-    var modelTools: [[String: Any]] = []
-    if query.starts(with: "@aithing") {
-        modelTools = aiThingMcpManager.getTools()
-    } else {
-        await reconnectManagedAgents()
+    // Load tools
+    var modelTools = getUsedTools()
+    // Refresh tools
+    if modelTools.isEmpty {
         modelTools = getAllClientTools().values.flatMap { $0 }
-        modelTools.append(contentsOf: aiThingMcpManager.getTools())
+        if query.starts(with: "@aithing") {
+            modelTools.append(contentsOf: aiThingMcpManager.getTools())
+        }
     }
 
     let model = getModel()
@@ -208,8 +187,7 @@ func callModel(
             You can create one at: https://console.anthropic.com/settings/keys
 
             For setup instructions, visit: https://aithing.dev/quickstart
-            """,
-            true
+            """
         )
         AnalyticsManager.shared
             .customEvent(
@@ -436,7 +414,7 @@ func callModel(
 
     ]
 
-    // logger.debug("api key: \(apiKey)")
+    logger.debug("api key: \(apiKey)")
     logger.debug("model: \(model)")
     logger.debug("max tokens: \(getOutputToken())")
     logger.debug("messages: \(String(describing: body["messages"]))")
@@ -450,10 +428,7 @@ func callModel(
         guard let httpResponse = response as? HTTPURLResponse
         else {
             setIsThinking(false)
-            await animateOutput(
-                "Invalid response\n\nReport issue at help@aithing.dev",
-                true
-            )
+            await animateOutput("Invalid response\n\nReport issue at help@aithing.dev")
             AnalyticsManager.shared
                 .customEvent(
                     view: .IntelligenceManager,
@@ -476,8 +451,7 @@ func callModel(
                     You’ve reached your API key’s rate limit.
 
                     Learn more: https://console.anthropic.com/settings/limits
-                    """,
-                    true
+                    """
                 )
                 AnalyticsManager.shared
                     .customEvent(
@@ -488,9 +462,7 @@ func callModel(
                     )
             } else {
                 await animateOutput(
-
-                    "Error \(httpResponse.statusCode)\n\(error)\n\nReport issue at help@aithing.dev",
-                    true
+                    "Error \(httpResponse.statusCode)\n\n```\n\(error)\n```\n\nReport issue at help@aithing.dev"
                 )
                 AnalyticsManager.shared
                     .customEvent(
@@ -503,47 +475,51 @@ func callModel(
             return false
         }
 
-        if let appUser {
-            let usage = Usage(
-                query: (query.isEmpty ? 0 : 1),
-                agentUse: (query.isEmpty ? 1 : 0),
-                filesAttached: fileCount
-            )
-            await firestoreManager.incrementUsage(user: appUser, usage: usage)
-            appendModelInput([
-                "role": "usage",
-                "content": [
-                    [
-                        "type": "text",
-                        "text": """
-                        Total Usage:
-                        1 \(query.isEmpty ? "Agent Use" : "Query")
-                        \(fileCount) Attached Files                                
-                        """,
-                    ]
-                ],
-            ])
-
-        } else {
-            AnalyticsManager.shared
-                .customEvent(
-                    view: .IntelligenceManager,
-                    primary: .query,
-                    secondary: "usage not calculated",
-                    sev: .error
+        Task {
+            if let appUser {
+                let usage = Usage(
+                    query: (query.isEmpty ? 0 : 1),
+                    agentUse: (query.isEmpty ? 1 : 0),
+                    filesAttached: fileCount
                 )
+                await firestoreManager.incrementUsage(user: appUser, usage: usage)
+                appendModelInput([
+                    "role": "usage",
+                    "content": [
+                        [
+                            "type": "text",
+                            "text": """
+                            Total Usage:
+                            1 \(query.isEmpty ? "Agent Use" : "Query")
+                            \(fileCount) Attached Files                                
+                            """,
+                        ]
+                    ],
+                ])
+            } else {
+                AnalyticsManager.shared
+                    .customEvent(
+                        view: .IntelligenceManager,
+                        primary: .query,
+                        secondary: "usage not calculated",
+                        sev: .error
+                    )
+            }
         }
 
         clearModelContext()
 
         // Store the current input
-        await storeHistory(tabId, getTabTitle(), getModelInput())
+        await storeHistory(tabId, getModelInput())
+
         // Fetch and display it
         setModelOutput("")
         setDisplayQuery("")
         setToolCall("")
         setHistory(await getHistory(tabId))
-        await updateHistoryList()
+
+        // Update sidebar
+        Task { await updateHistoryList() }
 
         var finalResponse = ""
         var finalToolUseInputParam = ""
@@ -620,21 +596,23 @@ func callModel(
                             "content": [["text": getModelOutput(), "type": "text"]],
                         ])
 
-                        let tabTitle = getTabTitle()
-                        if !query.isEmpty && (tabTitle.isEmpty || tabTitle == "New Chat") {
-                            setTabTitle(
-                                await createTitle(
+                        await storeHistory(tabId, getModelInput())
+
+                        var tabTitle = getTabTitle()
+                        let response = getModelOutput()
+                        Task {
+                            if !query.isEmpty && (tabTitle.isEmpty || tabTitle == "New Chat") {
+                                tabTitle = await createTitle(
                                     query: query,
-                                    response: getModelOutput(),
+                                    response: response,
                                     model: model,
                                     apiKey: apiKey,
-                                    tabTitle: getTabTitle(),
+                                    tabTitle: tabTitle,
                                     firestoreManager: firestoreManager
                                 )
-                            )
+                                await setTabTitle(tabTitle)
+                            }
                         }
-
-                        await storeHistory(tabId, getTabTitle(), getModelInput())
                     }
 
                     switch delta_stop_reason {
@@ -720,7 +698,8 @@ func callModel(
                             setModelOutput: setModelOutput,
                             animateOutput: animateOutput,
                             getAllClientTools: getAllClientTools,
-                            reconnectManagedAgents: reconnectManagedAgents,
+                            // reuse the same tools in entire run
+                            getUsedTools: { modelTools },
                             getModelContext: getModelContext,
                             clearModelContext: clearModelContext,
                             getManagedModels: getManagedModels,

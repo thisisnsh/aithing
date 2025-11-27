@@ -30,8 +30,6 @@ struct IntelligenceView: View {
     @Binding var currentTabId: String
     @Binding var allClientTools: [String: [[String: Any]]]
     @Binding var managedModels: [ModelInfo]
-    @Binding var showMcpToolsButton: Bool
-    @Binding var showToast: Bool
     @Binding var toastText: String
 
     let close: () -> Void
@@ -41,9 +39,8 @@ struct IntelligenceView: View {
     let isTabRemoved: () -> Bool
     let setTabActive: (Bool) -> Void
     let updateHistoryList: () async -> Void
-    let reconnectManagedAgents: () async -> Void
     let getHistory: (String) async -> History?
-    let storeHistory: (String, String, [[String: Any]]) async -> Void
+    let storeHistory: (String, [[String: Any]]) async -> Void
     let setUnseen: (String, Bool) async -> Void
     let setTitle: (String, String) async -> Void
     let startSelectionPoll: () -> Void
@@ -86,6 +83,8 @@ struct IntelligenceView: View {
     @State private var selectedAppIcon: NSImage? = nil
     @State private var selectedAppName = ""
     @State private var selectedWindowName = ""
+    @State private var appContextWidth: CGFloat = 200
+
     @State private var toast = ""
 
     // Trafic Light
@@ -115,31 +114,32 @@ struct IntelligenceView: View {
                         Divider()
                             .padding(.horizontal, -8)
 
-                        if showMcpTools {
-                            ToolsView(cornerRadius: cornerRadius - 4)
-                                .environmentObject(mcpManager)
-                        } else {
-                            ZStack {
-                                ResponseView()
-                                    .padding(.vertical, -8)
-                                    .padding(.bottom, -24)
+                        ZStack {
+                            ChatView(
+                                history: $history,
+                                query: $displayQuery,
+                                modelOutput: $modelOutput,
+                                toolCall: $toolCall,
+                            )
+                            .padding(.vertical, -8)
+                            .padding(.bottom, -24)
+                            .frame(
+                                maxWidth: .infinity,
+                                maxHeight: .infinity,
+                                alignment: .topLeading
+                            )
+
+                            if !isThinking, !showMcpTools, showSavedQueries {
+                                SaveQueryView()
                                     .frame(
                                         maxWidth: .infinity,
                                         maxHeight: .infinity,
-                                        alignment: .topLeading
+                                        alignment: .bottomLeading
                                     )
-
-                                if !isThinking, showSavedQueries {
-                                    SaveQueryView()
-                                        .frame(
-                                            maxWidth: .infinity,
-                                            maxHeight: .infinity,
-                                            alignment: .bottomLeading
-                                        )
-                                        .padding(.leading, -8)
-                                }
+                                    .padding(.leading, -8)
                             }
                         }
+                        .padding(.bottom, showMcpTools ? -200 : 0)
 
                         Spacer()
 
@@ -174,29 +174,22 @@ struct IntelligenceView: View {
                     AnalyticsManager.shared.screenView(screenName: .IntelligenceView)
                 }
                 .task {
-                    history = await getHistory(tabId)
+                    await setUnseen(tabId, false)
 
+                    history = await getHistory(tabId)
                     if let history = history {
                         modelInput = history.history
                         tabTitle = history.title ?? "New Chat"
                     } else {
                         tabTitle = "New Chat"
                         let greeting = await firestoreManager.getGreeting() ?? ""
-                        if !greeting.isEmpty {
-                            modelOutput = greeting
-                        }
+                        if !greeting.isEmpty { modelOutput = greeting }
                     }
 
                     let notification = await firestoreManager.getNotification() ?? ""
-                    if !notification.isEmpty {
-                        modelOutput = notification
-                    }
+                    if !notification.isEmpty { modelOutput = notification }
 
-                    await setUnseen(tabId, false)
-
-                    if modelInput.isEmpty {
-                        showSavedQueries = true
-                    }
+                    if modelInput.isEmpty { showSavedQueries = true }
                 }
                 .onChange(of: currentTabId) { _ in
                     Task {
@@ -215,6 +208,13 @@ struct IntelligenceView: View {
                         startSelectionPoll()
                     } else {
                         stopSelectionPoll()
+                    }
+                }
+                .onChange(of: appContext.windowName) { _ in
+                    if !appContextEnabled {
+                        let text =
+                            "\(appContext.appName)\(appContext.windowName.count > 0 ? ": " : "")\(appContext.windowName)"
+                        appContextWidth = min(CGFloat(text.count) * 8, 200)
                     }
                 }
                 .onReceive(screenshotMonitor.$latestScreenshot) { ss in
@@ -313,18 +313,6 @@ struct IntelligenceView: View {
         .frame(height: 16)
     }
 
-    private func ResponseView() -> some View {
-        ChatView(
-            history: $history,
-            isThinking: $isThinking,
-            isThinkingBlinking: $isThinkingBlinking,
-            textSize: $textSize,
-            query: $displayQuery,
-            modelOutput: $modelOutput,
-            toolCall: $toolCall
-        )
-    }
-
     private func SaveQueryView() -> some View {
         VStack(alignment: .leading, spacing: 0) {
             ForEach(Array(savedQueries.enumerated()), id: \.offset) { index, savedQuery in
@@ -374,71 +362,59 @@ struct IntelligenceView: View {
 
     private func InputView() -> some View {
         VStack(alignment: .leading, spacing: 0) {
-            ZStack(alignment: .leading) {
-                if !isThinking, !isDropping {
-                    InputTextView(
-                        text: $query,
-                        seenCommands: .constant([]),
-                        size: $textSize,
-                        isNotEditable: isThinking || isDropping,
-                        onCommit: {
-                            Task {
-                                await handleQuery()
+            if showMcpTools {
+                ToolsView(
+                    cornerRadius: cornerRadius - 4,
+                    allClientTools: $allClientTools
+                )
+            } else {
+                ZStack(alignment: .leading) {
+                    if !isThinking, !isDropping {
+                        InputTextView(
+                            text: $query,
+                            seenCommands: .constant([]),
+                            size: $textSize,
+                            isNotEditable: isThinking || isDropping,
+                            onCommit: {
+                                Task {
+                                    await handleQuery()
+                                }
+                            },
+                            onCommandTyped: { _ in },
+                            onCommandRemoved: { _ in },
+                            onDebouncedTextChange: { _ in },
+                            onSpillover: { count in
+                                if count >= 2 && count <= 5 {
+                                    inputHeight = CGFloat(count) * baseHeight
+                                } else if count > 5 {
+                                    inputHeight = 5 * baseHeight
+                                } else {
+                                    inputHeight = baseHeight
+                                }
                             }
-                        },
-                        onCommandTyped: { _ in },
-                        onCommandRemoved: { _ in },
-                        onDebouncedTextChange: { _ in },
-                        onSpillover: { count in
-                            if count >= 2 && count <= 5 {
-                                inputHeight = CGFloat(count) * baseHeight
-                            } else if count > 5 {
-                                inputHeight = 5 * baseHeight
-                            } else {
-                                inputHeight = baseHeight
-                            }
-                        }
-                    )
-                }
-
-                if query.isEmpty {
-                    Text(
-                        isThinking
-                            ? "Responding..."
-                            : (isDropping ? "Drop files here..." : "Ask anything on AI Thing...")
-                    )
-                    .foregroundColor(isDropping ? .blue : .white.opacity(0.6))
-                    .font(.system(size: textSize, weight: .medium))
-                    .padding(.top, 2)
-                    .padding(.leading, 5)
-                    .allowsHitTesting(false)
-                    .frame(maxWidth: .infinity, alignment: .leading)
-                }
-
-                // MCP Tool Button
-                if query.isEmpty, !isThinking {
-                    Button(action: { showMcpTools.toggle() }) {
-                        HStack(spacing: 4) {
-                            Image(systemName: "hammer.fill")
-                                .resizable()
-                                .frame(width: 12, height: 12)
-                                .foregroundStyle(hoverMcpTools ? .white : .white.opacity(0.6))
-
-                            Text("Tools")
-                                .font(.system(size: 12, weight: .medium))
-                                .foregroundStyle(hoverMcpTools ? .white : .white.opacity(0.6))
-                        }
+                        )
                     }
-                    .buttonStyle(PlainButtonStyle())
-                    .onHover { hoverMcpTools = $0 }
-                    .frame(maxWidth: .infinity, alignment: .trailing)
-                    .padding(.trailing, 4)
+
+                    if query.isEmpty || isDropping || isThinking {
+                        Text(
+                            isThinking
+                                ? "Responding..."
+                                : (isDropping
+                                    ? "Drop files here..." : "Ask anything on AI Thing...")
+                        )
+                        .foregroundColor(isDropping ? .blue : .white.opacity(0.6))
+                        .font(.system(size: textSize, weight: .medium))
+                        .padding(.top, 2)
+                        .padding(.leading, 5)
+                        .allowsHitTesting(false)
+                        .frame(maxWidth: .infinity, alignment: .leading)
+                    }
                 }
+                .frame(height: inputHeight)
             }
-            .frame(height: inputHeight)
-            .padding(.vertical, 8)
-            .padding(.bottom, 40)
         }
+        .padding(.vertical, 8)
+        .padding(.bottom, 40)
         .padding(8)
         .overlay(
             Group {
@@ -460,38 +436,108 @@ struct IntelligenceView: View {
     }
 
     private func ContextView() -> some View {
-        VStack(alignment: .leading) {
-            if hoverAppContextEnabled, appContextEnabled {
-                let image = getAppContextBase64(
-                    appName: selectedAppName,
-                    windowName: selectedWindowName
-                )
-                if let image = image {
-                    Image(nsImage: image.screenshot)
-                        .resizable()
-                        .aspectRatio(contentMode: .fit)
-                        .frame(height: 128)
-                        .cornerRadius(cornerRadius - 8)
-                        .overlay {
-                            RoundedRectangle(cornerRadius: cornerRadius - 8, style: .continuous)
-                                .stroke(Color.white, lineWidth: 2)
+        ScrollView(.horizontal, showsIndicators: false) {
+            HStack(alignment: .bottom) {
+                if modelContext.count > 0, !isThinking {
+                    ForEach(modelContext.indices.reversed(), id: \.self) { index in
+                        let context = modelContext[index]
+                        switch context {
+                        case .image(let name, let image, _):
+                            FilePill(
+                                index: index,
+                                name: name,
+                                image: image,
+                                systemName: "photo",
+                                big: modelContext.count == 1,
+                                onDelete: { index in
+                                    modelContext.remove(at: index)
+                                    AnalyticsManager.shared
+                                        .customEvent(
+                                            view: .IntelligenceView,
+                                            primary: .file,
+                                            secondary: "remove",
+                                            sev: .info
+                                        )
+                                },
+                                cornerRadius: cornerRadius
+                            )
+
+                        case .pdf(let name, _, let images, _):
+                            FilePill(
+                                index: index,
+                                name: name,
+                                image: images[0],
+                                systemName: "text.page",
+                                big: false,
+                                onDelete: { index in
+                                    modelContext.remove(at: index)
+                                    AnalyticsManager.shared
+                                        .customEvent(
+                                            view: .IntelligenceView,
+                                            primary: .file,
+                                            secondary: "remove",
+                                            sev: .info
+                                        )
+                                },
+                                cornerRadius: cornerRadius
+                            )
+
+                        case .text(let name, _, let image):
+                            FilePill(
+                                index: index,
+                                name: name,
+                                image: image,
+                                systemName: "text.alignleft",
+                                big: false,
+                                onDelete: { index in
+                                    modelContext.remove(at: index)
+                                    AnalyticsManager.shared
+                                        .customEvent(
+                                            view: .IntelligenceView,
+                                            primary: .file,
+                                            secondary: "remove",
+                                            sev: .info
+                                        )
+                                },
+                                cornerRadius: cornerRadius
+                            )
                         }
-                } else {
-                    Color.clear
-                        .onAppear {
-                            appContext.refresh()
-                            appContextEnabled = false
-                            selectedAppIcon = nil
-                            selectedAppName = ""
-                            selectedWindowName = ""
-                        }
+                    }
                 }
-            }
 
-            ScrollView(.horizontal, showsIndicators: false) {
-                HStack(alignment: .bottom) {
+                // App Context Button
+                VStack {
+                    if hoverAppContextEnabled, appContextEnabled {
+                        let image = getAppContextBase64(
+                            appName: selectedAppName,
+                            windowName: selectedWindowName
+                        )
+                        if let image = image {
+                            Image(nsImage: image.screenshot)
+                                .resizable()
+                                .aspectRatio(contentMode: .fit)
+                                .cornerRadius(cornerRadius - 8)
+                                .overlay {
+                                    RoundedRectangle(
+                                        cornerRadius: cornerRadius - 8,
+                                        style: .continuous
+                                    )
+                                    .stroke(Color.white, lineWidth: 2)
+                                }
+                                .frame(width: appContextWidth)
+                        } else {
+                            Color.clear
+                                .onAppear {
+                                    appContext.refresh()
+                                    appContextEnabled = false
+                                    selectedAppIcon = nil
+                                    selectedAppName = ""
+                                    selectedWindowName = ""
+                                }
+                                .frame(width: appContextWidth)
+                        }
+                    }
 
-                    // App Context Button
                     if appContextEnabled {
                         Button(action: {
                             appContextEnabled = false
@@ -512,10 +558,10 @@ struct IntelligenceView: View {
                                 .lineLimit(1)
                                 .font(.system(size: 10, weight: .medium))
                                 .foregroundStyle(.black)
-                                .frame(maxWidth: 164)
                             }
                             .padding(8)
                             .padding(.horizontal, 4)
+                            .frame(width: appContextWidth)
                             .background(.white)
                             .clipShape(RoundedRectangle(cornerRadius: cornerRadius))
                         }
@@ -540,7 +586,6 @@ struct IntelligenceView: View {
                                     selectedAppName = ""
                                     selectedWindowName = ""
                                 }
-
                             }) {
                                 HStack {
                                     if let icon = appContext.appIcon {
@@ -558,10 +603,10 @@ struct IntelligenceView: View {
                                         hoverAppContextEnabled || appContextEnabled
                                             ? .black : .white
                                     )
-                                    .frame(maxWidth: 164)
                                 }
                                 .padding(8)
                                 .padding(.horizontal, 4)
+                                .frame(width: appContextWidth)
                                 .background(
                                     hoverAppContextEnabled || appContextEnabled
                                         ? .white : .white.opacity(0.1)
@@ -580,138 +625,105 @@ struct IntelligenceView: View {
                             }
                         }
                     }
+                }
 
-                    // Text Selection Button
-                    Button(action: {
-                        // Accessibility trust (prompt once as needed)
-                        if !AXIsProcessTrusted() {
-                            let opts: NSDictionary = [
-                                kAXTrustedCheckOptionPrompt.takeUnretainedValue() as NSString: true
-                            ]
-                            _ = AXIsProcessTrustedWithOptions(opts)
-                            return
-                        } else {
-                            selectionEnabled.toggle()
-                        }
+                // Text Selection Button
+                Button(action: {
+                    // Accessibility trust (prompt once as needed)
+                    if !AXIsProcessTrusted() {
+                        let opts: NSDictionary = [
+                            kAXTrustedCheckOptionPrompt.takeUnretainedValue() as NSString: true
+                        ]
+                        _ = AXIsProcessTrustedWithOptions(opts)
+                        return
+                    } else {
+                        selectionEnabled.toggle()
+                    }
 
-                        if !selectionEnabled {
-                            selectedText = ""
-                            vm.selectedText = ""
-                            AnalyticsManager.shared
-                                .customEvent(
-                                    view: .IntelligenceView,
-                                    primary: .selection,
-                                    secondary: "remove",
-                                    sev: .info
-                                )
-                        }
-
+                    if !selectionEnabled {
+                        selectedText = ""
+                        vm.selectedText = ""
                         AnalyticsManager.shared
                             .customEvent(
                                 view: .IntelligenceView,
                                 primary: .selection,
-                                secondary: "\(selectionEnabled)",
+                                secondary: "remove",
                                 sev: .info
                             )
+                    }
+
+                    AnalyticsManager.shared
+                        .customEvent(
+                            view: .IntelligenceView,
+                            primary: .selection,
+                            secondary: "\(selectionEnabled)",
+                            sev: .info
+                        )
+                }) {
+                    HStack {
+                        Image(
+                            systemName: selectionEnabled
+                                ? "text.redaction" : "text.alignleft"
+                        )
+                        .resizable()
+                        .frame(width: 12, height: 12)
+                        .foregroundStyle(
+                            hoverSelectionEnabled || selectionEnabled ? .black : .white
+                        )
+
+                        Text("Text Selection")
+                            .font(.system(size: 10, weight: .medium))
+                            .foregroundStyle(
+                                hoverSelectionEnabled || selectionEnabled ? .black : .white
+                            )
+                    }
+                    .padding(8)
+                    .padding(.horizontal, 4)
+                    .background(
+                        hoverSelectionEnabled || selectionEnabled ? .white : .white.opacity(0.1)
+                    )
+                    .clipShape(RoundedRectangle(cornerRadius: cornerRadius))
+                }
+                .buttonStyle(PlainButtonStyle())
+                .onHover { hoverSelectionEnabled = $0 }
+
+                // MCP Tool Button
+                if !allClientTools.isEmpty {
+                    Button(action: {
+                        showMcpTools.toggle()
                     }) {
                         HStack {
                             Image(
-                                systemName: selectionEnabled
-                                    ? "text.redaction" : "text.alignleft"
+                                systemName: showMcpTools
+                                    ? "hammer.fill" : "hammer"
                             )
                             .resizable()
                             .frame(width: 12, height: 12)
                             .foregroundStyle(
-                                hoverSelectionEnabled || selectionEnabled ? .black : .white
+                                hoverMcpTools || showMcpTools ? .black : .white
                             )
 
-                            Text("Text Selection")
+                            Text("View Tools")
                                 .font(.system(size: 10, weight: .medium))
                                 .foregroundStyle(
-                                    hoverSelectionEnabled || selectionEnabled ? .black : .white
+                                    hoverMcpTools || showMcpTools ? .black : .white
                                 )
                         }
                         .padding(8)
                         .padding(.horizontal, 4)
                         .background(
-                            hoverSelectionEnabled || selectionEnabled ? .white : .white.opacity(0.1)
+                            hoverMcpTools || showMcpTools ? .white : .white.opacity(0.1)
                         )
                         .clipShape(RoundedRectangle(cornerRadius: cornerRadius))
                     }
                     .buttonStyle(PlainButtonStyle())
-                    .onHover { hoverSelectionEnabled = $0 }
-
-                    if modelContext.count > 0, !isThinking {
-                        ForEach(modelContext.indices.reversed(), id: \.self) { index in
-                            let context = modelContext[index]
-                            switch context {
-                            case .image(let name, let image, _):
-                                FilePill(
-                                    index: index,
-                                    name: name,
-                                    image: image,
-                                    systemName: "photo",
-                                    big: modelContext.count == 1,
-                                    onDelete: { index in
-                                        modelContext.remove(at: index)
-                                        AnalyticsManager.shared
-                                            .customEvent(
-                                                view: .IntelligenceView,
-                                                primary: .file,
-                                                secondary: "remove",
-                                                sev: .info
-                                            )
-                                    },
-                                    cornerRadius: cornerRadius
-                                )
-
-                            case .pdf(let name, _, let images, _):
-                                FilePill(
-                                    index: index,
-                                    name: name,
-                                    image: images[0],
-                                    systemName: "text.page",
-                                    big: false,
-                                    onDelete: { index in
-                                        modelContext.remove(at: index)
-                                        AnalyticsManager.shared
-                                            .customEvent(
-                                                view: .IntelligenceView,
-                                                primary: .file,
-                                                secondary: "remove",
-                                                sev: .info
-                                            )
-                                    },
-                                    cornerRadius: cornerRadius
-                                )
-
-                            case .text(let name, _, let image):
-                                FilePill(
-                                    index: index,
-                                    name: name,
-                                    image: image,
-                                    systemName: "text.alignleft",
-                                    big: false,
-                                    onDelete: { index in
-                                        modelContext.remove(at: index)
-                                        AnalyticsManager.shared
-                                            .customEvent(
-                                                view: .IntelligenceView,
-                                                primary: .file,
-                                                secondary: "remove",
-                                                sev: .info
-                                            )
-                                    },
-                                    cornerRadius: cornerRadius
-                                )
-                            }
-                        }
-                    }
+                    .onHover { hoverMcpTools = $0 }
                 }
-                .padding(.horizontal, 8)
+
             }
-            .padding(.horizontal, -8)
+            .padding(.horizontal, 8)
         }
+        .padding(.horizontal, -8)
         .padding(8)
     }
 }
@@ -767,20 +779,23 @@ extension IntelligenceView {
             getSelectionEnabled: { return selectionEnabled },
             setSelectionEnabled: { selectionEnabled = $0 },
             getTabTitle: { return tabTitle },
-            setTabTitle: { tabTitle = $0 },
+            setTabTitle: {
+                tabTitle = $0
+                await setTitle(tabId, $0)
+            },
             setDisplayQuery: { displayQuery = $0 },
             setToolCall: { toolCall = $0 },
             getHistory: { return await self.getHistory($0) },
-            storeHistory: { await storeHistory($0, $1, $2) },
+            storeHistory: { await storeHistory($0, $1) },
             setHistory: { history = $0 },
             setIsThinking: { isThinking = $0 },
             getModelInput: { return modelInput },
             appendModelInput: { modelInput.append($0) },
             getModelOutput: { return modelOutput },
             setModelOutput: { modelOutput = $0 },
-            animateOutput: { await self.animateOutput(content: $0, notification: $1) },
+            animateOutput: { await self.animateOutput($0) },
             getAllClientTools: { return allClientTools },
-            reconnectManagedAgents: { await self.reconnectManagedAgents() },
+            getUsedTools: { return [] },
             getModelContext: { return modelContext },
             clearModelContext: { modelContext.removeAll() },
             getManagedModels: { return managedModels },
@@ -856,13 +871,13 @@ extension IntelligenceView {
         }
 
         if let error = error {
+            toastText = ""
             toastText = error
-            showToast = true
         }
         return nil
     }
 
-    private func animateOutput(content: String, notification: Bool) async {
+    private func animateOutput(_ content: String) async {
         var partial = ""
         for text in content.split(separator: " ") {
             partial += String(text) + " "

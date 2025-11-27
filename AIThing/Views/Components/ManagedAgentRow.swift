@@ -45,18 +45,21 @@ struct ManagedAgentRow: View {
                             Task {
                                 if newValue {
                                     manager.enabled = true
-                                    print("\(title): Enabling")
+                                    logger.debug("\(title): Enabling")
                                     if await manager.generateToken(
                                         refresh: false
-                                    ) != nil {
-                                    } else {
+                                    ) == nil {                                    
                                         manager.enabled = false
                                     }
                                 } else {
                                     manager.enabled = false
-                                    print("\(title): Disabling")
+                                    logger.debug("\(title): Disabling")
                                     manager.resetToken()
                                 }
+                                setMcpEnabled(
+                                    value: manager.enabled,
+                                    clientName: manager.server.id ?? ""
+                                )
                             }
                         }
                     )
@@ -72,15 +75,25 @@ struct ManagedAgentRow: View {
 
 struct GithubManagedAgentRow: View {
     @EnvironmentObject var manager: GithubOAuthManager
+    @EnvironmentObject var mcpOAuthManagers: McpOAuthManagers
     let icon: String
     let title: String
     @Binding var subheading: String
     @State private var exapanded = false
 
+    var enabled: Bool {
+        if let server = mcpOAuthManagers.customManagers["managed_aithing_github"] {
+            return server.enabled ?? false
+        }
+        return false
+    }
+
     var body: some View {
         VStack {
             Button {
-                exapanded.toggle()
+                if enabled {
+                    exapanded.toggle()
+                }
             } label: {
                 HStack {
                     Image(icon).resizable().frame(width: 16, height: 16)
@@ -91,8 +104,12 @@ struct GithubManagedAgentRow: View {
                         }
                     }
                     Spacer()
-                    Image(systemName: "chevron.right")
-                        .frame(width: 10, height: 10)
+                    if enabled {
+                        Image(systemName: "chevron.right")
+                            .frame(width: 10, height: 10)
+                    } else {
+                        RowSub("Disabled")
+                    }
                 }
             }
             .buttonStyle(.plain)
@@ -115,8 +132,8 @@ struct GithubManagedAgentRow: View {
                                         Task {
                                             if newValue {
                                                 manager.enabled.insert(tool)
-                                                print("Github: Enabling \(tool)")
-                                                print("Github: Tools: \(manager.enabled)")
+                                                logger.debug("Github: Enabling \(tool.rawValue)")
+                                                logger.debug("Github: Tools: \(manager.enabled)")
                                                 if let user = await manager.generateToken(
                                                     refresh: false
                                                 ) {
@@ -126,13 +143,14 @@ struct GithubManagedAgentRow: View {
                                                 }
                                             } else {
                                                 manager.enabled.remove(tool)
-                                                print("Github: Disabling \(tool)")
-                                                print("Github: Tools: \(manager.enabled)")
+                                                logger.debug("Github: Disabling \(tool.rawValue)")
+                                                logger.debug("Github: Tools: \(manager.enabled)")
                                                 if manager.enabled.count == 0 {
-                                                    print("Github: Resetting token")
+                                                    logger.debug("Github: Resetting token")
                                                     manager.resetToken()
                                                 }
                                             }
+                                            setGithubTools(value: manager.enabled)
                                         }
                                     }
                                 )
@@ -152,15 +170,25 @@ struct GithubManagedAgentRow: View {
 
 struct GoogleManagedAgentRow: View {
     @EnvironmentObject var manager: GoogleOAuthManager
+    @EnvironmentObject var mcpOAuthManagers: McpOAuthManagers
     let icon: String
     let title: String
     @Binding var subheading: String
     @State private var exapanded = false
 
+    var enabled: Bool {
+        if let server = mcpOAuthManagers.customManagers["managed_aithing_google"] {
+            return server.enabled ?? false
+        }
+        return false
+    }
+
     var body: some View {
         VStack {
             Button {
-                exapanded.toggle()
+                if enabled {
+                    exapanded.toggle()
+                }
             } label: {
                 HStack {
                     Image(icon).resizable().frame(width: 16, height: 16)
@@ -171,8 +199,12 @@ struct GoogleManagedAgentRow: View {
                         }
                     }
                     Spacer()
-                    Image(systemName: "chevron.right")
-                        .frame(width: 10, height: 10)
+                    if enabled {
+                        Image(systemName: "chevron.right")
+                            .frame(width: 10, height: 10)
+                    } else {
+                        RowSub("Disabled")
+                    }
                 }
             }
             .buttonStyle(.plain)
@@ -195,8 +227,8 @@ struct GoogleManagedAgentRow: View {
                                         Task {
                                             if newValue {
                                                 manager.enabled.insert(tool)
-                                                print("Google: Enabling \(tool)")
-                                                print("Google: Tools: \(manager.enabled)")
+                                                logger.debug("Google: Enabling \(tool.rawValue)")
+                                                logger.debug("Google: Tools: \(manager.enabled)")
                                                 if let user = await manager.generateToken(
                                                     refresh: false
                                                 ) {
@@ -206,13 +238,14 @@ struct GoogleManagedAgentRow: View {
                                                 }
                                             } else {
                                                 manager.enabled.remove(tool)
-                                                print("Google: Disabling \(tool)")
-                                                print("Google: Tools: \(manager.enabled)")
+                                                logger.debug("Google: Disabling \(tool.rawValue)")
+                                                logger.debug("Google: Tools: \(manager.enabled)")
                                                 if manager.enabled.count == 0 {
-                                                    print("Google: Resetting token")
+                                                    logger.debug("Google: Resetting token")
                                                     manager.resetToken()
                                                 }
                                             }
+                                            setGoogleTools(value: manager.enabled)
                                         }
                                     }
                                 )
