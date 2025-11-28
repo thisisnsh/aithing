@@ -83,7 +83,7 @@ struct IntelligenceView: View {
     @State private var selectedAppIcon: NSImage? = nil
     @State private var selectedAppName = ""
     @State private var selectedWindowName = ""
-    @State private var appContextWidth: CGFloat = 200
+    @State private var appContextWidth: CGFloat = 180
 
     @State private var toast = ""
 
@@ -208,13 +208,6 @@ struct IntelligenceView: View {
                         startSelectionPoll()
                     } else {
                         stopSelectionPoll()
-                    }
-                }
-                .onChange(of: appContext.windowName) { _ in
-                    if !appContextEnabled {
-                        let text =
-                            "\(appContext.appName)\(appContext.windowName.count > 0 ? ": " : "")\(appContext.windowName)"
-                        appContextWidth = min(CGFloat(text.count) * 8, 200)
                     }
                 }
                 .onReceive(screenshotMonitor.$latestScreenshot) { ss in
