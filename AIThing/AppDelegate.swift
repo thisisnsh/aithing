@@ -31,6 +31,7 @@ final class NotchVM: ObservableObject {
     @Published var open = false
     @Published var toggle = false
     @Published var selectedText = ""
+    @Published var selectionPolling = false
     @Published var move = false
 
     func refreshDimensions() { refresh.toggle() }
@@ -39,6 +40,7 @@ final class NotchVM: ObservableObject {
     func toggleDimensions() { toggle.toggle() }
     func updateSelectedText(text: String) { selectedText = text }
     func toggleMove() { move.toggle() }
+    func updateSelectionPolling(value: Bool) { selectionPolling = value }
 }
 
 // MARK: - AppDelegate
@@ -371,10 +373,12 @@ extension AppDelegate {
     }
 
     private func stopSelectionPoll() {
+        vm.updateSelectionPolling(value: false)
         pollingTimer?.cancel()
     }
 
     private func startSelectionPoll() {
+        vm.updateSelectionPolling(value: true)
         pollingTimer?.cancel()
 
         // Accessibility trust (prompt once as needed)

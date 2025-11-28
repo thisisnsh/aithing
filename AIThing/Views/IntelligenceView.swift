@@ -172,6 +172,7 @@ struct IntelligenceView: View {
                 .padding(8)
                 .onAppear {
                     AnalyticsManager.shared.screenView(screenName: .IntelligenceView)
+                    selectionEnabled = vm.selectionPolling
                 }
                 .task {
                     await setUnseen(tabId, false)

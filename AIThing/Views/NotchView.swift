@@ -820,6 +820,7 @@ extension NotchView {
             ? WindowSize.sidebarIsExpanded : WindowSize.sidebarIsCollapsed
         screenshotMonitor.updateKnownFiles()
         screenshotMonitor.close()
+        stopSelectionPoll()
         if !initialClose {
             Task { await refreshManagedAgents(forceRefresh: false) }
         }
@@ -858,6 +859,7 @@ extension NotchView {
         (width, height) = updateWindowSize(windowSize)
         screenshotMonitor.updateKnownFiles()
         screenshotMonitor.close()
+        stopSelectionPoll()
         Task { await refreshManagedAgents(forceRefresh: false) }
     }
 
