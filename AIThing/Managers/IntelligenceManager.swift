@@ -526,6 +526,10 @@ func callModel(
         var finalToolUseId = ""
         var finalToolUseName = ""
 
+        // Model output update throttle
+        var lastUpdateTime: Date = .distantPast
+        let throttleInterval: TimeInterval = 0.05
+
         for try await line in stream.lines {
             if line.starts(with: "data: ") {
                 let jsonString = line.replacingOccurrences(of: "data: ", with: "")
@@ -565,8 +569,12 @@ func callModel(
                     case "text_delta":
                         guard let text = delta["text"] as? String else { continue }
                         finalResponse += String(text)
-                        await MainActor.run {
-                            setModelOutput(finalResponse + " " + shimmerPlaceholder())
+                        let now = Date()
+                        if now.timeIntervalSince(lastUpdateTime) >= throttleInterval {
+                            lastUpdateTime = now
+                            await MainActor.run {
+                                setModelOutput(finalResponse + " " + shimmerPlaceholder())
+                            }
                         }
 
                     case "input_json_delta":

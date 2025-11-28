@@ -3,29 +3,31 @@
 ------------------------ 
 
 
-Thursday
 - QA
-- Figure out slowness
-
-Friday
-- Release 2.0.7
+- Get Started 
 - Website Change
     - remove complete free
     - AI can make mistakes. Perform irreversible tasks carefully.
     - create get started page
 
+11
+- Release 2.0.7
+
+12
 - Apple Promotion Graphic & Animation  
     - many agents
     - complete google suite
     - privacy and local 
     - byok
-- Where to Promote?      
+
+13
 - Promote 2.0 on Reddit  
-- Add notification for automation
+
+- Where else to Promote?      
 
 
 Saturday Morning
-- Promote 2.0 on Reddit  
+- Add notification for automation
 - Email people about the new release who emailed you before
 
 
