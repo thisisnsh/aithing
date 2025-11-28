@@ -173,14 +173,10 @@ func callModel(
 
     guard let apiKey = getAnthropicAPIKey(), !apiKey.isEmpty
     else {
-        let modelTitle = getModelTitle(getModel(), all: getManagedModels())
-
         setIsThinking(false)
         await animateOutput(
             """
-            API key not found.
-
-            You can create one at: https://console.anthropic.com/settings/keys
+            API key not found. You can create one at: https://console.anthropic.com/settings/keys
 
             For setup instructions, visit: https://aithing.dev/getstarted
             """
@@ -410,10 +406,10 @@ func callModel(
 
     ]
 
-    logger.debug("api key: \(apiKey)")
+    // logger.debug("api key: \(apiKey)")
     logger.debug("model: \(model)")
     logger.debug("max tokens: \(getOutputToken())")
-    logger.debug("messages: \(String(describing: body["messages"]))")
+    // logger.debug("messages: \(String(describing: body["messages"]))")
     logger.debug("tools count: \((body["tools"] as? [[String: Any]])?.count ?? 0)")
 
     request.httpBody = try? JSONSerialization.data(withJSONObject: body)
