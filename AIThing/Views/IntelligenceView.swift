@@ -78,6 +78,9 @@ struct IntelligenceView: View {
     @State private var selectionEnabled: Bool = false
     @State private var hoverSelectionEnabled: Bool = false
 
+    @State private var showGetStarted: Bool = false
+    @State private var getStarted: LocalizedStringKey = ""
+
     @State private var appContextEnabled: Bool = false
     @State private var hoverAppContextEnabled: Bool = false
     @State private var selectedAppIcon: NSImage? = nil
@@ -173,6 +176,34 @@ struct IntelligenceView: View {
                 .onAppear {
                     AnalyticsManager.shared.screenView(screenName: .IntelligenceView)
                     selectionEnabled = vm.selectionPolling
+
+                    let apiKey = getAnthropicAPIKey() ?? ""
+                    var loggedIn = false
+                    switch loginManager.authState {
+                    case .signedIn(let user):
+                        loggedIn = true
+                        AnalyticsManager.shared.setUserId(user.uid)
+                    default:
+                        loggedIn = false
+                        AnalyticsManager.shared.setUserId(nil)
+                    }
+
+                    if !loggedIn && apiKey.isEmpty {
+                        getStarted =
+                            "Get started by following the instructions [here](https://aithing.dev/getstarted)."
+                        showGetStarted = true
+                    } else if apiKey.isEmpty {
+                        getStarted =
+                            "Please add the API key to continue. [How?](https://aithing.dev/getstarted)"
+                        showGetStarted = true
+                    } else if !loggedIn {
+                        getStarted =
+                            "Please log in to continue. [How?](https://aithing.dev/getstarted)"
+                        showGetStarted = true
+                    } else {
+                        getStarted = ""
+                        showGetStarted = false
+                    }
                 }
                 .task {
                     await setUnseen(tabId, false)
@@ -363,7 +394,8 @@ struct IntelligenceView: View {
                 )
             } else {
                 ZStack(alignment: .leading) {
-                    if !isThinking, !isDropping {
+
+                    if !isThinking, !isDropping, !showGetStarted {
                         InputTextView(
                             text: $query,
                             seenCommands: .constant([]),
@@ -389,18 +421,20 @@ struct IntelligenceView: View {
                         )
                     }
 
-                    if query.isEmpty || isDropping || isThinking {
+                    if query.isEmpty || isDropping || isThinking || showGetStarted {
                         Text(
-                            isThinking
-                                ? "Responding..."
-                                : (isDropping
-                                    ? "Drop files here..." : "Ask anything on AI Thing...")
+                            showGetStarted
+                                ? getStarted
+                                : (isThinking
+                                    ? "Responding..."
+                                    : (isDropping
+                                        ? "Drop files here..." : "Ask anything on AI Thing..."))
                         )
                         .foregroundColor(isDropping ? .blue : .white.opacity(0.6))
                         .font(.system(size: textSize, weight: .medium))
                         .padding(.top, 2)
                         .padding(.leading, 5)
-                        .allowsHitTesting(false)
+                        .allowsHitTesting(showGetStarted)
                         .frame(maxWidth: .infinity, alignment: .leading)
                     }
                 }

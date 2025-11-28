@@ -3,29 +3,19 @@
 ------------------------ 
 
 
-
-- Get Started 
-    - Text - Follow to get started (show when no api key or no login)
-    - show in query with clickable link     
-
+- Release 2.0.7
 - Website Change
     - remove complete free
     - AI can make mistakes. Perform irreversible tasks carefully.
     - create get started page
 
-11:30
-- Release 2.0.7
-
-12
 - Apple Promotion Graphic & Animation  
     - many agents
     - complete google suite
     - privacy and local 
     - byok
 
-13
 - Promote 2.0 on Reddit  
-
 - Where else to Promote?      
 
 
@@ -82,12 +72,10 @@ Anthropic
 
 Zapier
 https://mcp.zapier.com/api/mcp/mcp
-<zapier-basic-auth>
 https://mcp.zapier.com/authorize?client_id=<zapier-client-id>&redirect_uri=http://127.0.0.1:62326/callback&response_type=code&scope=profile%20email&state=F21AAA44-0643-4C90-824F-482C8FCFD27A
 
 GitHub
 https://api.githubcopilot.com/mcp/ 
-<your-github-token>    
 
 Xcode
 /usr/local/bin/xcode-npx-wrapper
@@ -96,9 +84,6 @@ Xcode
 Apple
 /Users/thisisnsh/.bun/bin/bunx
 @dhravya/apple-mcp@latest
-
-Google Sheets
-https://docs.google.com/spreadsheets/d/<spreadsheet-id>
 
 ------------------------
 

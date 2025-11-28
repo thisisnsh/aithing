@@ -180,13 +180,9 @@ func callModel(
             """
             API key not found.
 
-            You have selected the \(modelTitle) model in **Settings** under the *"Use Own API Key"* section in the **Models** tab.
-
-            This model requires you to provide an API key.
-
             You can create one at: https://console.anthropic.com/settings/keys
 
-            For setup instructions, visit: https://aithing.dev/quickstart
+            For setup instructions, visit: https://aithing.dev/getstarted
             """
         )
         AnalyticsManager.shared
