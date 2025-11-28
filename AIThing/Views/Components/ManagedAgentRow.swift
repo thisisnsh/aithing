@@ -48,7 +48,7 @@ struct ManagedAgentRow: View {
                                     logger.debug("\(title): Enabling")
                                     if await manager.generateToken(
                                         refresh: false
-                                    ) == nil {                                    
+                                    ) == nil {
                                         manager.enabled = false
                                     }
                                 } else {
@@ -271,33 +271,39 @@ struct AgentRow: View {
     @State private var isHovered = false
 
     var body: some View {
-        HStack(alignment: .center) {
-            if isHovered {
-                Button(action: delete) { Image(systemName: "trash.fill") }
-                    .clipShape(Circle())
+        VStack(alignment: .leading) {
+            HStack(alignment: .center) {
+                VStack(alignment: .leading, spacing: 2) {
+                    switch agent.entry {
+                    case .url(let name, let url):
+                        RowTitle(name)
+                        RowSub("URL: \(url)")
+                    case .urlWithToken(let name, let url, let token):
+                        RowTitle(name)
+                        RowSub("URL: \(url)\nToken: \(token.prefix(4))...\(token.suffix(4))")
+                    case .command(let name, let command, let arguments):
+                        RowTitle(name)
+                        RowSub(
+                            "Command: \(command)\nArguments: [\(arguments.joined(separator: " "))]"
+                        )
+                    }
+                }
 
+                Spacer()
+
+                Toggle("", isOn: .init(get: { agent.isEnabled }, set: toggle))
+                    .toggleStyle(.switch)
+                    .tint(.black)
+                    .scaleEffect(0.7)
             }
 
-            VStack(alignment: .leading, spacing: 2) {
-                switch agent.entry {
-                case .url(let name, let url):
-                    RowTitle(name)
-                    RowSub("URL: \(url)")
-                case .urlWithToken(let name, let url, let token):
-                    RowTitle(name)
-                    RowSub("URL: \(url)\nToken: \(token.prefix(4))...\(token.suffix(4))")
-                case .command(let name, let command, let arguments):
-                    RowTitle(name)
-                    RowSub("Command: \(command)\nArguments: [\(arguments.joined(separator: " "))]")
+            if isHovered {
+                Button(action: delete) {
+                    Text("Remove")
+                        .font(.system(size: 10, weight: .medium))
+                        .foregroundStyle(.red)
                 }
             }
-
-            Spacer()
-
-            Toggle("", isOn: .init(get: { agent.isEnabled }, set: toggle))
-                .toggleStyle(.switch)
-                .tint(.black)
-                .scaleEffect(0.7)
         }
         .padding(4)
         .contentShape(Rectangle())

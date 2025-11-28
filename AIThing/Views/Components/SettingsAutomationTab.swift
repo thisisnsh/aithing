@@ -90,37 +90,42 @@ private struct AutomationRow: View {
     @State private var isHovered = false
 
     var body: some View {
-        HStack {
-            if isHovered {
-                Button(action: onRemove) { Image(systemName: "trash.fill") }
-                    .clipShape(Circle())
+        VStack(alignment: .leading) {
+            HStack {
+                VStack(alignment: .leading, spacing: 2) {
+                    RowTitle(automation.title)
+                    RowSub(automation.instructions)
+                    Text("Executes: \(automation.executeTime)")
+                        .font(.system(size: 10, weight: .medium))
+                        .opacity(0.5)
+                    if !automation.recurrence.isOneOff {
+                        RowSub("Recurs every: \(recurrenceString(automation.recurrence))")
+                    } else {
+                        RowSub("One-time")
+                    }
+                }
+
+                Spacer()
+
+                Toggle(
+                    "",
+                    isOn: Binding(
+                        get: { automation.enabled },
+                        set: { _ in onToggle() }
+                    )
+                )
+                .toggleStyle(.switch)
+                .tint(.black)
+                .scaleEffect(0.7)
             }
 
-            VStack(alignment: .leading, spacing: 2) {
-                RowTitle(automation.title)
-                RowSub(automation.instructions)
-                Text("Executes: \(automation.executeTime)")
-                    .font(.system(size: 10, weight: .medium))
-                    .opacity(0.5)
-                if !automation.recurrence.isOneOff {
-                    RowSub("Recurs every: \(recurrenceString(automation.recurrence))")
-                } else {
-                    RowSub("One-time")
+            if isHovered {
+                Button(action: onRemove) {
+                    Text("Remove")
+                        .font(.system(size: 10, weight: .medium))
+                        .foregroundStyle(.red)
                 }
             }
-
-            Spacer()
-
-            Toggle(
-                "",
-                isOn: Binding(
-                    get: { automation.enabled },
-                    set: { _ in onToggle() }
-                )
-            )
-            .toggleStyle(.switch)
-            .tint(.black)
-            .scaleEffect(0.7)
         }
         .padding(4)
         .contentShape(Rectangle())
