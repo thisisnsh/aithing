@@ -3,24 +3,7 @@
 ------------------------ 
 
 
-- Release 2.0.7
-- Website Change
-    - remove complete free
-    - AI can make mistakes. Perform irreversible tasks carefully.
-    - create get started page
-
-- Apple Promotion Graphic & Animation  
-    - many agents
-    - complete google suite
-    - privacy and local 
-    - byok
-
-- Promote 2.0 on Reddit  
-- Where else to Promote?      
-
-
 Saturday Morning
-
 - Email people about the new release who emailed you before
 
 
@@ -41,18 +24,14 @@ Later
 Jan 1, 2026
 - PH Release
 
-
 ------------------------
-
 
 ## Missing Features
 
 - Support Image Generation 
 - Support Audio  
-- Support Search History
 - Support Elicitation 
-- Support Markdown Select
-- Support OpenAI Models 
+- Support Markdown Select 
 - Support AI Suggestions
 
 
@@ -61,9 +40,7 @@ Jan 1, 2026
 - 2 hover required to open the app after closing
 - First file drop is slow
 
-
 ------------------------
-
     
 ## Servers
  
@@ -92,16 +69,18 @@ Apple
 https://chatgpt.com/g/g-p-6873dd743bb48191b8a269cab99e4c01-ai-thing/c/688ff3cc-7be8-8329-9fed-0be50ddd3485
 
 ```
-change bundle version in info.plist
-change bundle version in settings
+>>> change bundle version in info.plist
+>>> change bundle version in settings
 
 export version=<version>
 
-spctl --assess --type execute --verbose AIThing.app 
-AIThing.app: accepted
-source=Notarized Developer ID
+>>> spctl --assess --type execute --verbose AIThing.app 
+>>> AIThing.app: accepted
+>>> source=Notarized Developer ID
 
 echo $version
+
+cp AIThing.app AIThing_dmg
 
 hdiutil create -volname "AIThing" \
   -srcfolder "AIThing_dmg" \
@@ -133,7 +112,7 @@ xcrun stapler staple "AIThing-$version.dmg"
 
 codesign -dv --verbose=4 AIThing-$version.dmg 2>&1 | grep -E 'Authority|TeamIdentifier|Identifier'
 
-cp AIThing-$version.dmg ../Sparkles/  
+mv AIThing-$version.dmg ../Sparkles/  
 
 ../Sparkle-2.8.1/bin/generate_appcast ../Sparkles
 
@@ -142,6 +121,8 @@ cd ../Sparkles
 scp -i ~/.ssh/id_rsa * root@159.89.183.84:/var/www/html
 
 ssh -i ~/.ssh/id_rsa root@159.89.183.84
+
+cd /var/www/html
 
 ```
 
