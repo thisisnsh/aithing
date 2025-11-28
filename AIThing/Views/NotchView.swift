@@ -1239,7 +1239,7 @@ extension NotchView {
 
                 if agentOAuthManager.enabled == false {
                     await MainActor.run { _ = allClientTools.removeValue(forKey: clientName) }
-                    return
+                    continue
                 }
 
                 group.addTask {

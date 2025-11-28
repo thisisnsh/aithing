@@ -407,7 +407,7 @@ struct IntelligenceView: View {
                 .frame(height: inputHeight)
             }
         }
-        .padding(.vertical, 8)
+        .padding(.vertical, showMcpTools ? 0 : 8)
         .padding(.bottom, 40)
         .padding(8)
         .overlay(

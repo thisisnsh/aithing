@@ -50,6 +50,7 @@ struct ManagedAgentRow: View {
                                         refresh: false
                                     ) == nil {
                                         manager.enabled = false
+                                        logger.debug("\(title): Disabling")
                                     }
                                 } else {
                                     manager.enabled = false

@@ -9,10 +9,7 @@ import SwiftUI
 
 struct ModelInfo: Codable, Identifiable, Equatable {
     let id: String
-    // case claude_opus_4_1 = "claude-opus-4-1-20250805"
-    // case claude_sonnet_4 = "claude-sonnet-4-20250514"
-    // case claude_haiku_3_5 = "claude-3-5-haiku-20241022"
-
+    
     let provider: String
     let title: String
 

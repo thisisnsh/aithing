@@ -3,14 +3,17 @@
 ------------------------ 
 
 
-- QA
+
 - Get Started 
+    - Text - Follow to get started (show when no api key or no login)
+    - show in query with clickable link     
+
 - Website Change
     - remove complete free
     - AI can make mistakes. Perform irreversible tasks carefully.
     - create get started page
 
-11
+11:30
 - Release 2.0.7
 
 12
@@ -27,7 +30,7 @@
 
 
 Saturday Morning
-- Add notification for automation
+
 - Email people about the new release who emailed you before
 
 
@@ -37,10 +40,12 @@ Sunday
 
 
 Later
-
 - RAG 
 - Token Count / Savings
 - Get API Key seamlessly 
+- Search Tools
+- Search History
+- Add notification for automation
 
 
 Jan 1, 2026

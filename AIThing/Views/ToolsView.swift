@@ -32,7 +32,6 @@ struct ToolsView: View {
             } else {
                 VStack(alignment: .leading, spacing: 12) {
                     ForEach(sortedHeadings, id: \.self) { heading in
-                        // Top-level: heading collapsible
                         DisclosureGroup(
                             isExpanded: Binding(
                                 get: { expandedHeadings.contains(heading) },
@@ -56,6 +55,8 @@ struct ToolsView: View {
                                         // Unique ID per name within heading
                                         let nameID = "\(heading)-\(index)"
 
+                                        Divider()
+
                                         // Second level: name collapsible
                                         DisclosureGroup(
                                             isExpanded: Binding(
@@ -72,7 +73,13 @@ struct ToolsView: View {
                                             if !description.isEmpty {
                                                 HStack {
                                                     Text("\(description)")
-                                                        .font(.system(size: 12, weight: .medium))
+                                                        .font(
+                                                            .system(
+                                                                size: 12,
+                                                                weight: .medium,
+                                                                design: .monospaced
+                                                            )
+                                                        )
                                                         .foregroundColor(.secondary)
                                                         .padding(.top, 2)
                                                     Spacer()
@@ -80,9 +87,15 @@ struct ToolsView: View {
                                                 .padding(.horizontal, 16)
                                             }
                                         } label: {
-                                            Text("\(name)")
-                                                .font(.system(size: 12, weight: .medium))
-                                                .bold()
+                                            Text("\(formatNameString(name))")
+                                                .font(
+                                                    .system(
+                                                        size: 12,
+                                                        weight: .medium,
+                                                        design: .monospaced
+                                                    )
+                                                )
+                                                .padding(.leading, 4)
                                         }
                                     }
                                 }
@@ -92,13 +105,21 @@ struct ToolsView: View {
                         } label: {
                             Text(heading)
                                 .font(.system(size: 14, weight: .medium))
+                                .bold()
+                                .padding(.leading, 4)
                         }
+                        .padding(8)
+                        .background(.white.opacity(0.1))
+                        .clipShape(RoundedRectangle(cornerRadius: 8))
                     }
                 }
+                .padding(.vertical, 16)
             }
         }
-        .padding(.horizontal, 16)
+        .padding(.horizontal, 8)
         .frame(height: 300)
+        .background(.white.opacity(0.1))
+        .clipShape(RoundedRectangle(cornerRadius: 16))
         .onAppear {
             AnalyticsManager.shared.screenView(screenName: .ToolsView)
             Task {
@@ -131,6 +152,21 @@ struct ToolsView: View {
 
         // 1. Remove the "managed_" prefix if it exists
         trimmed.removeFirst("managed_".count)
+
+        // 2. Split by underscore
+        let parts = trimmed.split(separator: "_")
+
+        // 3. Capitalize each word
+        let capitalizedParts = parts.map { part in
+            part.prefix(1).uppercased() + part.dropFirst()
+        }
+
+        // 4. Join with spaces
+        return capitalizedParts.joined(separator: " ")
+    }
+
+    func formatNameString(_ input: String) -> String {
+        var trimmed = input
 
         // 2. Split by underscore
         let parts = trimmed.split(separator: "_")
