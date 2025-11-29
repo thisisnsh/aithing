@@ -66,7 +66,7 @@ struct IntelligenceView: View {
     @State private var modelContext: [DroppedContent] = []
     @State private var toolCall: String = ""
     @State private var showRefreshButton = false
-    
+
     @State private var query: String = ""
     @State private var displayQuery: String = ""
     @State private var selectedText: String = ""
@@ -208,12 +208,54 @@ struct IntelligenceView: View {
                             )
                     }
                     .padding(8)
-                    .onChange(of: currentTabId) { _ in
-                        Task {
-                            if currentTabId == tabId {
-                                await setUnseen(tabId, false)
-                            }
+                    .onAppear {
+                        selectionEnabled = vm.selectionPolling
+
+                        let apiKey = getAnthropicAPIKey() ?? ""
+                        var loggedIn = false
+                        switch loginManager.authState {
+                        case .signedIn(let user):
+                            loggedIn = true
+                            AnalyticsManager.shared.setUserId(user.uid)
+                        default:
+                            loggedIn = false
+                            AnalyticsManager.shared.setUserId(nil)
                         }
+
+                        if !loggedIn && apiKey.isEmpty {
+                            getStarted =
+                                "Get started by following the instructions [here](https://aithing.dev/getstarted)."
+                            showGetStarted = true
+                        } else if apiKey.isEmpty {
+                            getStarted =
+                                "Please add the API key to continue. [How?](https://aithing.dev/getstarted)"
+                            showGetStarted = true
+                        } else if !loggedIn {
+                            getStarted =
+                                "Please log in to continue. [How?](https://aithing.dev/getstarted)"
+                            showGetStarted = true
+                        } else {
+                            getStarted = ""
+                            showGetStarted = false
+                        }
+                    }
+                    .task {
+                        await setUnseen(tabId, false)
+
+                        history = await getHistory(tabId)
+                        if let history = history {
+                            modelInput = history.history
+                            tabTitle = history.title ?? "New Chat"
+                        } else {
+                            tabTitle = "New Chat"
+                            let greeting = await firestoreManager.getGreeting() ?? ""
+                            if !greeting.isEmpty { modelOutput = greeting }
+                        }
+
+                        let notification = await firestoreManager.getNotification() ?? ""
+                        if !notification.isEmpty { modelOutput = notification }
+
+                        if modelInput.isEmpty { showSavedQueries = true }
                     }
                     .onChange(of: vm.selectedText) { text in
                         if isTabShowing() {
@@ -245,7 +287,7 @@ struct IntelligenceView: View {
                                 }
 
                                 await setUnseen(tabId, false)
-                                logger.info("Refresh Window \(tabId)")
+                                logger.debug("Auto 5-Second Refresh Window \(tabId)")
                             }
                         }
                     }
@@ -298,55 +340,9 @@ struct IntelligenceView: View {
                 Color.clear.frame(width: 0, height: 0)
             }
         }
-        .onAppear {            
+        .onAppear {
+            logger.debug("OnAppear \(tabId)")
             AnalyticsManager.shared.screenView(screenName: .IntelligenceView)
-            selectionEnabled = vm.selectionPolling
-
-            let apiKey = getAnthropicAPIKey() ?? ""
-            var loggedIn = false
-            switch loginManager.authState {
-            case .signedIn(let user):
-                loggedIn = true
-                AnalyticsManager.shared.setUserId(user.uid)
-            default:
-                loggedIn = false
-                AnalyticsManager.shared.setUserId(nil)
-            }
-
-            if !loggedIn && apiKey.isEmpty {
-                getStarted =
-                    "Get started by following the instructions [here](https://aithing.dev/getstarted)."
-                showGetStarted = true
-            } else if apiKey.isEmpty {
-                getStarted =
-                    "Please add the API key to continue. [How?](https://aithing.dev/getstarted)"
-                showGetStarted = true
-            } else if !loggedIn {
-                getStarted =
-                    "Please log in to continue. [How?](https://aithing.dev/getstarted)"
-                showGetStarted = true
-            } else {
-                getStarted = ""
-                showGetStarted = false
-            }
-        }
-        .task {            
-            await setUnseen(tabId, false)
-
-            history = await getHistory(tabId)
-            if let history = history {
-                modelInput = history.history
-                tabTitle = history.title ?? "New Chat"
-            } else {
-                tabTitle = "New Chat"
-                let greeting = await firestoreManager.getGreeting() ?? ""
-                if !greeting.isEmpty { modelOutput = greeting }
-            }
-
-            let notification = await firestoreManager.getNotification() ?? ""
-            if !notification.isEmpty { modelOutput = notification }
-
-            if modelInput.isEmpty { showSavedQueries = true }
         }
     }
 
@@ -890,7 +886,7 @@ extension IntelligenceView {
             automationManager: automationManager,
             aiThingMcpManager: aiThingMcpManager
         )
-        
+
         if isTabRemoved() {
             logger.debug("Stop the query after tab removal")
             return

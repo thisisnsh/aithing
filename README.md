@@ -3,12 +3,16 @@
 ------------------------ 
 
 
-Saturday Morning
+Saturday 
 - Find time between handle query call and api response
+- Dynamic App Context Width
+- Release 2.0.8
+
 
 Sunday 
 - Google Server Stats
 - Google Server Rate Limit
+
 
 Monday
 - [Morning 8am] Reddit Release
