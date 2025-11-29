@@ -4,16 +4,15 @@
 
 
 Saturday Morning
-- Fix Performance
-- 2 Histories Tabs in Sidebar (active and inactive)
-- Email people about the new release who emailed you before
+- Find time between handle query call and api response
 
 Sunday 
 - Google Server Stats
 - Google Server Rate Limit
 
 Monday
-- Reddit Release
+- [Morning 8am] Reddit Release
+- [Evening 6pm] Email people about the new release who emailed you before
 
 Later
 - RAG 

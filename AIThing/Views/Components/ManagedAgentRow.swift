@@ -45,16 +45,16 @@ struct ManagedAgentRow: View {
                             Task {
                                 if newValue {
                                     manager.enabled = true
-                                    logger.debug("\(title): Enabling")
+                                    logger.debug("Enabling: \(title)")
                                     if await manager.generateToken(
                                         refresh: false
                                     ) == nil {
                                         manager.enabled = false
-                                        logger.debug("\(title): Disabling")
+                                        logger.debug("Disabling: \(title)")
                                     }
                                 } else {
                                     manager.enabled = false
-                                    logger.debug("\(title): Disabling")
+                                    logger.debug("Disabling: \(title)")
                                     manager.resetToken()
                                 }
                                 setMcpEnabled(

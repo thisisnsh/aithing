@@ -47,6 +47,7 @@ struct NotchView: View {
 
     let cornerRadiusLeft: CGFloat = 38
     let shadowBuffer: CGFloat = 32
+    let maxTabs: Int = 25
 
     @State private var width: CGFloat = 0
     @State private var height: CGFloat = 0
@@ -61,6 +62,7 @@ struct NotchView: View {
 
     @State private var focusedTabId: String = ""
     @State private var tabs: [String: TabItem] = [:]
+    @State private var tabOrder: [String] = []
     @State private var histories: [History] = []
     @State private var unseen: Bool = false
 
@@ -135,9 +137,11 @@ struct NotchView: View {
                         .environmentObject(screenshotMonitor)
                     }
 
-                    ForEach(Array(tabs.values.enumerated()), id: \.element.id) { index, tab in
-                        tabView(tab: tab)
-                    }
+                    TabContainer(
+                        tabOrder: tabOrder,
+                        tabs: tabs,
+                        tabView: { tabView(tab: $0) }
+                    )
 
                     if showChatWindow {
                         ResizeViewY()
@@ -187,7 +191,7 @@ struct NotchView: View {
                                 open()
                                 showSettings = false
                                 let tabId = UUID().uuidString
-                                tabs[tabId] = TabItem(id: tabId)
+                                addTab(TabItem(id: tabId))
                                 focusedTabId = tabId
                             },
                             deleteAction: {},
@@ -204,7 +208,7 @@ struct NotchView: View {
                                 open()
                                 if focusedTabId.isEmpty {
                                     let tabId = UUID().uuidString
-                                    tabs[tabId] = TabItem(id: tabId)
+                                    addTab(TabItem(id: tabId))
                                     focusedTabId = tabId
                                 }
                                 showSettings.toggle()
@@ -303,11 +307,6 @@ struct NotchView: View {
         .onChange(of: vm.move) { _ in
             circularNotch = !isTouchingRightEdge()
         }
-        .onReceive(
-            Timer.publish(every: 60, on: .main, in: .common).autoconnect()
-        ) { _ in
-            removeTabs()
-        }
         .task {
             switch loginManager.authState {
             case .signedIn(let user):
@@ -326,11 +325,10 @@ struct NotchView: View {
             await refreshManagedAgents()
 
             automationManager.onExecute = { (automation: Automation) async in
-                logger.debug("Called automation: \(automation.id)")
+                logger.debug("Called automation: \(automation.title)")
                 var modelInput: [[String: Any]] = []
                 var modelOutput: String = ""
                 let tabId = UUID().uuidString
-                tabs[tabId] = TabItem(id: tabId)
                 var title = ""
                 var history: [[String: Any]] = []
 
@@ -338,7 +336,7 @@ struct NotchView: View {
                     tabId: tabId,
                     query: automation.instructions,
 
-                    isTabRemoved: { isTabRemoved(tabId: tabId) },
+                    isTabRemoved: { false },
                     getAppContextBase64: { return nil },
                     getSelectedText: { return "" },
                     setSelectedText: { _ in },
@@ -356,7 +354,7 @@ struct NotchView: View {
                     setHistory: { _ in },
                     setIsThinking: { _ in },
                     getModelInput: { return modelInput },
-                    appendModelInput: { modelInput.append($0) },
+                    setModelInput: { modelInput = $0 },
                     getModelOutput: { return modelOutput },
                     setModelOutput: { modelOutput = $0 },
                     animateOutput: { (_) async in },
@@ -496,24 +494,22 @@ struct NotchView: View {
                         action: {
                             open()
                             showSettings = false
-                            tabs[h.id] = TabItem(id: h.id)
+                            addTab(TabItem(id: h.id))
                             focusedTabId = h.id
-                            removeTabs()
                         },
                         deleteAction: {
                             Task {
                                 let isActive = focusedTabId == h.id
                                 await historyStore.delete(id: h.id)
-                                tabs.removeValue(forKey: h.id)
-                                setTabActive(tabId: h.id, active: false)
+                                removeTab(id: h.id)
                                 histories = await historyStore.getAll(limit: 100)
                                 if isActive {
                                     if let history = histories.first {
-                                        tabs[history.id] = TabItem(id: history.id)
+                                        addTab(TabItem(id: history.id))
                                         focusedTabId = history.id
                                     } else {
                                         let tabId = UUID().uuidString
-                                        tabs[tabId] = TabItem(id: tabId)
+                                        addTab(TabItem(id: tabId))
                                         focusedTabId = tabId
                                     }
                                 }
@@ -704,6 +700,20 @@ struct NotchView: View {
 
 // MARK: Tab Stuff
 extension NotchView {
+    struct TabContainer<Content: View>: View {
+        let tabOrder: [String]
+        let tabs: [String: TabItem]
+        let tabView: (TabItem) -> Content
+
+        var body: some View {
+            ForEach(tabOrder, id: \.self) { id in
+                if let tab = tabs[id] {
+                    tabView(tab)
+                }
+            }
+        }
+    }
+
     @ViewBuilder
     private func tabView(tab: TabItem) -> some View {
         IntelligenceView(
@@ -718,7 +728,6 @@ extension NotchView {
             expand: { maximize() },
             isTabShowing: { isTabShowing(tabId: tab.id) },
             isTabRemoved: { isTabRemoved(tabId: tab.id) },
-            setTabActive: { setTabActive(tabId: tab.id, active: $0) },
             updateHistoryList: { await updateHistoryList() },
             getHistory: { return await getHistory(tabId: $0) },
             storeHistory: { await storeHistory(tabId: $0, history: $1) },
@@ -733,8 +742,31 @@ extension NotchView {
         .environmentObject(firestoreManager)
         .environmentObject(appContext)
         .environmentObject(automationManager)
-        .environmentObject(screenshotMonitor)
-        .id(focusedTabId)
+        .environmentObject(screenshotMonitor)        
+    }
+
+    private func addTab(_ tab: TabItem) {
+        let id = tab.id
+
+        // Always update or insert the tab
+        tabs[id] = tab
+
+        // If the ID already exists, do not duplicate or move its position
+        guard !tabOrder.contains(id) else { return }
+
+        // Insert at end
+        tabOrder.append(id)
+
+        // Enforce max tab count
+        if tabOrder.count > maxTabs {
+            let removedId = tabOrder.removeFirst()
+            tabs.removeValue(forKey: removedId)
+        }
+    }
+
+    func removeTab(id: String) {
+        tabs.removeValue(forKey: id)
+        tabOrder.removeAll { $0 == id }
     }
 
     private func printTabs() {
@@ -747,40 +779,6 @@ extension NotchView {
 
     private func isTabRemoved(tabId: String) -> Bool {
         !tabs.keys.contains(tabId)
-    }
-
-    private func setTabActive(tabId: String, active: Bool) {
-        guard var tab = tabs[tabId] else { return }
-
-        tab.active = active
-        tab.lastUpdated = Date()
-        tabs[tabId] = tab
-
-        AnalyticsManager.shared.customEvent(
-            view: .NotchView,
-            primary: .activateTab,
-            secondary: "\(active)",
-            sev: .info
-        )
-    }
-
-    // Remove tabs that are inactive for longer than 30 minutes
-    private func removeTabs() {
-        let minutes: Double = 30
-        let cutoff = Date().addingTimeInterval(-(minutes * 60))
-        let countStart = tabs.count
-        tabs = tabs.filter { _, tab in
-            tab.lastUpdated >= cutoff || tab.id == self.focusedTabId
-        }
-
-        let countEnd = tabs.count
-        AnalyticsManager.shared
-            .customEvent(
-                view: .NotchView,
-                primary: .removeTabs,
-                secondary: "\(countStart - countEnd)",
-                sev: .info
-            )
     }
 }
 
@@ -1026,7 +1024,7 @@ extension NotchView {
                 sev: .info
             )
 
-            logger.info("Added Agent: \(name)")
+            logger.debug("Added Agent: \(name)")
 
             if connectRc.isEmpty {
                 let tools = await mcpManager.getTools(clientName: name, filter: [])
@@ -1140,7 +1138,7 @@ extension NotchView {
                     )
                     allClientTools[clientName] = tools
 
-                    logger.info("Refreshed \(clientName) with \(tools.count) tools")
+                    logger.debug("Refreshed \(clientName) with \(tools.count) tools")
                     logger.debug("\(clientName) Capabilities: \(tools)")
                 }
             }

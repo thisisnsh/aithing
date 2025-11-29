@@ -45,7 +45,7 @@ final class HistoryStore: ObservableObject {
         async -> Bool
     {
         guard JSONSerialization.isValidJSONObject(history) else {
-            self.logger.debug("store invalid JSON for id=\(id)")
+            self.logger.error("store invalid JSON for id=\(id)")
             return false
         }
         guard let container = await container(for: id) else { return false }
@@ -212,7 +212,7 @@ final class HistoryStore: ObservableObject {
     /// Remove a single id (deletes its SQLite file).
     @discardableResult
     func delete(id: String) async -> Bool {
-        logger.info("Delete history id: \(id)")
+        logger.debug("Delete history id: \(id)")
         guard let container = containers[id] else {
             // Not loaded yet, just delete files
             Self.deleteStoreFiles(for: id)
@@ -221,7 +221,7 @@ final class HistoryStore: ObservableObject {
         let psc = container.persistentStoreCoordinator
         if let store = psc.persistentStores.first {
             do { try psc.remove(store) } catch {
-                self.logger.debug("remove store failed: \(error)")
+                self.logger.error("remove store failed: \(error)")
             }
         }
         Self.deleteStoreFiles(for: id)
@@ -253,7 +253,7 @@ final class HistoryStore: ObservableObject {
 
         let url = Self.storeURL(for: id)
         do { try Self.ensureParentDir(url) } catch {
-            self.logger.debug("ensure dir failed: \(error)")
+            self.logger.error("ensure dir failed: \(error)")
             return nil
         }
 
@@ -274,7 +274,7 @@ final class HistoryStore: ObservableObject {
             }
         }
         if !ok {
-            self.logger.debug("load store failed for id=\(id): \(String(describing: loadError))")
+            self.logger.error("load store failed for id=\(id): \(String(describing: loadError))")
             return nil
         }
         c.viewContext.automaticallyMergesChangesFromParent = true

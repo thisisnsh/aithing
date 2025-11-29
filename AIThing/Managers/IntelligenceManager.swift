@@ -7,7 +7,26 @@
 
 import Foundation
 
-@MainActor
+actor StreamAccumulator {
+    private var response: String = ""
+    private var toolInput: String = ""
+    private var lastUpdateTime: Date = .distantPast
+
+    func appendResponse(_ text: String) { response += text }
+    func snapshotResponse() -> String { response }
+
+    func appendToolInput(_ partial: String) { toolInput += partial }
+    func snapshotToolInput() -> String { toolInput }
+
+    func shouldThrottle(now: Date, interval: TimeInterval) -> Bool {
+        if now.timeIntervalSince(lastUpdateTime) >= interval {
+            lastUpdateTime = now
+            return true
+        }
+        return false
+    }
+}
+
 func callModel(
     tabId: String,
     query: String,
@@ -26,7 +45,7 @@ func callModel(
     setHistory: (History?) -> Void,
     setIsThinking: (Bool) -> Void,
     getModelInput: () -> [[String: Any]],
-    appendModelInput: @escaping ([String: Any]) -> Void,
+    setModelInput: @escaping ([[String: Any]]) -> Void,
     getModelOutput: () -> String,
     setModelOutput: (String) -> Void,
     animateOutput: (String) async -> Void,
@@ -42,120 +61,45 @@ func callModel(
     automationManager: AutomationManager,
     aiThingMcpManager: AIThingMCPManager
 ) async -> Bool {
-    // Close the query after tab removal
+    var modelInput = getModelInput()
+    var modelOutput = getModelOutput()
+    var modelTools = getUsedTools()
+    let model = getModel()
+    let modelContext = getModelContext()
+
     if isTabRemoved() {
+        logger.debug("Stop the query after tab removal")
         return true
     }
 
     setIsThinking(true)
+    // MARK: Check Firebase Configs
     if !query.isEmpty {
-        // Check if version is breakglassed
-        if await firestoreManager.getBreakglass() {
-            setIsThinking(false)
-            await animateOutput(
-                """
-                This version has been disabled due to an internal issue.
-                We apologize for the inconvenience. The app will be re-enabled soon.
-                For updates, please contact help@aithing.dev.
-                """
-            )
-            AnalyticsManager.shared
-                .customEvent(
-                    view: .IntelligenceManager,
-                    primary: .query,
-                    secondary: "breakglass",
-                    sev: .error
-                )
-            return false
-        }
-
-        // Check if version is expired
-        if await firestoreManager.getExpired() {
-            setIsThinking(false)
-            await animateOutput(
-                """
-                Current version has expired.
-                Please [upgrade the version](https://aithing.dev/upgrade) to enjoy new features and continue using the app.
-                """
-            )
-            AnalyticsManager.shared
-                .customEvent(
-                    view: .IntelligenceManager,
-                    primary: .query,
-                    secondary: "version expired",
-                    sev: .error
-                )
-            return false
-        }
-    }
-
-    var appUser: AppUser?
-    switch loginManager.authState {
-    case .signedIn(let user):
-        if let profile = await firestoreManager.getProfile(user: user) {
-            // Check if profile is blocked
-            if profile.blocked {
-                setIsThinking(false)
-                await animateOutput(
-                    """
-                    You access has been disabled. We apologize for the inconvenience.
-                    Please contact help@aithing.dev for more information.
-                    """,
-                )
-                AnalyticsManager.shared
-                    .customEvent(
-                        view: .IntelligenceManager,
-                        primary: .query,
-                        secondary: "version blocked",
-                        sev: .error
-                    )
-                return false
-            }
-
-            appUser = user
-            AnalyticsManager.shared.setUserId(user.uid)
-            break
-        }
-
-        setIsThinking(false)
-        await animateOutput(
-            """
-            Something went wrong. Please log out and log in again. 
-            Report issue at help@aithing.dev
-            """,
+        let rc = await validateFirebaseConfigs(
+            firestoreManager: firestoreManager,
+            setIsThinking: setIsThinking,
+            animateOutput: animateOutput
         )
-        AnalyticsManager.shared
-            .customEvent(
-                view: .IntelligenceManager,
-                primary: .query,
-                secondary: "profile error",
-                sev: .error
-            )
-        return false
-    default:
-        setIsThinking(false)
-        await animateOutput("**Please log in from Settings to continue.**")
-        AnalyticsManager.shared
-            .customEvent(
-                view: .IntelligenceManager,
-                primary: .query,
-                secondary: "no login",
-                sev: .error
-            )
-        return false
+        if !rc { return rc }
     }
 
-    // Load tools
-    var modelTools = getUsedTools()
-    // Refresh tools
+    // MARK: Check Login
+    let appUser: AppUser? = await validateLogin(
+        loginManager: loginManager,
+        firestoreManager: firestoreManager,
+        setIsThinking: setIsThinking,
+        animateOutput: animateOutput
+    )
+    if appUser == nil { return false }
+
+    // MARK: Refresh Tools
     if modelTools.isEmpty {
         modelTools = getAllClientTools().values.flatMap { $0 }
         if query.starts(with: "@aithing") {
-            modelTools.append(contentsOf: aiThingMcpManager.getTools())
+            let aiThingTools = await MainActor.run { aiThingMcpManager.getTools() }
+            modelTools.append(contentsOf: aiThingTools)
         }
     }
-
-    let model = getModel()
 
     AnalyticsManager.shared.customEvent(
         view: .IntelligenceManager,
@@ -163,13 +107,12 @@ func callModel(
         secondary: "model",
         sev: .info
     )
-    AnalyticsManager.shared
-        .customEvent(
-            view: .IntelligenceManager,
-            primary: .count,
-            secondary: "\(modelTools.count)",
-            sev: .info
-        )
+    AnalyticsManager.shared.customEvent(
+        view: .IntelligenceManager,
+        primary: .count,
+        secondary: "\(modelTools.count)",
+        sev: .info
+    )
 
     guard let apiKey = getAnthropicAPIKey(), !apiKey.isEmpty
     else {
@@ -192,7 +135,6 @@ func callModel(
     }
 
     guard let url = URL(string: "https://api.anthropic.com/v1/messages") else { return true }
-
     var request = URLRequest(url: url)
     request.httpMethod = "POST"
     request.setValue("application/json", forHTTPHeaderField: "Content-Type")
@@ -201,9 +143,8 @@ func callModel(
     request.setValue("extended-cache-ttl-2025-04-11", forHTTPHeaderField: "anthropic-beta")
 
     var fileCount = 0
-    // query is non-empty only on first parse
-    let modelContext = getModelContext()
     if !query.isEmpty {
+        // MARK: Put files only once when query is non-empty
         for i in 0..<modelContext.count {
             switch modelContext[i] {
             case .image(let name, _, let base64):
@@ -214,7 +155,7 @@ func callModel(
                     secondary: "use image",
                     sev: .info
                 )
-                appendModelInput(
+                modelInput.append(
                     [
                         "role": "file",
                         "content": [
@@ -226,7 +167,7 @@ func callModel(
                         ],
                     ]
                 )
-                appendModelInput(
+                modelInput.append(
                     [
                         "role": "user",
                         "content": [
@@ -243,7 +184,7 @@ func callModel(
                 )
             case .pdf(let name, _, _, let base64s):
                 fileCount += 1
-                appendModelInput(
+                modelInput.append(
                     [
                         "role": "file",
                         "content": [
@@ -272,7 +213,7 @@ func callModel(
                     secondary: "use pdf",
                     sev: .info
                 )
-                appendModelInput(
+                modelInput.append(
                     [
                         "role": "user",
                         "content": content,
@@ -286,7 +227,7 @@ func callModel(
                     secondary: "use text",
                     sev: .info
                 )
-                appendModelInput(
+                modelInput.append(
                     [
                         "role": "file",
                         "content": [
@@ -298,7 +239,7 @@ func callModel(
                         ],
                     ]
                 )
-                appendModelInput(
+                modelInput.append(
                     [
                         "role": "user",
                         "content": [
@@ -312,6 +253,7 @@ func callModel(
             }
         }
 
+        // MARK: Put selected text only once when query is non-empty
         if !getSelectedText().isEmpty, getSelectionEnabled() {
             AnalyticsManager.shared.customEvent(
                 view: .IntelligenceManager,
@@ -319,7 +261,7 @@ func callModel(
                 secondary: "use selection",
                 sev: .info
             )
-            appendModelInput(
+            modelInput.append(
                 [
                     "role": "file",
                     "content": [
@@ -331,7 +273,7 @@ func callModel(
                     ],
                 ]
             )
-            appendModelInput(
+            modelInput.append(
                 [
                     "role": "user",
                     "content": [
@@ -345,6 +287,7 @@ func callModel(
             setSelectedText("")
         }
 
+        // MARK: Get application context as screenshot
         if let appContext = getAppContextBase64() {
             AnalyticsManager.shared.customEvent(
                 view: .IntelligenceManager,
@@ -352,7 +295,7 @@ func callModel(
                 secondary: "use application context",
                 sev: .info
             )
-            appendModelInput(
+            modelInput.append(
                 [
                     "role": "file",
                     "content": [
@@ -365,7 +308,7 @@ func callModel(
                     ],
                 ]
             )
-            appendModelInput(
+            modelInput.append(
                 [
                     "role": "user",
                     "content": [
@@ -382,7 +325,8 @@ func callModel(
             )
         }
 
-        appendModelInput(
+        // MARK: Add actual query
+        modelInput.append(
             [
                 "role": "user",
                 "content": [
@@ -397,20 +341,16 @@ func callModel(
         "stream": true,
         "max_tokens": getOutputToken(),
         "temperature": 0.7,
-        "messages": addCacheBlock(
-            input: nonUsageFileMessages(from: getModelInput()),
-            isMessage: true
-        ),
+        "messages": addCacheBlock(input: nonUsageFileMessages(from: modelInput), isMessage: true),
         "tools": addCacheBlock(input: modelTools),
         "system": addCacheBlock(input: buildSystemMessages()),
-
     ]
 
-    logger.debug("api key: \(apiKey)")
-    logger.debug("model: \(model)")
-    logger.debug("max tokens: \(getOutputToken())")
-    logger.debug("messages: \(String(describing: redactDataKeys(in: body["messages"] ?? [:])))")
-    logger.debug("tools count: \((body["tools"] as? [[String: Any]])?.count ?? 0)")
+    logger.debug("API Key: \(apiKey)")
+    logger.debug("Model: \(model)")
+    logger.debug("Max Tokens: \(getOutputToken())")
+    logger.debug("Messages: \(String(describing: redactDataKeys(in: body["messages"] ?? [:])))")
+    logger.debug("Tools Count: \((body["tools"] as? [[String: Any]])?.count ?? 0)")
 
     request.httpBody = try? JSONSerialization.data(withJSONObject: body)
 
@@ -475,7 +415,7 @@ func callModel(
                     filesAttached: fileCount
                 )
                 await firestoreManager.incrementUsage(user: appUser, usage: usage)
-                appendModelInput([
+                modelInput.append([
                     "role": "usage",
                     "content": [
                         [
@@ -502,7 +442,7 @@ func callModel(
         clearModelContext()
 
         // Store the current input
-        await storeHistory(tabId, getModelInput())
+        await storeHistory(tabId, modelInput)
 
         // Fetch and display it
         setModelOutput("")
@@ -513,13 +453,9 @@ func callModel(
         // Update sidebar
         Task { await updateHistoryList() }
 
-        var finalResponse = ""
-        var finalToolUseInputParam = ""
+        let accumulator = StreamAccumulator()
         var finalToolUseId = ""
         var finalToolUseName = ""
-
-        // Model output update throttle
-        var lastUpdateTime: Date = .distantPast
         let throttleInterval: TimeInterval = 0.05
 
         for try await line in stream.lines {
@@ -560,31 +496,28 @@ func callModel(
                     switch delta_type {
                     case "text_delta":
                         guard let text = delta["text"] as? String else { continue }
-                        finalResponse += String(text)
+                        await accumulator.appendResponse(String(text))
                         let now = Date()
-                        if now.timeIntervalSince(lastUpdateTime) >= throttleInterval {
-                            lastUpdateTime = now
-                            await MainActor.run {
-                                logger.debug("main actor text_delta \(finalResponse)")
-                                setModelOutput(finalResponse + " " + shimmerPlaceholder())
-                            }
+                        if await accumulator.shouldThrottle(now: now, interval: throttleInterval) {
+                            modelOutput = await accumulator.snapshotResponse()
+                            logger.debug("text_delta \(modelOutput)")
+                            setModelOutput(modelOutput + " " + shimmerPlaceholder())
                         }
 
                     case "input_json_delta":
                         guard let partial_json = delta["partial_json"] as? String else {
                             continue
                         }
-                        finalToolUseInputParam += partial_json
+                        await accumulator.appendToolInput(partial_json)
 
                     default:
                         continue
                     }
 
                 case "content_block_stop":
-                    await MainActor.run {
-                        logger.debug("main actor content_block_stop \(finalResponse)")
-                        setModelOutput(finalResponse)
-                    }
+                    modelOutput = await accumulator.snapshotResponse()
+                    logger.debug("content_block_stop \(modelOutput)")
+                    setModelOutput(modelOutput)
 
                 case "message_delta":
                     guard let delta = json["delta"] as? [String: Any] else { continue }
@@ -592,21 +525,18 @@ func callModel(
                         continue
                     }
 
-                    if !getModelOutput().isEmpty {
-                        appendModelInput([
+                    if !modelOutput.isEmpty {
+                        modelInput.append([
                             "role": "assistant",
-                            "content": [["text": getModelOutput(), "type": "text"]],
+                            "content": [["text": modelOutput, "type": "text"]],
                         ])
 
-                        await storeHistory(tabId, getModelInput())
-
                         var tabTitle = getTabTitle()
-                        let response = getModelOutput()
                         Task {
                             if !query.isEmpty && (tabTitle.isEmpty || tabTitle == "New Chat") {
                                 tabTitle = await createTitle(
                                     query: query,
-                                    response: response,
+                                    response: modelOutput,
                                     model: model,
                                     apiKey: apiKey,
                                     tabTitle: tabTitle,
@@ -621,7 +551,7 @@ func callModel(
                     case "max_tokens":
                         continue
                     case "tool_use":
-                        appendModelInput([
+                        modelInput.append([
                             "role": "assistant",
                             "content": [
                                 [
@@ -629,7 +559,7 @@ func callModel(
                                     "id": finalToolUseId,
                                     "name": finalToolUseName,
                                     "input": parseJSONStringToDictObject(
-                                        finalToolUseInputParam
+                                        await accumulator.snapshotToolInput()
                                     ),
                                 ]
                             ],
@@ -638,9 +568,9 @@ func callModel(
                         setToolCall("Calling tool: \(finalToolUseName)...")
                         var result: [[String: Any]] = []
                         if finalToolUseName.starts(with: "aithing_") {
-                            result = aiThingMcpManager.callTools(
+                            result = await aiThingMcpManager.callTools(
                                 name: finalToolUseName,
-                                input: finalToolUseInputParam,
+                                input: await accumulator.snapshotToolInput(),
                                 automationManager: automationManager
                             )
                         } else {
@@ -650,7 +580,7 @@ func callModel(
                                     allClientTools: getAllClientTools()
                                 ),
                                 name: finalToolUseName,
-                                input: finalToolUseInputParam
+                                input: await accumulator.snapshotToolInput()
                             )
                         }
 
@@ -663,10 +593,13 @@ func callModel(
                             )
 
                         logger.debug("Call tool: \(finalToolUseName)")
-                        logger.debug("Tool input: \(finalToolUseInputParam)")
+                        let snapshotToolInput = await accumulator.snapshotToolInput()
+                        logger.debug(
+                            "Tool input: \(parseJSONStringToDictObject(snapshotToolInput))"
+                        )
                         logger.debug("Tool output: \(result)")
 
-                        appendModelInput([
+                        modelInput.append([
                             "role": "user",
                             "content": [
                                 [
@@ -677,7 +610,7 @@ func callModel(
                             ],
                         ])
 
-                        let rc = await callModel(
+                        return await callModel(
                             tabId: tabId,
                             query: "",
                             isTabRemoved: isTabRemoved,
@@ -694,9 +627,9 @@ func callModel(
                             storeHistory: storeHistory,
                             setHistory: setHistory,
                             setIsThinking: setIsThinking,
-                            getModelInput: getModelInput,
-                            appendModelInput: appendModelInput,
-                            getModelOutput: getModelOutput,
+                            getModelInput: { modelInput },
+                            setModelInput: setModelInput,
+                            getModelOutput: { modelOutput },
                             setModelOutput: setModelOutput,
                             animateOutput: animateOutput,
                             getAllClientTools: getAllClientTools,
@@ -712,7 +645,6 @@ func callModel(
                             automationManager: automationManager,
                             aiThingMcpManager: aiThingMcpManager
                         )
-                        return rc
 
                     default:
                         continue
@@ -738,8 +670,128 @@ func callModel(
 
         return false
     }
+
+    await storeHistory(tabId, modelInput)
     setIsThinking(false)
+    setModelInput(modelInput)
+    setModelOutput("")
+    setDisplayQuery("")
+    setToolCall("")
+    setHistory(await getHistory(tabId))
+    Task { await updateHistoryList() }
+
     return true
+}
+
+private func validateFirebaseConfigs(
+    firestoreManager: FirestoreManager,
+    setIsThinking: (Bool) -> Void,
+    animateOutput: (String) async -> Void
+) async -> Bool {
+    // Check if version is breakglassed
+    if await firestoreManager.getBreakglass() {
+        setIsThinking(false)
+        await animateOutput(
+            """
+            This version has been disabled due to an internal issue.
+            We apologize for the inconvenience. The app will be re-enabled soon.
+            For updates, please contact help@aithing.dev.
+            """
+        )
+        AnalyticsManager.shared
+            .customEvent(
+                view: .IntelligenceManager,
+                primary: .query,
+                secondary: "breakglass",
+                sev: .error
+            )
+        return false
+    }
+
+    // Check if version is expired
+    if await firestoreManager.getExpired() {
+        setIsThinking(false)
+        await animateOutput(
+            """
+            Current version has expired.
+            Please [upgrade the version](https://aithing.dev/upgrade) to enjoy new features and continue using the app.
+            """
+        )
+        AnalyticsManager.shared
+            .customEvent(
+                view: .IntelligenceManager,
+                primary: .query,
+                secondary: "version expired",
+                sev: .error
+            )
+        return false
+    }
+    return true
+}
+
+private func validateLogin(
+    loginManager: LoginManager,
+    firestoreManager: FirestoreManager,
+    setIsThinking: (Bool) -> Void,
+    animateOutput: (String) async -> Void
+) async -> AppUser? {
+    let authState = await MainActor.run { loginManager.authState }
+
+    switch authState {
+    case .signedIn(let user):
+        if let profile = await firestoreManager.getProfile(user: user) {
+            // Check if profile is blocked
+            if profile.blocked {
+                setIsThinking(false)
+                await animateOutput(
+                    """
+                    You access has been disabled. We apologize for the inconvenience.
+                    Please contact help@aithing.dev for more information.
+                    """,
+                )
+                AnalyticsManager.shared
+                    .customEvent(
+                        view: .IntelligenceManager,
+                        primary: .query,
+                        secondary: "version blocked",
+                        sev: .error
+                    )
+                return nil
+            }
+
+            AnalyticsManager.shared.setUserId(user.uid)
+            return user
+        }
+
+        setIsThinking(false)
+        await animateOutput(
+            """
+            Something went wrong. Please log out and log in again. 
+            Report issue at help@aithing.dev
+            """,
+        )
+        AnalyticsManager.shared
+            .customEvent(
+                view: .IntelligenceManager,
+                primary: .query,
+                secondary: "profile error",
+                sev: .error
+            )
+        return nil
+    default:
+        setIsThinking(false)
+        await animateOutput(
+            "Please log in from Settings to continue. [How?](https://aithing.dev/getstarted)"
+        )
+        AnalyticsManager.shared
+            .customEvent(
+                view: .IntelligenceManager,
+                primary: .query,
+                secondary: "no login",
+                sev: .error
+            )
+        return nil
+    }
 }
 
 private func buildQuery(query: String) -> String {

@@ -30,6 +30,11 @@ enum ChatPayload: Equatable {
         default: return false
         }
     }
+
+    var isText: Bool {
+        if case .text = self { return true }
+        return false
+    }
 }
 
 struct ChatItem: Identifiable, Equatable {
@@ -43,6 +48,7 @@ struct ChatView: View {
     @Binding var query: String
     @Binding var modelOutput: String
     @Binding var toolCall: String
+    @Binding var showRefreshButton: Bool
 
     @State private var items: [ChatItem] = []
 
@@ -115,6 +121,11 @@ struct ChatView: View {
     private func setHistory(_ history: History?) {
         guard let history = history else { return }
         items = parseHistory(history.history)
+
+        if let last = items.last {
+            showRefreshButton = last.role != .assistant || !last.payload.isText
+        }
+
         AnalyticsManager.shared
             .customEvent(
                 view: .ChatView,

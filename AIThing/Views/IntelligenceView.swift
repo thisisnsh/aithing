@@ -37,7 +37,6 @@ struct IntelligenceView: View {
     let expand: () -> Void
     let isTabShowing: () -> Bool
     let isTabRemoved: () -> Bool
-    let setTabActive: (Bool) -> Void
     let updateHistoryList: () async -> Void
     let getHistory: (String) async -> History?
     let storeHistory: (String, [[String: Any]]) async -> Void
@@ -50,21 +49,24 @@ struct IntelligenceView: View {
     let cornerRadius: CGFloat = 24
     let aiThingMcpManager = AIThingMCPManager()
 
+    @State private var refreshTimer = Timer.publish(every: 5, on: .main, in: .common).autoconnect()
+
+    private let baseHeight: CGFloat = 24
     @State private var tabTitle: String = ""
     @State private var inputHeight: CGFloat = 24
-    private let baseHeight: CGFloat = 24
     @State private var textSize: CGFloat = 14
     @FocusState private var isFocused: Bool
 
     @State private var isThinking: Bool = false
-    @State private var isThinkingBlinking: Bool = false
+    @State private var isThinkingText: LocalizedStringKey = "Responding..."
 
     @State private var history: History?
     @State private var modelInput: [[String: Any]] = []
     @State private var modelOutput: String = ""
     @State private var modelContext: [DroppedContent] = []
     @State private var toolCall: String = ""
-
+    @State private var showRefreshButton = false
+    
     @State private var query: String = ""
     @State private var displayQuery: String = ""
     @State private var selectedText: String = ""
@@ -96,199 +98,255 @@ struct IntelligenceView: View {
     @State private var hoverGreen: Bool = false
 
     var body: some View {
-        if isTabShowing() {
-            ZStack {
-                if #available(macOS 26.0, *) {
-                    RoundedRectangle(cornerRadius: cornerRadius)
-                        .glassEffect(
-                            .regular.tint(.black),
-                            in: RoundedRectangle(cornerRadius: cornerRadius)
-                        )
-                } else {
-                    RoundedRectangle(cornerRadius: cornerRadius)
-                        .fill(.white.opacity(0.1))
-                }
-
-                ZStack(alignment: .bottom) {
-                    VStack {
-                        TitleView()
-                            .padding(8)
-
-                        Divider()
-                            .padding(.horizontal, -8)
-
-                        ZStack {
-                            ChatView(
-                                history: $history,
-                                query: $displayQuery,
-                                modelOutput: $modelOutput,
-                                toolCall: $toolCall,
+        Group {
+            if isTabShowing() {
+                ZStack {
+                    if #available(macOS 26.0, *) {
+                        RoundedRectangle(cornerRadius: cornerRadius)
+                            .glassEffect(
+                                .regular.tint(.black),
+                                in: RoundedRectangle(cornerRadius: cornerRadius)
                             )
-                            .padding(.vertical, -8)
-                            .padding(.bottom, -24)
-                            .frame(
-                                maxWidth: .infinity,
-                                maxHeight: .infinity,
-                                alignment: .topLeading
-                            )
+                    } else {
+                        RoundedRectangle(cornerRadius: cornerRadius)
+                            .fill(.white.opacity(0.1))
+                    }
 
-                            if !isThinking, !showMcpTools, showSavedQueries {
-                                SaveQueryView()
+                    ZStack(alignment: .bottom) {
+                        VStack {
+                            TitleView()
+                                .padding(8)
+
+                            Divider()
+                                .padding(.horizontal, -8)
+
+                            ZStack {
+                                ChatView(
+                                    history: $history,
+                                    query: $displayQuery,
+                                    modelOutput: $modelOutput,
+                                    toolCall: $toolCall,
+                                    showRefreshButton: $showRefreshButton,
+                                )
+                                .padding(.vertical, -8)
+                                .padding(.bottom, -24)
+                                .frame(
+                                    maxWidth: .infinity,
+                                    maxHeight: .infinity,
+                                    alignment: .topLeading
+                                )
+
+                                if !isThinking, !showMcpTools, showSavedQueries {
+                                    SaveQueryView()
+                                        .frame(
+                                            maxWidth: .infinity,
+                                            maxHeight: .infinity,
+                                            alignment: .bottomLeading
+                                        )
+                                        .padding(.leading, -8)
+                                }
+
+                                if showRefreshButton {
+                                    HoverableTabButton(
+                                        title: "Refresh",
+                                        isActive: true,
+                                        action: {
+                                            // Left empty intentionally. Users can click this for their satisfaction.
+                                            // Actual refresh happens every 5 seconds when the conversation is stuck.
+                                        },
+                                        deleteAction: {},
+                                        image: "arrow.clockwise",
+                                        isDeletable: false,
+                                        isExpanded: true,
+                                        fixedSize: true,
+                                        cornerRadius: 16
+                                    )
                                     .frame(
                                         maxWidth: .infinity,
                                         maxHeight: .infinity,
-                                        alignment: .bottomLeading
+                                        alignment: .bottom
                                     )
-                                    .padding(.leading, -8)
+                                    .onAppear {
+                                        if modelOutput.isEmpty {
+                                            isThinking = true
+                                            isThinkingText = "Responding in Background..."
+                                        }
+                                    }
+                                    .onDisappear {
+                                        isThinking = false
+                                        isThinkingText = "Responding..."
+                                    }
+                                }
+                            }
+                            .padding(.bottom, showMcpTools ? -200 : 0)
+
+                            Spacer()
+
+                            if #available(macOS 26.0, *) {
+                                InputView()
+                                    .clipShape(RoundedRectangle(cornerRadius: cornerRadius - 4))
+                                    .glassEffect(
+                                        .regular.interactive(),
+                                        in: RoundedRectangle(cornerRadius: cornerRadius - 4)
+                                    )
+                            } else {
+                                InputView()
+                                    .background(.white.opacity(0.1))
+                                    .clipShape(RoundedRectangle(cornerRadius: cornerRadius - 4))
+                            }
+
+                        }
+
+                        ContextView()
+                            .clipShape(
+                                VariableRoundedRectangle(
+                                    topLeft: 0,
+                                    topRight: 0,
+                                    bottomLeft: cornerRadius,
+                                    bottomRight: cornerRadius
+                                )
+                            )
+                    }
+                    .padding(8)
+                    .onChange(of: currentTabId) { _ in
+                        Task {
+                            if currentTabId == tabId {
+                                await setUnseen(tabId, false)
                             }
                         }
-                        .padding(.bottom, showMcpTools ? -200 : 0)
-
-                        Spacer()
-
-                        if #available(macOS 26.0, *) {
-                            InputView()
-                                .clipShape(RoundedRectangle(cornerRadius: cornerRadius - 4))
-                                .glassEffect(
-                                    .regular.interactive(),
-                                    in: RoundedRectangle(cornerRadius: cornerRadius - 4)
-                                )
+                    }
+                    .onChange(of: vm.selectedText) { text in
+                        if isTabShowing() {
+                            selectedText = text
+                        }
+                    }
+                    .onChange(of: selectionEnabled) { _ in
+                        if selectionEnabled {
+                            startSelectionPoll()
                         } else {
-                            InputView()
-                                .background(.white.opacity(0.1))
-                                .clipShape(RoundedRectangle(cornerRadius: cornerRadius - 4))
-                        }
-
-                    }
-
-                    ContextView()
-                        .clipShape(
-                            VariableRoundedRectangle(
-                                topLeft: 0,
-                                topRight: 0,
-                                bottomLeft: cornerRadius,
-                                bottomRight: cornerRadius
-                            )
-                        )
-                }
-                .id(tabId)
-                .padding(8)
-                .onAppear {
-                    AnalyticsManager.shared.screenView(screenName: .IntelligenceView)
-                    selectionEnabled = vm.selectionPolling
-
-                    let apiKey = getAnthropicAPIKey() ?? ""
-                    var loggedIn = false
-                    switch loginManager.authState {
-                    case .signedIn(let user):
-                        loggedIn = true
-                        AnalyticsManager.shared.setUserId(user.uid)
-                    default:
-                        loggedIn = false
-                        AnalyticsManager.shared.setUserId(nil)
-                    }
-
-                    if !loggedIn && apiKey.isEmpty {
-                        getStarted =
-                            "Get started by following the instructions [here](https://aithing.dev/getstarted)."
-                        showGetStarted = true
-                    } else if apiKey.isEmpty {
-                        getStarted =
-                            "Please add the API key to continue. [How?](https://aithing.dev/getstarted)"
-                        showGetStarted = true
-                    } else if !loggedIn {
-                        getStarted =
-                            "Please log in to continue. [How?](https://aithing.dev/getstarted)"
-                        showGetStarted = true
-                    } else {
-                        getStarted = ""
-                        showGetStarted = false
-                    }
-                }
-                .task {
-                    await setUnseen(tabId, false)
-
-                    history = await getHistory(tabId)
-                    if let history = history {
-                        modelInput = history.history
-                        tabTitle = history.title ?? "New Chat"
-                    } else {
-                        tabTitle = "New Chat"
-                        let greeting = await firestoreManager.getGreeting() ?? ""
-                        if !greeting.isEmpty { modelOutput = greeting }
-                    }
-
-                    let notification = await firestoreManager.getNotification() ?? ""
-                    if !notification.isEmpty { modelOutput = notification }
-
-                    if modelInput.isEmpty { showSavedQueries = true }
-                }
-                .onChange(of: currentTabId) { _ in
-                    Task {
-                        if currentTabId == tabId {
-                            await setUnseen(tabId, false)
+                            stopSelectionPoll()
                         }
                     }
-                }
-                .onChange(of: vm.selectedText) { text in
-                    if isTabShowing() {
-                        selectedText = text
-                    }
-                }
-                .onChange(of: selectionEnabled) { _ in
-                    if selectionEnabled {
-                        startSelectionPoll()
-                    } else {
-                        stopSelectionPoll()
-                    }
-                }
-                .onReceive(screenshotMonitor.$latestScreenshot) { ss in
-                    if isTabShowing() {
-                        if let ss = ss {
+                    .onReceive(refreshTimer) { _ in
+                        if isTabShowing() {
                             Task {
-                                let results = await DragFileManager.processPaths([ss.url])
+                                let newHistory = await getHistory(tabId)
+
+                                // Exit on no change
+                                if newHistory?.history.count ?? 0 == history?.history.count ?? 0 {
+                                    return
+                                }
+
+                                history = newHistory
+
+                                if let history = history {
+                                    modelInput = history.history
+                                    tabTitle = history.title ?? "New Chat"
+                                }
+
+                                await setUnseen(tabId, false)
+                                logger.info("Refresh Window \(tabId)")
+                            }
+                        }
+                    }
+                    .onReceive(screenshotMonitor.$latestScreenshot) { ss in
+                        if isTabShowing() {
+                            if let ss = ss {
+                                Task {
+                                    let results = await DragFileManager.processPaths([ss.url])
+                                    for r in results {
+                                        modelContext.insert(r, at: 0)
+                                        AnalyticsManager.shared
+                                            .customEvent(
+                                                view: .IntelligenceView,
+                                                primary: .file,
+                                                secondary: "screenshot",
+                                                sev: .info
+                                            )
+                                    }
+                                    screenshotMonitor.updateKnownFiles()
+                                }
+                            }
+                        }
+                    }
+                    .dropDestination(for: URL.self) { urls, _ in
+                        if isTabShowing() {
+                            Task {
+                                let results = await DragFileManager.processPaths(urls)
                                 for r in results {
                                     modelContext.insert(r, at: 0)
                                     AnalyticsManager.shared
                                         .customEvent(
                                             view: .IntelligenceView,
                                             primary: .file,
-                                            secondary: "screenshot",
+                                            secondary: "add",
                                             sev: .info
                                         )
                                 }
-                                screenshotMonitor.updateKnownFiles()
                             }
                         }
-                    }
-                }
-                .dropDestination(for: URL.self) { urls, _ in
-                    if isTabShowing() {
-                        Task {
-                            let results = await DragFileManager.processPaths(urls)
-                            for r in results {
-                                modelContext.insert(r, at: 0)
-                                AnalyticsManager.shared
-                                    .customEvent(
-                                        view: .IntelligenceView,
-                                        primary: .file,
-                                        secondary: "add",
-                                        sev: .info
-                                    )
-                            }
-                        }
-                    }
 
-                    // You can’t know yet, so just return true to accept the drop.
-                    return true
-                } isTargeted: {
-                    if isTabShowing() {
-                        isDropping = $0
+                        // You can’t know yet, so just return true to accept the drop.
+                        return true
+                    } isTargeted: {
+                        if isTabShowing() {
+                            isDropping = $0
+                        }
                     }
                 }
+            } else {
+                Color.clear.frame(width: 0, height: 0)
             }
-        } else {
-            Color.clear.frame(width: 0, height: 0)
+        }
+        .onAppear {            
+            AnalyticsManager.shared.screenView(screenName: .IntelligenceView)
+            selectionEnabled = vm.selectionPolling
+
+            let apiKey = getAnthropicAPIKey() ?? ""
+            var loggedIn = false
+            switch loginManager.authState {
+            case .signedIn(let user):
+                loggedIn = true
+                AnalyticsManager.shared.setUserId(user.uid)
+            default:
+                loggedIn = false
+                AnalyticsManager.shared.setUserId(nil)
+            }
+
+            if !loggedIn && apiKey.isEmpty {
+                getStarted =
+                    "Get started by following the instructions [here](https://aithing.dev/getstarted)."
+                showGetStarted = true
+            } else if apiKey.isEmpty {
+                getStarted =
+                    "Please add the API key to continue. [How?](https://aithing.dev/getstarted)"
+                showGetStarted = true
+            } else if !loggedIn {
+                getStarted =
+                    "Please log in to continue. [How?](https://aithing.dev/getstarted)"
+                showGetStarted = true
+            } else {
+                getStarted = ""
+                showGetStarted = false
+            }
+        }
+        .task {            
+            await setUnseen(tabId, false)
+
+            history = await getHistory(tabId)
+            if let history = history {
+                modelInput = history.history
+                tabTitle = history.title ?? "New Chat"
+            } else {
+                tabTitle = "New Chat"
+                let greeting = await firestoreManager.getGreeting() ?? ""
+                if !greeting.isEmpty { modelOutput = greeting }
+            }
+
+            let notification = await firestoreManager.getNotification() ?? ""
+            if !notification.isEmpty { modelOutput = notification }
+
+            if modelInput.isEmpty { showSavedQueries = true }
         }
     }
 
@@ -401,11 +459,7 @@ struct IntelligenceView: View {
                             seenCommands: .constant([]),
                             size: $textSize,
                             isNotEditable: isThinking || isDropping,
-                            onCommit: {
-                                Task {
-                                    await handleQuery()
-                                }
-                            },
+                            onCommit: { Task { await handleQuery() } },
                             onCommandTyped: { _ in },
                             onCommandRemoved: { _ in },
                             onDebouncedTextChange: { _ in },
@@ -426,7 +480,7 @@ struct IntelligenceView: View {
                             showGetStarted
                                 ? getStarted
                                 : (isThinking
-                                    ? "Responding..."
+                                    ? isThinkingText
                                     : (isDropping
                                         ? "Drop files here..." : "Ask anything on AI Thing..."))
                         )
@@ -799,8 +853,6 @@ extension IntelligenceView {
             sev: .info
         )
 
-        setTabActive(true)
-
         let result = await callModel(
             tabId: tabId,
             query: trimmed,
@@ -822,7 +874,7 @@ extension IntelligenceView {
             setHistory: { history = $0 },
             setIsThinking: { isThinking = $0 },
             getModelInput: { return modelInput },
-            appendModelInput: { modelInput.append($0) },
+            setModelInput: { modelInput = $0 },
             getModelOutput: { return modelOutput },
             setModelOutput: { modelOutput = $0 },
             animateOutput: { await self.animateOutput($0) },
@@ -838,13 +890,12 @@ extension IntelligenceView {
             automationManager: automationManager,
             aiThingMcpManager: aiThingMcpManager
         )
-
-        // Close the query after tab removal
+        
         if isTabRemoved() {
+            logger.debug("Stop the query after tab removal")
             return
         }
 
-        setTabActive(false)
         if !isTabShowing() {
             await setUnseen(tabId, true)
         } else {
@@ -867,16 +918,13 @@ extension IntelligenceView {
         vm.selectedText = ""
         selectedText = ""
         selectionEnabled = false
-
+        displayQuery = ""
+        toolCall = ""
         isThinking = false
-        history = await getHistory(tabId)
+
         if result {
             modelOutput = ""
         }
-        displayQuery = ""
-        toolCall = ""
-
-        await updateHistoryList()
     }
 
     private func getAppContextBase64(appName: String, windowName: String?) -> AppContextModel? {

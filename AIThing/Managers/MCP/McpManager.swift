@@ -144,7 +144,7 @@ class MCPManager: ObservableObject {
             try process.run()
 
             try await client.connect(transport: transport)
-            logger.info("Connected to MCP server for \(clientName)")
+            logger.debug("Connected to MCP server for \(clientName)")
             AnalyticsManager.shared.customEvent(
                 view: .McpManager,
                 primary: .mcpStdio,
@@ -220,7 +220,7 @@ class MCPManager: ObservableObject {
                 try await client.connect(transport: transport)
             }
 
-            logger.info("Connected to MCP server for \(clientName)")
+            logger.debug("Connected to MCP server for \(clientName)")
             AnalyticsManager.shared.customEvent(
                 view: .McpManager,
                 primary: .mcpHTTP,
