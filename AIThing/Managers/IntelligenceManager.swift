@@ -406,10 +406,10 @@ func callModel(
 
     ]
 
-    // logger.debug("api key: \(apiKey)")
+    logger.debug("api key: \(apiKey)")
     logger.debug("model: \(model)")
     logger.debug("max tokens: \(getOutputToken())")
-    // logger.debug("messages: \(String(describing: body["messages"]))")
+    logger.debug("messages: \(String(describing: redactDataKeys(in: body["messages"] ?? [:])))")
     logger.debug("tools count: \((body["tools"] as? [[String: Any]])?.count ?? 0)")
 
     request.httpBody = try? JSONSerialization.data(withJSONObject: body)
@@ -565,6 +565,7 @@ func callModel(
                         if now.timeIntervalSince(lastUpdateTime) >= throttleInterval {
                             lastUpdateTime = now
                             await MainActor.run {
+                                logger.debug("main actor text_delta \(finalResponse)")
                                 setModelOutput(finalResponse + " " + shimmerPlaceholder())
                             }
                         }
@@ -581,6 +582,7 @@ func callModel(
 
                 case "content_block_stop":
                     await MainActor.run {
+                        logger.debug("main actor content_block_stop \(finalResponse)")
                         setModelOutput(finalResponse)
                     }
 
@@ -949,4 +951,27 @@ private func createTitle(
 
 private func shimmerPlaceholder() -> String {
     return "▌"  // or use "…" or a flashing cursor symbol
+}
+
+private func redactDataKeys(in object: Any) -> Any {
+    // If it's a dictionary
+    if let dict = object as? [String: Any] {
+        var newDict: [String: Any] = [:]
+        for (key, value) in dict {
+            if key.lowercased() == "data" {
+                newDict[key] = "<base64>"
+            } else {
+                newDict[key] = redactDataKeys(in: value)
+            }
+        }
+        return newDict
+    }
+
+    // If it's an array, process recursively
+    if let array = object as? [Any] {
+        return array.map { redactDataKeys(in: $0) }
+    }
+
+    // Otherwise return unchanged
+    return object
 }

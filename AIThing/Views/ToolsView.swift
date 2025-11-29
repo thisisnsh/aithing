@@ -75,7 +75,7 @@ struct ToolsView: View {
                                                     Text("\(description)")
                                                         .font(
                                                             .system(
-                                                                size: 12,
+                                                                size: 10,
                                                                 weight: .medium,
                                                                 design: .monospaced
                                                             )
@@ -84,13 +84,13 @@ struct ToolsView: View {
                                                         .padding(.top, 2)
                                                     Spacer()
                                                 }
-                                                .padding(.horizontal, 16)
+                                                .padding(.leading, 16)
                                             }
                                         } label: {
                                             Text("\(formatNameString(name))")
                                                 .font(
                                                     .system(
-                                                        size: 12,
+                                                        size: 10,
                                                         weight: .medium,
                                                         design: .monospaced
                                                     )
@@ -104,7 +104,7 @@ struct ToolsView: View {
                             }
                         } label: {
                             Text(heading)
-                                .font(.system(size: 14, weight: .medium))
+                                .font(.system(size: 12, weight: .medium))
                                 .bold()
                                 .padding(.leading, 4)
                         }

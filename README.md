@@ -4,13 +4,16 @@
 
 
 Saturday Morning
+- Fix Performance
+- 2 Histories Tabs in Sidebar (active and inactive)
 - Email people about the new release who emailed you before
-
 
 Sunday 
 - Google Server Stats
 - Google Server Rate Limit
 
+Monday
+- Reddit Release
 
 Later
 - RAG 
