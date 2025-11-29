@@ -61,6 +61,8 @@ func callModel(
     automationManager: AutomationManager,
     aiThingMcpManager: AIThingMCPManager
 ) async -> Bool {
+    let startTime = Date()
+
     var modelInput = getModelInput()
     var modelOutput = getModelOutput()
     var modelTools = getUsedTools()
@@ -73,6 +75,7 @@ func callModel(
     }
 
     setIsThinking(true)
+
     // MARK: Check Firebase Configs
     if !query.isEmpty {
         let rc = await validateFirebaseConfigs(
@@ -133,6 +136,16 @@ func callModel(
             )
         return false
     }
+
+    let runTimeValidations = Date().timeIntervalSince(startTime) * 1000
+    logger.info("runTimeValidations \(runTimeValidations) ms")
+    AnalyticsManager.shared
+        .customEvent(
+            view: .IntelligenceManager,
+            primary: .runTimeValidations,
+            secondary: "\(runTimeValidations)ms",
+            sev: .info
+        )
 
     guard let url = URL(string: "https://api.anthropic.com/v1/messages") else { return true }
     var request = URLRequest(url: url)
@@ -336,6 +349,16 @@ func callModel(
         )
     }
 
+    let runTimeContextBuild = Date().timeIntervalSince(startTime) * 1000
+    logger.info("runTimeContextBuild \(runTimeContextBuild) ms")
+    AnalyticsManager.shared
+        .customEvent(
+            view: .IntelligenceManager,
+            primary: .runTimeContextBuild,
+            secondary: "\(runTimeContextBuild)ms",
+            sev: .info
+        )
+
     let body: [String: Any] = [
         "model": model,
         "stream": true,
@@ -356,6 +379,16 @@ func callModel(
 
     do {
         let (stream, response) = try await URLSession.shared.bytes(for: request)
+
+        let runTimeResponse = Date().timeIntervalSince(startTime) * 1000
+        logger.info("runTimeResponse \(runTimeResponse) ms")
+        AnalyticsManager.shared
+            .customEvent(
+                view: .IntelligenceManager,
+                primary: .runTimeResponse,
+                secondary: "\(runTimeResponse)ms",
+                sev: .info
+            )
 
         guard let httpResponse = response as? HTTPURLResponse
         else {
@@ -458,6 +491,16 @@ func callModel(
         var finalToolUseName = ""
         let throttleInterval: TimeInterval = 0.05
 
+        let runTimeResponseParseStart = Date().timeIntervalSince(startTime) * 1000
+        logger.info("runTimeResponseParseStart \(runTimeResponseParseStart) ms")
+        AnalyticsManager.shared
+            .customEvent(
+                view: .IntelligenceManager,
+                primary: .runTimeResponseParseStart,
+                secondary: "\(runTimeResponseParseStart)ms",
+                sev: .info
+            )
+
         for try await line in stream.lines {
             if line.starts(with: "data: ") {
                 let jsonString = line.replacingOccurrences(of: "data: ", with: "")
@@ -495,6 +538,7 @@ func callModel(
 
                     switch delta_type {
                     case "text_delta":
+                        let startTimeDelta = Date()
                         guard let text = delta["text"] as? String else { continue }
                         await accumulator.appendResponse(String(text))
                         let now = Date()
@@ -503,6 +547,15 @@ func callModel(
                             logger.debug("text_delta \(modelOutput)")
                             setModelOutput(modelOutput + " " + shimmerPlaceholder())
                         }
+                        let runTimeDelta = Date().timeIntervalSince(startTimeDelta) * 1000
+                        logger.info("runTimeDelta \(runTimeDelta) ms")
+                        AnalyticsManager.shared
+                            .customEvent(
+                                view: .IntelligenceManager,
+                                primary: .runTimeDelta,
+                                secondary: "\(runTimeDelta)ms",
+                                sev: .info
+                            )
 
                     case "input_json_delta":
                         guard let partial_json = delta["partial_json"] as? String else {
@@ -534,6 +587,7 @@ func callModel(
                         var tabTitle = getTabTitle()
                         Task {
                             if !query.isEmpty && (tabTitle.isEmpty || tabTitle == "New Chat") {
+                                let startTimeTitle = Date()
                                 tabTitle = await createTitle(
                                     query: query,
                                     response: modelOutput,
@@ -543,6 +597,15 @@ func callModel(
                                     firestoreManager: firestoreManager
                                 )
                                 await setTabTitle(tabTitle)
+                                let runTimeTitle = Date().timeIntervalSince(startTimeTitle) * 1000
+                                logger.info("runTimeTitle \(runTimeTitle) ms")
+                                AnalyticsManager.shared
+                                    .customEvent(
+                                        view: .IntelligenceManager,
+                                        primary: .runTimeTitle,
+                                        secondary: "\(runTimeTitle)ms",
+                                        sev: .info
+                                    )
                             }
                         }
                     }
@@ -551,6 +614,7 @@ func callModel(
                     case "max_tokens":
                         continue
                     case "tool_use":
+                        let startTimeTools = Date()
                         modelInput.append([
                             "role": "assistant",
                             "content": [
@@ -592,7 +656,7 @@ func callModel(
                                 sev: .info
                             )
 
-                        logger.debug("Call tool: \(finalToolUseName)")
+                        logger.debug("Called tool: \(finalToolUseName)")
                         let snapshotToolInput = await accumulator.snapshotToolInput()
                         logger.debug(
                             "Tool input: \(parseJSONStringToDictObject(snapshotToolInput))"
@@ -609,6 +673,16 @@ func callModel(
                                 ]
                             ],
                         ])
+
+                        let runTimeTools = Date().timeIntervalSince(startTimeTools) * 1000
+                        logger.info("runTimeTools \(runTimeTools) ms")
+                        AnalyticsManager.shared
+                            .customEvent(
+                                view: .IntelligenceManager,
+                                primary: .runTimeTools,
+                                secondary: "\(runTimeTools)ms",
+                                sev: .info
+                            )
 
                         return await callModel(
                             tabId: tabId,
@@ -655,6 +729,16 @@ func callModel(
                 }
             }
         }
+
+        let runTimeResponseParseEnd = Date().timeIntervalSince(startTime) * 1000
+        logger.info("runTimeResponseParseEnd \(runTimeResponseParseEnd) ms")
+        AnalyticsManager.shared
+            .customEvent(
+                view: .IntelligenceManager,
+                primary: .runTimeResponseParseEnd,
+                secondary: "\(runTimeResponseParseEnd)ms",
+                sev: .info
+            )
     } catch {
         setIsThinking(false)
         setModelOutput(
@@ -679,6 +763,16 @@ func callModel(
     setToolCall("")
     setHistory(await getHistory(tabId))
     Task { await updateHistoryList() }
+
+    let runTimeEnd = Date().timeIntervalSince(startTime) * 1000
+    logger.info("runTimeEnd \(runTimeEnd) ms")
+    AnalyticsManager.shared
+        .customEvent(
+            view: .IntelligenceManager,
+            primary: .runTimeEnd,
+            secondary: "\(runTimeEnd)ms",
+            sev: .info
+        )
 
     return true
 }

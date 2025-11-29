@@ -122,6 +122,16 @@ final class AnalyticsManager {
         case createTab
         case activateTab
         case removeTabs
+
+        case runTimeEnd
+        case runTimeResponseParseEnd
+        case runTimeResponseParseStart
+        case runTimeResponse
+        case runTimeContextBuild
+        case runTimeValidations
+        case runTimeDelta
+        case runTimeTitle
+        case runTimeTools
     }
 
     enum CustomEventSev: String {

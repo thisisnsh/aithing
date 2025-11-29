@@ -3,13 +3,9 @@
 ------------------------ 
 
 
-Saturday 
-- Find time between handle query call and api response
+Sunday
 - Dynamic App Context Width
-- Release 2.0.8
-
-
-Sunday 
+- Release 2.0.8 
 - Google Server Stats
 - Google Server Rate Limit
 
