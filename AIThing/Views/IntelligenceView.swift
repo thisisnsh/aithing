@@ -147,7 +147,7 @@ struct IntelligenceView: View {
                                         .padding(.leading, -8)
                                 }
 
-                                if showRefreshButton {
+                                if modelOutput.isEmpty, showRefreshButton {
                                     HoverableTabButton(
                                         title: "Refresh",
                                         isActive: true,

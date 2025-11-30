@@ -478,10 +478,10 @@ func callModel(
         await storeHistory(tabId, modelInput)
 
         // Fetch and display it
+        setHistory(await getHistory(tabId))
         setModelOutput("")
         setDisplayQuery("")
         setToolCall("")
-        setHistory(await getHistory(tabId))
 
         // Update sidebar
         Task { await updateHistoryList() }
@@ -744,12 +744,15 @@ func callModel(
     }
 
     await storeHistory(tabId, modelInput)
+
     setIsThinking(false)
     setModelInput(modelInput)
+
+    setHistory(await getHistory(tabId))
     setModelOutput("")
     setDisplayQuery("")
     setToolCall("")
-    setHistory(await getHistory(tabId))
+
     Task { await updateHistoryList() }
 
     let runTimeEnd = Date().timeIntervalSince(startTime) * 1000

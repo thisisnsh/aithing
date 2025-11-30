@@ -61,33 +61,30 @@ struct ChatView: View {
     @Binding var showRefreshButton: Bool
     @Binding var isThinking: Bool
 
-    @State private var showFullChat: Bool = false
-    @State private var showFullChatButton: Bool = false
+    @State private var scrollToBottom: Bool = true
+    @State private var hasMoreChats: Bool = false
     @State private var items: [ChatItem] = []
-    @State private var lastSeenIndex = 0
-
-    private var maxShownItems = 10
+    @State private var bottomPadding: CGFloat = 64
 
     var body: some View {
         ScrollViewReader { proxy in
             ScrollView(.vertical, showsIndicators: false) {
                 VStack(alignment: .leading, spacing: 12) {
-                    if showFullChatButton, !isThinking {
-                        HoverableTabButton(
-                            title: "Load Old Messages",
-                            isActive: false,
-                            action: {
-                                showFullChatButton = false
-                                showFullChat = true
-                                setHistory(history)
-                            },
-                            deleteAction: {},
-                            image: "ellipsis.message",
-                            isDeletable: false,
-                            isExpanded: true,
-                            fixedSize: true,
-                            cornerRadius: 16
-                        )
+                    if hasMoreChats {
+                        Button {
+                            scrollToBottom = false
+                            setHistory(history, showFullChat: true)
+                        } label: {
+                            Text("Load Old Messages")
+                                .font(.system(size: 10, weight: .medium, design: .monospaced))
+                                .foregroundStyle(.white)
+                                .padding(4)
+                                .padding(.horizontal, 8)
+                                .background(.white.opacity(0.1))
+                                .clipShape(RoundedRectangle(cornerRadius: 16))
+                        }
+                        .buttonStyle(.plain)
+                        .frame(maxWidth: .infinity, alignment: .center)
                     }
 
                     ForEach(items) { item in
@@ -122,11 +119,15 @@ struct ChatView: View {
                     }
 
                     Divider().opacity(0).id("Bottom")
-                        .padding(.bottom, 64)
+                        .padding(.bottom, bottomPadding)
                 }
                 .padding(.vertical, 16)
                 .onChange(of: items.count) { _ in
-                    scrollToBottom(proxy)
+                    if scrollToBottom {
+                        scrollToBottom(proxy)
+                    } else {
+                        scrollToBottom = true
+                    }
                 }
                 .onChange(of: modelOutput) { _ in
                     scrollToBottom(proxy)
@@ -152,40 +153,34 @@ struct ChatView: View {
         proxy.scrollTo("Bottom", anchor: .bottom)
     }
 
-    private func setHistory(_ history: History?) {
+    private func setHistory(_ history: History?, showFullChat: Bool = false) {
         guard let history = history else { return }
 
         items = parseHistory(history.history)
         items = items.filter { $0.role != .usage }
 
-        logger.info("Chat Elements Count: \(items.count)")
+        logger.debug("Chat total count: \(items.count)")
 
-        if !query.isEmpty || !modelOutput.isEmpty || !toolCall.isEmpty {
-            showFullChatButton = false
-            showFullChat = false
-            
-            if lastSeenIndex < items.count {
-                items = Array(items[lastSeenIndex...])
-                logger.info("Show Chat from \(lastSeenIndex + 1)")
-            } else if let last = items.last {
-                logger.info("Showing Last Element")
-                items = [last]
-            } else {
-                logger.info("Showing No Elements")
-                items = []
-            }
+        if showFullChat {
+            logger.debug("Showing full chat")
+            hasMoreChats = false
         } else {
-            showFullChatButton = true
-            
-            lastSeenIndex = items.count
-            logger.info("Show Chat from \(1). Updated Position to \(lastSeenIndex + 1)")
-            
-            if !showFullChat {
-                items = items.suffix(maxShownItems)
+            // Show last 2 conversations
+            // From second last occurance of role = .user and payload.isText in items
+
+            let indices = items.indices.filter {
+                items[$0].role == .user && items[$0].payload.isText
             }
+
+            let secondLastIndex = indices.count >= 2 ? indices[indices.count - 2] : 0
+            logger.debug("Showing chat from \(secondLastIndex + 1) position")
+            items = Array(items[secondLastIndex...])
+
+            hasMoreChats = secondLastIndex > 0
+            scrollToBottom = true
         }
 
-        if let last = items.last {
+        if let last = items.last, modelOutput.isEmpty {
             showRefreshButton = last.role != .assistant || !last.payload.isText
         }
 
