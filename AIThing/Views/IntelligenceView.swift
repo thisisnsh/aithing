@@ -49,7 +49,7 @@ struct IntelligenceView: View {
     let cornerRadius: CGFloat = 24
     let aiThingMcpManager = AIThingMCPManager()
 
-    @State private var refreshTimer = Timer.publish(every: 5, on: .main, in: .common).autoconnect()
+    @State private var refreshTimer = Timer.publish(every: 2, on: .main, in: .common).autoconnect()
 
     private let baseHeight: CGFloat = 24
     @State private var tabTitle: String = ""
@@ -127,6 +127,7 @@ struct IntelligenceView: View {
                                     modelOutput: $modelOutput,
                                     toolCall: $toolCall,
                                     showRefreshButton: $showRefreshButton,
+                                    isThinking: $isThinking
                                 )
                                 .padding(.vertical, -8)
                                 .padding(.bottom, -24)
@@ -152,7 +153,6 @@ struct IntelligenceView: View {
                                         isActive: true,
                                         action: {
                                             // Left empty intentionally. Users can click this for their satisfaction.
-                                            // Actual refresh happens every 5 seconds when the conversation is stuck.
                                         },
                                         deleteAction: {},
                                         image: "arrow.clockwise",
@@ -517,7 +517,7 @@ struct IntelligenceView: View {
         ScrollView(.horizontal, showsIndicators: false) {
             HStack(alignment: .bottom) {
                 if modelContext.count > 0, !isThinking {
-                    ForEach(modelContext.indices.reversed(), id: \.self) { index in
+                    ForEach(modelContext.indices, id: \.self) { index in
                         let context = modelContext[index]
                         switch context {
                         case .image(let name, let image, _):

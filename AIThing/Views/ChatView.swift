@@ -38,9 +38,19 @@ enum ChatPayload: Equatable {
 }
 
 struct ChatItem: Identifiable, Equatable {
-    let id = UUID()
+    let id: UUID
     let role: ChatRole
-    let payload: ChatPayload
+    var payload: ChatPayload
+
+    init(id: UUID = UUID(), role: ChatRole, payload: ChatPayload) {
+        self.id = id
+        self.role = role
+        self.payload = payload
+    }
+
+    static func == (lhs: ChatItem, rhs: ChatItem) -> Bool {
+        lhs.id == rhs.id && lhs.role == rhs.role && lhs.payload == rhs.payload
+    }
 }
 
 struct ChatView: View {
@@ -49,20 +59,43 @@ struct ChatView: View {
     @Binding var modelOutput: String
     @Binding var toolCall: String
     @Binding var showRefreshButton: Bool
+    @Binding var isThinking: Bool
 
+    @State private var showFullChat: Bool = false
+    @State private var showFullChatButton: Bool = false
     @State private var items: [ChatItem] = []
+    @State private var lastSeenIndex = 0
+
+    private var maxShownItems = 10
 
     var body: some View {
         ScrollViewReader { proxy in
             ScrollView(.vertical, showsIndicators: false) {
                 VStack(alignment: .leading, spacing: 12) {
-                    ForEach(items) { item in
-                        if item.role != .usage {
-                            ChatBubble(item: item)
-                                .id(item.id)
-                        }
+                    if showFullChatButton, !isThinking {
+                        HoverableTabButton(
+                            title: "Load Old Messages",
+                            isActive: false,
+                            action: {
+                                showFullChatButton = false
+                                showFullChat = true
+                                setHistory(history)
+                            },
+                            deleteAction: {},
+                            image: "ellipsis.message",
+                            isDeletable: false,
+                            isExpanded: true,
+                            fixedSize: true,
+                            cornerRadius: 16
+                        )
                     }
 
+                    ForEach(items) { item in
+                        ChatBubble(item: item)
+                            .id(item.id)
+                    }
+
+                    // Temporary Query
                     if !query.isEmpty {
                         ChatBubble(
                             item: ChatItem(
@@ -82,6 +115,7 @@ struct ChatView: View {
                         )
                     }
 
+                    // Temporary Tool Calling...
                     if !toolCall.isEmpty {
                         ExtraBubble(text: toolCall)
                             .frame(maxWidth: 500, alignment: .leading)
@@ -120,7 +154,36 @@ struct ChatView: View {
 
     private func setHistory(_ history: History?) {
         guard let history = history else { return }
+
         items = parseHistory(history.history)
+        items = items.filter { $0.role != .usage }
+
+        logger.info("Chat Elements Count: \(items.count)")
+
+        if !query.isEmpty || !modelOutput.isEmpty || !toolCall.isEmpty {
+            showFullChatButton = false
+            showFullChat = false
+            
+            if lastSeenIndex < items.count {
+                items = Array(items[lastSeenIndex...])
+                logger.info("Show Chat from \(lastSeenIndex + 1)")
+            } else if let last = items.last {
+                logger.info("Showing Last Element")
+                items = [last]
+            } else {
+                logger.info("Showing No Elements")
+                items = []
+            }
+        } else {
+            showFullChatButton = true
+            
+            lastSeenIndex = items.count
+            logger.info("Show Chat from \(1). Updated Position to \(lastSeenIndex + 1)")
+            
+            if !showFullChat {
+                items = items.suffix(maxShownItems)
+            }
+        }
 
         if let last = items.last {
             showRefreshButton = last.role != .assistant || !last.payload.isText
@@ -136,8 +199,12 @@ struct ChatView: View {
     }
 }
 
-struct ChatBubble: View {
+struct ChatBubble: View, Equatable {
     let item: ChatItem
+
+    static func == (lhs: ChatBubble, rhs: ChatBubble) -> Bool {
+        lhs.item == rhs.item
+    }
 
     var body: some View {
         HStack {

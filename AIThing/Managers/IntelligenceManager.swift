@@ -138,7 +138,7 @@ func callModel(
     }
 
     let runTimeValidations = Date().timeIntervalSince(startTime) * 1000
-    logger.info("runTimeValidations \(runTimeValidations) ms")
+    logger.debug("runTimeValidations \(runTimeValidations) ms")
     AnalyticsManager.shared
         .customEvent(
             view: .IntelligenceManager,
@@ -350,7 +350,7 @@ func callModel(
     }
 
     let runTimeContextBuild = Date().timeIntervalSince(startTime) * 1000
-    logger.info("runTimeContextBuild \(runTimeContextBuild) ms")
+    logger.debug("runTimeContextBuild \(runTimeContextBuild) ms")
     AnalyticsManager.shared
         .customEvent(
             view: .IntelligenceManager,
@@ -381,7 +381,7 @@ func callModel(
         let (stream, response) = try await URLSession.shared.bytes(for: request)
 
         let runTimeResponse = Date().timeIntervalSince(startTime) * 1000
-        logger.info("runTimeResponse \(runTimeResponse) ms")
+        logger.debug("runTimeResponse \(runTimeResponse) ms")
         AnalyticsManager.shared
             .customEvent(
                 view: .IntelligenceManager,
@@ -492,7 +492,7 @@ func callModel(
         let throttleInterval: TimeInterval = 0.05
 
         let runTimeResponseParseStart = Date().timeIntervalSince(startTime) * 1000
-        logger.info("runTimeResponseParseStart \(runTimeResponseParseStart) ms")
+        logger.debug("runTimeResponseParseStart \(runTimeResponseParseStart) ms")
         AnalyticsManager.shared
             .customEvent(
                 view: .IntelligenceManager,
@@ -538,24 +538,13 @@ func callModel(
 
                     switch delta_type {
                     case "text_delta":
-                        let startTimeDelta = Date()
                         guard let text = delta["text"] as? String else { continue }
                         await accumulator.appendResponse(String(text))
-                        let now = Date()
-                        if await accumulator.shouldThrottle(now: now, interval: throttleInterval) {
+                        if await accumulator.shouldThrottle(now: Date(), interval: throttleInterval)
+                        {
                             modelOutput = await accumulator.snapshotResponse()
-                            logger.debug("text_delta \(modelOutput)")
                             setModelOutput(modelOutput + " " + shimmerPlaceholder())
                         }
-                        let runTimeDelta = Date().timeIntervalSince(startTimeDelta) * 1000
-                        logger.info("runTimeDelta \(runTimeDelta) ms")
-                        AnalyticsManager.shared
-                            .customEvent(
-                                view: .IntelligenceManager,
-                                primary: .runTimeDelta,
-                                secondary: "\(runTimeDelta)ms",
-                                sev: .info
-                            )
 
                     case "input_json_delta":
                         guard let partial_json = delta["partial_json"] as? String else {
@@ -569,7 +558,6 @@ func callModel(
 
                 case "content_block_stop":
                     modelOutput = await accumulator.snapshotResponse()
-                    logger.debug("content_block_stop \(modelOutput)")
                     setModelOutput(modelOutput)
 
                 case "message_delta":
@@ -598,7 +586,7 @@ func callModel(
                                 )
                                 await setTabTitle(tabTitle)
                                 let runTimeTitle = Date().timeIntervalSince(startTimeTitle) * 1000
-                                logger.info("runTimeTitle \(runTimeTitle) ms")
+                                logger.debug("runTimeTitle \(runTimeTitle) ms")
                                 AnalyticsManager.shared
                                     .customEvent(
                                         view: .IntelligenceManager,
@@ -675,7 +663,7 @@ func callModel(
                         ])
 
                         let runTimeTools = Date().timeIntervalSince(startTimeTools) * 1000
-                        logger.info("runTimeTools \(runTimeTools) ms")
+                        logger.debug("runTimeTools \(runTimeTools) ms")
                         AnalyticsManager.shared
                             .customEvent(
                                 view: .IntelligenceManager,
@@ -731,7 +719,7 @@ func callModel(
         }
 
         let runTimeResponseParseEnd = Date().timeIntervalSince(startTime) * 1000
-        logger.info("runTimeResponseParseEnd \(runTimeResponseParseEnd) ms")
+        logger.debug("runTimeResponseParseEnd \(runTimeResponseParseEnd) ms")
         AnalyticsManager.shared
             .customEvent(
                 view: .IntelligenceManager,
@@ -765,7 +753,7 @@ func callModel(
     Task { await updateHistoryList() }
 
     let runTimeEnd = Date().timeIntervalSince(startTime) * 1000
-    logger.info("runTimeEnd \(runTimeEnd) ms")
+    logger.debug("runTimeEnd \(runTimeEnd) ms")
     AnalyticsManager.shared
         .customEvent(
             view: .IntelligenceManager,
