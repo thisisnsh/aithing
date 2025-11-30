@@ -3,10 +3,6 @@
 ------------------------ 
 
 
-Saturday 
-- Release 2.0.8 
-
-
 Sunday
 - Google Server Stats
 - Google Server Rate Limit
