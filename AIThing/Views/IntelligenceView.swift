@@ -88,7 +88,6 @@ struct IntelligenceView: View {
     @State private var selectedAppIcon: NSImage? = nil
     @State private var selectedAppName = ""
     @State private var selectedWindowName = ""
-    @State private var appContextWidth: CGFloat = 180
 
     @State private var toast = ""
 
@@ -96,6 +95,27 @@ struct IntelligenceView: View {
     @State private var hoverRed: Bool = false
     @State private var hoverYellow: Bool = false
     @State private var hoverGreen: Bool = false
+
+    private var appContextText: String {
+        if appContextEnabled {
+            "\(selectedAppName)\(selectedWindowName.count > 0 ? ": " : "")\(selectedWindowName)"
+        } else if !appContext.appName.isEmpty {
+            "\(appContext.appName)\(appContext.windowName.count > 0 ? ": " : "")\(appContext.windowName)"
+        } else {
+            ""
+        }
+    }
+
+    private var appContextWidth: CGFloat {
+        if appContextText.isEmpty {
+            return 0
+        }
+        let font = NSFont.systemFont(ofSize: 10, weight: .medium)
+        let attributes: [NSAttributedString.Key: Any] = [.font: font]
+        let size = (appContextText as NSString).size(withAttributes: attributes)
+        let paddingAndIcon: CGFloat = 8 + 16 + 12 + 8
+        return min(size.width + paddingAndIcon, 200)
+    }
 
     var body: some View {
         Group {
@@ -584,125 +604,119 @@ struct IntelligenceView: View {
                 }
 
                 // App Context Button
-                VStack {
-                    if hoverAppContextEnabled, appContextEnabled {
-                        let image = getAppContextBase64(
-                            appName: selectedAppName,
-                            windowName: selectedWindowName
-                        )
-                        if let image = image {
-                            Image(nsImage: image.screenshot)
-                                .resizable()
-                                .aspectRatio(contentMode: .fit)
-                                .cornerRadius(cornerRadius - 8)
-                                .overlay {
-                                    RoundedRectangle(
-                                        cornerRadius: cornerRadius - 8,
-                                        style: .continuous
-                                    )
-                                    .stroke(Color.white, lineWidth: 2)
-                                }
-                                .frame(width: appContextWidth)
-                        } else {
-                            Color.clear
-                                .onAppear {
-                                    appContext.refresh()
-                                    appContextEnabled = false
-                                    selectedAppIcon = nil
-                                    selectedAppName = ""
-                                    selectedWindowName = ""
-                                }
-                                .frame(width: appContextWidth)
-                        }
-                    }
-
-                    if appContextEnabled {
-                        Button(action: {
-                            appContextEnabled = false
-                            selectedAppIcon = nil
-                            selectedAppName = ""
-                            selectedWindowName = ""
-                        }) {
-                            HStack {
-                                if let icon = selectedAppIcon {
-                                    Image(nsImage: icon)
-                                        .resizable()
-                                        .frame(width: 12, height: 12)
-                                }
-
-                                Text(
-                                    "\(selectedAppName)\(selectedWindowName.count > 0 ? ": " : "")\(selectedWindowName)"
-                                )
-                                .lineLimit(1)
-                                .font(.system(size: 10, weight: .medium))
-                                .foregroundStyle(.black)
-
-                                Spacer()
+                if appContextWidth > 0 {
+                    VStack {
+                        if hoverAppContextEnabled, appContextEnabled {
+                            let image = getAppContextBase64(
+                                appName: selectedAppName,
+                                windowName: selectedWindowName
+                            )
+                            if let image = image {
+                                Image(nsImage: image.screenshot)
+                                    .resizable()
+                                    .aspectRatio(contentMode: .fit)
+                                    .cornerRadius(cornerRadius - 8)
+                                    .overlay {
+                                        RoundedRectangle(
+                                            cornerRadius: cornerRadius - 8,
+                                            style: .continuous
+                                        )
+                                        .stroke(Color.white, lineWidth: 2)
+                                    }
+                                    .frame(width: appContextWidth)
+                            } else {
+                                Color.clear
+                                    .onAppear {
+                                        appContext.refresh()
+                                        appContextEnabled = false
+                                        selectedAppIcon = nil
+                                        selectedAppName = ""
+                                        selectedWindowName = ""
+                                    }
+                                    .frame(width: appContextWidth)
                             }
-                            .padding(8)
-                            .padding(.horizontal, 4)
-                            .frame(width: appContextWidth)
-                            .background(.white)
-                            .clipShape(RoundedRectangle(cornerRadius: cornerRadius))
                         }
-                        .buttonStyle(PlainButtonStyle())
-                        .onHover { hoverAppContextEnabled = $0 }
-                    } else {
-                        if !appContext.appName.isEmpty {
-                            Button(action: {
-                                selectedAppIcon = appContext.appIcon
-                                selectedAppName = appContext.appName
-                                selectedWindowName = appContext.windowName
-                                appContextEnabled = true
 
-                                // Check if screenshot can not be taken disable the button
-                                if getAppContextBase64(
-                                    appName: selectedAppName,
-                                    windowName: selectedWindowName
-                                ) == nil {
-                                    appContext.refresh()
-                                    appContextEnabled = false
-                                    selectedAppIcon = nil
-                                    selectedAppName = ""
-                                    selectedWindowName = ""
-                                }
+                        if appContextEnabled {
+                            Button(action: {
+                                appContextEnabled = false
+                                selectedAppIcon = nil
+                                selectedAppName = ""
+                                selectedWindowName = ""
                             }) {
-                                HStack {
-                                    if let icon = appContext.appIcon {
+                                HStack(alignment: .bottom) {
+                                    if let icon = selectedAppIcon {
                                         Image(nsImage: icon)
                                             .resizable()
                                             .frame(width: 12, height: 12)
                                     }
 
-                                    Text(
-                                        "\(appContext.appName)\(appContext.windowName.count > 0 ? ": " : "")\(appContext.windowName)"
-                                    )
-                                    .lineLimit(1)
-                                    .font(.system(size: 10, weight: .medium))
-                                    .foregroundStyle(
-                                        hoverAppContextEnabled || appContextEnabled
-                                            ? .black : .white
-                                    )
-
-                                    Spacer()
+                                    Text(appContextText)
+                                        .lineLimit(1)
+                                        .font(.system(size: 10, weight: .medium))
+                                        .foregroundStyle(.black)
                                 }
                                 .padding(8)
                                 .padding(.horizontal, 4)
                                 .frame(width: appContextWidth)
-                                .background(
-                                    hoverAppContextEnabled || appContextEnabled
-                                        ? .white : .white.opacity(0.1)
-                                )
+                                .background(.white)
                                 .clipShape(RoundedRectangle(cornerRadius: cornerRadius))
                             }
                             .buttonStyle(PlainButtonStyle())
-                            .onHover {
-                                hoverAppContextEnabled = $0
-                                if !appContextEnabled {
-                                    appContext.refresh()
-                                    selectedAppIcon = nil
-                                    selectedAppName = ""
-                                    selectedWindowName = ""
+                            .onHover { hoverAppContextEnabled = $0 }
+                        } else {
+                            if !appContext.appName.isEmpty {
+                                Button(action: {
+                                    selectedAppIcon = appContext.appIcon
+                                    selectedAppName = appContext.appName
+                                    selectedWindowName = appContext.windowName
+                                    appContextEnabled = true
+
+                                    // Check if screenshot can not be taken disable the button
+                                    if getAppContextBase64(
+                                        appName: selectedAppName,
+                                        windowName: selectedWindowName
+                                    ) == nil {
+                                        appContext.refresh()
+                                        appContextEnabled = false
+                                        selectedAppIcon = nil
+                                        selectedAppName = ""
+                                        selectedWindowName = ""
+                                    }
+                                }) {
+                                    HStack(alignment: .bottom) {
+                                        if let icon = appContext.appIcon {
+                                            Image(nsImage: icon)
+                                                .resizable()
+                                                .frame(width: 12, height: 12)
+                                        }
+
+                                        Text(appContextText)
+                                            .lineLimit(1)
+                                            .font(.system(size: 10, weight: .medium))
+                                            .foregroundStyle(
+                                                hoverAppContextEnabled || appContextEnabled
+                                                    ? .black : .white
+                                            )
+                                    }
+                                    .padding(8)
+                                    .padding(.horizontal, 4)
+                                    .frame(width: appContextWidth)
+                                    .background(
+                                        hoverAppContextEnabled || appContextEnabled
+                                            ? .white : .white.opacity(0.1)
+                                    )
+                                    .clipShape(RoundedRectangle(cornerRadius: cornerRadius))
+                                }
+                                .buttonStyle(PlainButtonStyle())
+                                .onHover {
+                                    hoverAppContextEnabled = $0
+                                    if !appContextEnabled {
+                                        appContext.refresh()
+                                        selectedAppIcon = nil
+                                        selectedAppName = ""
+                                        selectedWindowName = ""
+                                    }
                                 }
                             }
                         }
@@ -742,7 +756,7 @@ struct IntelligenceView: View {
                             sev: .info
                         )
                 }) {
-                    HStack {
+                    HStack(alignment: .bottom) {
                         Image(
                             systemName: selectionEnabled
                                 ? "text.redaction" : "text.alignleft"
@@ -774,7 +788,7 @@ struct IntelligenceView: View {
                     Button(action: {
                         showMcpTools.toggle()
                     }) {
-                        HStack {
+                        HStack(alignment: .bottom) {
                             Image(
                                 systemName: showMcpTools
                                     ? "hammer.fill" : "hammer"

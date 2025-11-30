@@ -19,7 +19,7 @@ struct FilePill: View {
     @State private var onHover = false
 
     var body: some View {
-        HStack {
+        HStack(alignment: .bottom) {
             Image(systemName: systemName)
                 .resizable()
                 .frame(width: 12, height: 12)

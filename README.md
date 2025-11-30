@@ -4,7 +4,6 @@
 
 
 Saturday 
-- Dynamic App Context Width
 - Release 2.0.8 
 
 
