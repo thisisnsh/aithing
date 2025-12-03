@@ -13,35 +13,6 @@ import os
 /// Global logger instance for the application.
 let logger = Logger(subsystem: "com.thisisnsh.mac.AIThing", category: "Utility")
 
-// MARK: - Environment Variables
-
-/// Provides access to environment variables from the .env file.
-struct Env {
-    /// Gets an environment variable value from the .env file.
-    ///
-    /// Reads the .env file from the app bundle and parses key-value pairs.
-    ///
-    /// - Parameter key: The environment variable key to look up
-    /// - Returns: The value if found, nil otherwise
-    static func get(_ key: String) -> String? {
-        guard let url = Bundle.main.url(forResource: ".env", withExtension: nil),
-              let data = try? String(contentsOf: url, encoding: .utf8)
-        else {
-            return nil
-        }
-
-        for line in data.split(separator: "\n") {
-            let parts = line.split(separator: "=", maxSplits: 1)
-            if parts.count == 2 {
-                let k = parts[0].trimmingCharacters(in: .whitespacesAndNewlines)
-                let v = parts[1].trimmingCharacters(in: .whitespacesAndNewlines)
-                if k == key { return v }
-            }
-        }
-        return nil
-    }
-}
-
 // MARK: - Tool Conversion
 
 /// Converts MCP Tool objects to dictionary representations for JSON serialization.

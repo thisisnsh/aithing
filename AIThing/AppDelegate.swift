@@ -21,8 +21,6 @@ import SwiftUI
 class AppDelegate: NSObject, NSApplicationDelegate {
     private var floatingWindow: NonActivatingPanel!
 
-    static var selectedText = ""
-
     private var originalWidth: CGFloat = 660
     private var originalHeight: CGFloat = 600
     private var width: CGFloat = 660

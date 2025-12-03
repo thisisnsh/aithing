@@ -270,20 +270,13 @@ extension IntelligenceView {
         for text in content.split(separator: " ") {
             partial += String(text) + " "
             await MainActor.run {
-                modelOutput = partial + " " + shimmerPlaceholderLocal()
+                modelOutput = partial + " " + shimmerPlaceholder()
             }
             do {
                 try await Task.sleep(for: .milliseconds(10))
             } catch {}
         }
         modelOutput = partial
-    }
-    
-    /// Returns the shimmer placeholder character for streaming output.
-    ///
-    /// - Returns: The cursor character
-    private func shimmerPlaceholderLocal() -> String {
-        "▌"
     }
     
     // MARK: - Date Formatting

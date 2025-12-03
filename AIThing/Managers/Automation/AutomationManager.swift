@@ -328,12 +328,4 @@ class AutomationManager: ObservableObject {
         timers[id]?.invalidate()
         timers.removeValue(forKey: id)
     }
-    
-    /// Cancels all active timers.
-    private func cancelAllTimers() {
-        for timer in timers.values {
-            timer.invalidate()
-        }
-        timers.removeAll()
-    }
 }

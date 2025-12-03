@@ -174,24 +174,6 @@ func setSelectedTab(value: SettingsTab) {
     UserDefaults.standard.set(value.rawValue, forKey: StorageKey.selectedTab)
 }
 
-/// Gets whether BYOK (Bring Your Own Key) mode is selected.
-///
-/// Always returns `true` as BYOK is the only supported mode.
-///
-/// - Returns: Always returns `true`
-func getByokSelected() -> Bool {
-    return true
-}
-
-/// Sets whether BYOK mode is selected.
-///
-/// This is a no-op as BYOK is always enabled.
-///
-/// - Parameter value: Ignored parameter
-func setByokSelected(value: Bool) {
-    // No-op (always BYOK)
-}
-
 // MARK: - Agents & Saved Queries
 
 /// Gets all configured agent entries.

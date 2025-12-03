@@ -207,23 +207,6 @@ final class HistoryStore: ObservableObject {
         return true
     }
 
-    /// Remove all ids (deletes directory).
-    @discardableResult
-    func clearAll() async -> Bool {
-        // Remove all loaded stores
-        for (id, container) in containers {
-            let psc = container.persistentStoreCoordinator
-            if let store = psc.persistentStores.first {
-                try? psc.remove(store)
-            }
-            containers.removeValue(forKey: id)
-        }
-        // Delete directory
-        let dir = Self.historyDir()
-        try? FileManager.default.removeItem(at: dir)
-        return true
-    }
-
     private func container(for id: String) async -> NSPersistentContainer? {
         if let c = containers[id] { return c }
         let model = Self.makeModel()

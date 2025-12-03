@@ -29,7 +29,7 @@ struct SettingsView: View {
     @State private var apiKey: String = getAnthropicAPIKey() ?? ""
     @FocusState private var apiKeyFieldFocused: Bool
     @State private var modelSelected: String = getModel()
-    @State private var byokSelected: Bool = true  // Always true. Previously: getByokSelected()
+    @State private var byokSelected: Bool = true  // Always true (BYOK is the only mode)
 
     // Agents
     @State private var agents: [AgentEntry] = getAgentEntries()
@@ -222,10 +222,6 @@ struct SettingsView: View {
         )
     }
 
-    func boxTitle(_ text: String) -> some View {
-        Text(text).font(.system(size: 10, weight: .medium)).padding(.vertical, 4)
-    }
-
     func signIn() async {
         await loginManager.signInWithGoogle()
 
@@ -261,7 +257,6 @@ struct SettingsView: View {
 
     func saveModels() {
         setModel(value: modelSelected)
-        setByokSelected(value: byokSelected)
         setAnthropicAPIKey(value: apiKey)
     }
 
