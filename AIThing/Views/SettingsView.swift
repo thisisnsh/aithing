@@ -1,8 +1,6 @@
 import Sparkle
 import SwiftUI
 
-enum SettingsTab: String { case account = "Account", models = "Models", agents = "Agents", preferences = "Preferences", automations = "Automations" }
-
 struct SettingsView: View {
     @EnvironmentObject var loginManager: LoginManager
     @EnvironmentObject var firestoreManager: FirestoreManager

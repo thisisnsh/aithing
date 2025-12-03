@@ -63,6 +63,6 @@
 	<key>SUAutomaticallyUpdate</key>
 	<false/>
 	<key>CFBundleVersion</key>
-	<string>2.0.8</string>
+	<string>2.0.9</string>
 </dict>
 </plist>

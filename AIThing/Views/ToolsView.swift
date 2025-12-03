@@ -181,6 +181,3 @@ struct ToolsView: View {
     }
 }
 
-extension Array {
-    fileprivate subscript(safe i: Index) -> Element? { indices.contains(i) ? self[i] : nil }
-}

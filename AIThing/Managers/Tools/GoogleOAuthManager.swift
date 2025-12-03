@@ -12,9 +12,13 @@ import SwiftUI
 import os
 
 @MainActor
-class GoogleOAuthManager: ObservableObject {
+class GoogleOAuthManager: ObservableObject, OAuthManagerProtocol {
+    typealias TokenType = GIDGoogleUser
+    
     @Published var user: GIDGoogleUser?
     @Published var enabled: Set<GoogleTool> = getGoogleTools()
+    
+    var hasEnabledTools: Bool { !enabled.isEmpty }
 
     let logger = Logger(subsystem: "com.thisisnsh.mac.AIThing", category: "GoogleOAuthManager")
 
@@ -293,30 +297,3 @@ class GoogleOAuthManager: ObservableObject {
     ]
 }
 
-enum GoogleTool: String, CaseIterable, Identifiable, Codable {
-    case gmail = "Gmail"
-    case drive = "Drive"
-    case calendar = "Calendar"
-    case docs = "Docs"
-    case sheets = "Sheets"
-    case forms = "Form"
-    case slides = "Slides"
-    case tasks = "Tasks"
-
-    var id: String { rawValue }
-}
-
-func getGoogleTools() -> Set<GoogleTool> {
-    if let data = UserDefaults.standard.data(forKey: "GoogleTools"),
-        let decoded = try? JSONDecoder().decode(Set<GoogleTool>.self, from: data)
-    {
-        return decoded
-    }
-    return []
-}
-
-func setGoogleTools(value: Set<GoogleTool>) {
-    if let data = try? JSONEncoder().encode(value) {
-        UserDefaults.standard.set(data, forKey: "GoogleTools")
-    }
-}

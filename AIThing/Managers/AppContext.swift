@@ -9,13 +9,6 @@ import AppKit
 import ApplicationServices
 import Foundation
 
-struct AppContextModel {
-    let appName: String
-    let windowName: String
-    let screenshot: NSImage
-    let base64: String
-}
-
 class AppContext: ObservableObject {
     @Published var appName: String = ""
     @Published var windowName: String = ""

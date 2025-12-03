@@ -13,9 +13,13 @@ import SwiftUI
 import os
 
 @MainActor
-class GithubOAuthManager: ObservableObject {
+class GithubOAuthManager: ObservableObject, OAuthManagerProtocol {
+    typealias TokenType = GithubUser
+    
     @Published var user: GithubUser? = getGithubUser()
     @Published var enabled: Set<GithubTool> = getGithubTools()
+    
+    var hasEnabledTools: Bool { !enabled.isEmpty }
 
     let logger = Logger(subsystem: "com.thisisnsh.mac.AIThing", category: "GithubOAuthManager")
 
@@ -458,97 +462,5 @@ extension GithubOAuthManager {
         let primary: Bool
         let verified: Bool
         let visibility: String?
-    }
-}
-
-// MARK: - Public model
-
-enum GithubTool: String, CaseIterable, Identifiable, Codable {
-    // default case context = "User and org context"
-    case actions = "CI/CD Workflows"
-    case codeSecurity = "Code Scanning Alerts"
-    case dependabot = "Dependabot Alerts"
-    case discussions = "Discussions"
-    // case experiments = "Experimental features"
-    case gists = "Gists"
-    case issues = "Issues"
-    case notifications = "Notifications"
-    case orgs = "Organizations"
-    case pullRequests = "Pull Requests"
-    case repos = "Repository"
-    case secretProtection = "Secret Scanning"
-    case securityAdvisories = "Security Advisories"
-    case users = "User Search"
-
-    var id: String { rawValue }
-}
-
-func getGithubTools() -> Set<GithubTool> {
-    if let data = UserDefaults.standard.data(forKey: "GithubTools"),
-        let decoded = try? JSONDecoder().decode(Set<GithubTool>.self, from: data)
-    {
-        return decoded
-    }
-    return []
-}
-
-func setGithubTools(value: Set<GithubTool>) {
-    if let data = try? JSONEncoder().encode(value) {
-        UserDefaults.standard.set(data, forKey: "GithubTools")
-    }
-}
-
-public struct GithubUser: Codable, Equatable {
-    // Tokens
-    public var accessToken: String
-    public var refreshToken: String?
-    public var expiresAt: Date?
-
-    // Profile
-    public var id: Int?
-    public var login: String?
-    public var name: String?
-    public var email: String?
-    public var avatarURL: URL?
-}
-
-func getGithubUser() -> GithubUser? {
-    if let data = UserDefaults.standard.data(forKey: "GithubUser"),
-        let decoded = try? JSONDecoder().decode(GithubUser.self, from: data)
-    {
-        return decoded
-    }
-    return nil
-}
-
-func setGithubUser(value: GithubUser?) {
-    if let data = try? JSONEncoder().encode(value) {
-        UserDefaults.standard.set(data, forKey: "GithubUser")
-    }
-}
-
-// MARK: - Errors
-
-enum GithubOAuthError: LocalizedError {
-    case notConfigured
-    case authorizationFailed
-    case cancelled
-    case invalidHTTPResponse
-    case decodeFailed
-    case noClient
-    case refreshFailed
-    case getFailed
-
-    var errorDescription: String? {
-        switch self {
-        case .notConfigured: return "GitHub OAuth not configured."
-        case .authorizationFailed: return "Authorization failed."
-        case .cancelled: return "User cancelled."
-        case .invalidHTTPResponse: return "Invalid response from GitHub."
-        case .decodeFailed: return "Failed to decode GitHub response."
-        case .noClient: return "Failed to get GitHub client."
-        case .refreshFailed: return "Failed to refresh the GitHub token."
-        case .getFailed: return "Failed to fetch GitHub profile."
-        }
     }
 }

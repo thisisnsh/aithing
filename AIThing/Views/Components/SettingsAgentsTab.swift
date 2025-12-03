@@ -8,12 +8,6 @@
 import SwiftUI
 import os
 
-struct AgentEntry: Codable, Identifiable, Equatable {
-    let id: UUID
-    var entry: Entry
-    var isEnabled: Bool
-}
-
 struct SettingsAgentsTab: View {
     @EnvironmentObject var googleOAuthManager: GoogleOAuthManager
     @EnvironmentObject var gitHubOAuthManager: GithubOAuthManager

@@ -17,32 +17,6 @@ import ServiceManagement
 import Sparkle
 import SwiftUI
 
-enum WindowSize: Int {
-    case notchIsCollapsed = 0
-    case sidebarIsCollapsed = 1
-    case sidebarIsExpanded = 2
-    case chatIsShown = 3
-    case chatIsExpanded = 4
-}
-
-final class NotchVM: ObservableObject {
-    @Published var refresh = false
-    @Published var minimize = false
-    @Published var open = false
-    @Published var toggle = false
-    @Published var selectedText = ""
-    @Published var selectionPolling = false
-    @Published var move = false
-
-    func refreshDimensions() { refresh.toggle() }
-    func minimizeDimensions() { minimize.toggle() }
-    func openDimensions() { open.toggle() }
-    func toggleDimensions() { toggle.toggle() }
-    func updateSelectedText(text: String) { selectedText = text }
-    func toggleMove() { move.toggle() }
-    func updateSelectionPolling(value: Bool) { selectionPolling = value }
-}
-
 // MARK: - AppDelegate
 class AppDelegate: NSObject, NSApplicationDelegate {
     private var floatingWindow: NonActivatingPanel!
@@ -68,7 +42,7 @@ class AppDelegate: NSObject, NSApplicationDelegate {
     private var pollingTimer: DispatchSourceTimer?
     private var mouseLocation = NSEvent.mouseLocation
 
-    let vm = NotchVM()
+    let viewModel = NotchViewModel()
     let appContext = AppContext()
     let updaterController = SPUStandardUpdaterController(
         startingUpdater: true,
@@ -104,7 +78,7 @@ class AppDelegate: NSObject, NSApplicationDelegate {
             object: floatingWindow,
             queue: .main
         ) { notification in
-            self.vm.toggleMove()
+            self.viewModel.toggleMove()
         }
 
         FirebaseApp.configure()
@@ -139,8 +113,8 @@ extension AppDelegate {
     private func setupGlobalHotKeys() {
         spaceHotKey = HotKey(key: .space, modifiers: [.control, .option])
         spaceHotKeyAnother = HotKey(key: .space, modifiers: [.control])
-        spaceHotKey?.keyDownHandler = { self.vm.toggleDimensions() }
-        spaceHotKeyAnother?.keyDownHandler = { self.vm.toggleDimensions() }
+        spaceHotKey?.keyDownHandler = { self.viewModel.toggleDimensions() }
+        spaceHotKeyAnother?.keyDownHandler = { self.viewModel.toggleDimensions() }
     }
 
     private func setupNotchWindow() {
@@ -167,7 +141,7 @@ extension AppDelegate {
 
         // Create the SwiftUI view
         let notchView = NotchView(
-            vm: vm,
+            viewModel: viewModel,
             updater: updaterController.updater,
             updateWindowSize: {
                 return self.updateWindowSize(windowSize: $0)
@@ -312,13 +286,6 @@ extension AppDelegate {
         return (windowWidth, windowHeight)
     }
 
-    enum OutOfBoundsEdge: String {
-        case left
-        case right
-        case top
-        case bottom
-    }
-
     private func outOfBoundsEdges() -> Set<OutOfBoundsEdge> {
         var edges = Set<OutOfBoundsEdge>()
         guard let screen = floatingWindow.screen ?? NSScreen.main else { return edges }
@@ -373,12 +340,12 @@ extension AppDelegate {
     }
 
     private func stopSelectionPoll() {
-        vm.updateSelectionPolling(value: false)
+        viewModel.updateSelectionPolling(value: false)
         pollingTimer?.cancel()
     }
 
     private func startSelectionPoll() {
-        vm.updateSelectionPolling(value: true)
+        viewModel.updateSelectionPolling(value: true)
         pollingTimer?.cancel()
 
         // Accessibility trust (prompt once as needed)
@@ -426,7 +393,7 @@ extension AppDelegate {
                 let sanitized = text.trimmingCharacters(in: .whitespacesAndNewlines)
                 if !sanitized.isEmpty {
                     // We're on the main actor; no need to dispatch to main.
-                    vm.updateSelectedText(text: sanitized)
+                    viewModel.updateSelectedText(text: sanitized)
                     return
                 }
             }
@@ -439,7 +406,7 @@ extension AppDelegate {
             if let menuCopyText = try await textManager.getSelectedTextByMenuAction() {
                 let sanitized = menuCopyText.trimmingCharacters(in: .whitespacesAndNewlines)
                 if !sanitized.isEmpty {
-                    vm.updateSelectedText(text: sanitized)
+                    viewModel.updateSelectedText(text: sanitized)
                     return
                 }
             }
