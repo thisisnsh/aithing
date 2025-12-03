@@ -11,12 +11,32 @@ import Foundation
 import os
 
 class FirestoreManager: ObservableObject {
-    let db = Firestore.firestore()
+    private var _db: Firestore?
+    
+    /// Lazily initialized Firestore instance. Returns nil if Firebase isn't configured.
+    private var db: Firestore? {
+        guard FirebaseConfiguration.shared.isConfigured else { return nil }
+        if _db == nil {
+            _db = Firestore.firestore()
+        }
+        return _db
+    }
+    
     let logger = Logger(subsystem: "com.thisisnsh.mac.AIThing", category: "FirestoreManager")
+    
+    /// Whether Firebase/Firestore is enabled
+    private var isEnabled: Bool {
+        FirebaseConfiguration.shared.isConfigured
+    }
 
     // MARK: Configs
 
     func getBreakglass() async -> Bool {
+        guard isEnabled, let db = db else {
+            FirebaseConfiguration.shared.logSkipped(operation: "getBreakglass")
+            return false
+        }
+        
         do {
             let snapshot = try await db.collection("System").document("Configs-2.0").getDocument()
             guard let data = snapshot.data() else { return false }
@@ -43,6 +63,11 @@ class FirestoreManager: ObservableObject {
     }
 
     func getExpired() async -> Bool {
+        guard isEnabled, let db = db else {
+            FirebaseConfiguration.shared.logSkipped(operation: "getExpired")
+            return false
+        }
+        
         do {
             let snapshot = try await db.collection("System").document("Configs-2.0").getDocument()
             guard let data = snapshot.data() else { return false }
@@ -69,6 +94,11 @@ class FirestoreManager: ObservableObject {
     }
 
     func getApiKeyAnthropic() async -> String {
+        guard isEnabled, let db = db else {
+            FirebaseConfiguration.shared.logSkipped(operation: "getApiKeyAnthropic")
+            return ""
+        }
+        
         do {
             let snapshot = try await db.collection("System").document("Configs-2.0").getDocument()
             guard let data = snapshot.data() else { return "" }
@@ -95,6 +125,11 @@ class FirestoreManager: ObservableObject {
     }
 
     func getDefaultCredits() async -> Int? {
+        guard isEnabled, let db = db else {
+            FirebaseConfiguration.shared.logSkipped(operation: "getDefaultCredits")
+            return 50 // Default credits when Firebase is not configured
+        }
+        
         do {
             let snapshot = try await db.collection("System").document("Configs-2.0").getDocument()
             guard let data = snapshot.data() else { return nil }
@@ -121,6 +156,11 @@ class FirestoreManager: ObservableObject {
     }
 
     func getNotification() async -> String? {
+        guard isEnabled, let db = db else {
+            FirebaseConfiguration.shared.logSkipped(operation: "getNotification")
+            return nil
+        }
+        
         do {
             let snapshot = try await db.collection("System").document("Configs-2.0").getDocument()
             guard let data = snapshot.data() else { return nil }
@@ -147,6 +187,11 @@ class FirestoreManager: ObservableObject {
     }
 
     func getGreeting() async -> String? {
+        guard isEnabled, let db = db else {
+            FirebaseConfiguration.shared.logSkipped(operation: "getGreeting")
+            return nil
+        }
+        
         do {
             let snapshot = try await db.collection("System").document("Configs-2.0").getDocument()
             guard let data = snapshot.data() else { return nil }
@@ -175,6 +220,11 @@ class FirestoreManager: ObservableObject {
     // MARK: Others
 
     private func _getProfile(user: AppUser) async -> Profile? {
+        guard isEnabled, let db = db else {
+            FirebaseConfiguration.shared.logSkipped(operation: "_getProfile")
+            return nil
+        }
+        
         let id = user.uid
 
         do {
@@ -205,6 +255,22 @@ class FirestoreManager: ObservableObject {
     }
 
     func getProfile(user: AppUser) async -> Profile? {
+        guard isEnabled, let db = db else {
+            FirebaseConfiguration.shared.logSkipped(operation: "getProfile")
+            // Return a default profile when Firebase is not configured
+            return Profile(
+                id: user.uid,
+                name: user.displayName,
+                email: user.email ?? "",
+                creditsTotal: 50,
+                creditsUsed: 0,
+                blocked: false,
+                apiKeyAnthropic: "",
+                apiKeyOpenAI: "",
+                usageData: Usage()
+            )
+        }
+        
         let id = user.uid
 
         if let profile = await _getProfile(user: user) {
@@ -249,6 +315,11 @@ class FirestoreManager: ObservableObject {
     }
 
     func incrementCredits(user: AppUser, by amount: Int) async {
+        guard isEnabled, let db = db else {
+            FirebaseConfiguration.shared.logSkipped(operation: "incrementCredits")
+            return
+        }
+        
         let id = user.uid
 
         do {
@@ -275,6 +346,11 @@ class FirestoreManager: ObservableObject {
     }
 
     func incrementUsage(user: AppUser, usage: Usage) async {
+        guard isEnabled, let db = db else {
+            FirebaseConfiguration.shared.logSkipped(operation: "incrementUsage")
+            return
+        }
+        
         let id = user.uid
 
         do {
@@ -303,6 +379,11 @@ class FirestoreManager: ObservableObject {
     }
 
     func getModelInfos() async -> [ModelInfo] {
+        guard isEnabled, let db = db else {
+            FirebaseConfiguration.shared.logSkipped(operation: "getModelInfos")
+            return []
+        }
+        
         do {
             let snapshot = try await db.collection("Models").getDocuments()
 
@@ -340,6 +421,11 @@ class FirestoreManager: ObservableObject {
     }
 
     func createModel(model: ModelInfo) async {
+        guard isEnabled, let db = db else {
+            FirebaseConfiguration.shared.logSkipped(operation: "createModel")
+            return
+        }
+        
         do {
             try db.collection("Models").document(model.id).setData(from: model)
             logger.error("[FirestoreManager] Created/updated model with id \(model.id)")
@@ -351,6 +437,11 @@ class FirestoreManager: ObservableObject {
     }
 
     func fetchCreditsPlans(email: String) async -> Int {
+        guard isEnabled else {
+            FirebaseConfiguration.shared.logSkipped(operation: "fetchCreditsPlans")
+            return 0
+        }
+        
         let creditsPlans = await getActivePlanCredits(forEmail: email)
         return creditsPlans
     }
@@ -363,6 +454,11 @@ class FirestoreManager: ObservableObject {
     }
 
     func getManagedGitHubAgent() async -> ManagedGitHubAgent? {
+        guard isEnabled, let db = db else {
+            FirebaseConfiguration.shared.logSkipped(operation: "getManagedGitHubAgent")
+            return nil
+        }
+        
         do {
             let snapshot = try await db.collection("Agents").document("managed_github_agent")
                 .getDocument()
@@ -392,6 +488,11 @@ class FirestoreManager: ObservableObject {
     }
 
     func getManagedAgents() async -> [McpServer] {
+        guard isEnabled, let db = db else {
+            FirebaseConfiguration.shared.logSkipped(operation: "getManagedAgents")
+            return []
+        }
+        
         var result: [McpServer] = []
         do {
             let snapshot = try await db.collection("Agents").getDocuments()
@@ -404,7 +505,7 @@ class FirestoreManager: ObservableObject {
                         url: server.url,
                         version: server.version,
                         enabled: server.enabled,
-                        custom: server.custom,
+                        custom: server.custom
                     )
                     result.append(s)
                 }
@@ -433,6 +534,10 @@ class FirestoreManager: ObservableObject {
 extension FirestoreManager {
 
     private func getActivePlanCredits(forEmail email: String, asOf: Date = Date()) async -> Int {
+        guard isEnabled else {
+            return 0
+        }
+        
         let planCredits = await getPlanDetailsMap()
 
         let orders = await getActiveOrders(forEmail: email, planCredits: planCredits, asOf: asOf)
@@ -456,6 +561,11 @@ extension FirestoreManager {
 
     /// Returns a map of planId -> credits, read from /PlanDetails/<planId>.
     func getPlanDetailsMap() async -> [String: Int] {
+        guard isEnabled, let db = db else {
+            FirebaseConfiguration.shared.logSkipped(operation: "getPlanDetailsMap")
+            return [:]
+        }
+        
         var result: [String: Int] = [:]
         do {
             let snapshot = try await db.collection("PlanDetails").getDocuments()
@@ -494,6 +604,11 @@ extension FirestoreManager {
     func getActiveOrders(forEmail email: String, planCredits: [String: Int], asOf: Date = Date())
         async -> [PlanOrder]
     {
+        guard isEnabled, let db = db else {
+            FirebaseConfiguration.shared.logSkipped(operation: "getActiveOrders")
+            return []
+        }
+        
         var active: [PlanOrder] = []
         let planIds = Array(planCredits.keys)  // Using PlanDetails as the source of truth for valid planIds
         if planIds.isEmpty {
@@ -633,7 +748,7 @@ extension FirestoreManager {
                 return f
             }
 
-            // Example with “at”, timezone suffix like "UTC-4"
+            // Example with "at", timezone suffix like "UTC-4"
             list.append(
                 (
                     df("MMMM d, yyyy 'at' h:mm:ss a 'UTC'XXXXX"),
@@ -644,7 +759,7 @@ extension FirestoreManager {
                 (df("MMMM d, yyyy 'at' h:mm a 'UTC'XXXXX"), "MMMM d, yyyy at h:mm a 'UTC'XXXXX")
             )
 
-            // Without the word “at”
+            // Without the word "at"
             list.append(
                 (df("MMMM d, yyyy h:mm:ss a 'UTC'XXXXX"), "MMMM d, yyyy h:mm:ss a 'UTC'XXXXX")
             )

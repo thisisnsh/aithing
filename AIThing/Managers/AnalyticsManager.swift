@@ -15,9 +15,20 @@ final class AnalyticsManager {
 
     // Keep our local copy (also set in Firebase)
     private var currentUserId: String?
+    
+    /// Whether Firebase Analytics is enabled (Firebase must be configured)
+    private var isEnabled: Bool {
+        FirebaseConfiguration.shared.isConfigured
+    }
 
     /// Call this once early in app launch (e.g., in your App.init).
+    /// Only configures Firebase if the plist has valid values.
     func configureIfNeeded() {
+        guard isEnabled else {
+            FirebaseConfiguration.shared.logSkipped(operation: "configureIfNeeded")
+            return
+        }
+        
         if FirebaseApp.app() == nil {
             FirebaseApp.configure()
         }
@@ -26,6 +37,12 @@ final class AnalyticsManager {
     /// Set/clear the user ID. This sets Firebase's userID and also gets sent with every event as a param.
     func setUserId(_ userId: String?) {
         currentUserId = userId
+        
+        guard isEnabled else {
+            FirebaseConfiguration.shared.logSkipped(operation: "setUserId")
+            return
+        }
+        
         Analytics.setUserID(userId)
     }
 
@@ -41,6 +58,9 @@ final class AnalyticsManager {
     }
 
     private func log(_ name: String, params: [String: Any]? = nil) {
+        guard isEnabled else {
+            return
+        }
         Analytics.logEvent(name, parameters: baseParams(params))
     }
 
@@ -72,6 +92,9 @@ final class AnalyticsManager {
     ///   - screenName: Name you want to appear in GA4
     ///   - screenClass: Typically the SwiftUI wrapper or host class name
     func screenView(screenName: CustomEventView, screenClass: String = "SwiftUIView") {
+        guard isEnabled else {
+            return
+        }
         log(
             AnalyticsEventScreenView,
             params: [
@@ -151,8 +174,11 @@ final class AnalyticsManager {
         view: CustomEventView,
         primary: CustomEventPrimary,
         secondary: String,
-        sev: CustomEventSev,
+        sev: CustomEventSev
     ) {
+        guard isEnabled else {
+            return
+        }
         log(
             "custom_\(view)",
             params: [
@@ -165,6 +191,9 @@ final class AnalyticsManager {
 
     /// app_open
     func appOpen() {
+        guard isEnabled else {
+            return
+        }
         log(AnalyticsEventAppOpen, params: nil)
     }
 
@@ -175,6 +204,9 @@ final class AnalyticsManager {
     /// login
     /// - Parameter method: e.g., "email", "apple", "google"
     func login(method: LoginMethod) {
+        guard isEnabled else {
+            return
+        }
         log(
             AnalyticsEventLogin,
             params: [

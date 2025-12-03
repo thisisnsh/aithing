@@ -226,14 +226,20 @@ struct IntelligenceView: View {
                         selectionEnabled = viewModel.selectionPolling
 
                         let apiKey = getAnthropicAPIKey() ?? ""
-                        var loggedIn = false
-                        switch loginManager.authState {
-                        case .signedIn(let user):
-                            loggedIn = true
-                            AnalyticsManager.shared.setUserId(user.uid)
-                        default:
-                            loggedIn = false
-                            AnalyticsManager.shared.setUserId(nil)
+                        
+                        // Skip login check if Firebase isn't configured
+                        let isFirebaseConfigured = FirebaseConfiguration.shared.isConfigured
+                        var loggedIn = !isFirebaseConfigured // Treat as logged in if Firebase is disabled
+                        
+                        if isFirebaseConfigured {
+                            switch loginManager.authState {
+                            case .signedIn(let user):
+                                loggedIn = true
+                                AnalyticsManager.shared.setUserId(user.uid)
+                            default:
+                                loggedIn = false
+                                AnalyticsManager.shared.setUserId(nil)
+                            }
                         }
 
                         if !loggedIn && apiKey.isEmpty {

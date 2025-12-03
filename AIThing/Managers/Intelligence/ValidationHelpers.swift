@@ -12,6 +12,11 @@ func validateFirebaseConfigs(
     setIsThinking: (Bool) -> Void,
     animateOutput: (String) async -> Void
 ) async -> Bool {
+    // Skip validation if Firebase isn't configured
+    guard FirebaseConfiguration.shared.isConfigured else {
+        return true
+    }
+    
     // Check if version is breakglassed
     if await firestoreManager.getBreakglass() {
         setIsThinking(false)
@@ -59,6 +64,11 @@ func validateLogin(
     setIsThinking: (Bool) -> Void,
     animateOutput: (String) async -> Void
 ) async -> AppUser? {
+    // Skip login validation if Firebase isn't configured - return a mock user
+    guard FirebaseConfiguration.shared.isConfigured else {
+        return AppUser(uid: "local_user", displayName: "Local User", email: nil)
+    }
+    
     let authState = await MainActor.run { loginManager.authState }
 
     switch authState {

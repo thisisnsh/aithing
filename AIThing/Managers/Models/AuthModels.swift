@@ -20,6 +20,14 @@ struct AppUser {
         self.displayName = firebaseUser.displayName
         self.photoURL = firebaseUser.photoURL
     }
+    
+    /// Direct initializer for when Firebase isn't configured
+    init(uid: String, displayName: String?, email: String?, photoURL: URL? = nil) {
+        self.uid = uid
+        self.displayName = displayName
+        self.email = email
+        self.photoURL = photoURL
+    }
 }
 
 enum AuthState {

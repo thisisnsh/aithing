@@ -18,18 +18,32 @@ class LoginManager: ObservableObject {
 
     private var authStateListener: AuthStateDidChangeListenerHandle?
     let logger = Logger(subsystem: "com.thisisnsh.mac.AIThing", category: "LoginManager")
+    
+    /// Whether Firebase Auth is enabled
+    private var isFirebaseEnabled: Bool {
+        FirebaseConfiguration.shared.isConfigured
+    }
 
     init() {
         setupAuthStateListener()
     }
 
     deinit {
-        if let listener = authStateListener {
+        // Note: Using FirebaseConfiguration.shared directly instead of isFirebaseEnabled
+        // because deinit is not main actor-isolated
+        if let listener = authStateListener, FirebaseConfiguration.shared.isConfigured {
             Auth.auth().removeStateDidChangeListener(listener)
         }
     }
 
     private func setupAuthStateListener() {
+        // If Firebase isn't configured, just set state to signed out
+        guard isFirebaseEnabled else {
+            FirebaseConfiguration.shared.logSkipped(operation: "setupAuthStateListener")
+            authState = .signedOut
+            return
+        }
+        
         authStateListener = Auth.auth().addStateDidChangeListener { [weak self] _, user in
             guard let self = self else { return }
 
@@ -43,6 +57,12 @@ class LoginManager: ObservableObject {
     }
 
     func signInWithGoogle() async {
+        guard isFirebaseEnabled else {
+            FirebaseConfiguration.shared.logSkipped(operation: "signInWithGoogle")
+            authState = .error("Firebase is not configured. Please add valid credentials to GoogleService-Info.plist")
+            return
+        }
+        
         isLoading = true
 
         do {
@@ -89,6 +109,11 @@ class LoginManager: ObservableObject {
     }
 
     func signOut() {
+        guard isFirebaseEnabled else {
+            FirebaseConfiguration.shared.logSkipped(operation: "signOut")
+            return
+        }
+        
         isLoading = true
 
         do {

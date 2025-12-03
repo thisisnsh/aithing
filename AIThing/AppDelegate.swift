@@ -81,7 +81,10 @@ class AppDelegate: NSObject, NSApplicationDelegate {
             self.viewModel.toggleMove()
         }
 
-        FirebaseApp.configure()
+        // Only configure Firebase if GoogleService-Info.plist has valid values
+        if FirebaseConfiguration.shared.isConfigured {
+            FirebaseApp.configure()
+        }
 
         setupGlobalHotKeys()
         setupNotchWindow()
