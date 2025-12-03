@@ -11,7 +11,6 @@ struct SettingsModelTab: View {
     let managedModels: [ModelInfo]
 
     @Binding var modelSelected: String
-    @Binding var byokSelected: Bool
     @Binding var apiKey: String
     @FocusState var apiKeyFieldFocused: Bool
 
@@ -52,37 +51,25 @@ struct SettingsModelTab: View {
                                         .resizable()
                                         .aspectRatio(contentMode: .fit)
                                         .frame(width: 16, height: 16)
-                                    
+
                                     Text(title)
                                         .font(.system(size: 14, weight: .medium))
                                 }
                                 .padding(.bottom, 4)
-                                
+
                                 Text(rating)
                                     .font(.system(size: 10, weight: .medium))
                                     .opacity(0.5)
                             }
                             Spacer()
-                            if byokSelected {
-                                Text(
-                                    """
-                                    Billed by [Anthropic](https://console.anthropic.com/settings/billing) 
-                                    """
-                                    // Not by AI Thing
-                                )
-                                .font(.system(size: 10, weight: .medium))
-                                .multilineTextAlignment(.trailing)
-                            } else {
-                                Text(
-                                    """
-                                    Base Cost:
-                                    \(cost) Credit\(cost > 1 ? "s" : "") per Query
-                                    [Read More](https://aithing.dev/billing/usage)
-                                    """
-                                )
-                                .font(.system(size: 10, weight: .medium))
-                                .multilineTextAlignment(.trailing)
-                            }
+
+                            Text(
+                                """
+                                Billed by [Anthropic](https://console.anthropic.com/settings/billing) 
+                                """
+                            )
+                            .font(.system(size: 10, weight: .medium))
+                            .multilineTextAlignment(.trailing)
                         }
                         .padding(4)
                     }
@@ -106,8 +93,7 @@ struct SettingsModelTab: View {
                     .padding(.horizontal, 12)
                     .lineLimit(nil)
                     .fixedSize(horizontal: false, vertical: true)
-                    .opacity(byokSelected ? 1 : 0.5)
-                
+
                 GroupBox {
                     VStack(alignment: .leading) {
                         HStack {
@@ -121,17 +107,15 @@ struct SettingsModelTab: View {
                         .padding(4)
                         .contentShape(Rectangle())
 
-                        if byokSelected {
-                            TextField("sk-ant-...", text: $apiKey, onCommit: saveModels)
-                                .padding(.horizontal, 8)
-                                .frame(height: 32)
-                                .background(Color.black.opacity(0.2))
-                                .clipShape(RoundedRectangle(cornerRadius: 4))
-                                .font(.system(size: 14, weight: .medium))
-                                .focused($apiKeyFieldFocused)
-                                .textFieldStyle(.plain)
-                                .padding(.bottom, 4)
-                        }
+                        TextField("sk-ant-...", text: $apiKey, onCommit: saveModels)
+                            .padding(.horizontal, 8)
+                            .frame(height: 32)
+                            .background(Color.black.opacity(0.2))
+                            .clipShape(RoundedRectangle(cornerRadius: 4))
+                            .font(.system(size: 14, weight: .medium))
+                            .focused($apiKeyFieldFocused)
+                            .textFieldStyle(.plain)
+                            .padding(.bottom, 4)
 
                         Text(
                             "You will need to purchase credits at [Anthropic](https://console.anthropic.com/settings/billing)."
@@ -141,7 +125,6 @@ struct SettingsModelTab: View {
                         .padding(4)
                         .lineLimit(nil)
                         .fixedSize(horizontal: false, vertical: true)
-                        .opacity(byokSelected ? 1 : 0.5)
                     }
                     .padding(4)
                 }

@@ -29,7 +29,6 @@ struct SettingsView: View {
     @State private var apiKey: String = getAnthropicAPIKey() ?? ""
     @FocusState private var apiKeyFieldFocused: Bool
     @State private var modelSelected: String = getModel()
-    @State private var byokSelected: Bool = true  // Always true (BYOK is the only mode)
 
     // Agents
     @State private var agents: [AgentEntry] = getAgentEntries()
@@ -78,7 +77,6 @@ struct SettingsView: View {
                                 SettingsModelTab(
                                     managedModels: managedModels,
                                     modelSelected: $modelSelected,
-                                    byokSelected: $byokSelected,
                                     apiKey: $apiKey,
                                     apiKeyFieldFocused: _apiKeyFieldFocused,
                                     saveModels: saveModels,
