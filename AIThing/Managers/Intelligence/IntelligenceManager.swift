@@ -37,9 +37,9 @@ func callModel(
     updateHistoryList: @escaping () async -> Void,
     firestoreManager: FirestoreManager,
     loginManager: LoginManager,
-    mcpManager: MCPManager,
+    connectionManager: ConnectionManager,
     automationManager: AutomationManager,
-    aiThingMcpManager: AIThingMCPManager
+    internalToolProvider: InternalToolProvider
 ) async -> Bool {
     let startTime = Date()
 
@@ -79,7 +79,7 @@ func callModel(
     if modelTools.isEmpty {
         modelTools = getAllClientTools().values.flatMap { $0 }
         if query.starts(with: "@aithing") {
-            let aiThingTools = await MainActor.run { aiThingMcpManager.getTools() }
+            let aiThingTools = await MainActor.run { internalToolProvider.getTools() }
             modelTools.append(contentsOf: aiThingTools)
         }
     }
@@ -600,13 +600,13 @@ func callModel(
                         setToolCall("Calling tool: \(finalToolUseName)...")
                         var result: [[String: Any]] = []
                         if finalToolUseName.starts(with: "aithing_") {
-                            result = await aiThingMcpManager.callTools(
+                            result = await internalToolProvider.callTools(
                                 name: finalToolUseName,
                                 input: await accumulator.snapshotToolInput(),
                                 automationManager: automationManager
                             )
                         } else {
-                            result = await mcpManager.callTools(
+                            result = await connectionManager.callTools(
                                 clientName: getClientName(
                                     toolName: finalToolUseName,
                                     allClientTools: getAllClientTools()
@@ -683,9 +683,9 @@ func callModel(
                             updateHistoryList: updateHistoryList,
                             firestoreManager: firestoreManager,
                             loginManager: loginManager,
-                            mcpManager: mcpManager,
+                            connectionManager: connectionManager,
                             automationManager: automationManager,
-                            aiThingMcpManager: aiThingMcpManager
+                            internalToolProvider: internalToolProvider
                         )
 
                     default:

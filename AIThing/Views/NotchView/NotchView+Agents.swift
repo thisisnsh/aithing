@@ -31,9 +31,9 @@ extension NotchView {
 
         agents = newAgents
         allClientTools.removeAll()
-        mcpOAuthManagers.selfManagers.removeAll()
+        mcpAuthManagers.selfManagers.removeAll()
 
-        let disconnectRc = await mcpManager.disconnect()
+        let disconnectRc = await connectionManager.disconnect()
         if !disconnectRc.isEmpty {
             return "Failed to stop running agents: \(disconnectRc)"
         }
@@ -56,9 +56,9 @@ extension NotchView {
 
                 // URL is oauth ready if it has well known URLs
                 // Skip connecting to oauth servers now, they will be connected later
-                let oauth = await McpOAuthManager.hasWellKnownUrls(url: url)
+                let oauth = await MCPAuthManager.hasWellKnownUrls(url: url)
                 if oauth {
-                    mcpOAuthManagers.selfManagers[name] = McpOAuthManager(
+                    mcpAuthManagers.selfManagers[name] = MCPAuthManager(
                         server: McpServer(
                             id: name,
                             image: nil,
@@ -69,21 +69,21 @@ extension NotchView {
                             custom: false
                         )
                     )
-                    mcpOAuthManagers.selfManagers[name]?.enabled = true
+                    mcpAuthManagers.selfManagers[name]?.enabled = true
                     continue
                 }
 
-                connectRc = await mcpManager.connect(clientName: name, url: url, authToken: nil)
+                connectRc = await connectionManager.connect(clientName: name, url: url, authToken: nil)
 
             case .urlWithToken(let n, let url, let token):
                 name = n
                 primary = url
-                connectRc = await mcpManager.connect(clientName: name, url: url, authToken: token)
+                connectRc = await connectionManager.connect(clientName: name, url: url, authToken: token)
 
             case .command(let n, let command, let arguments):
                 name = n
                 primary = command
-                connectRc = await mcpManager.connect(
+                connectRc = await connectionManager.connect(
                     clientName: name,
                     command: command,
                     args: arguments
@@ -100,7 +100,7 @@ extension NotchView {
             logger.debug("Added Agent: \(name)")
 
             if connectRc.isEmpty {
-                let tools = await mcpManager.getTools(clientName: name, filter: [])
+                let tools = await connectionManager.getTools(clientName: name, filter: [])
                 allClientTools[name] = tools
             } else {
                 failure += "\n\n\(name): \(connectRc)"
@@ -128,36 +128,36 @@ extension NotchView {
                 allServerIds.append(id)
 
                 if server.custom ?? false {
-                    mcpOAuthManagers.customManagers[id] = server
+                    mcpAuthManagers.customManagers[id] = server
                     continue
                 }
 
-                if !mcpOAuthManagers.managers.keys.contains(id) {
-                    mcpOAuthManagers.managers[id] = McpOAuthManager(server: server)
+                if !mcpAuthManagers.managers.keys.contains(id) {
+                    mcpAuthManagers.managers[id] = MCPAuthManager(server: server)
                 }
 
-                if let manager = mcpOAuthManagers.managers[id] {
+                if let manager = mcpAuthManagers.managers[id] {
                     if manager.server.version != server.version {
-                        mcpOAuthManagers.managers[id] = McpOAuthManager(server: server)
+                        mcpAuthManagers.managers[id] = MCPAuthManager(server: server)
                     }
                 }
 
                 // Always update image
                 if let image = server.image {
-                    mcpOAuthManagers.managers[id]?.server.image = image
+                    mcpAuthManagers.managers[id]?.server.image = image
                 }
             }
         }
 
         // Remove mcp servers that were added before but are no longer supported
-        for key in mcpOAuthManagers.managers.keys {
+        for key in mcpAuthManagers.managers.keys {
             if !allServerIds.contains(key) {
-                mcpOAuthManagers.managers.removeValue(forKey: key)
+                mcpAuthManagers.managers.removeValue(forKey: key)
             }
         }
-        for key in mcpOAuthManagers.customManagers.keys {
+        for key in mcpAuthManagers.customManagers.keys {
             if !allServerIds.contains(key) {
-                mcpOAuthManagers.customManagers.removeValue(forKey: key)
+                mcpAuthManagers.customManagers.removeValue(forKey: key)
             }
         }
     }
@@ -197,15 +197,15 @@ extension NotchView {
 
                 // If token has been refreshed OR client does not exist
                 if forceRefresh || accessToken != refreshedAccessToken
-                    || !mcpManager.clientExists(clientName: clientName)
+                    || !connectionManager.clientExists(clientName: clientName)
                 {
-                    _ = await mcpManager.reconnect(
+                    _ = await connectionManager.reconnect(
                         clientName: clientName,
                         url: url(),
                         authToken: newToken
                     )
 
-                    let tools = await mcpManager.getTools(
+                    let tools = await connectionManager.getTools(
                         clientName: clientName,
                         filter: capabilities()
                     )
@@ -218,7 +218,7 @@ extension NotchView {
         }
 
         // Precompute the dynamic managers map (same as before).
-        let keepingCurrent = mcpOAuthManagers.managers.merging(mcpOAuthManagers.selfManagers) {
+        let keepingCurrent = mcpAuthManagers.managers.merging(mcpAuthManagers.selfManagers) {
             current,
             _ in current
         }
@@ -228,14 +228,14 @@ extension NotchView {
             group.addTask {
                 let (token, expiry, capabilities) = await MainActor.run {
                     (
-                        self.googleOAuthManager.user?.accessToken.tokenString,
-                        self.googleOAuthManager.user?.accessToken.expirationDate,
-                        self.googleOAuthManager.enabledCapabilities()
+                        self.googleAuthManager.user?.accessToken.tokenString,
+                        self.googleAuthManager.user?.accessToken.expirationDate,
+                        self.googleAuthManager.enabledCapabilities()
                     )
                 }
 
                 let clientName = "managed_aithing_google"
-                guard let server = await mcpOAuthManagers.customManagers[clientName] else {
+                guard let server = await mcpAuthManagers.customManagers[clientName] else {
                     await MainActor.run { _ = allClientTools.removeValue(forKey: clientName) }
                     return
                 }
@@ -246,13 +246,13 @@ extension NotchView {
 
                 await handleManager(
                     clientName: clientName,
-                    isEnabled: !self.googleOAuthManager.enabled.isEmpty,
+                    isEnabled: !self.googleAuthManager.enabled.isEmpty,
                     currentTokenAndExpiry: {
                         self.logger.debug("Google AccessToken \(String(describing: token))")
                         return (token, expiry)
                     },
                     generateToken: {
-                        guard let user = await self.googleOAuthManager.generateToken(refresh: true)
+                        guard let user = await self.googleAuthManager.generateToken(refresh: true)
                         else { return nil }
                         return user.accessToken.tokenString
                     },
@@ -265,14 +265,14 @@ extension NotchView {
             group.addTask {
                 let (token, expiry, capabilities) = await MainActor.run {
                     (
-                        self.githubOAuthManager.user?.accessToken,
-                        self.githubOAuthManager.user?.expiresAt,
-                        self.githubOAuthManager.enabledCapabilities()
+                        self.githubAuthManager.user?.accessToken,
+                        self.githubAuthManager.user?.expiresAt,
+                        self.githubAuthManager.enabledCapabilities()
                     )
                 }
 
                 let clientName = "managed_aithing_github"
-                guard let server = await mcpOAuthManagers.customManagers[clientName] else {
+                guard let server = await mcpAuthManagers.customManagers[clientName] else {
                     await MainActor.run { _ = allClientTools.removeValue(forKey: clientName) }
                     return
                 }
@@ -283,13 +283,13 @@ extension NotchView {
 
                 await handleManager(
                     clientName: clientName,
-                    isEnabled: !self.githubOAuthManager.enabled.isEmpty,
+                    isEnabled: !self.githubAuthManager.enabled.isEmpty,
                     currentTokenAndExpiry: {
                         self.logger.debug("Github AccessToken \(String(describing: token))")
                         return (token, expiry)
                     },
                     generateToken: {
-                        guard let user = await self.githubOAuthManager.generateToken(refresh: true)
+                        guard let user = await self.githubAuthManager.generateToken(refresh: true)
                         else { return nil }
                         return user.accessToken
                     },

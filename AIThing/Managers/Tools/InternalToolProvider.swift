@@ -1,0 +1,223 @@
+//
+//  InternalToolProvider.swift
+//  AIThing
+//
+//  Provides internal/native tools that are built into the app.
+//
+
+import Foundation
+import MCP
+import SwiftUI
+import os
+
+// MARK: - Internal Tool Provider
+
+/// Provides built-in tools for AIThing functionality.
+/// Currently supports automation creation and management.
+@MainActor
+class InternalToolProvider {
+    
+    // MARK: - Properties
+    
+    private let logger = Logger(
+        subsystem: "com.thisisnsh.mac.AIThing",
+        category: "InternalToolProvider"
+    )
+    
+    private let dateFormatter: DateFormatter = {
+        let formatter = DateFormatter()
+        formatter.dateFormat = "yyyy-MM-dd HH:mm"
+        return formatter
+    }()
+    
+    // MARK: - Tool Discovery
+    
+    /// Returns all available internal tools as dictionary definitions
+    func getTools() -> [[String: Any]] {
+        [createAutomationToolDefinition()]
+    }
+    
+    // MARK: - Tool Execution
+    
+    /// Executes an internal tool by name
+    /// - Parameters:
+    ///   - name: Tool name to execute
+    ///   - input: JSON string containing tool arguments
+    ///   - automationManager: Manager for creating automations
+    /// - Returns: Array of response content blocks
+    func callTools(
+        name: String,
+        input: String,
+        automationManager: AutomationManager
+    ) -> [[String: Any]] {
+        guard let value = try? parseJSONStringToValueObject(input),
+              case .object(let dict) = value else {
+            return []
+        }
+        
+        let text = executeCreateAutomation(dict: dict, automationManager: automationManager)
+        return [["type": "text", "text": text]]
+    }
+}
+
+// MARK: - Tool Definitions
+
+private extension InternalToolProvider {
+    
+    func createAutomationToolDefinition() -> [String: Any] {
+        [
+            "name": "aithing_create_automation",
+            "description": """
+                Create recurring or one-off automations tasks inside AI Thing app. \
+                Use this tool only if execution time is provided.
+                """,
+            "input_schema": [
+                "type": "object",
+                "properties": [
+                    "title": [
+                        "type": "string",
+                        "description": """
+                            Title of the automation. This is only used to distinguish between \
+                            multiple automations. If it is not provided by the user, suggest a \
+                            value based on the instructions.
+                            """
+                    ],
+                    "instructions": [
+                        "type": "string",
+                        "description": """
+                            Instructions of the automation. These are the prompts that the \
+                            automation runs when the time comes. These prompts are the ones \
+                            sent to LLM that then does the automations. Make sure the prompt \
+                            is small & clear for the AI.
+                            """
+                    ],
+                    "executeTime": [
+                        "type": "string",
+                        "description": """
+                            Date time to execute the automation in yyyy-MM-dd HH:mm format. \
+                            If just time is provided use current date.
+                            """
+                    ],
+                    "recurrence": [
+                        "type": "string",
+                        "description": """
+                            Recurrence schedule of the automation in dd-hh-mm format, where \
+                            dd is the days, hh is the hours, and mm is the minutes. For \
+                            one-off automations, keep this 00-00-00
+                            """
+                    ]
+                ],
+                "required": ["title", "instructions", "executeTime", "recurrence"]
+            ]
+        ]
+    }
+}
+
+// MARK: - Tool Execution
+
+private extension InternalToolProvider {
+    
+    func executeCreateAutomation(
+        dict: [String: Value],
+        automationManager: AutomationManager
+    ) -> String {
+        // Validate required fields
+        guard let title = dict["title"]?.stringValue else {
+            return "Title not provided"
+        }
+        
+        guard let instructions = dict["instructions"]?.stringValue else {
+            return "Instructions not provided"
+        }
+        
+        // Validate recurrence
+        let recurrenceResult = validateRecurrence(dict["recurrence"]?.stringValue)
+        if !recurrenceResult.error.isEmpty {
+            return recurrenceResult.error
+        }
+        
+        // Validate execution time
+        let dateResult = validateDateTime(dict["executeTime"]?.stringValue)
+        if !dateResult.error.isEmpty {
+            return dateResult.error
+        }
+        
+        guard let recurrence = recurrenceResult.value,
+              let executeTime = dateResult.value else {
+            return "Validation failed"
+        }
+        
+        // Create the automation
+        automationManager.createAutomation(
+            id: UUID().uuidString,
+            title: title,
+            instructions: instructions,
+            executeTime: executeTime,
+            recurrence: recurrence,
+            enabled: true
+        )
+        
+        return "Task created successfully. Check the created task in the automations tab in settings."
+    }
+}
+
+// MARK: - Validation
+
+private extension InternalToolProvider {
+    
+    struct ValidationResult<T> {
+        let value: T?
+        let error: String
+        
+        static func success(_ value: T) -> ValidationResult {
+            ValidationResult(value: value, error: "")
+        }
+        
+        static func failure(_ error: String) -> ValidationResult {
+            ValidationResult(value: nil, error: error)
+        }
+    }
+    
+    func validateDateTime(_ executeTimeString: String?) -> ValidationResult<Date> {
+        guard let executeTimeString = executeTimeString else {
+            return .failure("Execution time not provided")
+        }
+        
+        guard let validDate = dateFormatter.date(from: executeTimeString) else {
+            return .failure("Invalid date time format")
+        }
+        
+        return .success(validDate)
+    }
+    
+    func validateRecurrence(_ recurrenceString: String?) -> ValidationResult<Automation.Recurrence> {
+        guard let recurrenceString = recurrenceString else {
+            return .failure("Recurrence not provided")
+        }
+        
+        let components = recurrenceString.split(separator: "-")
+        
+        guard components.count == 3 else {
+            return .failure("Invalid recurrence format")
+        }
+        
+        guard let minutes = Int(components[2]),
+              (0...59).contains(minutes) else {
+            return .failure("Minutes should be between 0 and 59")
+        }
+        
+        guard let hours = Int(components[1]),
+              (0...23).contains(hours) else {
+            return .failure("Hours should be between 0 and 23")
+        }
+        
+        guard let days = Int(components[0]),
+              (0...30).contains(days) else {
+            return .failure("Days should be between 0 and 30")
+        }
+        
+        let recurrence = Automation.Recurrence(minutes: minutes, hours: hours, days: days)
+        return .success(recurrence)
+    }
+}
+

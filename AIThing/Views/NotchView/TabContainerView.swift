@@ -45,7 +45,7 @@ extension NotchView {
             stopSelectionPoll: { self.stopSelectionPoll() }
         )
         .opacity(showChatWindow && !showSettings && !focusedTabId.isEmpty ? 1 : 0)
-        .environmentObject(mcpManager)
+        .environmentObject(connectionManager)
         .environmentObject(loginManager)
         .environmentObject(firestoreManager)
         .environmentObject(appContext)

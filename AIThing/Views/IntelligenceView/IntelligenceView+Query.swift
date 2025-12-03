@@ -80,9 +80,9 @@ extension IntelligenceView {
             updateHistoryList: updateHistoryList,
             firestoreManager: firestoreManager,
             loginManager: loginManager,
-            mcpManager: mcpManager,
+            connectionManager: connectionManager,
             automationManager: automationManager,
-            aiThingMcpManager: aiThingMcpManager
+            internalToolProvider: internalToolProvider
         )
 
         if isTabRemoved() {

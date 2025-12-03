@@ -9,9 +9,9 @@ import SwiftUI
 import os
 
 struct SettingsAgentsTab: View {
-    @EnvironmentObject var googleOAuthManager: GoogleOAuthManager
-    @EnvironmentObject var gitHubOAuthManager: GithubOAuthManager
-    @EnvironmentObject var mcpOAuthManagers: McpOAuthManagers
+    @EnvironmentObject var googleAuthManager: GoogleAuthManager
+    @EnvironmentObject var githubAuthManager: GithubAuthManager
+    @EnvironmentObject var mcpAuthManagers: MCPAuthManagers
 
     @Binding var agents: [AgentEntry]
 
@@ -64,39 +64,39 @@ struct SettingsAgentsTab: View {
                             title: "Google Workspace",
                             subheading: $googleAgentAccount,
                         )
-                        .environmentObject(googleOAuthManager)
-                        .environmentObject(mcpOAuthManagers)
+                        .environmentObject(googleAuthManager)
+                        .environmentObject(mcpAuthManagers)
                         Divider()
                         GithubManagedAgentRow(
                             icon: "github",
                             title: "GitHub",
                             subheading: $githubAgentAccount,
                         )
-                        .environmentObject(gitHubOAuthManager)
-                        .environmentObject(mcpOAuthManagers)
+                        .environmentObject(githubAuthManager)
+                        .environmentObject(mcpAuthManagers)
                     }
 
                     GroupBox {
                         VStack(alignment: .leading) {
-                            ForEach(
-                                mcpOAuthManagers.managers.keys.sorted { lhs, rhs in
-                                    let lhsEnabled =
-                                        mcpOAuthManagers.managers[lhs]?.enabled ?? false
-                                    let rhsEnabled =
-                                        mcpOAuthManagers.managers[rhs]?.enabled ?? false
-                                    if lhsEnabled != rhsEnabled {
-                                        // enabled managers come first
-                                        return lhsEnabled && !rhsEnabled
-                                    } else {
-                                        // if both are enabled or both disabled, sort by key
-                                        return lhs < rhs
-                                    }
-                                },
-                                id: \.self
-                            ) { manager in
-                                if let agent = mcpOAuthManagers.managers[manager],
-                                    !(agent.server.custom ?? false)
-                                {
+                        ForEach(
+                            mcpAuthManagers.managers.keys.sorted { lhs, rhs in
+                                let lhsEnabled =
+                                    mcpAuthManagers.managers[lhs]?.enabled ?? false
+                                let rhsEnabled =
+                                    mcpAuthManagers.managers[rhs]?.enabled ?? false
+                                if lhsEnabled != rhsEnabled {
+                                    // enabled managers come first
+                                    return lhsEnabled && !rhsEnabled
+                                } else {
+                                    // if both are enabled or both disabled, sort by key
+                                    return lhs < rhs
+                                }
+                            },
+                            id: \.self
+                        ) { manager in
+                            if let agent = mcpAuthManagers.managers[manager],
+                                !(agent.server.custom ?? false)
+                            {
                                     ManagedAgentRow(
                                         icon: agent.server.image,
                                         title: agent.server.name
@@ -120,13 +120,13 @@ struct SettingsAgentsTab: View {
 
             .onAppear {
                 Task {
-                    if googleOAuthManager.enabled.count > 0 {
-                        if let user = googleOAuthManager.user {
+                    if googleAuthManager.enabled.count > 0 {
+                        if let user = googleAuthManager.user {
                             googleAgentAccount = user.profile?.name ?? ""
                         }
                     }
-                    if gitHubOAuthManager.enabled.count > 0 {
-                        if let user = gitHubOAuthManager.user {
+                    if githubAuthManager.enabled.count > 0 {
+                        if let user = githubAuthManager.user {
                             githubAgentAccount = user.name ?? ""
                         }
                     }

@@ -12,7 +12,7 @@ import os
 struct NotchView: View {
     @EnvironmentObject var appContext: AppContext
 
-    @StateObject var mcpManager = MCPManager()
+    @StateObject var connectionManager = ConnectionManager()
     @StateObject var loginManager = LoginManager()
     @StateObject var firestoreManager = FirestoreManager()
     @StateObject var automationManager = AutomationManager(onExecute: { _ in })
@@ -20,7 +20,7 @@ struct NotchView: View {
 
     let logger = Logger(subsystem: "com.thisisnsh.mac.AIThing", category: "NotchView")
     let historyStore = HistoryStore()
-    let aiThingMcpManager = AIThingMCPManager()
+    let internalToolProvider = InternalToolProvider()
 
     @ObservedObject var viewModel: NotchViewModel
     let updater: SPUUpdater
@@ -84,9 +84,9 @@ struct NotchView: View {
     @State var resizeHoverTask: Task<Void, Never>?
 
     // Managed Agents
-    @StateObject var googleOAuthManager = GoogleOAuthManager()
-    @StateObject var githubOAuthManager = GithubOAuthManager()
-    @StateObject var mcpOAuthManagers = McpOAuthManagers()
+    @StateObject var googleAuthManager = GoogleAuthManager()
+    @StateObject var githubAuthManager = GithubAuthManager()
+    @StateObject var mcpAuthManagers = MCPAuthManagers()
 
     var body: some View {
         ZStack {
@@ -117,9 +117,9 @@ struct NotchView: View {
                         )
                         .environmentObject(loginManager)
                         .environmentObject(firestoreManager)
-                        .environmentObject(googleOAuthManager)
-                        .environmentObject(githubOAuthManager)
-                        .environmentObject(mcpOAuthManagers)
+                        .environmentObject(googleAuthManager)
+                        .environmentObject(githubAuthManager)
+                        .environmentObject(mcpAuthManagers)
                         .environmentObject(automationManager)
                         .environmentObject(screenshotMonitor)
                     }
@@ -353,9 +353,9 @@ struct NotchView: View {
                     updateHistoryList: updateHistoryList,
                     firestoreManager: firestoreManager,
                     loginManager: loginManager,
-                    mcpManager: mcpManager,
+                    connectionManager: connectionManager,
                     automationManager: automationManager,
-                    aiThingMcpManager: aiThingMcpManager
+                    internalToolProvider: internalToolProvider
                 )
 
                 if !history.isEmpty {

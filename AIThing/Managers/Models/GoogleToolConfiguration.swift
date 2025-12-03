@@ -1,207 +1,141 @@
 //
-//  GoogleOAuthManager.swift
+//  GoogleToolConfiguration.swift
 //  AIThing
 //
-//  Created by Nishant Singh Hada on 8/25/25.
+//  Configuration for Google OAuth scopes and tool capabilities.
 //
 
-import Firebase
 import Foundation
-import GoogleSignIn
-import SwiftUI
-import os
 
-@MainActor
-class GoogleOAuthManager: ObservableObject, OAuthManagerProtocol {
-    typealias TokenType = GIDGoogleUser
+// MARK: - Google Tool Configuration
+
+/// Static configuration for Google OAuth scopes and API capabilities.
+/// Maps tools to required scopes and available API operations.
+enum GoogleToolConfiguration {
     
-    @Published var user: GIDGoogleUser?
-    @Published var enabled: Set<GoogleTool> = getGoogleTools()
+    // MARK: - OAuth Scopes
     
-    var hasEnabledTools: Bool { !enabled.isEmpty }
-
-    let logger = Logger(subsystem: "com.thisisnsh.mac.AIThing", category: "GoogleOAuthManager")
-
-    private var generating = false
-
-    func generateToken(refresh: Bool) async -> GIDGoogleUser? {
-        if generating { return nil }
-        generating = true
-        defer { generating = false }
-        
-        do {
-            // Refresh token if user already exists
-            if refresh {
-                if let user = self.user {
-                    do {
-                        try await user.refreshTokensIfNeeded()
-                        return user
-                    } catch {}
-                }
-            }
-
-            // Get the presenting window (required for macOS)
-            guard let presentingWindow = NSApplication.shared.keyWindow else {
-                throw LoginError.noPresentingWindow
-            }
-            // Configure Google Sign-In
-            guard let clientID = FirebaseApp.app()?.options.clientID else {
-                throw LoginError.noClientID
-            }
-
-            let config = GIDConfiguration(clientID: clientID)
-            GIDSignIn.sharedInstance.configuration = config
-
-            // Perform Google Sign-In
-            let result = try await GIDSignIn.sharedInstance.signIn(
-                withPresenting: presentingWindow,
-                hint: nil,
-                additionalScopes: additionalScopes()
-            )
-
-            user = result.user
-            return user
-        } catch {
-            logger.error("Get token: \(error.localizedDescription)")
-            user = nil
-            return user
-        }
-    }
-
-    func resetToken() {
-        user = nil
-    }
-
-    struct GoogleOAuthScopes {
+    /// Available Google OAuth scopes
+    enum Scopes {
+        // User info
         static let userInfoEmail = "https://www.googleapis.com/auth/userinfo.email"
         static let userInfoProfile = "https://www.googleapis.com/auth/userinfo.profile"
         static let openID = "openid"
-
+        
         // Calendar
         static let calendar = "https://www.googleapis.com/auth/calendar"
         static let calendarReadonly = "https://www.googleapis.com/auth/calendar.readonly"
         static let calendarEvents = "https://www.googleapis.com/auth/calendar.events"
-
+        
         // Drive
         static let drive = "https://www.googleapis.com/auth/drive"
         static let driveReadonly = "https://www.googleapis.com/auth/drive.readonly"
         static let driveFile = "https://www.googleapis.com/auth/drive.file"
-
+        
         // Docs
         static let docsReadonly = "https://www.googleapis.com/auth/documents.readonly"
         static let docsWrite = "https://www.googleapis.com/auth/documents"
-
+        
         // Gmail
         static let gmailReadonly = "https://www.googleapis.com/auth/gmail.readonly"
         static let gmailSend = "https://www.googleapis.com/auth/gmail.send"
         static let gmailCompose = "https://www.googleapis.com/auth/gmail.compose"
         static let gmailModify = "https://www.googleapis.com/auth/gmail.modify"
         static let gmailLabels = "https://www.googleapis.com/auth/gmail.labels"
-
+        
         // Sheets
         static let sheetsReadonly = "https://www.googleapis.com/auth/spreadsheets.readonly"
         static let sheetsWrite = "https://www.googleapis.com/auth/spreadsheets"
-
+        
         // Forms
         static let formsBody = "https://www.googleapis.com/auth/forms.body"
         static let formsBodyReadonly = "https://www.googleapis.com/auth/forms.body.readonly"
-        static let formsResponsesReadonly =
-            "https://www.googleapis.com/auth/forms.responses.readonly"
-
+        static let formsResponsesReadonly = "https://www.googleapis.com/auth/forms.responses.readonly"
+        
         // Slides
         static let slides = "https://www.googleapis.com/auth/presentations"
         static let slidesReadonly = "https://www.googleapis.com/auth/presentations.readonly"
-
+        
         // Tasks
         static let tasks = "https://www.googleapis.com/auth/tasks"
         static let tasksReadonly = "https://www.googleapis.com/auth/tasks.readonly"
-
     }
-
-    struct GoogleScopeGroups {
+    
+    // MARK: - Scope Groups
+    
+    /// Grouped scopes for convenience
+    enum ScopeGroups {
         static let base = [
-            GoogleOAuthScopes.userInfoEmail,
-            GoogleOAuthScopes.userInfoProfile,
-            GoogleOAuthScopes.openID,
+            Scopes.userInfoEmail,
+            Scopes.userInfoProfile,
+            Scopes.openID
         ]
-
+        
         static let docs = [
-            GoogleOAuthScopes.docsReadonly,
-            GoogleOAuthScopes.docsWrite,
+            Scopes.docsReadonly,
+            Scopes.docsWrite
         ]
-
+        
         static let calendar = [
-            GoogleOAuthScopes.calendar,
-            GoogleOAuthScopes.calendarReadonly,
-            GoogleOAuthScopes.calendarEvents,
+            Scopes.calendar,
+            Scopes.calendarReadonly,
+            Scopes.calendarEvents
         ]
-
+        
         static let drive = [
-            GoogleOAuthScopes.drive,
-            GoogleOAuthScopes.driveReadonly,
-            GoogleOAuthScopes.driveFile,
+            Scopes.drive,
+            Scopes.driveReadonly,
+            Scopes.driveFile
         ]
-
+        
         static let gmail = [
-            GoogleOAuthScopes.gmailReadonly,
-            GoogleOAuthScopes.gmailSend,
-            GoogleOAuthScopes.gmailCompose,
-            GoogleOAuthScopes.gmailModify,
-            GoogleOAuthScopes.gmailLabels,
+            Scopes.gmailReadonly,
+            Scopes.gmailSend,
+            Scopes.gmailCompose,
+            Scopes.gmailModify,
+            Scopes.gmailLabels
         ]
-
+        
         static let sheets = [
-            GoogleOAuthScopes.sheetsReadonly,
-            GoogleOAuthScopes.sheetsWrite,
+            Scopes.sheetsReadonly,
+            Scopes.sheetsWrite
         ]
-
+        
         static let forms = [
-            GoogleOAuthScopes.formsBody,
-            GoogleOAuthScopes.formsBodyReadonly,
-            GoogleOAuthScopes.formsResponsesReadonly,
+            Scopes.formsBody,
+            Scopes.formsBodyReadonly,
+            Scopes.formsResponsesReadonly
         ]
-
+        
         static let slides = [
-            GoogleOAuthScopes.slides,
-            GoogleOAuthScopes.slidesReadonly,
+            Scopes.slides,
+            Scopes.slidesReadonly
         ]
-
+        
         static let tasks = [
-            GoogleOAuthScopes.tasks,
-            GoogleOAuthScopes.tasksReadonly,
+            Scopes.tasks,
+            Scopes.tasksReadonly
         ]
     }
-
-    let toolScopesMap: [GoogleTool: [String]] = [
-        .gmail: GoogleScopeGroups.gmail,
-        .drive: GoogleScopeGroups.drive,
-        .calendar: GoogleScopeGroups.calendar,
-        .docs: GoogleScopeGroups.docs,
-        .sheets: GoogleScopeGroups.sheets,
-        .forms: GoogleScopeGroups.forms,
-        .slides: GoogleScopeGroups.slides,
-        .tasks: GoogleScopeGroups.tasks,
+    
+    // MARK: - Tool to Scope Mapping
+    
+    /// Maps Google tools to their required OAuth scopes
+    static let toolScopesMap: [GoogleTool: [String]] = [
+        .gmail: ScopeGroups.gmail,
+        .drive: ScopeGroups.drive,
+        .calendar: ScopeGroups.calendar,
+        .docs: ScopeGroups.docs,
+        .sheets: ScopeGroups.sheets,
+        .forms: ScopeGroups.forms,
+        .slides: ScopeGroups.slides,
+        .tasks: ScopeGroups.tasks
     ]
-
-    func additionalScopes() -> [String] {
-        var s = Set(enabled.flatMap { toolScopesMap[$0] ?? [] })
-        for b in GoogleScopeGroups.base {
-            s.insert(b)
-        }        
-        AnalyticsManager.shared.customEvent(
-            view: .GoogleOAuthManager,
-            primary: .scope,
-            secondary: String(describing: enabled),
-            sev: .info
-        )
-        return Array(s)
-    }
-
-    func enabledCapabilities() -> [String] {
-        enabled.flatMap { toolCapabilities[$0] ?? [] }
-    }
-
-    let toolCapabilities: [GoogleTool: [String]] = [
+    
+    // MARK: - Tool Capabilities
+    
+    /// Maps Google tools to their available API operations
+    static let toolCapabilities: [GoogleTool: [String]] = [
         .gmail: [
             "search_gmail_messages",
             "get_gmail_message_content",
@@ -213,7 +147,7 @@ class GoogleOAuthManager: ObservableObject, OAuthManagerProtocol {
             "manage_gmail_label",
             "draft_gmail_message",
             "get_gmail_threads_content_batch",
-            "batch_modify_gmail_message_labels",
+            "batch_modify_gmail_message_labels"
         ],
         .drive: [
             "search_drive_files",
@@ -221,14 +155,14 @@ class GoogleOAuthManager: ObservableObject, OAuthManagerProtocol {
             "create_drive_file",
             "list_drive_items",
             "get_drive_file_permissions",
-            "check_drive_file_public_access",
+            "check_drive_file_public_access"
         ],
         .calendar: [
             "list_calendars",
             "get_events",
             "create_event",
             "modify_event",
-            "delete_event",
+            "delete_event"
         ],
         .docs: [
             "get_doc_content",
@@ -248,7 +182,7 @@ class GoogleOAuthManager: ObservableObject, OAuthManagerProtocol {
             "read_document_comments",
             "create_document_comment",
             "reply_to_document_comment",
-            "resolve_document_comment",
+            "resolve_document_comment"
         ],
         .sheets: [
             "create_spreadsheet",
@@ -260,14 +194,14 @@ class GoogleOAuthManager: ObservableObject, OAuthManagerProtocol {
             "read_spreadsheet_comments",
             "create_spreadsheet_comment",
             "reply_to_spreadsheet_comment",
-            "resolve_spreadsheet_comment",
+            "resolve_spreadsheet_comment"
         ],
         .forms: [
             "create_form",
             "get_form",
             "list_form_responses",
             "set_publish_settings",
-            "get_form_response",
+            "get_form_response"
         ],
         .slides: [
             "create_presentation",
@@ -278,7 +212,7 @@ class GoogleOAuthManager: ObservableObject, OAuthManagerProtocol {
             "read_presentation_comments",
             "create_presentation_comment",
             "reply_to_presentation_comment",
-            "resolve_presentation_comment",
+            "resolve_presentation_comment"
         ],
         .tasks: [
             "get_task",
@@ -292,8 +226,8 @@ class GoogleOAuthManager: ObservableObject, OAuthManagerProtocol {
             "update_task_list",
             "delete_task_list",
             "move_task",
-            "clear_completed_tasks",
-        ],
+            "clear_completed_tasks"
+        ]
     ]
 }
 

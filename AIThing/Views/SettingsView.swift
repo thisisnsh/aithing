@@ -4,9 +4,9 @@ import SwiftUI
 struct SettingsView: View {
     @EnvironmentObject var loginManager: LoginManager
     @EnvironmentObject var firestoreManager: FirestoreManager
-    @EnvironmentObject var googleOAuthManager: GoogleOAuthManager
-    @EnvironmentObject var gitHubOAuthManager: GithubOAuthManager
-    @EnvironmentObject var mcpOAuthManagers: McpOAuthManagers
+    @EnvironmentObject var googleAuthManager: GoogleAuthManager
+    @EnvironmentObject var githubAuthManager: GithubAuthManager
+    @EnvironmentObject var mcpAuthManagers: MCPAuthManagers
     @EnvironmentObject var automationManager: AutomationManager
     @EnvironmentObject var screenshotMonitor: ScreenshotMonitor
 
@@ -92,9 +92,9 @@ struct SettingsView: View {
                                     saveAgents: saveAgents,
                                     deleteAgent: deleteAgent
                                 )
-                                .environmentObject(googleOAuthManager)
-                                .environmentObject(gitHubOAuthManager)
-                                .environmentObject(mcpOAuthManagers)
+                                .environmentObject(googleAuthManager)
+                                .environmentObject(githubAuthManager)
+                                .environmentObject(mcpAuthManagers)
 
                             case .preferences:
                                 SettingsPreferencesTab(

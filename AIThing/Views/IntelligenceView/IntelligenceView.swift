@@ -12,7 +12,7 @@ import SwiftUI
 import os
 
 struct IntelligenceView: View {
-    @EnvironmentObject var mcpManager: MCPManager
+    @EnvironmentObject var connectionManager: ConnectionManager
     @EnvironmentObject var loginManager: LoginManager
     @EnvironmentObject var firestoreManager: FirestoreManager
     @EnvironmentObject var appContext: AppContext
@@ -41,7 +41,7 @@ struct IntelligenceView: View {
 
     let logger = Logger(subsystem: "com.thisisnsh.mac.AIThing", category: "IntelligenceView")
     let cornerRadius: CGFloat = 24
-    let aiThingMcpManager = AIThingMCPManager()
+    let internalToolProvider = InternalToolProvider()
 
     @State var refreshTimer = Timer.publish(every: 2, on: .main, in: .common).autoconnect()
 

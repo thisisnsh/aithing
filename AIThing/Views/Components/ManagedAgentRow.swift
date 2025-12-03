@@ -9,7 +9,7 @@ import SwiftUI
 import os
 
 struct ManagedAgentRow: View {
-    @EnvironmentObject var manager: McpOAuthManager
+    @EnvironmentObject var manager: MCPAuthManager
     let icon: String?
     let title: String
 
@@ -75,15 +75,15 @@ struct ManagedAgentRow: View {
 }
 
 struct GithubManagedAgentRow: View {
-    @EnvironmentObject var manager: GithubOAuthManager
-    @EnvironmentObject var mcpOAuthManagers: McpOAuthManagers
+    @EnvironmentObject var manager: GithubAuthManager
+    @EnvironmentObject var mcpAuthManagers: MCPAuthManagers
     let icon: String
     let title: String
     @Binding var subheading: String
     @State private var exapanded = false
 
     var enabled: Bool {
-        if let server = mcpOAuthManagers.customManagers["managed_aithing_github"] {
+        if let server = mcpAuthManagers.customManagers["managed_aithing_github"] {
             return server.enabled ?? false
         }
         return false
@@ -117,7 +117,7 @@ struct GithubManagedAgentRow: View {
 
             if exapanded {
                 ForEach(
-                    manager.toolScopesMap.keys.sorted(by: { $0.rawValue < $1.rawValue }),
+                    GithubToolConfiguration.toolScopesMap.keys.sorted(by: { $0.rawValue < $1.rawValue }),
                     id: \.self
                 ) { tool in
                     VStack {
@@ -170,15 +170,15 @@ struct GithubManagedAgentRow: View {
 }
 
 struct GoogleManagedAgentRow: View {
-    @EnvironmentObject var manager: GoogleOAuthManager
-    @EnvironmentObject var mcpOAuthManagers: McpOAuthManagers
+    @EnvironmentObject var manager: GoogleAuthManager
+    @EnvironmentObject var mcpAuthManagers: MCPAuthManagers
     let icon: String
     let title: String
     @Binding var subheading: String
     @State private var exapanded = false
 
     var enabled: Bool {
-        if let server = mcpOAuthManagers.customManagers["managed_aithing_google"] {
+        if let server = mcpAuthManagers.customManagers["managed_aithing_google"] {
             return server.enabled ?? false
         }
         return false
@@ -212,7 +212,7 @@ struct GoogleManagedAgentRow: View {
 
             if exapanded {
                 ForEach(
-                    manager.toolScopesMap.keys.sorted(by: { $0.rawValue < $1.rawValue }),
+                    GoogleToolConfiguration.toolScopesMap.keys.sorted(by: { $0.rawValue < $1.rawValue }),
                     id: \.self
                 ) { tool in
                     VStack {
