@@ -7,35 +7,6 @@
 
 import Foundation
 
-// MARK: - Validation Contexts
-
-/// Context containing dependencies for Firebase config validation.
-struct ValidationContext {
-    /// Firestore manager for fetching config values
-    let firestoreManager: FirestoreManager
-    
-    /// Callback to update the thinking state
-    let setIsThinking: (Bool) -> Void
-    
-    /// Callback to animate output messages
-    let animateOutput: (String) async -> Void
-}
-
-/// Context containing dependencies for login validation.
-struct LoginValidationContext {
-    /// Authentication manager for checking login state
-    let loginManager: LoginManager
-    
-    /// Firestore manager for fetching user profile
-    let firestoreManager: FirestoreManager
-    
-    /// Callback to update the thinking state
-    let setIsThinking: (Bool) -> Void
-    
-    /// Callback to animate output messages
-    let animateOutput: (String) async -> Void
-}
-
 // MARK: - Public API
 
 /// Validates Firebase configuration before making a model call.

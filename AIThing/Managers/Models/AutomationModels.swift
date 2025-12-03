@@ -31,3 +31,26 @@ struct Automation: Codable, Identifiable {
     }
 }
 
+// MARK: - Automation Configuration
+
+/// Configuration for creating or updating an automation.
+struct AutomationConfig {
+    /// Unique identifier for the automation
+    let id: String
+    
+    /// Display title for the automation
+    let title: String
+    
+    /// Instructions/prompt to execute when triggered
+    let instructions: String
+    
+    /// Date/time when the automation should first execute
+    let executeTime: Date
+    
+    /// Recurrence schedule for the automation
+    let recurrence: Automation.Recurrence
+    
+    /// Whether the automation is enabled
+    let enabled: Bool
+}
+

@@ -117,7 +117,7 @@ struct GithubManagedAgentRow: View {
 
             if exapanded {
                 ForEach(
-                    GithubToolConfiguration.toolScopesMap.keys.sorted(by: { $0.rawValue < $1.rawValue }),
+                    GithubToolModels.toolScopesMap.keys.sorted(by: { $0.rawValue < $1.rawValue }),
                     id: \.self
                 ) { tool in
                     VStack {
@@ -212,7 +212,7 @@ struct GoogleManagedAgentRow: View {
 
             if exapanded {
                 ForEach(
-                    GoogleToolConfiguration.toolScopesMap.keys.sorted(by: { $0.rawValue < $1.rawValue }),
+                    GoogleToolModels.toolScopesMap.keys.sorted(by: { $0.rawValue < $1.rawValue }),
                     id: \.self
                 ) { tool in
                     VStack {

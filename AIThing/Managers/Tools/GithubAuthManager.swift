@@ -119,12 +119,12 @@ class GithubAuthManager: ObservableObject, OAuthManagerProtocol {
     func additionalScopes() -> [String] {
         guard !enabled.isEmpty else { return [] }
         
-        var scopes = Set(enabled.flatMap { GithubToolConfiguration.toolScopesMap[$0] ?? [] })
+        var scopes = Set(enabled.flatMap { GithubToolModels.toolScopesMap[$0] ?? [] })
         
         // Add default scopes
-        scopes.insert(GithubToolConfiguration.Scopes.readUser)
-        scopes.insert(GithubToolConfiguration.Scopes.readOrg)
-        scopes.insert(GithubToolConfiguration.Scopes.userEmail)
+        scopes.insert(GithubToolModels.Scopes.readUser)
+        scopes.insert(GithubToolModels.Scopes.readOrg)
+        scopes.insert(GithubToolModels.Scopes.userEmail)
         
         AnalyticsManager.shared.customEvent(
             view: .GithubOAuthManager,
@@ -140,7 +140,7 @@ class GithubAuthManager: ObservableObject, OAuthManagerProtocol {
     func enabledCapabilities() -> [String] {
         guard !enabled.isEmpty else { return [] }
         
-        var capabilities = enabled.flatMap { GithubToolConfiguration.toolCapabilities[$0] ?? [] }
+        var capabilities = enabled.flatMap { GithubToolModels.toolCapabilities[$0] ?? [] }
         capabilities.append(contentsOf: ["get_me", "get_team_members", "get_teams"])
         return capabilities
     }

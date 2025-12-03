@@ -7,29 +7,6 @@
 
 import Foundation
 
-// MARK: - Title Generation Context
-
-/// Context containing all parameters needed for title generation.
-struct TitleGenerationContext {
-    /// The user's query text
-    let query: String
-    
-    /// The AI's response text
-    let response: String
-    
-    /// The model identifier to use for generation
-    let model: String
-    
-    /// The API key for authentication
-    let apiKey: String
-    
-    /// The current tab title (used as fallback)
-    let tabTitle: String
-    
-    /// Firestore manager for config checks
-    let firestoreManager: FirestoreManager
-}
-
 // MARK: - Public API
 
 /// Generates a title for a chat based on the query and response.

@@ -1,5 +1,5 @@
 //
-//  GithubToolConfiguration.swift
+//  GithubToolModels.swift
 //  AIThing
 //
 //  Configuration for GitHub OAuth scopes and tool capabilities.
@@ -11,7 +11,7 @@ import Foundation
 
 /// Static configuration for GitHub OAuth scopes and API capabilities.
 /// Maps tools to required scopes and available API operations.
-enum GithubToolConfiguration {
+enum GithubToolModels {
     
     // MARK: - OAuth Scopes
     

@@ -1,5 +1,5 @@
 //
-//  GoogleToolConfiguration.swift
+//  GoogleToolModels.swift
 //  AIThing
 //
 //  Configuration for Google OAuth scopes and tool capabilities.
@@ -11,7 +11,7 @@ import Foundation
 
 /// Static configuration for Google OAuth scopes and API capabilities.
 /// Maps tools to required scopes and available API operations.
-enum GoogleToolConfiguration {
+enum GoogleToolModels {
     
     // MARK: - OAuth Scopes
     

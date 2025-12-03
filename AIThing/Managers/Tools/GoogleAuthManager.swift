@@ -90,10 +90,10 @@ class GoogleAuthManager: ObservableObject, OAuthManagerProtocol {
     
     /// Returns OAuth scopes based on enabled tools
     func additionalScopes() -> [String] {
-        var scopes = Set(enabled.flatMap { GoogleToolConfiguration.toolScopesMap[$0] ?? [] })
+        var scopes = Set(enabled.flatMap { GoogleToolModels.toolScopesMap[$0] ?? [] })
         
         // Add base scopes
-        for scope in GoogleToolConfiguration.ScopeGroups.base {
+        for scope in GoogleToolModels.ScopeGroups.base {
             scopes.insert(scope)
         }
         
@@ -109,7 +109,7 @@ class GoogleAuthManager: ObservableObject, OAuthManagerProtocol {
     
     /// Returns API capabilities based on enabled tools
     func enabledCapabilities() -> [String] {
-        enabled.flatMap { GoogleToolConfiguration.toolCapabilities[$0] ?? [] }
+        enabled.flatMap { GoogleToolModels.toolCapabilities[$0] ?? [] }
     }
 }
 
