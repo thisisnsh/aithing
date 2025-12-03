@@ -319,44 +319,59 @@ struct NotchView: View {
                 var title = ""
                 var history: [[String: Any]] = []
 
-                let _ = await callModel(
+                let context = ModelCallContext(
                     tabId: tabId,
                     query: automation.instructions,
-
-                    isTabRemoved: { false },
-                    getAppContextBase64: { return nil },
-                    getSelectedText: { return "" },
-                    setSelectedText: { _ in },
-                    getSelectionEnabled: { return false },
-                    setSelectionEnabled: { _ in },
-                    getTabTitle: { return title },
-                    setTabTitle: {
-                        title = $0
-                        await self.setTitle(id: tabId, title: title)
-                    },
-                    setDisplayQuery: { _ in },
-                    setToolCall: { _ in },
-                    getHistory: { await self.getHistory(tabId: $0) },
-                    storeHistory: { history = $1 },
-                    setHistory: { _ in },
-                    setIsThinking: { _ in },
-                    getModelInput: { return modelInput },
-                    setModelInput: { modelInput = $0 },
-                    getModelOutput: { return modelOutput },
-                    setModelOutput: { modelOutput = $0 },
-                    animateOutput: { (_) async in },
-                    getAllClientTools: { return allClientTools },
-                    getUsedTools: { return [] },
-                    getModelContext: { return [] },
-                    clearModelContext: {},
-                    getManagedModels: { return managedModels },
-                    updateHistoryList: updateHistoryList,
-                    firestoreManager: firestoreManager,
-                    loginManager: loginManager,
-                    connectionManager: connectionManager,
-                    automationManager: automationManager,
-                    internalToolProvider: internalToolProvider
+                    tabHandlers: TabHandlers(
+                        isTabRemoved: { false },
+                        getTabTitle: { title },
+                        setTabTitle: { newTitle in
+                            title = newTitle
+                            await self.setTitle(id: tabId, title: title)
+                        }
+                    ),
+                    selectionHandlers: SelectionHandlers(
+                        getSelectedText: { "" },
+                        setSelectedText: { _ in },
+                        getSelectionEnabled: { false },
+                        setSelectionEnabled: { _ in }
+                    ),
+                    modelHandlers: ModelHandlers(
+                        getModelInput: { modelInput },
+                        setModelInput: { modelInput = $0 },
+                        getModelOutput: { modelOutput },
+                        setModelOutput: { modelOutput = $0 },
+                        getModelContext: { [] },
+                        clearModelContext: {},
+                        getManagedModels: { managedModels }
+                    ),
+                    historyHandlers: HistoryHandlers(
+                        getHistory: { await self.getHistory(tabId: $0) },
+                        storeHistory: { _, hist in history = hist },
+                        setHistory: { _ in },
+                        updateHistoryList: { await updateHistoryList() }
+                    ),
+                    uiHandlers: UIHandlers(
+                        setDisplayQuery: { _ in },
+                        setToolCall: { _ in },
+                        setIsThinking: { _ in },
+                        animateOutput: { _ in }
+                    ),
+                    toolHandlers: ToolHandlers(
+                        getAllClientTools: { allClientTools },
+                        getUsedTools: { [] },
+                        getAppContextBase64: { nil }
+                    ),
+                    services: ModelCallServices(
+                        firestoreManager: firestoreManager,
+                        loginManager: loginManager,
+                        connectionManager: connectionManager,
+                        automationManager: automationManager,
+                        internalToolProvider: internalToolProvider
+                    )
                 )
+
+                let _ = await callModel(context: context)
 
                 if !history.isEmpty {
                     await self.storeHistory(

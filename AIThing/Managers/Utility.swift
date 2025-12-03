@@ -1,5 +1,5 @@
 //
-//  Environment.swift
+//  Utility.swift
 //  AIThing
 //
 //  Created by Nishant Singh Hada on 7/12/25.
@@ -10,12 +10,22 @@ import Foundation
 import MCP
 import os
 
+/// Global logger instance for the application.
 let logger = Logger(subsystem: "com.thisisnsh.mac.AIThing", category: "Utility")
 
+// MARK: - Environment Variables
+
+/// Provides access to environment variables from the .env file.
 struct Env {
+    /// Gets an environment variable value from the .env file.
+    ///
+    /// Reads the .env file from the app bundle and parses key-value pairs.
+    ///
+    /// - Parameter key: The environment variable key to look up
+    /// - Returns: The value if found, nil otherwise
     static func get(_ key: String) -> String? {
         guard let url = Bundle.main.url(forResource: ".env", withExtension: nil),
-            let data = try? String(contentsOf: url, encoding: .utf8)
+              let data = try? String(contentsOf: url, encoding: .utf8)
         else {
             return nil
         }
@@ -32,6 +42,12 @@ struct Env {
     }
 }
 
+// MARK: - Tool Conversion
+
+/// Converts MCP Tool objects to dictionary representations for JSON serialization.
+///
+/// - Parameter tools: Array of MCP Tool objects
+/// - Returns: Array of dictionaries containing tool name, description, and input schema
 func toolsToDictionaries(_ tools: [Tool]) -> [[String: Any]] {
     tools.map { tool in
         var dict: [String: Any] = [
@@ -47,6 +63,15 @@ func toolsToDictionaries(_ tools: [Tool]) -> [[String: Any]] {
     }
 }
 
+// MARK: - JSON Parsing
+
+/// Parses a JSON string into an MCP Value object.
+///
+/// Handles empty strings gracefully by returning an empty object.
+///
+/// - Parameter json: The JSON string to parse
+/// - Returns: The parsed Value object
+/// - Throws: Error if JSON parsing fails
 func parseJSONStringToValueObject(_ json: String) throws -> Value {
     if json.isEmpty {
         return [:]
@@ -57,6 +82,13 @@ func parseJSONStringToValueObject(_ json: String) throws -> Value {
     return Value(fromDecoded: jsonObject)
 }
 
+/// Parses a JSON string into a dictionary.
+///
+/// Handles empty strings and invalid JSON gracefully by returning an empty dictionary.
+/// Logs errors for debugging purposes.
+///
+/// - Parameter json: The JSON string to parse
+/// - Returns: Dictionary representation of the JSON, or empty dictionary on failure
 func parseJSONStringToDictObject(_ json: String) -> [String: Any] {
     do {
         if json.isEmpty {
@@ -81,4 +113,3 @@ func parseJSONStringToDictObject(_ json: String) -> [String: Any] {
         return [:]
     }
 }
-
