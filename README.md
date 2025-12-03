@@ -1,129 +1,158 @@
-# AI Thing (Previously This)
+<!--
+  README.md
+  AIThing
+  
+  Created by Nishant Singh Hada on December 2025.
+  https://aithing.dev
+-->
 
------------------------- 
+# AI Thing
 
+A powerful macOS menu bar app that brings AI assistance to your fingertips. Access AI capabilities from anywhere on your Mac with a simple keyboard shortcut.
 
-Sunday
-- Google Server Stats
-- Google Server Rate Limit
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
+[![Platform](https://img.shields.io/badge/Platform-macOS-blue.svg)](https://www.apple.com/macos)
+[![Swift](https://img.shields.io/badge/Swift-5.9+-orange.svg)](https://swift.org)
 
+**Website:** [https://aithing.dev](https://aithing.dev)
 
-Monday
-- [Morning 8am] Reddit Release
-- [Evening 6pm] Email people about the new release who emailed you before
+## Features
 
-Later
-- RAG 
-- Token Count / Savings
-- Get API Key seamlessly 
-- Search Tools
-- Search History
-- Add notification for automation
+- **Instant Access** - Summon AI assistance from anywhere with `Ctrl+Space` or `Ctrl+Option+Space`
+- **Floating Interface** - A sleek, non-intrusive floating window that stays out of your way
+- **MCP (Model Context Protocol) Support** - Connect to external tools and agents for extended capabilities
+- **File Attachments** - Drag and drop images, PDFs, and text files directly into conversations
+- **Text Selection Context** - Automatically capture selected text from any application
+- **Screenshot Context** - Include application screenshots for visual context in your queries
+- **Chat History** - Persistent conversation history with easy navigation
+- **Auto Updates** - Built-in update mechanism via Sparkle
 
+## Requirements
 
-Jan 1, 2026
-- PH Release
+- macOS 13.0 (Ventura) or later
+- Xcode 15.0 or later (for building from source)
+- An API key from a supported LLM provider
 
-------------------------
+## Supported LLM Providers
 
-## Missing Features
+Currently supported:
+- **Anthropic (Claude)** - Full support for Claude models
 
-- Support Image Generation 
-- Support Audio  
-- Support Elicitation 
-- Support Markdown Select 
-- Support AI Suggestions
+*More providers coming soon!*
 
+## Installation
 
-## Not Important Bugs
+### Download
 
-- 2 hover required to open the app after closing
-- First file drop is slow
+Visit [https://aithing.dev](https://aithing.dev) to download the latest release.
 
-------------------------
-    
-## Servers
- 
-Anthropic
-<your-anthropic-api-key>
+### Build from Source
 
-Zapier
-https://mcp.zapier.com/api/mcp/mcp
-https://mcp.zapier.com/authorize?client_id=<zapier-client-id>&redirect_uri=http://127.0.0.1:62326/callback&response_type=code&scope=profile%20email&state=F21AAA44-0643-4C90-824F-482C8FCFD27A
+1. Clone the repository:
+   ```bash
+   git clone https://github.com/thisisnsh/AIThing.git
+   cd AIThing
+   ```
 
-GitHub
-https://api.githubcopilot.com/mcp/ 
+2. Open the project in Xcode:
+   ```bash
+   open AIThing.xcodeproj
+   ```
 
-Xcode
-/usr/local/bin/xcode-npx-wrapper
--y xcodebuildmcp@latest
+3. Build and run the project (`Cmd+R`)
 
-Apple
-/Users/thisisnsh/.bun/bin/bunx
-@dhravya/apple-mcp@latest
+## Configuration
 
-------------------------
+### API Key Setup
 
-## Release
+1. Launch AI Thing
+2. Open Settings (click the gear icon or use the menu)
+3. Navigate to the **Model** tab
+4. Enter your API key for your preferred LLM provider:
+   - **Anthropic**: Get your API key from [console.anthropic.com](https://console.anthropic.com/settings/keys)
 
-https://chatgpt.com/g/g-p-6873dd743bb48191b8a269cab99e4c01-ai-thing/c/688ff3cc-7be8-8329-9fed-0be50ddd3485
+For detailed setup instructions, visit: [https://aithing.dev/getstarted](https://aithing.dev/getstarted)
 
-```
->>> change bundle version in info.plist
->>> change bundle version in settings
+### Permissions
 
-export version=<version>
+AI Thing requires the following permissions:
+- **Accessibility** - To detect text selection across applications
+- **Screen Recording** - To capture screenshots for visual context (optional)
 
->>> spctl --assess --type execute --verbose AIThing.app 
->>> AIThing.app: accepted
->>> source=Notarized Developer ID
+## Usage
 
-echo $version
+### Keyboard Shortcuts
 
-cp AIThing.app AIThing_dmg
+| Shortcut | Action |
+|----------|--------|
+| `Ctrl+Space` | Toggle AI Thing window |
+| `Ctrl+Option+Space` | Toggle AI Thing window (alternative) |
 
-hdiutil create -volname "AIThing" \
-  -srcfolder "AIThing_dmg" \
-  -format UDRW \
-  -fs HFS+ \
-  -ov "AIThing-temp.dmg"
+### Basic Workflow
 
-hdiutil attach "AIThing-temp.dmg"
+1. Select text in any application (optional)
+2. Press `Ctrl+Space` to open AI Thing
+3. Type your query or use the selected text as context
+4. Drag and drop files if needed
+5. Press Enter to send
 
-open /Volumes/AIThing
+### MCP Agents
 
-hdiutil detach /Volumes/AIThing
+AI Thing supports the Model Context Protocol (MCP) for connecting external tools:
 
-hdiutil convert "AIThing-temp.dmg" \
-  -format UDZO \
-  -imagekey zlib-level=9 \
-  -o "AIThing-$version.dmg"
+1. Go to Settings → Agents
+2. Add an MCP server via URL or local command
+3. Enable the agent to make its tools available in conversations
 
-rm AIThing-temp.dmg
+Use `@aithing` prefix in your queries to access built-in AI Thing tools.
 
-codesign -dv --verbose=4 AIThing.app 2>&1 | grep -E 'Authority|TeamIdentifier|Identifier'
+## Tech Stack
 
-codesign --sign "Developer ID Application: Nishant Hada (983LBM5U6B)" \
-  --timestamp \
-  AIThing-$version.dmg
+- **SwiftUI** - Modern declarative UI framework
+- **Firebase** - Authentication and analytics
+- **Model Context Protocol (MCP)** - Tool and agent integration
+- **Sparkle** - Auto-update framework
+- **HotKey** - Global keyboard shortcut handling
 
-xcrun notarytool submit "AIThing-$version.dmg" --keychain-profile "notary-profile" --wait
-xcrun stapler staple "AIThing-$version.dmg"
-
-codesign -dv --verbose=4 AIThing-$version.dmg 2>&1 | grep -E 'Authority|TeamIdentifier|Identifier'
-
-mv AIThing-$version.dmg ../Sparkles/  
-
-../Sparkle-2.8.1/bin/generate_appcast ../Sparkles
-
-cd ../Sparkles
-
-scp -i ~/.ssh/id_rsa * root@159.89.183.84:/var/www/html
-
-ssh -i ~/.ssh/id_rsa root@159.89.183.84
-
-cd /var/www/html
+## Project Structure
 
 ```
+AIThing/
+├── AIThingApp.swift          # App entry point
+├── AppDelegate.swift         # Application delegate and window management
+├── Managers/
+│   ├── Intelligence/         # LLM integration and streaming
+│   ├── Models/               # Data models
+│   ├── Tools/                # MCP and OAuth implementations
+│   └── Extensions/           # Swift extensions
+└── Views/
+    ├── ChatView/             # Chat interface components
+    ├── NotchView/            # Floating window UI
+    └── Components/           # Reusable UI components
+```
 
-------------------------
+## Contributing
+
+We welcome contributions! Please see [CONTRIBUTING.md](CONTRIBUTING.md) for guidelines.
+
+## Security
+
+For security vulnerabilities, please see our [Security Policy](SECURITY.md).
+
+## Code of Conduct
+
+This project follows the [Contributor Covenant Code of Conduct](CODE_OF_CONDUCT.md).
+
+## License
+
+This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
+
+## Support
+
+- **Website:** [https://aithing.dev](https://aithing.dev)
+- **Email:** help@aithing.dev
+- **Issues:** [GitHub Issues](https://github.com/thisisnsh/AIThing/issues)
+
+---
+
+Made with ❤️ by [Nishant Singh Hada](https://github.com/thisisnsh)
