@@ -13,7 +13,7 @@ struct ModelTab: View {
     @Binding var apiKeys: APIKeys
 
     // MARK: - Constants & Closures
-    let managedModels: [ModelInfo]
+    let allModels: [ModelInfo]
     let saveModels: () -> Void
     let bindingForModel: (Binding<String>, String) -> Binding<Bool>
 
@@ -26,7 +26,7 @@ struct ModelTab: View {
 
     /// Groups models by provider for organized display.
     private var modelsByProvider: [(provider: AIProvider, models: [ModelInfo])] {
-        let grouped = Dictionary(grouping: managedModels) { $0.provider }
+        let grouped = Dictionary(grouping: allModels) { $0.provider }
         return AIProvider.allCases.compactMap { provider in
             guard let models = grouped[provider], !models.isEmpty else { return nil }
             return (provider: provider, models: models)

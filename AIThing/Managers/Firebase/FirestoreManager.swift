@@ -15,28 +15,28 @@ import os
 /// Manages all Firestore database operations including profiles, configs, models, and agents.
 /// All operations are no-op when Firebase is not configured.
 final class FirestoreManager: ObservableObject {
-    
+
     // MARK: - Properties
-    
+
     private var _db: Firestore?
-    
+
     private var db: Firestore? {
         guard isEnabled else { return nil }
         if _db == nil { _db = Firestore.firestore() }
         return _db
     }
-    
+
     private let logger = Logger(
         subsystem: Bundle.main.bundleIdentifier ?? "com.thisisnsh.mac.AIThing",
         category: "FirestoreManager"
     )
-    
+
     private var isEnabled: Bool {
         FirebaseConfiguration.shared.isConfigured
     }
-    
+
     // MARK: - Constants
-    
+
     private enum Collection {
         static let system = "System"
         static let profiles = "Profiles"
@@ -45,12 +45,12 @@ final class FirestoreManager: ObservableObject {
         static let planDetails = "PlanDetails"
         static let plans = "Plans"
     }
-    
+
     private enum Document {
         static let configs = "Configs-2.0"
-        static let managedGitHubAgent = "managed_github_agent"
+        static let managedGitHubAgent = "managed_aithing_github"
     }
-    
+
     private enum ConfigKey {
         static let breakglass = "breakglass"
         static let expired = "expired"
@@ -59,7 +59,7 @@ final class FirestoreManager: ObservableObject {
         static let notification = "notification"
         static let greeting = "greeting"
     }
-    
+
     private enum ProfileField {
         static let creditsUsed = "creditsUsed"
         static let usageQuery = "usageData.query"
@@ -71,59 +71,60 @@ final class FirestoreManager: ObservableObject {
 // MARK: - System Configuration
 
 extension FirestoreManager {
-    
+
     /// Fetches the breakglass flag from system config
     func getBreakglass() async -> Bool {
         await fetchConfigValue(key: ConfigKey.breakglass, analyticsKey: "get_breakglass") ?? false
     }
-    
+
     /// Fetches the expired flag from system config
     func getExpired() async -> Bool {
         await fetchConfigValue(key: ConfigKey.expired, analyticsKey: "get_expired") ?? false
     }
-    
+
     /// Fetches the Anthropic API key from system config
     func getApiKeyAnthropic() async -> String {
         await fetchConfigValue(key: ConfigKey.apiKeyAnthropic, analyticsKey: "get_anthropic_api_key") ?? ""
     }
-    
+
     /// Fetches the default credits amount from system config
     func getDefaultCredits() async -> Int? {
         guard isEnabled else {
             FirebaseConfiguration.shared.logSkipped(operation: "getDefaultCredits")
-            return 50 // Default when Firebase is not configured
+            return 50  // Default when Firebase is not configured
         }
         return await fetchConfigValue(key: ConfigKey.defaultCredits, analyticsKey: "get_default_credits")
     }
-    
+
     /// Fetches the notification message from system config
     func getNotification() async -> String? {
         await fetchConfigValue(key: ConfigKey.notification, analyticsKey: "get_notification")
     }
-    
+
     /// Fetches the greeting message from system config
     func getGreeting() async -> String? {
         await fetchConfigValue(key: ConfigKey.greeting, analyticsKey: "get_greeting")
     }
-    
+
     // MARK: - Private Config Helpers
-    
+
     private func fetchConfigValue<T>(key: String, analyticsKey: String) async -> T? {
         guard isEnabled, let db else {
             FirebaseConfiguration.shared.logSkipped(operation: analyticsKey)
             return nil
         }
-        
+
         do {
             let snapshot = try await db.collection(Collection.system)
                 .document(Document.configs)
                 .getDocument()
-            
+
             guard let data = snapshot.data(),
-                  let value = data[key] as? T else {
+                let value = data[key] as? T
+            else {
                 return nil
             }
-            
+
             logAnalytics(operation: analyticsKey, success: true)
             return value
         } catch {
@@ -137,23 +138,23 @@ extension FirestoreManager {
 // MARK: - Profile Management
 
 extension FirestoreManager {
-    
+
     /// Fetches or creates a profile for the given user
     func getProfile(user: AppUser) async -> Profile? {
         guard isEnabled, let db else {
             FirebaseConfiguration.shared.logSkipped(operation: "getProfile")
             return createDefaultProfile(for: user)
         }
-        
+
         // Try to fetch existing profile
         if let profile = await fetchExistingProfile(userId: user.uid) {
             return profile
         }
-        
+
         // Create new profile if none exists
         return await createNewProfile(for: user, in: db)
     }
-    
+
     /// Increments the credits used for a user
     func incrementCredits(user: AppUser, by amount: Int) async {
         await updateProfileField(
@@ -162,7 +163,7 @@ extension FirestoreManager {
             analyticsKey: "increment_credit"
         )
     }
-    
+
     /// Increments usage statistics for a user
     func incrementUsage(user: AppUser, usage: Usage) async {
         await updateProfileField(
@@ -170,14 +171,14 @@ extension FirestoreManager {
             updates: [
                 ProfileField.usageQuery: FieldValue.increment(Int64(usage.query)),
                 ProfileField.usageAgentUse: FieldValue.increment(Int64(usage.agentUse)),
-                ProfileField.usageFilesAttached: FieldValue.increment(Int64(usage.filesAttached))
+                ProfileField.usageFilesAttached: FieldValue.increment(Int64(usage.filesAttached)),
             ],
             analyticsKey: "increment_usage"
         )
     }
-    
+
     // MARK: - Private Profile Helpers
-    
+
     private func createDefaultProfile(for user: AppUser) -> Profile {
         Profile(
             id: user.uid,
@@ -191,15 +192,15 @@ extension FirestoreManager {
             usageData: Usage()
         )
     }
-    
+
     private func fetchExistingProfile(userId: String) async -> Profile? {
         guard let db else { return nil }
-        
+
         do {
             let snapshot = try await db.collection(Collection.profiles)
                 .document(userId)
                 .getDocument()
-            
+
             if let profile = try? snapshot.data(as: Profile.self) {
                 logAnalytics(operation: "get_profile", success: true)
                 return profile
@@ -211,11 +212,11 @@ extension FirestoreManager {
             return nil
         }
     }
-    
+
     private func createNewProfile(for user: AppUser, in db: Firestore) async -> Profile? {
         let apiKey = await getApiKeyAnthropic()
         let defaultCredits = await getDefaultCredits()
-        
+
         let profile = Profile(
             id: user.uid,
             name: user.displayName,
@@ -227,7 +228,7 @@ extension FirestoreManager {
             apiKeyOpenAI: "",
             usageData: Usage()
         )
-        
+
         do {
             try db.collection(Collection.profiles)
                 .document(user.uid)
@@ -240,13 +241,13 @@ extension FirestoreManager {
             return nil
         }
     }
-    
+
     private func updateProfileField(userId: String, updates: [String: Any], analyticsKey: String) async {
         guard isEnabled, let db else {
             FirebaseConfiguration.shared.logSkipped(operation: analyticsKey)
             return
         }
-        
+
         do {
             try await db.collection(Collection.profiles)
                 .document(userId)
@@ -262,11 +263,11 @@ extension FirestoreManager {
 // MARK: - Models
 
 extension FirestoreManager {
-    
+
     /// Fetches all available model configurations from Firestore and local plist.
     func getModelInfos() async -> [ModelInfo] {
         var allModels: [ModelInfo] = []
-        
+
         // Load from Firestore
         if isEnabled, let db {
             do {
@@ -281,21 +282,21 @@ extension FirestoreManager {
         } else {
             FirebaseConfiguration.shared.logSkipped(operation: "getModelInfos")
         }
-        
+
         // Load from local plist
         let localModels = loadLocalModels()
         allModels.append(contentsOf: localModels)
-        
+
         return sortModels(allModels)
     }
-    
+
     /// Creates or updates a model configuration
     func createModel(model: ModelInfo) async {
         guard isEnabled, let db else {
             FirebaseConfiguration.shared.logSkipped(operation: "createModel")
             return
         }
-        
+
         do {
             try db.collection(Collection.models)
                 .document(model.id)
@@ -305,7 +306,7 @@ extension FirestoreManager {
             logger.error("[FirestoreManager] Error creating model \(model.id): \(error.localizedDescription)")
         }
     }
-    
+
     private func sortModels(_ models: [ModelInfo]) -> [ModelInfo] {
         models.sorted {
             if $0.provider == $1.provider {
@@ -314,25 +315,25 @@ extension FirestoreManager {
             return $0.provider.displayName < $1.provider.displayName
         }
     }
-    
+
     /// Loads models from the local Models.plist file in the app bundle.
     private func loadLocalModels() -> [ModelInfo] {
         guard let url = Bundle.main.url(forResource: "Models", withExtension: "plist"),
-              let data = try? Data(contentsOf: url),
-              let plistArray = try? PropertyListSerialization.propertyList(from: data, format: nil) as? [[String: Any]]
+            let data = try? Data(contentsOf: url),
+            let plistArray = try? PropertyListSerialization.propertyList(from: data, format: nil) as? [[String: Any]]
         else {
             return []
         }
-        
+
         return plistArray.compactMap { dict -> ModelInfo? in
             guard let id = dict["id"] as? String, !id.isEmpty else {
                 return nil
             }
-            
+
             let name = (dict["name"] as? String) ?? id
             let providerString = dict["provider"] as? String ?? "anthropic"
             let provider = AIProvider(rawValue: providerString) ?? .anthropic
-            
+
             return ModelInfo(id: id, name: name, provider: provider)
         }
     }
@@ -341,25 +342,25 @@ extension FirestoreManager {
 // MARK: - Agents
 
 extension FirestoreManager {
-    
+
     /// Managed GitHub Agent credentials
     struct ManagedGitHubAgent: Codable {
         let clientId: String
         let clientSecret: String
     }
-    
+
     /// Fetches the managed GitHub agent credentials
     func getManagedGitHubAgent() async -> ManagedGitHubAgent? {
         guard isEnabled, let db else {
             FirebaseConfiguration.shared.logSkipped(operation: "getManagedGitHubAgent")
             return nil
         }
-        
+
         do {
             let snapshot = try await db.collection(Collection.agents)
                 .document(Document.managedGitHubAgent)
                 .getDocument()
-            
+
             if let agent = try? snapshot.data(as: ManagedGitHubAgent.self) {
                 logAnalytics(operation: "get_managed_github_agent", success: true)
                 return agent
@@ -371,14 +372,14 @@ extension FirestoreManager {
             return nil
         }
     }
-    
+
     /// Fetches all managed MCP agents
     func getManagedAgents() async -> [McpServer] {
         guard isEnabled, let db else {
             FirebaseConfiguration.shared.logSkipped(operation: "getManagedAgents")
             return []
         }
-        
+
         do {
             let snapshot = try await db.collection(Collection.agents).getDocuments()
             let agents = snapshot.documents.compactMap { doc -> McpServer? in
@@ -393,7 +394,7 @@ extension FirestoreManager {
                     custom: server.custom
                 )
             }
-            
+
             logAnalytics(operation: "get_managed_agents", success: true)
             return agents
         } catch {
@@ -406,9 +407,9 @@ extension FirestoreManager {
 
 // MARK: - Analytics Helper
 
-private extension FirestoreManager {
-    
-    func logAnalytics(operation: String, success: Bool) {
+extension FirestoreManager {
+
+    fileprivate func logAnalytics(operation: String, success: Bool) {
         AnalyticsManager.shared.customEvent(
             view: .FirebaseManager,
             primary: .firebase,
@@ -421,7 +422,7 @@ private extension FirestoreManager {
 // MARK: - Date Parser
 
 private enum DateParser {
-    
+
     /// Parses date strings in various formats (e.g., "September 16, 2025 at 11:59:59 PM UTC-4")
     static func parseEndDate(_ raw: String) -> Date? {
         // Strip leading "endDate " if present
@@ -430,30 +431,30 @@ private enum DateParser {
             with: "",
             options: .regularExpression
         )
-        
+
         for formatter in dateFormatters {
             if let date = formatter.date(from: cleaned) {
                 return date
             }
         }
-        
+
         // Try ISO8601 as last resort
         return ISO8601DateFormatter().date(from: cleaned)
     }
-    
+
     private static var dateFormatters: [DateFormatter] {
         let eastern = TimeZone(identifier: "America/New_York")
         let locale = Locale(identifier: "en_US_POSIX")
-        
+
         let formats: [(String, TimeZone?)] = [
             ("MMMM d, yyyy 'at' h:mm:ss a 'UTC'XXXXX", nil),
             ("MMMM d, yyyy 'at' h:mm a 'UTC'XXXXX", nil),
             ("MMMM d, yyyy h:mm:ss a 'UTC'XXXXX", nil),
             ("MMMM d, yyyy h:mm a 'UTC'XXXXX", nil),
             ("MMMM d, yyyy 'at' h:mm:ss a", eastern),
-            ("MMMM d, yyyy 'at' h:mm a", eastern)
+            ("MMMM d, yyyy 'at' h:mm a", eastern),
         ]
-        
+
         return formats.map { format, tz in
             let formatter = DateFormatter()
             formatter.locale = locale
@@ -463,4 +464,3 @@ private enum DateParser {
         }
     }
 }
-

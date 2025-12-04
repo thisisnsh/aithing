@@ -90,7 +90,7 @@ struct ModelHandlers {
     let clearModelContext: () -> Void
     
     /// Gets all available managed models
-    let getManagedModels: () -> [ModelInfo]
+    let getAllModels: () -> [ModelInfo]
 }
 
 /// Handlers for history operations

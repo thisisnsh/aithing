@@ -28,7 +28,7 @@ extension NotchView {
             viewModel: viewModel,
             currentTabId: $focusedTabId,
             allClientTools: $allClientTools,
-            managedModels: $managedModels,
+            allModels: $allModels,
             toastText: $toastText,
             tabId: tab.id,
             close: { close() },

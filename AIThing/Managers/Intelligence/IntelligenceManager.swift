@@ -58,8 +58,8 @@ private func executeModelCall(
     }
 
     // Get provider for the selected model
-    let managedModels = context.modelHandlers.getManagedModels()
-    guard let modelProvider = getModelProvider(model, all: managedModels) else {
+    let allModels = context.modelHandlers.getAllModels()
+    guard let modelProvider = getModelProvider(model, all: allModels) else {
         context.uiHandlers.setIsThinking(false)
         await context.uiHandlers.animateOutput("Model provider not found")
         return false
@@ -648,7 +648,7 @@ private func createRecursiveContext(
             setModelOutput: originalContext.modelHandlers.setModelOutput,
             getModelContext: originalContext.modelHandlers.getModelContext,
             clearModelContext: originalContext.modelHandlers.clearModelContext,
-            getManagedModels: originalContext.modelHandlers.getManagedModels
+            getAllModels: originalContext.modelHandlers.getAllModels
         ),
         historyHandlers: originalContext.historyHandlers,
         uiHandlers: originalContext.uiHandlers,

@@ -54,7 +54,7 @@ struct NotchView: View {
     @State var lastExpandedWindowSize = WindowSize.sidebarIsExpanded
     @State var hoverTask: Task<Void, Never>?
     @State var circularNotch = false
-    @State var managedModels: [ModelInfo] = []
+    @State var allModels: [ModelInfo] = []
     @State var agents: [AgentEntry] = []
     @State var allClientTools: [String: [[String: Any]]] = [:]
     @State var focusedTabId: String = ""
@@ -101,7 +101,7 @@ struct NotchView: View {
                     if showChatWindow && showSettings {
                         SettingsView(
                             isPresented: $showSettings,
-                            managedModels: $managedModels,
+                            allModels: $allModels,
                             close: {
                                 showSettings = false
                                 close()
@@ -273,7 +273,7 @@ struct NotchView: View {
             // Refresh when settings is closed
             if !showSettings {
                 Task {
-                    managedModels = await firestoreManager.getModelInfos()
+                    allModels = await firestoreManager.getModelInfos()
                     let rc1 = await refreshLocalAgents()
                     toastText = ""
                     toastText = rc1
@@ -304,7 +304,7 @@ struct NotchView: View {
 
             histories = await historyStore.getAll(limit: 100)
 
-            managedModels = await firestoreManager.getModelInfos()
+            allModels = await firestoreManager.getModelInfos()
 
             let rc1 = await refreshLocalAgents()
             toastText = ""
@@ -343,7 +343,7 @@ struct NotchView: View {
                         setModelOutput: { modelOutput = $0 },
                         getModelContext: { [] },
                         clearModelContext: {},
-                        getManagedModels: { managedModels }
+                        getAllModels: { allModels }
                     ),
                     historyHandlers: HistoryHandlers(
                         getHistory: { await self.getHistory(tabId: $0) },

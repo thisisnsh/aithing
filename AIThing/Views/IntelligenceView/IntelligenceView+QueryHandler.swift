@@ -112,7 +112,7 @@ extension IntelligenceView {
             setModelOutput: { [self] output in modelOutput = output },
             getModelContext: { [self] in modelContext },
             clearModelContext: { [self] in modelContext.removeAll() },
-            getManagedModels: { [self] in managedModels }
+            getAllModels: { [self] in allModels }
         )
     }
     

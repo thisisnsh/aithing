@@ -13,7 +13,7 @@ struct SettingsView: View {
 
     // MARK: - Bindings
     @Binding var isPresented: Bool
-    @Binding var managedModels: [ModelInfo]
+    @Binding var allModels: [ModelInfo]
 
     // MARK: - Constants & Closures
     let close: () -> Void
@@ -68,7 +68,7 @@ struct SettingsView: View {
                                 ModelTab(
                                     modelSelected: $modelSelected,
                                     apiKeys: $apiKeys,
-                                    managedModels: managedModels,
+                                    allModels: allModels,
                                     saveModels: saveModels,
                                     bindingForModel: bindingForModel
                                 )

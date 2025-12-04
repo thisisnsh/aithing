@@ -26,7 +26,7 @@ struct IntelligenceView: View {
     // MARK: - Bindings
     @Binding var currentTabId: String
     @Binding var allClientTools: [String: [[String: Any]]]
-    @Binding var managedModels: [ModelInfo]
+    @Binding var allModels: [ModelInfo]
     @Binding var toastText: String
 
     // MARK: - Constants & Closures
@@ -210,7 +210,7 @@ struct IntelligenceView: View {
                         // Check API key for the selected model's provider
                         var apiKey = ""
                         if let selectedModel = getModel() {
-                            if let provider = getModelProvider(selectedModel, all: managedModels) {
+                            if let provider = getModelProvider(selectedModel, all: allModels) {
                                 apiKey = getAPIKey(for: provider) ?? ""
                             }
                         }
