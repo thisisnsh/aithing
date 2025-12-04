@@ -9,12 +9,15 @@ import AppKit
 import SwiftUI
 
 struct ChatBubble: View, Equatable {
+    // MARK: - Constants
     let item: ChatItem
 
+    // MARK: - Equatable
     static func == (lhs: ChatBubble, rhs: ChatBubble) -> Bool {
         lhs.item == rhs.item
     }
 
+    // MARK: - Body
     var body: some View {
         HStack {
             if item.role == .assistant { Spacer().frame(width: 0) }

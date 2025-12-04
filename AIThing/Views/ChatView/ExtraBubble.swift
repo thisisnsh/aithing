@@ -8,8 +8,10 @@
 import SwiftUI
 
 struct ExtraBubble: View {
+    // MARK: - Constants
     let text: String
 
+    // MARK: - Body
     var body: some View {
         Text(text)
             .font(.system(size: 10, weight: .medium, design: .monospaced))

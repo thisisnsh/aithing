@@ -9,11 +9,14 @@ import AppKit
 import SwiftUI
 
 struct ImageBubble: View {
+    // MARK: - Constants
     let image: [NSImage]
     let isUser: Bool
 
+    // MARK: - State
     @State private var index = 0
 
+    // MARK: - Body
     var body: some View {
         ZStack {
             if image.count > 2 {

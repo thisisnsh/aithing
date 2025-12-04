@@ -9,17 +9,23 @@ import MCP
 import SwiftUI
 
 struct ToolsView: View {
-    let cornerRadius: CGFloat
+    // MARK: - Bindings
     @Binding var allClientTools: [String: [[String: Any]]]
 
+    // MARK: - Constants
+    let cornerRadius: CGFloat
+
+    // MARK: - State
     @State private var tools: [String: [[String: Any]]] = [:]
     @State private var expandedHeadings: Set<String> = []
     @State private var expandedNames: Set<String> = []
 
+    // MARK: - Computed Properties
     private var sortedHeadings: [String] {
         tools.keys.sorted()
     }
 
+    // MARK: - Body
     var body: some View {
         ScrollView {
             if tools.isEmpty {

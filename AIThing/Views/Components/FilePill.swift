@@ -8,6 +8,7 @@
 import SwiftUI
 
 struct FilePill: View {
+    // MARK: - Constants & Closures
     let index: Int
     let name: String
     let image: NSImage?
@@ -16,8 +17,10 @@ struct FilePill: View {
     let onDelete: (Int) -> Void
     let cornerRadius: CGFloat
 
+    // MARK: - State
     @State private var onHover = false
 
+    // MARK: - Body
     var body: some View {
         HStack(alignment: .bottom) {
             Image(systemName: systemName)

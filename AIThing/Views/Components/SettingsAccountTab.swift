@@ -8,12 +8,22 @@
 import SwiftUI
 
 struct SettingsAccountTab: View {
+    // MARK: - Constants & Closures
     let authState: AuthState
     let signIn: () async -> Void
     let signOut: () async -> Void
     let usageData: Usage
     let onHistory: () -> Void
 
+    private let help: [(String, String, String)] = [
+        ("Show / Hide AI Thing", "Toggle visibility", "Control (⌃) + Space"),
+        (
+            "Show / Hide AI Thing (Alternate)", "Alternate shortcut",
+            "Control (⌃) + Option (⌥) + Space"
+        ),
+    ]
+
+    // MARK: - Computed Properties
     private var version: String {
         if let infoDictionary = Bundle.main.infoDictionary {
             let version = infoDictionary["CFBundleShortVersionString"] as? String ?? "X"
@@ -25,14 +35,7 @@ struct SettingsAccountTab: View {
         }
     }
 
-    private let help: [(String, String, String)] = [
-        ("Show / Hide AI Thing", "Toggle visibility", "Control (⌃) + Space"),
-        (
-            "Show / Hide AI Thing (Alternate)", "Alternate shortcut",
-            "Control (⌃) + Option (⌥) + Space"
-        ),
-    ]
-
+    // MARK: - Body
     var body: some View {
         VStack(alignment: .leading, spacing: 16) {
             GroupBox(label: title("Login")) {

@@ -8,31 +8,40 @@
 import SwiftUI
 
 struct SettingsModelTab: View {
-    let managedModels: [ModelInfo]
-
+    // MARK: - Bindings
     @Binding var modelSelected: String
     @Binding var apiKey: String
-    @FocusState var apiKeyFieldFocused: Bool
 
+    // MARK: - Constants & Closures
+    let managedModels: [ModelInfo]
     let saveModels: () -> Void
     let bindingForModel: (Binding<String>, String) -> Binding<Bool>
 
+    // MARK: - Focus State
+    @FocusState private var apiKeyFieldFocused: Bool
+
+    // MARK: - Computed Properties
     private var icon: String {
         getModelIcon(modelSelected, all: managedModels)
     }
-    private var title: String {
+
+    private var modelTitle: String {
         getModelTitle(modelSelected, all: managedModels)
     }
+
     private var rating: String {
         getModelRating(modelSelected, all: managedModels)
     }
+
     private var cost: Int {
         getModelCost(modelSelected, all: managedModels)
     }
+
     private var costImage: Int {
         getModelCostImage(modelSelected, all: managedModels)
     }
 
+    // MARK: - Body
     var body: some View {
         ZStack(alignment: .top) {
             Color.clear
@@ -52,7 +61,7 @@ struct SettingsModelTab: View {
                                         .aspectRatio(contentMode: .fit)
                                         .frame(width: 16, height: 16)
 
-                                    Text(title)
+                                    Text(modelTitle)
                                         .font(.system(size: 14, weight: .medium))
                                 }
                                 .padding(.bottom, 4)

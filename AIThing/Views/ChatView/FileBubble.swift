@@ -8,11 +8,14 @@
 import SwiftUI
 
 struct FileBubble: View {
+    // MARK: - Constants
     let file: String
     let content: String
 
+    // MARK: - State
     @State private var showContent = false
 
+    // MARK: - Body
     var body: some View {
         if showContent {
             MarkdownText(text: content)

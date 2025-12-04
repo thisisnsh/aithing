@@ -10,19 +10,23 @@ import SwiftUI
 import os
 
 struct NotchView: View {
+    // MARK: - Environment Objects
     @EnvironmentObject var appContext: AppContext
 
-    @StateObject var connectionManager = ConnectionManager()
-    @StateObject var loginManager = LoginManager()
-    @StateObject var firestoreManager = FirestoreManager()
-    @StateObject var automationManager = AutomationManager(onExecute: { _ in })
-    @StateObject var screenshotMonitor = ScreenshotMonitor()
+    // MARK: - State Objects
+    @StateObject private var connectionManager = ConnectionManager()
+    @StateObject private var loginManager = LoginManager()
+    @StateObject private var firestoreManager = FirestoreManager()
+    @StateObject private var automationManager = AutomationManager(onExecute: { _ in })
+    @StateObject private var screenshotMonitor = ScreenshotMonitor()
+    @StateObject private var googleAuthManager = GoogleAuthManager()
+    @StateObject private var githubAuthManager = GithubAuthManager()
+    @StateObject private var mcpAuthManagers = MCPAuthManagers()
 
-    let logger = Logger(subsystem: "com.thisisnsh.mac.AIThing", category: "NotchView")
-    let historyStore = HistoryStore()
-    let internalToolProvider = InternalToolProvider()
-
+    // MARK: - Observed Objects
     @ObservedObject var viewModel: NotchViewModel
+
+    // MARK: - Constants & Closures
     let updater: SPUUpdater
     let updateWindowSize: (WindowSize) -> (CGFloat, CGFloat)
     let modifyWindowBaseSize: (CGSize, WindowSize) -> (CGFloat, CGFloat)
@@ -34,60 +38,56 @@ struct NotchView: View {
     let startSelectionPoll: () -> Void
     let stopSelectionPoll: () -> Void
     let setPanelVisibility: () -> Void
-
+    let logger = Logger(subsystem: "com.thisisnsh.mac.AIThing", category: "NotchView")
+    let historyStore = HistoryStore()
+    let internalToolProvider = InternalToolProvider()
     let cornerRadiusLeft: CGFloat = 38
     let shadowBuffer: CGFloat = 32
     let maxTabs: Int = 25
+    let alpha: CGFloat = 0.25
+    let pixelStep: CGFloat = 1.0
 
-    @State var width: CGFloat = 0
-    @State var height: CGFloat = 0
-    @State var windowSize = WindowSize.notchIsCollapsed
-    @State var lastExpandedWindowSize = WindowSize.sidebarIsExpanded
-    @State var hoverTask: Task<Void, Never>?
-    @State var circularNotch = false
+    // MARK: - State
+    @State private var width: CGFloat = 0
+    @State private var height: CGFloat = 0
+    @State private var windowSize = WindowSize.notchIsCollapsed
+    @State private var lastExpandedWindowSize = WindowSize.sidebarIsExpanded
+    @State private var hoverTask: Task<Void, Never>?
+    @State private var circularNotch = false
+    @State private var managedModels: [ModelInfo] = []
+    @State private var agents: [AgentEntry] = []
+    @State private var allClientTools: [String: [[String: Any]]] = [:]
+    @State private var focusedTabId: String = ""
+    @State private var tabs: [String: TabItem] = [:]
+    @State private var tabOrder: [String] = []
+    @State private var histories: [History] = []
+    @State private var unseen: Bool = false
+    @State private var showDragIcon = false
+    @State private var showSettings = false
+    @State private var toastText = ""
+    @State private var hoverSidebar = false
+    @State private var expandSidebar = false
+    @State private var previousExpandSidebar = false
+    @State private var showResizeX = false
+    @State private var showResizeY = false
+    @State private var smoothedY: CGFloat = 0
+    @State private var smoothedX: CGFloat = 0
+    @State private var smoothedDragY: CGFloat = 0
+    @State private var lastAppliedY: CGFloat = 0
+    @State private var lastAppliedX: CGFloat = 0
+    @State private var lastAppliedDragY: CGFloat = 0
+    @State private var resizeHoverTask: Task<Void, Never>?
 
-    @State var managedModels: [ModelInfo] = []
-    @State var agents: [AgentEntry] = []
-    @State var allClientTools: [String: [[String: Any]]] = [:]
-
-    @State var focusedTabId: String = ""
-    @State var tabs: [String: TabItem] = [:]
-    @State var tabOrder: [String] = []
-    @State var histories: [History] = []
-    @State var unseen: Bool = false
-
-    @State var showDragIcon = false
-    @State var showSettings = false
-    @State var toastText = ""
-    @State var hoverSidebar = false
-    @State var expandSidebar = false
-    @State var previousExpandSidebar = false
-
+    // MARK: - Computed Properties
     var showChatWindow: Bool {
         windowSize.rawValue >= WindowSize.chatIsShown.rawValue
     }
+
     var expandNotch: Bool {
         windowSize.rawValue >= WindowSize.sidebarIsCollapsed.rawValue
     }
 
-    // Resize
-    @State var showResizeX = false
-    @State var showResizeY = false
-    @State var smoothedY: CGFloat = 0
-    @State var smoothedX: CGFloat = 0
-    @State var smoothedDragY: CGFloat = 0
-    @State var lastAppliedY: CGFloat = 0
-    @State var lastAppliedX: CGFloat = 0
-    @State var lastAppliedDragY: CGFloat = 0
-    let alpha: CGFloat = 0.25
-    let pixelStep: CGFloat = 1.0
-    @State var resizeHoverTask: Task<Void, Never>?
-
-    // Managed Agents
-    @StateObject var googleAuthManager = GoogleAuthManager()
-    @StateObject var githubAuthManager = GithubAuthManager()
-    @StateObject var mcpAuthManagers = MCPAuthManagers()
-
+    // MARK: - Body
     var body: some View {
         ZStack {
             NotchShapeExt()

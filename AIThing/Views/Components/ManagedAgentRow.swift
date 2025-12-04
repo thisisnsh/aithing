@@ -9,10 +9,14 @@ import SwiftUI
 import os
 
 struct ManagedAgentRow: View {
+    // MARK: - Environment Objects
     @EnvironmentObject var manager: MCPAuthManager
+
+    // MARK: - Constants
     let icon: String?
     let title: String
 
+    // MARK: - Body
     var body: some View {
         VStack {
             HStack {
@@ -75,13 +79,21 @@ struct ManagedAgentRow: View {
 }
 
 struct GithubManagedAgentRow: View {
+    // MARK: - Environment Objects
     @EnvironmentObject var manager: GithubAuthManager
     @EnvironmentObject var mcpAuthManagers: MCPAuthManagers
+
+    // MARK: - Bindings
+    @Binding var subheading: String
+
+    // MARK: - Constants
     let icon: String
     let title: String
-    @Binding var subheading: String
+
+    // MARK: - State
     @State private var exapanded = false
 
+    // MARK: - Computed Properties
     var enabled: Bool {
         if let server = mcpAuthManagers.customManagers["managed_aithing_github"] {
             return server.enabled ?? false
@@ -89,6 +101,7 @@ struct GithubManagedAgentRow: View {
         return false
     }
 
+    // MARK: - Body
     var body: some View {
         VStack {
             Button {
@@ -170,13 +183,21 @@ struct GithubManagedAgentRow: View {
 }
 
 struct GoogleManagedAgentRow: View {
+    // MARK: - Environment Objects
     @EnvironmentObject var manager: GoogleAuthManager
     @EnvironmentObject var mcpAuthManagers: MCPAuthManagers
+
+    // MARK: - Bindings
+    @Binding var subheading: String
+
+    // MARK: - Constants
     let icon: String
     let title: String
-    @Binding var subheading: String
+
+    // MARK: - State
     @State private var exapanded = false
 
+    // MARK: - Computed Properties
     var enabled: Bool {
         if let server = mcpAuthManagers.customManagers["managed_aithing_google"] {
             return server.enabled ?? false
@@ -184,6 +205,7 @@ struct GoogleManagedAgentRow: View {
         return false
     }
 
+    // MARK: - Body
     var body: some View {
         VStack {
             Button {
@@ -265,12 +287,15 @@ struct GoogleManagedAgentRow: View {
 }
 
 struct AgentRow: View {
+    // MARK: - Constants & Closures
     let agent: AgentEntry
     let toggle: (Bool) -> Void
     let delete: () -> Void
 
+    // MARK: - State
     @State private var isHovered = false
 
+    // MARK: - Body
     var body: some View {
         VStack(alignment: .leading) {
             HStack(alignment: .center) {

@@ -2,6 +2,7 @@ import Sparkle
 import SwiftUI
 
 struct SettingsView: View {
+    // MARK: - Environment Objects
     @EnvironmentObject var loginManager: LoginManager
     @EnvironmentObject var firestoreManager: FirestoreManager
     @EnvironmentObject var googleAuthManager: GoogleAuthManager
@@ -10,8 +11,11 @@ struct SettingsView: View {
     @EnvironmentObject var automationManager: AutomationManager
     @EnvironmentObject var screenshotMonitor: ScreenshotMonitor
 
+    // MARK: - Bindings
     @Binding var isPresented: Bool
     @Binding var managedModels: [ModelInfo]
+
+    // MARK: - Constants & Closures
     let close: () -> Void
     let minimize: () -> Void
     let expand: () -> Void
@@ -20,26 +24,22 @@ struct SettingsView: View {
     let updater: SPUUpdater
     let cornerRadius: CGFloat = 24
 
+    // MARK: - State
     @State private var selectedTab: SettingsTab = getSelectedTab()
     @State private var hoverRed: Bool = false
     @State private var hoverYellow: Bool = false
     @State private var hoverGreen: Bool = false
-
-    // Models
     @State private var apiKey: String = getAnthropicAPIKey() ?? ""
-    @FocusState private var apiKeyFieldFocused: Bool
     @State private var modelSelected: String = getModel()
-
-    // Agents
     @State private var agents: [AgentEntry] = getAgentEntries()
-
-    // Preferences
     @State private var preferencesShowInScreenshot = getPreferencesShowInScreenshot()
     @State private var preferencesCaptureFullScreen = getPreferencesCaptureFullScreen()
-
-    // Usage
     @State private var usageData: Usage = Usage()
 
+    // MARK: - Focus State
+    @FocusState private var apiKeyFieldFocused: Bool
+
+    // MARK: - Body
     var body: some View {
         if isPresented {
             ZStack {

@@ -9,6 +9,7 @@ import AppKit
 import SwiftUI
 
 struct ChatView: View {
+    // MARK: - Bindings
     @Binding var history: History?
     @Binding var query: String
     @Binding var modelOutput: String
@@ -16,11 +17,13 @@ struct ChatView: View {
     @Binding var showRefreshButton: Bool
     @Binding var isThinking: Bool
 
+    // MARK: - State
     @State private var scrollToBottom: Bool = true
     @State private var hasMoreChats: Bool = false
     @State private var items: [ChatItem] = []
     @State private var bottomPadding: CGFloat = 64
 
+    // MARK: - Body
     var body: some View {
         ScrollViewReader { proxy in
             ScrollView(.vertical, showsIndicators: false) {

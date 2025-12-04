@@ -8,6 +8,7 @@
 import SwiftUI
 
 struct HoverableTabButton: View {
+    // MARK: - Constants & Closures
     let title: String
     let isActive: Bool
     let action: () -> Void
@@ -20,9 +21,11 @@ struct HoverableTabButton: View {
     var cornerRadius: CGFloat = 8
     var notification = false
 
+    // MARK: - State
     @State private var isHovered = false
     @State private var hoverTask: Task<Void, Never>?
 
+    // MARK: - Body
     var body: some View {
         if #available(macOS 26.0, *) {
             HoverView()

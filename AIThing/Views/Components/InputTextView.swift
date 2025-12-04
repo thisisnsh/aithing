@@ -9,17 +9,20 @@ import AppKit
 import SwiftUI
 
 struct InputTextView: NSViewRepresentable {
+    // MARK: - Bindings
     @Binding var text: String
     @Binding var seenCommands: Set<String>
     @Binding var size: CGFloat
-    var isNotEditable: Bool
 
+    // MARK: - Constants & Closures
+    var isNotEditable: Bool
     var onCommit: () -> Void
     var onCommandTyped: (String) -> Void = { _ in }
-    var onCommandRemoved: (String) -> Void = { _ in }  // ← new
+    var onCommandRemoved: (String) -> Void = { _ in }
     var onDebouncedTextChange: (String) -> Void = { _ in }
     var onSpillover: (Int) -> Void = { _ in }
 
+    // MARK: - Coordinator
     class Coordinator: NSObject, NSTextViewDelegate {
         var parent: InputTextView
         private var debounceWorkItem: DispatchWorkItem?

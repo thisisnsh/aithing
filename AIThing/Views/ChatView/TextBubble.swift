@@ -8,9 +8,11 @@
 import SwiftUI
 
 struct TextBubble: View {
+    // MARK: - Constants
     let text: String
     let isUser: Bool
 
+    // MARK: - Body
     var body: some View {
         MarkdownText(text: text)
             .font(.system(size: 12, weight: .medium))

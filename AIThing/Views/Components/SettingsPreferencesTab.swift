@@ -8,19 +8,24 @@
 import SwiftUI
 
 struct SettingsPreferencesTab: View {
+    // MARK: - Environment Objects
     @EnvironmentObject var screenshotMonitor: ScreenshotMonitor
 
+    // MARK: - Bindings
     @Binding var preferencesShowInScreenshot: Bool
     @Binding var preferencesCaptureFullScreen: Bool
 
+    // MARK: - Constants & Closures
     let setPreferencesShowInScreenshot: (Bool) -> Void
     let setPreferencesCaptureFullScreen: (Bool) -> Void
     let setPanelVisibility: () -> Void
 
+    // MARK: - State
     @State private var outputToken = getOutputToken()
     @State private var cacheMessage = getCacheMessages()
     @State private var useCapturedScreenshots = getUseCapturedScreenshots()
 
+    // MARK: - Body
     var body: some View {
         VStack(alignment: .leading, spacing: 16) {
             GroupBox(label: title("Performance")) {
@@ -223,12 +228,16 @@ struct SettingsPreferencesTab: View {
 
 // Local reusable row
 private struct PreferenceToggleRow: View {
+    // MARK: - Bindings
     @Binding var isOn: Bool
+
+    // MARK: - Constants
     let iconOn: String
     let iconOff: String
     let title: String
     let onChange: (Bool) -> Void
 
+    // MARK: - Body
     var body: some View {
         HStack {
             Text(title)

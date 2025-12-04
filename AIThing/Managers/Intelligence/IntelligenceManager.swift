@@ -84,9 +84,8 @@ private func executeModelCall(
     if modelTools.isEmpty {
         modelTools = context.toolHandlers.getAllClientTools().values.flatMap { $0 }
         if context.query.starts(with: "@aithing") {
-            let aiThingTools = await MainActor.run {
-                context.services.internalToolProvider.getTools()
-            }
+            // InternalToolProvider.getTools() is not @MainActor, runs on current executor
+            let aiThingTools = context.services.internalToolProvider.getTools()
             modelTools.append(contentsOf: aiThingTools)
         }
     }

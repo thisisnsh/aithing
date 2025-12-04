@@ -8,12 +8,16 @@
 import SwiftUI
 
 struct SettingsAutomationTab: View {
+    // MARK: - Environment Objects
     @EnvironmentObject var automationManager: AutomationManager
 
-    @State private var automations: [Automation] = []
-
+    // MARK: - Constants
     let maxAutomationCount = 10
 
+    // MARK: - State
+    @State private var automations: [Automation] = []
+
+    // MARK: - Body
     var body: some View {
         VStack(alignment: .leading, spacing: 16) {
             GroupBox(
@@ -83,12 +87,15 @@ struct SettingsAutomationTab: View {
 }
 
 private struct AutomationRow: View {
+    // MARK: - Constants
     let automation: Automation
     let onToggle: () -> Void
     let onRemove: () -> Void
 
+    // MARK: - State
     @State private var isHovered = false
 
+    // MARK: - Body
     var body: some View {
         VStack(alignment: .leading) {
             HStack {
@@ -152,10 +159,13 @@ private struct AutomationRow: View {
 }
 
 private struct AddAutomationForm: View {
+    // MARK: - Environment Objects
     @EnvironmentObject var automationManager: AutomationManager
 
+    // MARK: - Bindings
     @Binding var automations: [Automation]
 
+    // MARK: - State
     @State private var title: String = ""
     @State private var instructions: String = ""
     @State private var executeTime: Date = Date()
@@ -164,13 +174,12 @@ private struct AddAutomationForm: View {
         hours: 0,
         days: 0
     )
-
     @State private var executeTimeString: String = ""
-
     @State private var days: String = "0"
     @State private var hours: String = "0"
     @State private var minutes: String = "0"
 
+    // MARK: - Body
     var body: some View {
         VStack(alignment: .leading) {
 

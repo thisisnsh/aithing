@@ -14,8 +14,9 @@ import os
 
 /// Provides built-in tools for AIThing functionality.
 /// Currently supports automation creation and management.
-@MainActor
-class InternalToolProvider {
+/// Note: This class is NOT @MainActor as it performs no UI updates.
+/// Tool execution is done asynchronously and results are returned to callers.
+final class InternalToolProvider: Sendable {
     
     // MARK: - Properties
     
@@ -49,13 +50,13 @@ class InternalToolProvider {
         name: String,
         input: String,
         automationManager: AutomationManager
-    ) -> [[String: Any]] {
+    ) async -> [[String: Any]] {
         guard let value = try? parseJSONStringToValueObject(input),
               case .object(let dict) = value else {
             return []
         }
         
-        let text = executeCreateAutomation(dict: dict, automationManager: automationManager)
+        let text = await executeCreateAutomation(dict: dict, automationManager: automationManager)
         return [["type": "text", "text": text]]
     }
 }
@@ -117,11 +118,14 @@ private extension InternalToolProvider {
 
 private extension InternalToolProvider {
     
+    /// Executes automation creation with validation.
+    /// Validation is performed off the main thread, only the actual creation
+    /// is dispatched to MainActor.
     func executeCreateAutomation(
         dict: [String: Value],
         automationManager: AutomationManager
-    ) -> String {
-        // Validate required fields
+    ) async -> String {
+        // Validate required fields (done off main thread)
         guard let title = dict["title"]?.stringValue else {
             return "Title not provided"
         }
@@ -130,13 +134,13 @@ private extension InternalToolProvider {
             return "Instructions not provided"
         }
         
-        // Validate recurrence
+        // Validate recurrence (done off main thread)
         let recurrenceResult = validateRecurrence(dict["recurrence"]?.stringValue)
         if !recurrenceResult.error.isEmpty {
             return recurrenceResult.error
         }
         
-        // Validate execution time
+        // Validate execution time (done off main thread)
         let dateResult = validateDateTime(dict["executeTime"]?.stringValue)
         if !dateResult.error.isEmpty {
             return dateResult.error
@@ -147,8 +151,8 @@ private extension InternalToolProvider {
             return "Validation failed"
         }
         
-        // Create the automation
-        automationManager.createAutomation(
+        // Create the automation on the main thread (AutomationManager is @MainActor)
+        await automationManager.createAutomation(
             id: UUID().uuidString,
             title: title,
             instructions: instructions,

@@ -9,38 +9,32 @@ import SwiftUI
 import os
 
 struct SettingsAgentsTab: View {
+    // MARK: - Environment Objects
     @EnvironmentObject var googleAuthManager: GoogleAuthManager
     @EnvironmentObject var githubAuthManager: GithubAuthManager
     @EnvironmentObject var mcpAuthManagers: MCPAuthManagers
 
+    // MARK: - Bindings
     @Binding var agents: [AgentEntry]
 
-    @State private var agentMaxCount: Int = 10
+    // MARK: - Constants & Closures
+    let addAgentEntry: (_ type: String, _ name: String, _ primary: String, _ secondary: String) -> String
+    let saveAgents: () -> Void
+    let deleteAgent: (AgentEntry) -> Void
+    let logger = Logger(subsystem: "com.thisisnsh.mac.AIThing", category: "SettingsAgentsTab")
 
+    // MARK: - State
+    @State private var agentMaxCount: Int = 10
     @State private var agentType: String = "global"
     @State private var agentName: String = ""
     @State private var agentPrimary: String = ""
     @State private var agentSecondary: String = ""
-
     @State private var showToast: Bool = false
     @State private var toastText: String = ""
-
-    let addAgentEntry:
-        (
-            _ type: String,
-            _ name: String,
-            _ primary: String,
-            _ secondary: String
-        ) -> String
-    let saveAgents: () -> Void
-    let deleteAgent: (AgentEntry) -> Void
-
-    // Managed Agents
     @State private var googleAgentAccount: String = ""
     @State private var githubAgentAccount: String = ""
 
-    let logger = Logger(subsystem: "com.thisisnsh.mac.AIThing", category: "SettingsAgentsTab")
-
+    // MARK: - Body
     var body: some View {
         VStack(alignment: .leading, spacing: 16) {
             GroupBox(
@@ -232,11 +226,13 @@ struct SettingsAgentsTab: View {
 }
 
 private struct AddAgentForm: View {
+    // MARK: - Bindings
     @Binding var agentType: String
     @Binding var agentName: String
     @Binding var agentPrimary: String
     @Binding var agentSecondary: String
 
+    // MARK: - Body
     var body: some View {
 
         VStack(alignment: .leading) {
