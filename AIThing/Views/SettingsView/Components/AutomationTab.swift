@@ -1,5 +1,5 @@
 //
-//  SettingsAutomationTab.swift
+//  AutomationTab.swift
 //  AIThing
 //
 //  Created by Nishant Singh Hada on 11/9/25.
@@ -7,7 +7,7 @@
 
 import SwiftUI
 
-struct SettingsAutomationTab: View {
+struct AutomationTab: View {
     // MARK: - Environment Objects
     @EnvironmentObject var automationManager: AutomationManager
 
@@ -15,7 +15,7 @@ struct SettingsAutomationTab: View {
     let maxAutomationCount = 10
 
     // MARK: - State
-    @State private var automations: [Automation] = []
+    @State var automations: [Automation] = []
 
     // MARK: - Body
     var body: some View {
@@ -74,7 +74,7 @@ struct SettingsAutomationTab: View {
                     if automations.count < maxAutomationCount {
                         GroupBox {
                             AddAutomationForm(
-                                automations: $automations,
+                                automations: $automations
                             ).environmentObject(automationManager)
                         }
                     }
@@ -93,7 +93,7 @@ private struct AutomationRow: View {
     let onRemove: () -> Void
 
     // MARK: - State
-    @State private var isHovered = false
+    @State var isHovered = false
 
     // MARK: - Body
     var body: some View {
@@ -166,18 +166,18 @@ private struct AddAutomationForm: View {
     @Binding var automations: [Automation]
 
     // MARK: - State
-    @State private var title: String = ""
-    @State private var instructions: String = ""
-    @State private var executeTime: Date = Date()
-    @State private var recurrence: Automation.Recurrence = Automation.Recurrence(
+    @State var title: String = ""
+    @State var instructions: String = ""
+    @State var executeTime: Date = Date()
+    @State var recurrence: Automation.Recurrence = Automation.Recurrence(
         minutes: 0,
         hours: 0,
         days: 0
     )
-    @State private var executeTimeString: String = ""
-    @State private var days: String = "0"
-    @State private var hours: String = "0"
-    @State private var minutes: String = "0"
+    @State var executeTimeString: String = ""
+    @State var days: String = "0"
+    @State var hours: String = "0"
+    @State var minutes: String = "0"
 
     // MARK: - Body
     var body: some View {
@@ -357,3 +357,4 @@ private struct AddAutomationForm: View {
         recurrence = .init(minutes: Int(minutes)!, hours: Int(hours)!, days: Int(days)!)
     }
 }
+

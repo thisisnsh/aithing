@@ -18,7 +18,7 @@ struct FilePill: View {
     let cornerRadius: CGFloat
 
     // MARK: - State
-    @State private var onHover = false
+    @State var onHover = false
 
     // MARK: - Body
     var body: some View {
@@ -60,3 +60,4 @@ struct FilePill: View {
         .buttonStyle(.plain)
     }
 }
+

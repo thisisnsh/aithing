@@ -13,8 +13,8 @@ struct MarkdownText: View {
     var text: String
     var noBackground = false
 
-    @State private var copiedBlock: String? = nil
-    @State private var codeHover = false
+    @State var copiedBlock: String? = nil
+    @State var codeHover = false
 
     var body: some View {
         Markdown(text)
@@ -91,3 +91,4 @@ struct MarkdownText: View {
         NSPasteboard.general.setString(text, forType: .string)
     }
 }
+

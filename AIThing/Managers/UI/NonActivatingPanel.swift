@@ -57,3 +57,4 @@ class NonActivatingPanel: NSPanel {
         self.makeKeyAndOrderFront(nil)
     }
 }
+

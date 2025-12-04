@@ -1,5 +1,5 @@
 //
-//  IntelligenceView+Query.swift
+//  IntelligenceView+QueryHandler.swift
 //  AIThing
 //
 //  Query handling extension for IntelligenceView.
@@ -298,3 +298,4 @@ extension IntelligenceView {
         }
     }
 }
+

@@ -13,7 +13,7 @@ struct FileBubble: View {
     let content: String
 
     // MARK: - State
-    @State private var showContent = false
+    @State var showContent = false
 
     // MARK: - Body
     var body: some View {

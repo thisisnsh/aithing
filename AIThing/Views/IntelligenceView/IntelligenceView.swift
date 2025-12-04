@@ -49,42 +49,42 @@ struct IntelligenceView: View {
     let baseHeight: CGFloat = 24
 
     // MARK: - State
-    @State private var refreshTimer = Timer.publish(every: 2, on: .main, in: .common).autoconnect()
-    @State private var tabTitle: String = ""
-    @State private var inputHeight: CGFloat = 24
-    @State private var textSize: CGFloat = 14
-    @State private var isThinking: Bool = false
-    @State private var isThinkingText: LocalizedStringKey = "Responding..."
-    @State private var history: History?
-    @State private var modelInput: [[String: Any]] = []
-    @State private var modelOutput: String = ""
-    @State private var modelContext: [DroppedContent] = []
-    @State private var toolCall: String = ""
-    @State private var showRefreshButton = false
-    @State private var query: String = ""
-    @State private var displayQuery: String = ""
-    @State private var selectedText: String = ""
-    @State private var savedQueries = getSavedQueries()
-    @State private var showSavedQueries: Bool = false
-    @State private var isDropping: Bool = false
-    @State private var showMcpTools: Bool = false
-    @State private var hoverMcpTools: Bool = false
-    @State private var selectionEnabled: Bool = false
-    @State private var hoverSelectionEnabled: Bool = false
-    @State private var showGetStarted: Bool = false
-    @State private var getStarted: LocalizedStringKey = ""
-    @State private var appContextEnabled: Bool = false
-    @State private var hoverAppContextEnabled: Bool = false
-    @State private var selectedAppIcon: NSImage? = nil
-    @State private var selectedAppName = ""
-    @State private var selectedWindowName = ""
-    @State private var toast = ""
-    @State private var hoverRed: Bool = false
-    @State private var hoverYellow: Bool = false
-    @State private var hoverGreen: Bool = false
+    @State var refreshTimer = Timer.publish(every: 2, on: .main, in: .common).autoconnect()
+    @State var tabTitle: String = ""
+    @State var inputHeight: CGFloat = 24
+    @State var textSize: CGFloat = 14
+    @State var isThinking: Bool = false
+    @State var isThinkingText: LocalizedStringKey = "Responding..."
+    @State var history: History?
+    @State var modelInput: [[String: Any]] = []
+    @State var modelOutput: String = ""
+    @State var modelContext: [DroppedContent] = []
+    @State var toolCall: String = ""
+    @State var showRefreshButton = false
+    @State var query: String = ""
+    @State var displayQuery: String = ""
+    @State var selectedText: String = ""
+    @State var savedQueries = getSavedQueries()
+    @State var showSavedQueries: Bool = false
+    @State var isDropping: Bool = false
+    @State var showMcpTools: Bool = false
+    @State var hoverMcpTools: Bool = false
+    @State var selectionEnabled: Bool = false
+    @State var hoverSelectionEnabled: Bool = false
+    @State var showGetStarted: Bool = false
+    @State var getStarted: LocalizedStringKey = ""
+    @State var appContextEnabled: Bool = false
+    @State var hoverAppContextEnabled: Bool = false
+    @State var selectedAppIcon: NSImage? = nil
+    @State var selectedAppName = ""
+    @State var selectedWindowName = ""
+    @State var toast = ""
+    @State var hoverRed: Bool = false
+    @State var hoverYellow: Bool = false
+    @State var hoverGreen: Bool = false
 
     // MARK: - Focus State
-    @FocusState private var isFocused: Bool
+    @FocusState var isFocused: Bool
 
     // MARK: - Computed Properties
     var appContextText: String {
@@ -113,16 +113,7 @@ struct IntelligenceView: View {
         Group {
             if isTabShowing() {
                 ZStack {
-                    if #available(macOS 26.0, *) {
-                        RoundedRectangle(cornerRadius: cornerRadius)
-                            .glassEffect(
-                                .regular.tint(.black),
-                                in: RoundedRectangle(cornerRadius: cornerRadius)
-                            )
-                    } else {
-                        RoundedRectangle(cornerRadius: cornerRadius)
-                            .fill(.white.opacity(0.1))
-                    }
+                    GlassBackgroundShape(cornerRadius: cornerRadius, tintBlack: true)
 
                     ZStack(alignment: .bottom) {
                         VStack {
@@ -194,18 +185,11 @@ struct IntelligenceView: View {
 
                             Spacer()
 
-                            if #available(macOS 26.0, *) {
-                                InputView()
-                                    .clipShape(RoundedRectangle(cornerRadius: cornerRadius - 4))
-                                    .glassEffect(
-                                        .regular.interactive(),
-                                        in: RoundedRectangle(cornerRadius: cornerRadius - 4)
-                                    )
-                            } else {
-                                InputView()
-                                    .background(.white.opacity(0.1))
-                                    .clipShape(RoundedRectangle(cornerRadius: cornerRadius - 4))
-                            }
+                            InputView()
+                                .glassBackground(
+                                    cornerRadius: cornerRadius - 4,
+                                    style: .regularInteractive
+                                )
 
                         }
 

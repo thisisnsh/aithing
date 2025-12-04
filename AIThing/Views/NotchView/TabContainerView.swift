@@ -26,11 +26,11 @@ extension NotchView {
     func tabView(tab: TabItem) -> some View {
         IntelligenceView(
             viewModel: viewModel,
-            tabId: tab.id,
             currentTabId: $focusedTabId,
             allClientTools: $allClientTools,
             managedModels: $managedModels,
             toastText: $toastText,
+            tabId: tab.id,
             close: { close() },
             minimize: { minimize() },
             expand: { maximize() },
@@ -43,7 +43,7 @@ extension NotchView {
             setTitle: { await setTitle(id: $0, title: $1) },
             startSelectionPoll: { self.startSelectionPoll() },
             stopSelectionPoll: { self.stopSelectionPoll() }
-        )
+        )        
         .opacity(showChatWindow && !showSettings && !focusedTabId.isEmpty ? 1 : 0)
         .environmentObject(connectionManager)
         .environmentObject(loginManager)

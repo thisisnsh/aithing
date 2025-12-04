@@ -234,3 +234,4 @@ struct InputTextView: NSViewRepresentable {
         }
     }
 }
+

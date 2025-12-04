@@ -1,5 +1,5 @@
 //
-//  GoogleManagedAgentRow.swift
+//  AgentRows.swift
 //  AIThing
 //
 //  Created by Nishant Singh Hada on 8/28/25.
@@ -7,6 +7,8 @@
 
 import SwiftUI
 import os
+
+// MARK: - MCP Agent Row
 
 struct ManagedAgentRow: View {
     // MARK: - Environment Objects
@@ -78,6 +80,8 @@ struct ManagedAgentRow: View {
     }
 }
 
+// MARK: - GitHub Agent Row
+
 struct GithubManagedAgentRow: View {
     // MARK: - Environment Objects
     @EnvironmentObject var manager: GithubAuthManager
@@ -91,7 +95,7 @@ struct GithubManagedAgentRow: View {
     let title: String
 
     // MARK: - State
-    @State private var exapanded = false
+    @State var exapanded = false
 
     // MARK: - Computed Properties
     var enabled: Bool {
@@ -182,6 +186,8 @@ struct GithubManagedAgentRow: View {
     }
 }
 
+// MARK: - Google Agent Row
+
 struct GoogleManagedAgentRow: View {
     // MARK: - Environment Objects
     @EnvironmentObject var manager: GoogleAuthManager
@@ -195,7 +201,7 @@ struct GoogleManagedAgentRow: View {
     let title: String
 
     // MARK: - State
-    @State private var exapanded = false
+    @State var exapanded = false
 
     // MARK: - Computed Properties
     var enabled: Bool {
@@ -286,6 +292,8 @@ struct GoogleManagedAgentRow: View {
     }
 }
 
+// MARK: - Custom Agent Row
+
 struct AgentRow: View {
     // MARK: - Constants & Closures
     let agent: AgentEntry
@@ -293,7 +301,7 @@ struct AgentRow: View {
     let delete: () -> Void
 
     // MARK: - State
-    @State private var isHovered = false
+    @State var isHovered = false
 
     // MARK: - Body
     var body: some View {
@@ -341,9 +349,13 @@ struct AgentRow: View {
     }
 }
 
+// MARK: - Helper Functions
+
 func RowTitle(_ text: String) -> some View {
     Text(text).font(.system(size: 14, weight: .medium))
 }
+
 func RowSub(_ text: String) -> some View {
     Text(text).font(.system(size: 10, weight: .medium)).opacity(0.5)
 }
+

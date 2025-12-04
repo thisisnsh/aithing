@@ -1,13 +1,13 @@
 //
-//  NotchView+Utility.swift
+//  NotchView+WindowControl.swift
 //  AIThing
 //
-//  Utility extension for NotchView.
+//  Window control and utility extension for NotchView.
 //
 
 import SwiftUI
 
-// MARK: - Utility
+// MARK: - Window Control & Utilities
 extension NotchView {
     func updateHistoryList() async {
         histories = await historyStore.getAll(limit: 100)

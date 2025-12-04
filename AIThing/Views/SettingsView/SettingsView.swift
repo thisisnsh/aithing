@@ -25,16 +25,16 @@ struct SettingsView: View {
     let cornerRadius: CGFloat = 24
 
     // MARK: - State
-    @State private var selectedTab: SettingsTab = getSelectedTab()
-    @State private var hoverRed: Bool = false
-    @State private var hoverYellow: Bool = false
-    @State private var hoverGreen: Bool = false
-    @State private var apiKey: String = getAnthropicAPIKey() ?? ""
-    @State private var modelSelected: String = getModel()
-    @State private var agents: [AgentEntry] = getAgentEntries()
-    @State private var preferencesShowInScreenshot = getPreferencesShowInScreenshot()
-    @State private var preferencesCaptureFullScreen = getPreferencesCaptureFullScreen()
-    @State private var usageData: Usage = Usage()
+    @State var selectedTab: SettingsTab = getSelectedTab()
+    @State var hoverRed: Bool = false
+    @State var hoverYellow: Bool = false
+    @State var hoverGreen: Bool = false
+    @State var apiKey: String = getAnthropicAPIKey() ?? ""
+    @State var modelSelected: String = getModel()
+    @State var agents: [AgentEntry] = getAgentEntries()
+    @State var preferencesShowInScreenshot = getPreferencesShowInScreenshot()
+    @State var preferencesCaptureFullScreen = getPreferencesCaptureFullScreen()
+    @State var usageData: Usage = Usage()
 
     // MARK: - Focus State
     @FocusState private var apiKeyFieldFocused: Bool
@@ -43,16 +43,7 @@ struct SettingsView: View {
     var body: some View {
         if isPresented {
             ZStack {
-                if #available(macOS 26.0, *) {
-                    RoundedRectangle(cornerRadius: cornerRadius)
-                        .glassEffect(
-                            .regular.tint(.black),
-                            in: RoundedRectangle(cornerRadius: cornerRadius)
-                        )
-                } else {
-                    RoundedRectangle(cornerRadius: cornerRadius)
-                        .fill(.white.opacity(0.1))
-                }
+                GlassBackgroundShape(cornerRadius: cornerRadius, tintBlack: true)
 
                 VStack {
                     TitleView()
@@ -65,7 +56,7 @@ struct SettingsView: View {
                         VStack {
                             switch selectedTab {
                             case .account:
-                                SettingsAccountTab(
+                                AccountTab(
                                     authState: loginManager.authState,
                                     signIn: { await signIn() },
                                     signOut: { await signOut() },
@@ -74,17 +65,16 @@ struct SettingsView: View {
                                 )
 
                             case .models:
-                                SettingsModelTab(
-                                    managedModels: managedModels,
+                                ModelTab(
                                     modelSelected: $modelSelected,
                                     apiKey: $apiKey,
-                                    apiKeyFieldFocused: _apiKeyFieldFocused,
+                                    managedModels: managedModels,
                                     saveModels: saveModels,
                                     bindingForModel: bindingForModel
                                 )
 
                             case .agents:
-                                SettingsAgentsTab(
+                                AgentsTab(
                                     agents: $agents,
                                     addAgentEntry: addAgentEntry,
                                     saveAgents: saveAgents,
@@ -95,18 +85,18 @@ struct SettingsView: View {
                                 .environmentObject(mcpAuthManagers)
 
                             case .preferences:
-                                SettingsPreferencesTab(
+                                PreferencesTab(
                                     preferencesShowInScreenshot: $preferencesShowInScreenshot,
                                     preferencesCaptureFullScreen: $preferencesCaptureFullScreen,
                                     setPreferencesShowInScreenshot: setPreferencesShowInScreenshot,
                                     setPreferencesCaptureFullScreen:
                                         setPreferencesCaptureFullScreen,
-                                    setPanelVisibility: setPanelVisibility,
+                                    setPanelVisibility: setPanelVisibility
                                 )
                                 .environmentObject(screenshotMonitor)
 
                             case .automations:
-                                SettingsAutomationTab()
+                                AutomationTab()
                                     .environmentObject(automationManager)
                             }
                         }
@@ -151,7 +141,7 @@ struct SettingsView: View {
 
             Spacer()
 
-            CheckForUpdatesView(updater: updater)
+            CheckForUpdatesButton(updater: updater)
 
             ControlGroup {
                 Button(action: {
@@ -332,3 +322,4 @@ struct SettingsView: View {
         }
     }
 }
+

@@ -1,5 +1,5 @@
 //
-//  SettingsAgentsTab.swift
+//  AgentsTab.swift
 //  AIThing
 //
 //  Created by Nishant Singh Hada on 8/13/25.
@@ -8,7 +8,7 @@
 import SwiftUI
 import os
 
-struct SettingsAgentsTab: View {
+struct AgentsTab: View {
     // MARK: - Environment Objects
     @EnvironmentObject var googleAuthManager: GoogleAuthManager
     @EnvironmentObject var githubAuthManager: GithubAuthManager
@@ -18,21 +18,22 @@ struct SettingsAgentsTab: View {
     @Binding var agents: [AgentEntry]
 
     // MARK: - Constants & Closures
-    let addAgentEntry: (_ type: String, _ name: String, _ primary: String, _ secondary: String) -> String
+    let addAgentEntry:
+        (_ type: String, _ name: String, _ primary: String, _ secondary: String) -> String
     let saveAgents: () -> Void
     let deleteAgent: (AgentEntry) -> Void
-    let logger = Logger(subsystem: "com.thisisnsh.mac.AIThing", category: "SettingsAgentsTab")
+    let logger = Logger(subsystem: "com.thisisnsh.mac.AIThing", category: "AgentsTab")
 
     // MARK: - State
-    @State private var agentMaxCount: Int = 10
-    @State private var agentType: String = "global"
-    @State private var agentName: String = ""
-    @State private var agentPrimary: String = ""
-    @State private var agentSecondary: String = ""
-    @State private var showToast: Bool = false
-    @State private var toastText: String = ""
-    @State private var googleAgentAccount: String = ""
-    @State private var githubAgentAccount: String = ""
+    @State var agentMaxCount: Int = 10
+    @State var agentType: String = "global"
+    @State var agentName: String = ""
+    @State var agentPrimary: String = ""
+    @State var agentSecondary: String = ""
+    @State var showToast: Bool = false
+    @State var toastText: String = ""
+    @State var googleAgentAccount: String = ""
+    @State var githubAgentAccount: String = ""
 
     // MARK: - Body
     var body: some View {
@@ -54,17 +55,17 @@ struct SettingsAgentsTab: View {
 
                     GroupBox {
                         GoogleManagedAgentRow(
-                            icon: "google",
-                            title: "Google Workspace",
                             subheading: $googleAgentAccount,
+                            icon: "google",
+                            title: "Google Workspace"
                         )
                         .environmentObject(googleAuthManager)
                         .environmentObject(mcpAuthManagers)
                         Divider()
                         GithubManagedAgentRow(
-                            icon: "github",
-                            title: "GitHub",
                             subheading: $githubAgentAccount,
+                            icon: "github",
+                            title: "GitHub"
                         )
                         .environmentObject(githubAuthManager)
                         .environmentObject(mcpAuthManagers)
@@ -72,25 +73,25 @@ struct SettingsAgentsTab: View {
 
                     GroupBox {
                         VStack(alignment: .leading) {
-                        ForEach(
-                            mcpAuthManagers.managers.keys.sorted { lhs, rhs in
-                                let lhsEnabled =
-                                    mcpAuthManagers.managers[lhs]?.enabled ?? false
-                                let rhsEnabled =
-                                    mcpAuthManagers.managers[rhs]?.enabled ?? false
-                                if lhsEnabled != rhsEnabled {
-                                    // enabled managers come first
-                                    return lhsEnabled && !rhsEnabled
-                                } else {
-                                    // if both are enabled or both disabled, sort by key
-                                    return lhs < rhs
-                                }
-                            },
-                            id: \.self
-                        ) { manager in
-                            if let agent = mcpAuthManagers.managers[manager],
-                                !(agent.server.custom ?? false)
-                            {
+                            ForEach(
+                                mcpAuthManagers.managers.keys.sorted { lhs, rhs in
+                                    let lhsEnabled =
+                                        mcpAuthManagers.managers[lhs]?.enabled ?? false
+                                    let rhsEnabled =
+                                        mcpAuthManagers.managers[rhs]?.enabled ?? false
+                                    if lhsEnabled != rhsEnabled {
+                                        // enabled managers come first
+                                        return lhsEnabled && !rhsEnabled
+                                    } else {
+                                        // if both are enabled or both disabled, sort by key
+                                        return lhs < rhs
+                                    }
+                                },
+                                id: \.self
+                            ) { manager in
+                                if let agent = mcpAuthManagers.managers[manager],
+                                    !(agent.server.custom ?? false)
+                                {
                                     ManagedAgentRow(
                                         icon: agent.server.image,
                                         title: agent.server.name

@@ -1,5 +1,5 @@
 //
-//  SettingsModelTab.swift
+//  ModelTab.swift
 //  AIThing
 //
 //  Created by Nishant Singh Hada on 8/13/25.
@@ -7,7 +7,7 @@
 
 import SwiftUI
 
-struct SettingsModelTab: View {
+struct ModelTab: View {
     // MARK: - Bindings
     @Binding var modelSelected: String
     @Binding var apiKey: String
@@ -171,3 +171,4 @@ struct SettingsModelTab: View {
         .textSelection(.enabled)
     }
 }
+

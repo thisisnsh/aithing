@@ -14,7 +14,7 @@ struct ImageBubble: View {
     let isUser: Bool
 
     // MARK: - State
-    @State private var index = 0
+    @State var index = 0
 
     // MARK: - Body
     var body: some View {

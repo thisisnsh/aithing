@@ -22,46 +22,29 @@ struct HoverableTabButton: View {
     var notification = false
 
     // MARK: - State
-    @State private var isHovered = false
-    @State private var hoverTask: Task<Void, Never>?
+    @State var isHovered = false
+    @State var hoverTask: Task<Void, Never>?
 
     // MARK: - Body
     var body: some View {
-        if #available(macOS 26.0, *) {
-            HoverView()
-                .glassEffect(
-                    isActive || isHovered ? .regular.interactive() : .identity,
-                    in: RoundedRectangle(cornerRadius: cornerRadius)
-                )
-                .padding(.horizontal, 8)
-                .onHover { hovering in
-                    hoverTask?.cancel()  // cancel any pending hover change
-                    hoverTask = Task { @MainActor in
-                        // delay a bit before applying the hover state
-                        try? await Task.sleep(nanoseconds: 150_000_000)
-                        guard !Task.isCancelled else { return }
-                        withAnimation(.easeInOut(duration: 0.2)) {
-                            isHovered = hovering
-                        }
+        HoverView()
+            .glassBackground(
+                cornerRadius: cornerRadius,
+                style: .conditionalInteractive(isActive: isActive || isHovered),
+                fallbackOpacity: isActive || isHovered ? 0.1 : 0
+            )
+            .padding(.horizontal, 8)
+            .onHover { hovering in
+                hoverTask?.cancel()  // cancel any pending hover change
+                hoverTask = Task { @MainActor in
+                    // delay a bit before applying the hover state
+                    try? await Task.sleep(nanoseconds: 150_000_000)
+                    guard !Task.isCancelled else { return }
+                    withAnimation(.easeInOut(duration: 0.2)) {
+                        isHovered = hovering
                     }
                 }
-        } else {
-            HoverView()
-                .background(isActive || isHovered ? Color.white.opacity(0.1) : .clear)
-                .clipShape(RoundedRectangle(cornerRadius: cornerRadius))
-                .padding(.horizontal, 8)
-                .onHover { hovering in
-                    hoverTask?.cancel()  // cancel any pending hover change
-                    hoverTask = Task { @MainActor in
-                        // delay a bit before applying the hover state
-                        try? await Task.sleep(nanoseconds: 150_000_000)
-                        guard !Task.isCancelled else { return }
-                        withAnimation(.easeInOut(duration: 0.2)) {
-                            isHovered = hovering
-                        }
-                    }
-                }
-        }
+            }
     }
 
     private func HoverView() -> some View {

@@ -1,5 +1,5 @@
 //
-//  SettingsAccountTab.swift
+//  AccountTab.swift
 //  AIThing
 //
 //  Created by Nishant Singh Hada on 8/13/25.
@@ -7,7 +7,7 @@
 
 import SwiftUI
 
-struct SettingsAccountTab: View {
+struct AccountTab: View {
     // MARK: - Constants & Closures
     let authState: AuthState
     let signIn: () async -> Void
@@ -191,3 +191,4 @@ struct SettingsAccountTab: View {
         .opacity(0.5)
     }
 }
+

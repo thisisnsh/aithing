@@ -1,8 +1,8 @@
 //
-//  ChatHelpers.swift
+//  ChatParser.swift
 //  AIThing
 //
-//  Helper functions for chat functionality.
+//  Helper functions for parsing chat history.
 //
 
 import AppKit

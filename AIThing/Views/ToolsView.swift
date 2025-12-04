@@ -16,9 +16,9 @@ struct ToolsView: View {
     let cornerRadius: CGFloat
 
     // MARK: - State
-    @State private var tools: [String: [[String: Any]]] = [:]
-    @State private var expandedHeadings: Set<String> = []
-    @State private var expandedNames: Set<String> = []
+    @State var tools: [String: [[String: Any]]] = [:]
+    @State var expandedHeadings: Set<String> = []
+    @State var expandedNames: Set<String> = []
 
     // MARK: - Computed Properties
     private var sortedHeadings: [String] {

@@ -1,5 +1,5 @@
 //
-//  SettingsPreferencesTab.swift
+//  PreferencesTab.swift
 //  AIThing
 //
 //  Created by Nishant Singh Hada on 8/13/25.
@@ -7,7 +7,7 @@
 
 import SwiftUI
 
-struct SettingsPreferencesTab: View {
+struct PreferencesTab: View {
     // MARK: - Environment Objects
     @EnvironmentObject var screenshotMonitor: ScreenshotMonitor
 
@@ -21,9 +21,9 @@ struct SettingsPreferencesTab: View {
     let setPanelVisibility: () -> Void
 
     // MARK: - State
-    @State private var outputToken = getOutputToken()
-    @State private var cacheMessage = getCacheMessages()
-    @State private var useCapturedScreenshots = getUseCapturedScreenshots()
+    @State var outputToken = getOutputToken()
+    @State var cacheMessage = getCacheMessages()
+    @State var useCapturedScreenshots = getUseCapturedScreenshots()
 
     // MARK: - Body
     var body: some View {
@@ -166,7 +166,7 @@ struct SettingsPreferencesTab: View {
                             Text("Use Captured Screenshots")
                                 .font(.system(size: 14, weight: .medium))
                             Text(
-                                "Allows you to use screenshots captured\nwhile AI Thing is open for queries. [Learn More](https://aithing.dev/features/selective-context#3-use-mac’s-native-screenshot-shortcuts)"
+                                "Allows you to use screenshots captured\nwhile AI Thing is open for queries. [Learn More](https://aithing.dev/features/selective-context#3-use-mac's-native-screenshot-shortcuts)"
                             )
                             .font(.system(size: 10, weight: .medium))
                             .foregroundStyle(.secondary)
@@ -255,3 +255,4 @@ private struct PreferenceToggleRow: View {
         }
     }
 }
+

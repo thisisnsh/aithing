@@ -13,7 +13,7 @@ struct AnimatedGradientBorder: View {
     var color: Color = .white
     var rainbow = false
 
-    @State private var animate = false
+    @State var animate = false
 
     var body: some View {
         GeometryReader { geometry in
@@ -56,3 +56,4 @@ struct AnimatedGradientBorder: View {
         }
     }
 }
+

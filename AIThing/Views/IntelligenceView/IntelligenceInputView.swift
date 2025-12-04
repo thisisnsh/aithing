@@ -12,8 +12,8 @@ extension IntelligenceView {
         VStack(alignment: .leading, spacing: 0) {
             if showMcpTools {
                 ToolsView(
-                    cornerRadius: cornerRadius - 4,
-                    allClientTools: $allClientTools
+                    allClientTools: $allClientTools,
+                    cornerRadius: cornerRadius - 4
                 )
             } else {
                 ZStack(alignment: .leading) {
@@ -82,4 +82,3 @@ extension IntelligenceView {
         )
     }
 }
-

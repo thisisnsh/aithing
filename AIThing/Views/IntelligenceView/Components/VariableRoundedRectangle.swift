@@ -54,3 +54,4 @@ struct VariableRoundedRectangle: Shape {
         return path
     }
 }
+

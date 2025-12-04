@@ -63,3 +63,4 @@ struct LogoShape: Shape {
         return path
     }
 }
+

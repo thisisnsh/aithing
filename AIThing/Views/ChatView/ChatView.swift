@@ -18,10 +18,10 @@ struct ChatView: View {
     @Binding var isThinking: Bool
 
     // MARK: - State
-    @State private var scrollToBottom: Bool = true
-    @State private var hasMoreChats: Bool = false
-    @State private var items: [ChatItem] = []
-    @State private var bottomPadding: CGFloat = 64
+    @State var scrollToBottom: Bool = true
+    @State var hasMoreChats: Bool = false
+    @State var items: [ChatItem] = []
+    @State var bottomPadding: CGFloat = 64
 
     // MARK: - Body
     var body: some View {
