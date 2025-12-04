@@ -16,7 +16,7 @@ private enum StorageKey {
     // Model & API
     static let modelName = "ModelName"
     static let outputToken = "OutputToken"
-    static let anthropicAPIKey = "AnthropicAPIKey"
+    static let apiKeys = "APIKeys"
     
     // Caching & Screenshots
     static let cacheMessages = "CacheMessages"
@@ -47,9 +47,9 @@ private enum StorageKey {
 
 /// Gets the currently selected AI model identifier.
 ///
-/// - Returns: The model name, defaults to Claude Sonnet 4.5 if not set
-func getModel() -> String {
-    UserDefaults.standard.string(forKey: StorageKey.modelName) ?? "claude-sonnet-4-5-20250929"
+/// - Returns: The model name
+func getModel() -> String? {
+    UserDefaults.standard.string(forKey: StorageKey.modelName)
 }
 
 /// Sets the selected AI model identifier.
@@ -74,18 +74,67 @@ func setOutputToken(value: Int) {
     UserDefaults.standard.set(value, forKey: StorageKey.outputToken)
 }
 
-/// Gets the Anthropic API key.
-///
-/// - Returns: The API key if set, nil otherwise
-func getAnthropicAPIKey() -> String? {
-    UserDefaults.standard.string(forKey: StorageKey.anthropicAPIKey)
+// MARK: - API Keys
+
+/// Container for all provider API keys.
+struct APIKeys: Codable, Equatable {
+    var anthropic: String
+    var openai: String
+    var gemini: String
+    
+    init(anthropic: String = "", openai: String = "", gemini: String = "") {
+        self.anthropic = anthropic
+        self.openai = openai
+        self.gemini = gemini
+    }
+    
+    /// Gets the API key for a specific provider.
+    func key(for provider: AIProvider) -> String {
+        switch provider {
+        case .anthropic: return anthropic
+        case .openai: return openai
+        case .gemini: return gemini
+        }
+    }
+    
+    /// Returns a new APIKeys with the key updated for the given provider.
+    func with(key: String, for provider: AIProvider) -> APIKeys {
+        var copy = self
+        switch provider {
+        case .anthropic: copy.anthropic = key
+        case .openai: copy.openai = key
+        case .gemini: copy.gemini = key
+        }
+        return copy
+    }
 }
 
-/// Sets the Anthropic API key.
+/// Gets all stored API keys.
 ///
-/// - Parameter value: The API key to store
-func setAnthropicAPIKey(value: String) {
-    UserDefaults.standard.set(value, forKey: StorageKey.anthropicAPIKey)
+/// - Returns: The APIKeys object, with empty strings for unset keys
+func getAPIKeys() -> APIKeys {
+    guard let data = UserDefaults.standard.data(forKey: StorageKey.apiKeys),
+          let decoded = try? JSONDecoder().decode(APIKeys.self, from: data)
+    else { return APIKeys() }
+    return decoded
+}
+
+/// Sets all API keys.
+///
+/// - Parameter value: The APIKeys object to store
+func setAPIKeys(value: APIKeys) {
+    if let data = try? JSONEncoder().encode(value) {
+        UserDefaults.standard.set(data, forKey: StorageKey.apiKeys)
+    }
+}
+
+/// Gets the API key for a specific provider.
+///
+/// - Parameter provider: The AI provider
+/// - Returns: The API key if set and non-empty, nil otherwise
+func getAPIKey(for provider: AIProvider) -> String? {
+    let key = getAPIKeys().key(for: provider)
+    return key.isEmpty ? nil : key
 }
 
 // MARK: - Caching & Screenshots

@@ -263,24 +263,30 @@ extension FirestoreManager {
 
 extension FirestoreManager {
     
-    /// Fetches all available model configurations
+    /// Fetches all available model configurations from Firestore and local plist.
     func getModelInfos() async -> [ModelInfo] {
-        guard isEnabled, let db else {
+        var allModels: [ModelInfo] = []
+        
+        // Load from Firestore
+        if isEnabled, let db {
+            do {
+                let snapshot = try await db.collection(Collection.models).getDocuments()
+                let firestoreModels = snapshot.documents.compactMap { try? $0.data(as: ModelInfo.self) }
+                allModels.append(contentsOf: firestoreModels)
+                logAnalytics(operation: "get_model_info", success: true)
+            } catch {
+                logAnalytics(operation: "get_model_info", success: false)
+                logger.error("[FirestoreManager] Error fetching models: \(error.localizedDescription)")
+            }
+        } else {
             FirebaseConfiguration.shared.logSkipped(operation: "getModelInfos")
-            return []
         }
         
-        do {
-            let snapshot = try await db.collection(Collection.models).getDocuments()
-            let models = snapshot.documents.compactMap { try? $0.data(as: ModelInfo.self) }
-            
-            logAnalytics(operation: "get_model_info", success: true)
-            return sortModels(models)
-        } catch {
-            logAnalytics(operation: "get_model_info", success: false)
-            logger.error("[FirestoreManager] Error fetching models: \(error.localizedDescription)")
-            return []
-        }
+        // Load from local plist
+        let localModels = loadLocalModels()
+        allModels.append(contentsOf: localModels)
+        
+        return sortModels(allModels)
     }
     
     /// Creates or updates a model configuration
@@ -302,10 +308,32 @@ extension FirestoreManager {
     
     private func sortModels(_ models: [ModelInfo]) -> [ModelInfo] {
         models.sorted {
-            if $0.order == $1.order {
-                return $0.title.localizedCompare($1.title) == .orderedAscending
+            if $0.provider == $1.provider {
+                return $0.name.localizedCompare($1.name) == .orderedAscending
             }
-            return $0.order < $1.order
+            return $0.provider.displayName < $1.provider.displayName
+        }
+    }
+    
+    /// Loads models from the local Models.plist file in the app bundle.
+    private func loadLocalModels() -> [ModelInfo] {
+        guard let url = Bundle.main.url(forResource: "Models", withExtension: "plist"),
+              let data = try? Data(contentsOf: url),
+              let plistArray = try? PropertyListSerialization.propertyList(from: data, format: nil) as? [[String: Any]]
+        else {
+            return []
+        }
+        
+        return plistArray.compactMap { dict -> ModelInfo? in
+            guard let id = dict["id"] as? String, !id.isEmpty else {
+                return nil
+            }
+            
+            let name = (dict["name"] as? String) ?? id
+            let providerString = dict["provider"] as? String ?? "anthropic"
+            let provider = AIProvider(rawValue: providerString) ?? .anthropic
+            
+            return ModelInfo(id: id, name: name, provider: provider)
         }
     }
 }

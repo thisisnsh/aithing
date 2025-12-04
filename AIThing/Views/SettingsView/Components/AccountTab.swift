@@ -44,8 +44,6 @@ struct AccountTab: View {
                         Task { await signIn() }
                     } label: {
                         HStack {
-                            Image("google").resizable().frame(width: 16, height: 16)
-
                             switch authState {
                             case .signedIn(let user):
                                 Text(user.displayName ?? "Logged In")

@@ -62,7 +62,7 @@ struct MarkdownText: View {
                                 systemImage: "doc.on.doc"
                             )
                             .labelStyle(.titleAndIcon)
-                            .font(.system(size: 11, weight: .medium))
+                            .font(.system(size: 10, weight: .medium))
                             .padding(.horizontal, 8)
                             .padding(.vertical, 4)
                             .background(.ultraThinMaterial)

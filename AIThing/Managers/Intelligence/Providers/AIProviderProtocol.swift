@@ -1,0 +1,145 @@
+//
+//  AIProviderProtocol.swift
+//  AIThing
+//
+//  Protocol defining the interface for AI provider implementations.
+//
+
+import Foundation
+
+// MARK: - Stream Event
+
+/// Represents events that can occur during streaming responses from AI providers.
+enum StreamEvent {
+    /// Text content received from the model.
+    case text(String)
+    
+    /// Tool use block started with id and name.
+    case toolUseStart(id: String, name: String)
+    
+    /// Partial JSON input for tool use.
+    case toolInput(String)
+    
+    /// Content block completed.
+    case contentBlockStop
+    
+    /// Stream completed with a stop reason.
+    case done(stopReason: StopReason)
+    
+    /// Error occurred during streaming.
+    case error(String)
+}
+
+/// Represents the reason why the model stopped generating.
+enum StopReason: String {
+    case endTurn = "end_turn"
+    case stopSequence = "stop_sequence"
+    case maxTokens = "max_tokens"
+    case toolUse = "tool_use"
+    case unknown
+    
+    init(from string: String) {
+        self = StopReason(rawValue: string) ?? .unknown
+    }
+}
+
+// MARK: - Provider Protocol
+
+/// Protocol that all AI provider implementations must conform to.
+protocol AIProviderProtocol {
+    /// The provider type this implementation handles.
+    var provider: AIProvider { get }
+    
+    /// Builds an API request for the provider.
+    ///
+    /// - Parameters:
+    ///   - apiKey: The API key for authentication
+    ///   - model: The model identifier to use
+    ///   - messages: The conversation messages
+    ///   - tools: Available tools for the model
+    ///   - systemMessages: System messages/instructions
+    ///   - maxTokens: Maximum tokens in the response
+    /// - Returns: Configured URLRequest or nil if invalid
+    func buildRequest(
+        apiKey: String,
+        model: String,
+        messages: [[String: Any]],
+        tools: [[String: Any]],
+        systemMessages: [[String: Any]],
+        maxTokens: Int
+    ) -> URLRequest?
+    
+    /// Parses a single line from the streaming response.
+    ///
+    /// - Parameter line: A line from the SSE stream
+    /// - Returns: A StreamEvent if the line contains relevant data, nil otherwise
+    func parseStreamLine(_ line: String) -> StreamEvent?
+    
+    /// Converts the internal message format to the provider's expected format.
+    ///
+    /// - Parameter messages: Messages in the internal format
+    /// - Returns: Messages converted to provider's format
+    func convertMessages(_ messages: [[String: Any]]) -> [[String: Any]]
+    
+    /// Converts the internal tool format to the provider's expected format.
+    ///
+    /// - Parameter tools: Tools in the internal format
+    /// - Returns: Tools converted to provider's format
+    func convertTools(_ tools: [[String: Any]]) -> [[String: Any]]
+    
+    /// Builds a tool result message in the provider's format.
+    ///
+    /// - Parameters:
+    ///   - toolUseId: The ID of the tool use
+    ///   - result: The tool execution result
+    /// - Returns: A message dictionary in the provider's format
+    func buildToolResultMessage(toolUseId: String, result: [[String: Any]]) -> [String: Any]
+    
+    /// Builds an assistant message with tool use in the provider's format.
+    ///
+    /// - Parameters:
+    ///   - text: Optional text content
+    ///   - toolUseId: The ID of the tool use
+    ///   - toolName: The name of the tool
+    ///   - toolInput: The tool input as a dictionary
+    /// - Returns: A message dictionary in the provider's format
+    func buildAssistantToolUseMessage(
+        text: String?,
+        toolUseId: String,
+        toolName: String,
+        toolInput: Any
+    ) -> [String: Any]
+    
+    /// Builds an assistant text message in the provider's format.
+    ///
+    /// - Parameter text: The text content
+    /// - Returns: A message dictionary in the provider's format
+    func buildAssistantTextMessage(text: String) -> [String: Any]
+}
+
+// MARK: - Provider Registry
+
+/// Registry for AI provider implementations.
+final class AIProviderRegistry {
+    static let shared = AIProviderRegistry()
+    
+    private var providers: [AIProvider: AIProviderProtocol] = [:]
+    
+    private init() {
+        // Register default providers
+        register(AnthropicProvider())
+        register(OpenAIProvider())
+        register(GeminiProvider())
+    }
+    
+    /// Registers a provider implementation.
+    func register(_ provider: AIProviderProtocol) {
+        providers[provider.provider] = provider
+    }
+    
+    /// Gets the provider implementation for a given provider type.
+    func getProvider(for type: AIProvider) -> AIProviderProtocol? {
+        providers[type]
+    }
+}
+

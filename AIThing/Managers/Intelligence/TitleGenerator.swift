@@ -58,12 +58,34 @@ private func shouldSkipTitleGeneration(firestoreManager: FirestoreManager) async
     return false
 }
 
-/// Generates the title by calling the Anthropic API.
+/// Generates the title by calling the appropriate provider API.
 ///
 /// - Parameter context: The title generation context
 /// - Returns: The generated title or the fallback tab title
 private func generateTitleViaAPI(context: TitleGenerationContext) async -> String {
-    guard let request = buildTitleRequest(context: context) else {
+    // Determine the provider for the model
+    let provider = context.provider
+    
+    guard let providerImpl = AIProviderRegistry.shared.getProvider(for: provider) else {
+        return context.tabTitle
+    }
+    
+    let prompt = buildTitlePrompt(query: context.query, response: context.response)
+    let messages: [[String: Any]] = [
+        [
+            "role": "user",
+            "content": [["type": "text", "text": prompt]]
+        ]
+    ]
+    
+    guard let request = providerImpl.buildRequest(
+        apiKey: context.apiKey,
+        model: context.model,
+        messages: messages,
+        tools: [],
+        systemMessages: [],
+        maxTokens: 32
+    ) else {
         return context.tabTitle
     }
     
@@ -73,37 +95,15 @@ private func generateTitleViaAPI(context: TitleGenerationContext) async -> Strin
         guard let httpResponse = response as? HTTPURLResponse,
               (200..<300).contains(httpResponse.statusCode)
         else {
-            logger.error("Bad HTTP response")
+            logger.error("Bad HTTP response for title generation")
             return context.tabTitle
         }
         
-        return parseTitleResponse(data: data) ?? context.tabTitle
+        return parseTitleResponse(data: data, provider: provider) ?? context.tabTitle
     } catch {
+        logger.error("Error generating title: \(error.localizedDescription)")
         return context.tabTitle
     }
-}
-
-/// Builds the API request for title generation.
-///
-/// - Parameter context: The title generation context
-/// - Returns: Configured URLRequest or nil if URL is invalid
-private func buildTitleRequest(context: TitleGenerationContext) -> URLRequest? {
-    guard let url = URL(string: "https://api.anthropic.com/v1/messages") else {
-        return nil
-    }
-    
-    var request = URLRequest(url: url)
-    request.httpMethod = "POST"
-    request.setValue("application/json", forHTTPHeaderField: "Content-Type")
-    request.setValue("2023-06-01", forHTTPHeaderField: "anthropic-version")
-    request.setValue("\(context.apiKey)", forHTTPHeaderField: "x-api-key")
-    request.setValue("extended-cache-ttl-2025-04-11", forHTTPHeaderField: "anthropic-beta")
-    
-    let prompt = buildTitlePrompt(query: context.query, response: context.response)
-    let body = buildTitleRequestBody(model: context.model, prompt: prompt)
-    
-    request.httpBody = try? JSONSerialization.data(withJSONObject: body)
-    return request
 }
 
 /// Builds the prompt for title generation.
@@ -127,52 +127,61 @@ private func buildTitlePrompt(query: String, response: String) -> String {
     """
 }
 
-/// Builds the request body for title generation.
+/// Parses the title from the API response based on the provider.
 ///
 /// - Parameters:
-///   - model: The model identifier
-///   - prompt: The prompt text
-/// - Returns: The request body dictionary
-private func buildTitleRequestBody(model: String, prompt: String) -> [String: Any] {
-    let input = [
-        [
-            "role": "user",
-            "content": [
-                [
-                    "type": "text",
-                    "text": prompt,
-                ]
-            ],
-        ]
-    ]
-    
-    return [
-        "model": model,
-        "stream": false,
-        "max_tokens": 32,
-        "temperature": 0.7,
-        "messages": input,
-    ]
-}
-
-/// Parses the title from the API response.
-///
-/// - Parameter data: The response data
+///   - data: The response data
+///   - provider: The AI provider
 /// - Returns: The extracted title or nil if parsing fails
-private func parseTitleResponse(data: Data) -> String? {
-    guard let json = try? JSONSerialization.jsonObject(with: data) as? [String: Any],
-          let contentArray = json["content"] as? [[String: Any]]
-    else {
+private func parseTitleResponse(data: Data, provider: AIProvider) -> String? {
+    guard let json = try? JSONSerialization.jsonObject(with: data) as? [String: Any] else {
         return nil
     }
     
-    // Find the first item with type = "text"
+    switch provider {
+    case .anthropic:
+        return parseAnthropicResponse(json: json)
+    case .openai:
+        return parseOpenAIResponse(json: json)
+    case .gemini:
+        return parseGeminiResponse(json: json)
+    }
+}
+
+private func parseAnthropicResponse(json: [String: Any]) -> String? {
+    guard let contentArray = json["content"] as? [[String: Any]] else {
+        return nil
+    }
+    
     for item in contentArray {
         if let type = item["type"] as? String, type == "text",
            let text = item["text"] as? String {
-            return text
+            return text.trimmingCharacters(in: .whitespacesAndNewlines)
         }
     }
-    
     return nil
+}
+
+private func parseOpenAIResponse(json: [String: Any]) -> String? {
+    guard let choices = json["choices"] as? [[String: Any]],
+          let firstChoice = choices.first,
+          let message = firstChoice["message"] as? [String: Any],
+          let content = message["content"] as? String
+    else {
+        return nil
+    }
+    return content.trimmingCharacters(in: .whitespacesAndNewlines)
+}
+
+private func parseGeminiResponse(json: [String: Any]) -> String? {
+    guard let candidates = json["candidates"] as? [[String: Any]],
+          let firstCandidate = candidates.first,
+          let content = firstCandidate["content"] as? [String: Any],
+          let parts = content["parts"] as? [[String: Any]],
+          let firstPart = parts.first,
+          let text = firstPart["text"] as? String
+    else {
+        return nil
+    }
+    return text.trimmingCharacters(in: .whitespacesAndNewlines)
 }

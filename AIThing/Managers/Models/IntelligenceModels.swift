@@ -203,5 +203,8 @@ struct TitleGenerationContext {
     
     /// Firestore manager for config checks
     let firestoreManager: FirestoreManager
+    
+    /// The AI provider for the model
+    let provider: AIProvider
 }
 

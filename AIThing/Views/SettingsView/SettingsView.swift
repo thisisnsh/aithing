@@ -29,8 +29,8 @@ struct SettingsView: View {
     @State var hoverRed: Bool = false
     @State var hoverYellow: Bool = false
     @State var hoverGreen: Bool = false
-    @State var apiKey: String = getAnthropicAPIKey() ?? ""
-    @State var modelSelected: String = getModel()
+    @State var apiKeys: APIKeys = getAPIKeys()
+    @State var modelSelected: String = getModel() ?? ""
     @State var agents: [AgentEntry] = getAgentEntries()
     @State var preferencesShowInScreenshot = getPreferencesShowInScreenshot()
     @State var preferencesCaptureFullScreen = getPreferencesCaptureFullScreen()
@@ -67,7 +67,7 @@ struct SettingsView: View {
                             case .models:
                                 ModelTab(
                                     modelSelected: $modelSelected,
-                                    apiKey: $apiKey,
+                                    apiKeys: $apiKeys,
                                     managedModels: managedModels,
                                     saveModels: saveModels,
                                     bindingForModel: bindingForModel
@@ -245,7 +245,7 @@ struct SettingsView: View {
 
     func saveModels() {
         setModel(value: modelSelected)
-        setAnthropicAPIKey(value: apiKey)
+        setAPIKeys(value: apiKeys)
     }
 
     func addAgentEntry(

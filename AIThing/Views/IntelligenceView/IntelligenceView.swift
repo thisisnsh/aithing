@@ -207,12 +207,18 @@ struct IntelligenceView: View {
                     .onAppear {
                         selectionEnabled = viewModel.selectionPolling
 
-                        let apiKey = getAnthropicAPIKey() ?? ""
-                        
+                        // Check API key for the selected model's provider
+                        var apiKey = ""
+                        if let selectedModel = getModel() {
+                            if let provider = getModelProvider(selectedModel, all: managedModels) {
+                                apiKey = getAPIKey(for: provider) ?? ""
+                            }
+                        }
+
                         // Skip login check if Firebase isn't configured
                         let isFirebaseConfigured = FirebaseConfiguration.shared.isConfigured
-                        var loggedIn = !isFirebaseConfigured // Treat as logged in if Firebase is disabled
-                        
+                        var loggedIn = !isFirebaseConfigured  // Treat as logged in if Firebase is disabled
+
                         if isFirebaseConfigured {
                             switch loginManager.authState {
                             case .signedIn(let user):
@@ -343,9 +349,7 @@ struct IntelligenceView: View {
             }
         }
         .onAppear {
-            logger.debug("OnAppear \(tabId)")
             AnalyticsManager.shared.screenView(screenName: .IntelligenceView)
         }
     }
 }
-

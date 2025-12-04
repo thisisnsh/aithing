@@ -10,7 +10,7 @@ import SwiftUI
 struct ModelTab: View {
     // MARK: - Bindings
     @Binding var modelSelected: String
-    @Binding var apiKey: String
+    @Binding var apiKeys: APIKeys
 
     // MARK: - Constants & Closures
     let managedModels: [ModelInfo]
@@ -18,27 +18,19 @@ struct ModelTab: View {
     let bindingForModel: (Binding<String>, String) -> Binding<Bool>
 
     // MARK: - Focus State
-    @FocusState private var apiKeyFieldFocused: Bool
+    @FocusState private var anthropicFieldFocused: Bool
+    @FocusState private var openAIFieldFocused: Bool
+    @FocusState private var geminiFieldFocused: Bool
 
     // MARK: - Computed Properties
-    private var icon: String {
-        getModelIcon(modelSelected, all: managedModels)
-    }
 
-    private var modelTitle: String {
-        getModelTitle(modelSelected, all: managedModels)
-    }
-
-    private var rating: String {
-        getModelRating(modelSelected, all: managedModels)
-    }
-
-    private var cost: Int {
-        getModelCost(modelSelected, all: managedModels)
-    }
-
-    private var costImage: Int {
-        getModelCostImage(modelSelected, all: managedModels)
+    /// Groups models by provider for organized display.
+    private var modelsByProvider: [(provider: AIProvider, models: [ModelInfo])] {
+        let grouped = Dictionary(grouping: managedModels) { $0.provider }
+        return AIProvider.allCases.compactMap { provider in
+            guard let models = grouped[provider], !models.isEmpty else { return nil }
+            return (provider: provider, models: models)
+        }
     }
 
     // MARK: - Body
@@ -46,55 +38,29 @@ struct ModelTab: View {
         ZStack(alignment: .top) {
             Color.clear
                 .contentShape(Rectangle())
-                .onTapGesture { apiKeyFieldFocused = false }
+                .onTapGesture { clearFocus() }
 
             VStack(alignment: .leading, spacing: 16) {
-                GroupBox(
-                    label: title("Chosen Model")
-                ) {
-                    VStack(alignment: .leading) {
-                        HStack {
-                            VStack(alignment: .leading, spacing: 2) {
-                                HStack {
-                                    Image(icon)
-                                        .resizable()
-                                        .aspectRatio(contentMode: .fit)
-                                        .frame(width: 16, height: 16)
-
-                                    Text(modelTitle)
-                                        .font(.system(size: 14, weight: .medium))
-                                }
-                                .padding(.bottom, 4)
-
-                                Text(rating)
-                                    .font(.system(size: 10, weight: .medium))
-                                    .opacity(0.5)
+                ForEach(modelsByProvider, id: \.provider) { group in
+                    GroupBox(
+                        label: title(group.provider.displayName)
+                    ) {
+                        VStack(alignment: .leading) {
+                            // Models for this provider
+                            ForEach(Array(group.models.enumerated()), id: \.offset) { idx, info in
+                                modelRow(info)
+                                Divider().padding(.leading, 4)
                             }
-                            Spacer()
 
-                            Text(
-                                """
-                                Billed by [Anthropic](https://console.anthropic.com/settings/billing) 
-                                """
+                            // API Key
+                            apiKeySection(
+                                provider: group.provider,
+                                apiKey: apiKeyBinding(for: group.provider),
+                                isFocused: apiKeyFieldFocused(for: group.provider)
                             )
-                            .font(.system(size: 10, weight: .medium))
-                            .multilineTextAlignment(.trailing)
                         }
                         .padding(4)
                     }
-                    .padding(4)
-                }
-
-                GroupBox(
-                    label: title("Managed Models")
-                ) {
-                    VStack(alignment: .leading) {
-                        ForEach(Array(managedModels.enumerated()), id: \.offset) { idx, info in
-                            modelRow(info, showDetails: modelSelected == info.id)
-                            if idx < managedModels.count - 1 { Divider() }
-                        }
-                    }
-                    .padding(4)
                 }
 
                 Text("AI can make mistakes. Perform irreversible tasks carefully.")
@@ -103,50 +69,47 @@ struct ModelTab: View {
                     .lineLimit(nil)
                     .fixedSize(horizontal: false, vertical: true)
 
-                GroupBox {
-                    VStack(alignment: .leading) {
-                        HStack {
-                            Image(systemName: "key.fill")
-                                .resizable()
-                                .aspectRatio(contentMode: .fit)
-                                .frame(width: 16, height: 16)
-                            Text("API Key").font(.system(size: 14, weight: .medium))
-                            Spacer()
-                        }
-                        .padding(4)
-                        .contentShape(Rectangle())
-
-                        TextField("sk-ant-...", text: $apiKey, onCommit: saveModels)
-                            .padding(.horizontal, 8)
-                            .frame(height: 32)
-                            .background(Color.black.opacity(0.2))
-                            .clipShape(RoundedRectangle(cornerRadius: 4))
-                            .font(.system(size: 14, weight: .medium))
-                            .focused($apiKeyFieldFocused)
-                            .textFieldStyle(.plain)
-                            .padding(.bottom, 4)
-
-                        Text(
-                            "You will need to purchase credits at [Anthropic](https://console.anthropic.com/settings/billing)."
-                            // Using own key will not deduct credits from your AI Thing account.
-                        )
-                        .font(.system(size: 10, weight: .medium))
-                        .padding(4)
-                        .lineLimit(nil)
-                        .fixedSize(horizontal: false, vertical: true)
-                    }
-                    .padding(4)
-                }
-
             }
         }
         .frame(maxWidth: .infinity, alignment: .leading)
     }
 
-    private func modelRow(_ info: ModelInfo, showDetails: Bool) -> some View {
+    // MARK: - Subviews
+
+    private func apiKeySection(
+        provider: AIProvider,
+        apiKey: Binding<String>,
+        isFocused: FocusState<Bool>
+    ) -> some View {
+        VStack(alignment: .leading, spacing: 8) {
+            Text("API Key")
+                .font(.system(size: 10, weight: .medium))
+                .lineLimit(nil)
+                .fixedSize(horizontal: false, vertical: true)
+
+            TextField(apiKeyPlaceholder(for: provider), text: apiKey, onCommit: saveModels)
+                .padding(.horizontal, 8)
+                .frame(height: 28)
+                .background(Color.black.opacity(0.2))
+                .clipShape(RoundedRectangle(cornerRadius: 8))
+                .font(.system(size: 14, weight: .medium))
+                .focused(isFocused.projectedValue)
+                .textFieldStyle(.plain)
+                .padding(.horizontal, -8)
+
+            Text(keyInstructions(for: provider))
+                .font(.system(size: 10, weight: .medium))
+                .lineLimit(nil)
+                .fixedSize(horizontal: false, vertical: true)
+                .foregroundStyle(.gray)
+        }
+        .padding(4)
+    }
+
+    private func modelRow(_ info: ModelInfo) -> some View {
         HStack(spacing: 8) {
             VStack(alignment: .leading, spacing: 2) {
-                Text(info.description).font(.system(size: 14, weight: .medium))
+                Text(info.name).font(.system(size: 14, weight: .medium))
             }
             Spacer()
             Toggle(
@@ -163,12 +126,68 @@ struct ModelTab: View {
     }
 
     private func title(_ text: String) -> some View {
-        VStack(alignment: .leading) {
+        HStack(alignment: .center) {
             Text(text)
                 .font(.system(size: 10, weight: .medium))
-                .padding(.bottom, 4)
         }
         .textSelection(.enabled)
+        .padding(.bottom, 4)
+    }
+
+    // MARK: - Helpers
+
+    private func apiKeyBinding(for provider: AIProvider) -> Binding<String> {
+        Binding(
+            get: { apiKeys.key(for: provider) },
+            set: { apiKeys = apiKeys.with(key: $0, for: provider) }
+        )
+    }
+
+    private func apiKeyFieldFocused(for provider: AIProvider) -> FocusState<Bool> {
+        switch provider {
+        case .anthropic: return _anthropicFieldFocused
+        case .openai: return _openAIFieldFocused
+        case .gemini: return _geminiFieldFocused
+        }
+    }
+
+    private func clearFocus() {
+        anthropicFieldFocused = false
+        openAIFieldFocused = false
+        geminiFieldFocused = false
+    }
+
+    private func billingLink(for provider: AIProvider) -> AttributedString {
+        let urlString: String
+        switch provider {
+        case .anthropic:
+            urlString = "https://console.anthropic.com/settings/billing"
+        case .openai:
+            urlString = "https://platform.openai.com/account/billing"
+        case .gemini:
+            urlString = "https://aistudio.google.com/app/billing"
+        }
+        return try! AttributedString(markdown: "Billed by [\(provider.displayName)](\(urlString))")
+    }
+
+    private func apiKeyPlaceholder(for provider: AIProvider) -> String {
+        switch provider {
+        case .anthropic: return "sk-ant-..."
+        case .openai: return "sk-..."
+        case .gemini: return "AIza..."
+        }
+    }
+
+    private func keyInstructions(for provider: AIProvider) -> AttributedString {
+        let urlString: String
+        switch provider {
+        case .anthropic:
+            urlString = "https://console.anthropic.com/settings/billing"
+        case .openai:
+            urlString = "https://platform.openai.com/account/billing"
+        case .gemini:
+            urlString = "https://aistudio.google.com/app/billing"
+        }
+        return try! AttributedString(markdown: "Get your API key at [\(provider.displayName)](\(urlString))")
     }
 }
-

@@ -56,7 +56,6 @@ struct AgentsTab: View {
                     GroupBox {
                         GoogleManagedAgentRow(
                             subheading: $googleAgentAccount,
-                            icon: "google",
                             title: "Google Workspace"
                         )
                         .environmentObject(googleAuthManager)
@@ -64,7 +63,6 @@ struct AgentsTab: View {
                         Divider()
                         GithubManagedAgentRow(
                             subheading: $githubAgentAccount,
-                            icon: "github",
                             title: "GitHub"
                         )
                         .environmentObject(githubAuthManager)
@@ -92,8 +90,7 @@ struct AgentsTab: View {
                                 if let agent = mcpAuthManagers.managers[manager],
                                     !(agent.server.custom ?? false)
                                 {
-                                    ManagedAgentRow(
-                                        icon: agent.server.image,
+                                    ManagedAgentRow(                                        
                                         title: agent.server.name
                                     )
                                     .environmentObject(agent)

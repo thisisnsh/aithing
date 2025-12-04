@@ -15,30 +15,12 @@ struct ManagedAgentRow: View {
     @EnvironmentObject var manager: MCPAuthManager
 
     // MARK: - Constants
-    let icon: String?
     let title: String
 
     // MARK: - Body
     var body: some View {
         VStack {
             HStack {
-                if let icon = icon {
-                    AsyncImage(url: URL(string: icon)) { image in
-                        image
-                            .resizable()
-                            .scaledToFit()
-                    } placeholder: {
-                        Image(systemName: "circle.hexagongrid")
-                            .resizable()
-                            .scaledToFit()
-                    }
-                    .frame(width: 16, height: 16)
-                } else {
-                    Image(systemName: "circle.hexagongrid")
-                        .resizable()
-                        .scaledToFit()
-                        .frame(width: 16, height: 16)
-                }
                 VStack(alignment: .leading, spacing: 2) {
                     RowTitle(title)
                 }
@@ -91,7 +73,6 @@ struct GithubManagedAgentRow: View {
     @Binding var subheading: String
 
     // MARK: - Constants
-    let icon: String
     let title: String
 
     // MARK: - State
@@ -114,7 +95,6 @@ struct GithubManagedAgentRow: View {
                 }
             } label: {
                 HStack {
-                    Image(icon).resizable().frame(width: 16, height: 16)
                     VStack(alignment: .leading, spacing: 2) {
                         RowTitle(title)
                         if !subheading.isEmpty {
@@ -197,7 +177,6 @@ struct GoogleManagedAgentRow: View {
     @Binding var subheading: String
 
     // MARK: - Constants
-    let icon: String
     let title: String
 
     // MARK: - State
@@ -220,7 +199,6 @@ struct GoogleManagedAgentRow: View {
                 }
             } label: {
                 HStack {
-                    Image(icon).resizable().frame(width: 16, height: 16)
                     VStack(alignment: .leading, spacing: 2) {
                         RowTitle(title)
                         if !subheading.isEmpty {
