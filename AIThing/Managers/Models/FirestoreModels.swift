@@ -17,21 +17,6 @@ struct Profile: Codable {
     var id: String
     var name: String?
     var email: String
-    var creditsTotal: Int
-    var creditsUsed: Int
     var blocked: Bool
-    var apiKeyAnthropic: String
-    var apiKeyOpenAI: String
     var usageData: Usage?
 }
-
-struct PlanDetail: Codable {
-    var credits: Int
-}
-
-struct PlanOrder: Codable {
-    var id: String
-    var planId: String
-    var endDate: Date
-}
-

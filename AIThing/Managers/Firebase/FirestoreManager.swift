@@ -40,28 +40,22 @@ final class FirestoreManager: ObservableObject {
     private enum Collection {
         static let system = "System"
         static let profiles = "Profiles"
-        static let models = "Models"
         static let agents = "Agents"
-        static let planDetails = "PlanDetails"
-        static let plans = "Plans"
     }
 
     private enum Document {
-        static let configs = "Configs-2.0"
+        static let configs = "Configs-2.0.9"
         static let managedGitHubAgent = "managed_aithing_github"
     }
 
     private enum ConfigKey {
         static let breakglass = "breakglass"
         static let expired = "expired"
-        static let apiKeyAnthropic = "apiKeyAnthropic"
-        static let defaultCredits = "defaultCredits"
         static let notification = "notification"
         static let greeting = "greeting"
     }
 
     private enum ProfileField {
-        static let creditsUsed = "creditsUsed"
         static let usageQuery = "usageData.query"
         static let usageAgentUse = "usageData.agentUse"
         static let usageFilesAttached = "usageData.filesAttached"
@@ -80,20 +74,6 @@ extension FirestoreManager {
     /// Fetches the expired flag from system config
     func getExpired() async -> Bool {
         await fetchConfigValue(key: ConfigKey.expired, analyticsKey: "get_expired") ?? false
-    }
-
-    /// Fetches the Anthropic API key from system config
-    func getApiKeyAnthropic() async -> String {
-        await fetchConfigValue(key: ConfigKey.apiKeyAnthropic, analyticsKey: "get_anthropic_api_key") ?? ""
-    }
-
-    /// Fetches the default credits amount from system config
-    func getDefaultCredits() async -> Int? {
-        guard isEnabled else {
-            FirebaseConfiguration.shared.logSkipped(operation: "getDefaultCredits")
-            return 50  // Default when Firebase is not configured
-        }
-        return await fetchConfigValue(key: ConfigKey.defaultCredits, analyticsKey: "get_default_credits")
     }
 
     /// Fetches the notification message from system config
@@ -155,15 +135,6 @@ extension FirestoreManager {
         return await createNewProfile(for: user, in: db)
     }
 
-    /// Increments the credits used for a user
-    func incrementCredits(user: AppUser, by amount: Int) async {
-        await updateProfileField(
-            userId: user.uid,
-            updates: [ProfileField.creditsUsed: FieldValue.increment(Int64(amount))],
-            analyticsKey: "increment_credit"
-        )
-    }
-
     /// Increments usage statistics for a user
     func incrementUsage(user: AppUser, usage: Usage) async {
         await updateProfileField(
@@ -184,11 +155,7 @@ extension FirestoreManager {
             id: user.uid,
             name: user.displayName,
             email: user.email ?? "",
-            creditsTotal: 50,
-            creditsUsed: 0,
             blocked: false,
-            apiKeyAnthropic: "",
-            apiKeyOpenAI: "",
             usageData: Usage()
         )
     }
@@ -214,18 +181,11 @@ extension FirestoreManager {
     }
 
     private func createNewProfile(for user: AppUser, in db: Firestore) async -> Profile? {
-        let apiKey = await getApiKeyAnthropic()
-        let defaultCredits = await getDefaultCredits()
-
         let profile = Profile(
             id: user.uid,
             name: user.displayName,
             email: user.email ?? "",
-            creditsTotal: defaultCredits ?? 50,
-            creditsUsed: 0,
             blocked: false,
-            apiKeyAnthropic: apiKey,
-            apiKeyOpenAI: "",
             usageData: Usage()
         )
 
@@ -269,42 +229,13 @@ extension FirestoreManager {
         var allModels: [ModelInfo] = []
 
         // Load from Firestore
-        if isEnabled, let db {
-            do {
-                let snapshot = try await db.collection(Collection.models).getDocuments()
-                let firestoreModels = snapshot.documents.compactMap { try? $0.data(as: ModelInfo.self) }
-                allModels.append(contentsOf: firestoreModels)
-                logAnalytics(operation: "get_model_info", success: true)
-            } catch {
-                logAnalytics(operation: "get_model_info", success: false)
-                logger.error("[FirestoreManager] Error fetching models: \(error.localizedDescription)")
-            }
-        } else {
-            FirebaseConfiguration.shared.logSkipped(operation: "getModelInfos")
-        }
+        // Removed this logic in > 2.0.8. All models come from Models.plist now.
 
         // Load from local plist
         let localModels = loadLocalModels()
         allModels.append(contentsOf: localModels)
 
         return sortModels(allModels)
-    }
-
-    /// Creates or updates a model configuration
-    func createModel(model: ModelInfo) async {
-        guard isEnabled, let db else {
-            FirebaseConfiguration.shared.logSkipped(operation: "createModel")
-            return
-        }
-
-        do {
-            try db.collection(Collection.models)
-                .document(model.id)
-                .setData(from: model)
-            logger.info("[FirestoreManager] Created/updated model with id \(model.id)")
-        } catch {
-            logger.error("[FirestoreManager] Error creating model \(model.id): \(error.localizedDescription)")
-        }
     }
 
     private func sortModels(_ models: [ModelInfo]) -> [ModelInfo] {
