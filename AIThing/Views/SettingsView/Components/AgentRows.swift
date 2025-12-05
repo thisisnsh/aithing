@@ -33,7 +33,7 @@ struct ManagedAgentRow: View {
                             Task {
                                 if newValue {
                                     manager.enabled = true
-                                    logger.debug("Enabling: \(title)")
+                                    logger.info("Enabling: \(title)")
                                     if await manager.generateToken(
                                         refresh: false
                                     ) == nil {
@@ -130,7 +130,7 @@ struct GithubManagedAgentRow: View {
                                         Task {
                                             if newValue {
                                                 manager.enabled.insert(tool)
-                                                logger.debug("Github: Enabling \(tool.rawValue)")
+                                                logger.info("Github: Enabling \(tool.rawValue)")
                                                 logger.debug("Github: Tools: \(manager.enabled)")
                                                 if let user = await manager.generateToken(
                                                     refresh: false
@@ -141,7 +141,7 @@ struct GithubManagedAgentRow: View {
                                                 }
                                             } else {
                                                 manager.enabled.remove(tool)
-                                                logger.debug("Github: Disabling \(tool.rawValue)")
+                                                logger.info("Github: Disabling \(tool.rawValue)")
                                                 logger.debug("Github: Tools: \(manager.enabled)")
                                                 if manager.enabled.count == 0 {
                                                     logger.debug("Github: Resetting token")
@@ -234,7 +234,7 @@ struct GoogleManagedAgentRow: View {
                                         Task {
                                             if newValue {
                                                 manager.enabled.insert(tool)
-                                                logger.debug("Google: Enabling \(tool.rawValue)")
+                                                logger.info("Google: Enabling \(tool.rawValue)")
                                                 logger.debug("Google: Tools: \(manager.enabled)")
                                                 if let user = await manager.generateToken(
                                                     refresh: false
@@ -245,7 +245,7 @@ struct GoogleManagedAgentRow: View {
                                                 }
                                             } else {
                                                 manager.enabled.remove(tool)
-                                                logger.debug("Google: Disabling \(tool.rawValue)")
+                                                logger.info("Google: Disabling \(tool.rawValue)")
                                                 logger.debug("Google: Tools: \(manager.enabled)")
                                                 if manager.enabled.count == 0 {
                                                     logger.debug("Google: Resetting token")

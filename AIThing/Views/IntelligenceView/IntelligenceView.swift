@@ -294,7 +294,7 @@ struct IntelligenceView: View {
                                 }
 
                                 await setUnseen(tabId, false)
-                                logger.debug("Auto 5-Second Refresh Window \(tabId)")
+                                logger.debug("Auto 5-Second Refresh Window \(tabId)")                                
                             }
                         }
                     }

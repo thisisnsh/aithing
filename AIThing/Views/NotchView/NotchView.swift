@@ -312,8 +312,8 @@ struct NotchView: View {
             await refreshManagedAgents()
 
             automationManager.onExecute = { (automation: Automation) async in
-                logger.debug("Called automation: \(automation.title)")
-                var modelInput: [ChatItem] = []
+                logger.info("Called automation: \(automation.title)")
+                let modelInput: [ChatItem] = []
                 var modelOutput: String = ""
                 let tabId = UUID().uuidString
                 var history: [ChatItem] = []

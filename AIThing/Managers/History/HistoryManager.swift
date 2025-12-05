@@ -202,7 +202,7 @@ final class HistoryStore: ObservableObject {
     /// Remove a single id (deletes its SQLite file).
     @discardableResult
     func delete(id: String) async -> Bool {
-        logger.debug("Delete history id: \(id)")
+        logger.info("Delete history id: \(id)")
         guard let container = containers[id] else {
             // Not loaded yet, just delete files
             Self.deleteStoreFiles(for: id)

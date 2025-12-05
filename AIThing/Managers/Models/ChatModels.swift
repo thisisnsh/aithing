@@ -17,7 +17,7 @@ enum ChatPayload: Equatable {
     case text(text: String)
     case textWithName(name: String, text: String)
     case imageBase64(name: String, media: String, image: String)
-    case toolUse(id: String, name: String, input: Any)
+    case toolUse(id: String, name: String, input: [String: Any])
     case toolResult(id: String, result: String)
 
     static func == (lhs: ChatPayload, rhs: ChatPayload) -> Bool {
@@ -187,7 +187,7 @@ extension ChatItem {
         case "toolUse":
             guard let id = dict["id"] as? String,
                 let name = dict["name"] as? String,
-                let input = dict["input"]
+                let input = dict["input"] as? [String: Any]
             else { return nil }
             return .toolUse(id: id, name: name, input: input)
 
@@ -220,7 +220,7 @@ extension ChatItem {
         case "tool_use":
             guard let id = dict["id"] as? String,
                 let name = dict["name"] as? String,
-                let input = dict["input"]
+                let input = dict["input"] as? [String: Any]
             else { return nil }
             return .toolUse(id: id, name: name, input: input)
 

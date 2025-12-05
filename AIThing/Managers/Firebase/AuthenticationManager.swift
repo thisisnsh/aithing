@@ -150,7 +150,7 @@ final class AuthenticationManager: ObservableObject {
 
     private func signInToFirebase(with credential: AuthCredential) async throws {
         let authResult = try await Auth.auth().signIn(with: credential)
-        logger.debug("Successfully signed in user: \(authResult.user.email ?? "No email")")
+        logger.info("Successfully signed in user: \(authResult.user.email ?? "No email")")
     }
 }
 

@@ -127,12 +127,7 @@ protocol AIProviderProtocol {
     ///   - toolName: The name of the tool
     ///   - toolInput: The tool input as a dictionary
     /// - Returns: A message dictionary in the provider's format
-    func buildAssistantToolUseMessage(
-        text: String?,
-        toolUseId: String,
-        toolName: String,
-        toolInput: Any
-    ) -> [ChatItem]
+    func buildAssistantToolUseMessage(text: String?, toolUseId: String, toolName: String, toolInput: [String: Any]) -> [ChatItem]
 
     /// Builds an assistant text message in the provider's format.
     ///
@@ -152,7 +147,7 @@ final class AIProviderRegistry {
     private init() {
         // Register default providers
         providers[.anthropic] = AnthropicProvider()
-        providers[.openai] = AnthropicProvider()
+        providers[.openai] = OpenAIProvider()
         providers[.gemini] = AnthropicProvider()
 
         // register(AnthropicProvider())

@@ -80,3 +80,28 @@ func parseJSONStringToDictObject(_ json: String) -> [String: Any] {
         return [:]
     }
 }
+
+func dictObjectToJSONString(_ dict: [String: Any]) -> String {
+    // Step 1: Convert dictionary into JSON-safe values
+    let jsonSafe = dict.mapValues { Value(fromDecoded: $0).toJSONSafeObject() }
+
+    // Step 2: Remove nils (because JSONSerialization cannot serialize nil)
+    let cleaned = jsonSafe.compactMapValues { $0 }
+
+    // Step 3: Validate before serialization
+    guard JSONSerialization.isValidJSONObject(cleaned) else {
+        logger.error("Invalid JSON object in dictObjectToJSONString.")
+        return ""
+    }
+
+    do {
+        let data = try JSONSerialization.data(
+            withJSONObject: cleaned,
+            options: [.prettyPrinted]
+        )
+        return String(data: data, encoding: .utf8) ?? ""
+    } catch {
+        logger.error("Failed to serialize JSON: \(error)")
+        return ""
+    }
+}

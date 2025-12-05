@@ -53,7 +53,7 @@ final class FirebaseConfiguration {
     /// Logs a debug message when a Firebase operation is skipped due to missing configuration
     func logSkipped(operation: String) {
         // Enable if Firebase is required
-        // logger.debug("Firebase operation '\(operation)' skipped - Firebase not configured")
+        // logger.info("Firebase operation '\(operation)' skipped - Firebase not configured")
     }
 
     // MARK: - Private Methods

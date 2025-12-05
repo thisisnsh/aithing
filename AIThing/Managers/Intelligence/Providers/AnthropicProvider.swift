@@ -193,12 +193,7 @@ final class AnthropicProvider: AIProviderProtocol {
         return [ChatItem(role: .user, payload: .toolResult(id: toolUseId, result: result))]
     }
 
-    func buildAssistantToolUseMessage(
-        text: String?,
-        toolUseId: String,
-        toolName: String,
-        toolInput: Any
-    ) -> [ChatItem] {
+    func buildAssistantToolUseMessage(text: String?, toolUseId: String, toolName: String, toolInput: [String: Any]) -> [ChatItem] {
         var payloads: [ChatPayload] = []
         if let text = text, !text.isEmpty {
             payloads.append(.text(text: text))

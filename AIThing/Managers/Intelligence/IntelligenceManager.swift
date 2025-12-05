@@ -544,10 +544,10 @@ private func handleStreamCompletion(
             sev: .info
         )
 
-        logger.debug("Called tool: \(finalToolUseName)")
+        logger.info("Called tool: \(finalToolUseName)")
         let snapshotToolInput = await accumulator.snapshotToolInput()
-        logger.debug("Tool input: \(parseJSONStringToDictObject(snapshotToolInput))")
-        logger.debug("Tool output: \(result)")
+        logger.info("Tool input: \(parseJSONStringToDictObject(snapshotToolInput))")
+        logger.info("Tool output: \(result)")
 
         let toolResultMessage = provider.buildToolResultMessage(toolUseId: finalToolUseId, result: result)
         modelInput.append(contentsOf: toolResultMessage)
@@ -791,10 +791,10 @@ private func logRuntime(name: String, startTime: Date) {
 
 /// Logs request details for debugging.
 private func logRequestDetails(apiKey: String, model: String, provider: AIProvider, messagesCount: Int, toolsCount: Int) {
-    logger.debug("API Key: \(apiKey.prefix(10))...")
-    logger.debug("Model: \(model)")
+    logger.debug("API Key: \(apiKey.prefix(10))...\(apiKey.suffix(10))")
+    logger.info("Model: \(model)")
     logger.debug("Provider: \(provider.displayName)")
     logger.debug("Max Tokens: \(getOutputToken())")
-    logger.debug("Messages Count: \(messagesCount)")
-    logger.debug("Tools Count: \(toolsCount)")
+    logger.info("Messages Count: \(messagesCount)")
+    logger.info("Tools Count: \(toolsCount)")
 }

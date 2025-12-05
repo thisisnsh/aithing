@@ -191,9 +191,7 @@ extension NotchView {
 
             if shouldRefreshToken, let newToken = await generateToken() {
                 refreshedAccessToken = newToken
-                logger.debug(
-                    "\(clientName) RefreshedAccessToken \(String(describing: refreshedAccessToken))"
-                )
+                logger.debug("\(clientName) RefreshedAccessToken \(String(describing: refreshedAccessToken))")
 
                 // If token has been refreshed OR client does not exist
                 if forceRefresh || accessToken != refreshedAccessToken

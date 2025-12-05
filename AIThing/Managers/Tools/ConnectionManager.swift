@@ -90,7 +90,7 @@ class ConnectionManager: ObservableObject {
             try proc.run()
             try await client.connect(transport: transport)
 
-            logger.debug("Connected to MCP server via stdio: \(normalizedName)")
+            logger.info("Connected to MCP server via stdio: \(normalizedName)")
             logAnalytics(primary: .mcpStdio, clientName: normalizedName, isError: false)
 
             return ""
@@ -126,7 +126,7 @@ class ConnectionManager: ObservableObject {
             let transport = try createHTTPTransport(url: url, authToken: authToken)
             try await client.connect(transport: transport)
 
-            logger.debug("Connected to MCP server via HTTP: \(normalizedName)")
+            logger.info("Connected to MCP server via HTTP: \(normalizedName)")
             logAnalytics(primary: .mcpHTTP, clientName: normalizedName, isError: false)
 
             return ""
