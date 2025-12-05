@@ -230,7 +230,7 @@ extension FirestoreManager {
         let localModels = loadLocalModels()
         allModels.append(contentsOf: localModels)
 
-        return sortModels(allModels)
+        return allModels
     }
 
     private func sortModels(_ models: [ModelInfo]) -> [ModelInfo] {

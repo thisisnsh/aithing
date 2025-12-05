@@ -21,6 +21,7 @@ extension IntelligenceView {
     /// 4. Executes the model call
     /// 5. Cleans up state after completion
     func handleQuery() async {
+        showRefreshButton = false
         let trimmed = query.trimmingCharacters(in: .whitespacesAndNewlines)
         guard !trimmed.isEmpty else { return }
         

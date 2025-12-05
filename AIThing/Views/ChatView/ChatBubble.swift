@@ -36,7 +36,7 @@ struct ChatBubble: View, Equatable {
             case .toolUse(_, let name, let input):
                 ToolBubble(text: "Called tool: \(name)\nInput: \(input)")
                     .frame(maxWidth: 800, alignment: .leading)
-            case .toolResult(_, _):
+            case .toolResult(_, _, _):
                 // Ignored. This will never be displayed
                 Color.clear.frame(width: 0, height: 0)
             }

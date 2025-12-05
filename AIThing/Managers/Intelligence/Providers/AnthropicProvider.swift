@@ -46,7 +46,7 @@ final class AnthropicProvider: AIProviderProtocol {
             "model": model,
             "stream": stream,
             "max_tokens": maxTokens,
-            "temperature": 0.7,
+            "temperature": 1,
             "messages": processedMessages,
             "tools": processedTools,
             "system": systemMessages,
@@ -147,7 +147,7 @@ final class AnthropicProvider: AIProviderProtocol {
                     content.append(["type": "image", "source": ["type": "base64", "media_type": media, "data": image]])
                 case .toolUse(let id, let name, let input):
                     content.append(["type": "tool_use", "id": id, "name": name, "input": input])
-                case .toolResult(let id, let result):
+                case .toolResult(let id, _, let result):
                     content.append(["type": "tool_result", "tool_use_id": id, "content": result])
                 }
             }
@@ -189,8 +189,8 @@ final class AnthropicProvider: AIProviderProtocol {
 
     // MARK: - Message Building
 
-    func buildToolResultMessage(toolUseId: String, result: String) -> [ChatItem] {
-        return [ChatItem(role: .user, payload: .toolResult(id: toolUseId, result: result))]
+    func buildToolResultMessage(toolUseId: String, toolName: String, result: String) -> [ChatItem] {
+        return [ChatItem(role: .user, payload: .toolResult(id: toolUseId, name: toolName, result: result))]
     }
 
     func buildAssistantToolUseMessage(text: String?, toolUseId: String, toolName: String, toolInput: [String: Any]) -> [ChatItem] {

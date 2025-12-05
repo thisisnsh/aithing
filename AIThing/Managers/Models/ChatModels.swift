@@ -18,7 +18,7 @@ enum ChatPayload: Equatable {
     case textWithName(name: String, text: String)
     case imageBase64(name: String, media: String, image: String)
     case toolUse(id: String, name: String, input: [String: Any])
-    case toolResult(id: String, result: String)
+    case toolResult(id: String, name: String, result: String)
 
     static func == (lhs: ChatPayload, rhs: ChatPayload) -> Bool {
         switch (lhs, rhs) {
@@ -26,7 +26,7 @@ enum ChatPayload: Equatable {
         case (.textWithName(_, let a), .textWithName(_, let b)): return a == b
         case (.imageBase64(_, _, let a), .imageBase64(_, _, let b)): return a == b
         case (.toolUse(let a, _, _), .toolUse(let b, _, _)): return a == b
-        case (.toolResult(_, _), .toolResult(_, _)): return false
+        case (.toolResult(_, _, _), .toolResult(_, _, _)): return false
         default: return false
         }
     }
@@ -154,10 +154,11 @@ extension ChatItem {
                 "input": input,
             ]
 
-        case .toolResult(let id, let result):
+        case .toolResult(let id, let name, let result):
             return [
                 "type": "toolResult",
                 "id": id,
+                "name": name, 
                 "result": result,
             ]
         }
@@ -193,9 +194,10 @@ extension ChatItem {
 
         case "toolResult":
             guard let id = dict["id"] as? String,
+                let name = dict["name"] as? String,
                 let result = dict["result"] as? String
             else { return nil }
-            return .toolResult(id: id, result: result)
+            return .toolResult(id: id, name: name, result: result)
 
         default:
             return nil
@@ -229,7 +231,7 @@ extension ChatItem {
                 let content = dict["content"] as? [String: Any]
             else { return nil }
             guard let result = content["text"] as? String else { return nil }
-            return .toolResult(id: id, result: result)
+            return .toolResult(id: id, name: "", result: result)
 
         default:
             return nil

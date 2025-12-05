@@ -154,7 +154,21 @@ struct IntelligenceView: View {
                                         title: "Refresh",
                                         isActive: true,
                                         action: {
-                                            // Left empty intentionally. Users can click this for their satisfaction.
+                                            Task {
+                                                let newHistory = await getHistory(tabId)
+
+                                                // Exit on no change
+                                                if newHistory?.history.count ?? 0 == history?.history.count ?? 0 {
+                                                    return
+                                                }
+
+                                                history = newHistory
+                                                if let history = history {
+                                                    modelInput = history.history
+                                                    tabTitle = history.title ?? "New Chat"
+                                                }
+                                                await setUnseen(tabId, false)
+                                            }
                                         },
                                         deleteAction: {},
                                         image: "arrow.clockwise",
@@ -274,28 +288,6 @@ struct IntelligenceView: View {
                             startSelectionPoll()
                         } else {
                             stopSelectionPoll()
-                        }
-                    }
-                    .onReceive(refreshTimer) { _ in
-                        if isTabShowing() {
-                            Task {
-                                let newHistory = await getHistory(tabId)
-
-                                // Exit on no change
-                                if newHistory?.history.count ?? 0 == history?.history.count ?? 0 {
-                                    return
-                                }
-
-                                history = newHistory
-
-                                if let history = history {
-                                    modelInput = history.history
-                                    tabTitle = history.title ?? "New Chat"
-                                }
-
-                                await setUnseen(tabId, false)
-                                logger.debug("Auto 5-Second Refresh Window \(tabId)")                                
-                            }
                         }
                     }
                     .onReceive(screenshotMonitor.$latestScreenshot) { ss in

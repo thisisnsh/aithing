@@ -12,16 +12,22 @@ import MCP
 
 /// Represents events that can occur during streaming responses from AI providers.
 enum StreamEvent {
-    /// Text content received from the model.
+    /// Text content received from the model. Wait for done.
     case text(String)
 
-    /// Tool use block started with id and name.
+    /// Last text content received from the model.
+    case endText(String)
+
+    /// Tool use block started with id and name. Wait for toolInput and done.
     case toolUseStart(id: String, name: String)
+
+    /// Tool use in one-go. Call the tool
+    case toolUse(id: String, name: String, input: String)
 
     /// Partial JSON input for tool use.
     case toolInput(String)
 
-    /// Stream completed with a stop reason.
+    /// Stream completed with a stop reason. Take required action.
     case done(stopReason: StopReason)
 
     /// Error occurred during streaming.
@@ -40,12 +46,14 @@ enum StopReason {
         switch string {
         // Anthropic: "end_turn"
         // OpenAI:    "stop"
-        case "end_turn", "stop":
+        // Gemini:    "STOP"
+        case "end_turn", "stop", "STOP":
             self = .endTurn
 
         // Anthropic: "max_tokens"
         // OpenAI:    "length"
-        case "max_tokens", "length":
+        // Gemini:    "MAX_TOKENS"
+        case "max_tokens", "length", "MAX_TOKENS":
             self = .maxTokens
 
         // Anthropic: "tool_use"
@@ -117,7 +125,7 @@ protocol AIProviderProtocol {
     ///   - toolUseId: The ID of the tool use
     ///   - result: The tool execution result
     /// - Returns: A message dictionary in the provider's format
-    func buildToolResultMessage(toolUseId: String, result: String) -> [ChatItem]
+    func buildToolResultMessage(toolUseId: String, toolName: String, result: String) -> [ChatItem]
 
     /// Builds an assistant message with tool use in the provider's format.
     ///
@@ -146,13 +154,9 @@ final class AIProviderRegistry {
 
     private init() {
         // Register default providers
-        providers[.anthropic] = AnthropicProvider()
-        providers[.openai] = OpenAIProvider()
-        providers[.gemini] = AnthropicProvider()
-
-        // register(AnthropicProvider())
-        // register(OpenAIProvider())
-        // register(GeminiProvider())
+        register(AnthropicProvider())
+        register(OpenAIProvider())
+        register(GeminiProvider())
     }
 
     /// Registers a provider implementation.

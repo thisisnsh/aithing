@@ -42,7 +42,7 @@ final class OpenAIProvider: AIProviderProtocol {
             "model": model,
             "stream": stream,
             "max_completion_tokens": maxTokens,
-            "temperature": 0.7,
+            "temperature": 1,
             "messages": processedMessages,
             "tools": processedTools,
         ]
@@ -144,7 +144,7 @@ final class OpenAIProvider: AIProviderProtocol {
                         "role": message.role.rawValue,
                         "tool_calls": [["id": id, "type": "function", "function": ["name": name, "arguments": dictObjectToJSONString(input)]]],
                     ]
-                case .toolResult(let id, let result):
+                case .toolResult(let id, _, let result):
                     return ["role": "tool", "tool_call_id": id, "content": result]
                 }
             }
@@ -212,8 +212,8 @@ final class OpenAIProvider: AIProviderProtocol {
 
     // MARK: - Message Building
 
-    func buildToolResultMessage(toolUseId: String, result: String) -> [ChatItem] {
-        return [ChatItem(role: .user, payload: .toolResult(id: toolUseId, result: result))]
+    func buildToolResultMessage(toolUseId: String, toolName: String, result: String) -> [ChatItem] {
+        return [ChatItem(role: .user, payload: .toolResult(id: toolUseId, name: toolName, result: result))]
     }
 
     func buildAssistantToolUseMessage(text: String?, toolUseId: String, toolName: String, toolInput: [String: Any]) -> [ChatItem] {

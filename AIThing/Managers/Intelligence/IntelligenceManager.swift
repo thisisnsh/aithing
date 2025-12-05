@@ -414,11 +414,58 @@ private func processResponseStream(
                     modelOutput = await accumulator.snapshotResponse()
                     context.modelHandlers.setModelOutput(modelOutput + " " + shimmerPlaceholder())
                 }
+            
+            case .endText(let text):
+                await accumulator.appendResponse(text)
+                modelOutput = await accumulator.snapshotResponse()
+                context.modelHandlers.setModelOutput(modelOutput)
+
+                if let result = await handleStreamCompletion(
+                    stopReason: .endTurn,
+                    context: context,
+                    modelInput: &modelInput,
+                    modelOutput: modelOutput,
+                    modelTools: modelTools,
+                    accumulator: accumulator,
+                    finalToolUseId: finalToolUseId,
+                    finalToolUseName: finalToolUseName,
+                    model: model,
+                    apiKey: apiKey,
+                    provider: provider,
+                    startTime: startTime
+                ) {
+                    return StreamProcessingResult(recursiveResult: result)
+                }
 
             case .toolUseStart(let id, let name):
                 finalToolUseId = id
                 finalToolUseName = name
+                
+            case .toolUse(let id, let name, let input):
+                finalToolUseId = id
+                finalToolUseName = name
+                await accumulator.appendToolInput(input)
+                
+                modelOutput = await accumulator.snapshotResponse()
+                context.modelHandlers.setModelOutput(modelOutput)
 
+                if let result = await handleStreamCompletion(
+                    stopReason: .toolUse,
+                    context: context,
+                    modelInput: &modelInput,
+                    modelOutput: modelOutput,
+                    modelTools: modelTools,
+                    accumulator: accumulator,
+                    finalToolUseId: finalToolUseId,
+                    finalToolUseName: finalToolUseName,
+                    model: model,
+                    apiKey: apiKey,
+                    provider: provider,
+                    startTime: startTime
+                ) {
+                    return StreamProcessingResult(recursiveResult: result)
+                }
+                
             case .toolInput(let input):
                 await accumulator.appendToolInput(input)
 
@@ -549,7 +596,7 @@ private func handleStreamCompletion(
         logger.info("Tool input: \(parseJSONStringToDictObject(snapshotToolInput))")
         logger.info("Tool output: \(result)")
 
-        let toolResultMessage = provider.buildToolResultMessage(toolUseId: finalToolUseId, result: result)
+        let toolResultMessage = provider.buildToolResultMessage(toolUseId: finalToolUseId, toolName: finalToolUseName, result: result)
         modelInput.append(contentsOf: toolResultMessage)
 
         logRuntime(name: "runTimeTools", startTime: toolStartTime)
