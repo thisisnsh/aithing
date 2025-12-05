@@ -14,10 +14,10 @@ enum ChatRole {
 }
 
 enum ChatPayload: Equatable {
-    case text(contents: [String])
-    case textWithName(name: String, contents: [String])
-    case imageBase64(name: String, media: String, images: [String])
-    case imageNSImage(name: String, media: String, images: [NSImage])
+    case text(content: String)
+    case textWithName(name: String, content: String)
+    case imageBase64(name: String, media: String, image: String)
+    case imageNSImage(name: String, media: String, image: NSImage)
     case toolUse(id: String, name: String, input: Any)
     case toolResult(id: String, result: String)
 
@@ -25,7 +25,7 @@ enum ChatPayload: Equatable {
         switch (lhs, rhs) {
         case (.text(let a), .text(let b)): return a == b
         case (.textWithName(_, let a), .textWithName(_, let b)): return a == b
-        case (.toolUse(let a), .toolUse(let b)): return a == b
+        case (.toolUse(let a, _, _), .toolUse(let b, _, _)): return a == b
         case (.imageBase64(_, _, let a), .imageBase64(_, _, let b)): return a == b
         case (.imageNSImage(_, _, _), .imageBase64(_, _, _)): return false  // NSImage not Equatable; treat as unequal
         case (.toolResult(_, _), .toolResult(_, _)): return false

@@ -174,6 +174,6 @@ final class AnthropicProvider: AIProviderProtocol {
     }
 
     func buildAssistantTextMessage(text: String) -> [ChatItem] {
-        [ChatItem(role: .assistant, payload: [.text(contents: [text]))]]
+        [ChatItem(role: .assistant, payload: [.text(content: text))]]
     }
 }
