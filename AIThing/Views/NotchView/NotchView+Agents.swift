@@ -248,7 +248,7 @@ extension NotchView {
                     clientName: clientName,
                     isEnabled: !self.googleAuthManager.enabled.isEmpty,
                     currentTokenAndExpiry: {
-                        self.logger.debug("Google AccessToken \(String(describing: token))")
+                        logger.debug("Google AccessToken \(String(describing: token))")
                         return (token, expiry)
                     },
                     generateToken: {
@@ -285,7 +285,7 @@ extension NotchView {
                     clientName: clientName,
                     isEnabled: !self.githubAuthManager.enabled.isEmpty,
                     currentTokenAndExpiry: {
-                        self.logger.debug("Github AccessToken \(String(describing: token))")
+                        logger.debug("Github AccessToken \(String(describing: token))")
                         return (token, expiry)
                     },
                     generateToken: {
@@ -318,7 +318,7 @@ extension NotchView {
                         clientName: clientName,
                         isEnabled: agentOAuthManager.enabled,
                         currentTokenAndExpiry: {
-                            self.logger.debug("AccessToken \(String(describing: token))")
+                            logger.debug("AccessToken \(String(describing: token))")
                             return (token, expiry)
                         },
                         generateToken: {

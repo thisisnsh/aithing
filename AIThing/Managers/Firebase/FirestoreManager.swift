@@ -26,11 +26,6 @@ final class FirestoreManager: ObservableObject {
         return _db
     }
 
-    private let logger = Logger(
-        subsystem: Bundle.main.bundleIdentifier ?? "com.thisisnsh.mac.AIThing",
-        category: "FirestoreManager"
-    )
-
     private var isEnabled: Bool {
         FirebaseConfiguration.shared.isConfigured
     }

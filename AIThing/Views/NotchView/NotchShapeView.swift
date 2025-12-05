@@ -18,7 +18,7 @@ extension NotchView {
             circularNotch: circularNotch
         )
     }
-    
+
     /// Creates the gradient overlay for the notch
     private var notchGradientOverlay: some View {
         LinearGradient(
@@ -31,7 +31,7 @@ extension NotchView {
         )
         .clipShape(currentNotchShape)
     }
-    
+
     func NotchShapeExt() -> some View {
         Group {
             if #available(macOS 26.0, *) {
@@ -48,4 +48,3 @@ extension NotchView {
         }
     }
 }
-

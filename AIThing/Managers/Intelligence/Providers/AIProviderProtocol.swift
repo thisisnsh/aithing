@@ -13,33 +13,56 @@ import Foundation
 enum StreamEvent {
     /// Text content received from the model.
     case text(String)
-    
+
     /// Tool use block started with id and name.
     case toolUseStart(id: String, name: String)
-    
+
     /// Partial JSON input for tool use.
     case toolInput(String)
-    
+
     /// Content block completed.
     case contentBlockStop
-    
+
     /// Stream completed with a stop reason.
     case done(stopReason: StopReason)
-    
+
     /// Error occurred during streaming.
     case error(String)
 }
 
 /// Represents the reason why the model stopped generating.
-enum StopReason: String {
-    case endTurn = "end_turn"
-    case stopSequence = "stop_sequence"
-    case maxTokens = "max_tokens"
-    case toolUse = "tool_use"
+enum StopReason {
+    case endTurn
+    case stopSequence
+    case maxTokens
+    case toolUse
     case unknown
-    
+
     init(from string: String) {
-        self = StopReason(rawValue: string) ?? .unknown
+        switch string {
+        // Anthropic: "end_turn"
+        // OpenAI:    "stop"
+        case "end_turn", "stop":
+            self = .endTurn
+
+        // Anthropic: "max_tokens"
+        // OpenAI:    "length"
+        case "max_tokens", "length":
+            self = .maxTokens
+
+        // Anthropic: "tool_use"
+        // OpenAI:    "tool_calls"
+        case "tool_use", "tool_calls":
+            self = .toolUse
+
+        // Anthropic: "stop_sequence"
+        // OpenAI:    "content_filter"
+        case "stop_sequence", "content_filter":
+            self = .stopSequence
+
+        default:
+            self = .unknown
+        }
     }
 }
 
@@ -49,7 +72,7 @@ enum StopReason: String {
 protocol AIProviderProtocol {
     /// The provider type this implementation handles.
     var provider: AIProvider { get }
-    
+
     /// Builds an API request for the provider.
     ///
     /// - Parameters:
@@ -66,27 +89,28 @@ protocol AIProviderProtocol {
         messages: [[String: Any]],
         tools: [[String: Any]],
         systemMessages: [[String: Any]],
-        maxTokens: Int
+        maxTokens: Int,
+        stream: Bool
     ) -> URLRequest?
-    
+
     /// Parses a single line from the streaming response.
     ///
     /// - Parameter line: A line from the SSE stream
     /// - Returns: A StreamEvent if the line contains relevant data, nil otherwise
     func parseStreamLine(_ line: String) -> StreamEvent?
-    
+
     /// Converts the internal message format to the provider's expected format.
     ///
     /// - Parameter messages: Messages in the internal format
     /// - Returns: Messages converted to provider's format
     func convertMessages(_ messages: [[String: Any]]) -> [[String: Any]]
-    
+
     /// Converts the internal tool format to the provider's expected format.
     ///
     /// - Parameter tools: Tools in the internal format
     /// - Returns: Tools converted to provider's format
     func convertTools(_ tools: [[String: Any]]) -> [[String: Any]]
-    
+
     /// Builds a tool result message in the provider's format.
     ///
     /// - Parameters:
@@ -94,7 +118,7 @@ protocol AIProviderProtocol {
     ///   - result: The tool execution result
     /// - Returns: A message dictionary in the provider's format
     func buildToolResultMessage(toolUseId: String, result: [[String: Any]]) -> [String: Any]
-    
+
     /// Builds an assistant message with tool use in the provider's format.
     ///
     /// - Parameters:
@@ -109,7 +133,7 @@ protocol AIProviderProtocol {
         toolName: String,
         toolInput: Any
     ) -> [String: Any]
-    
+
     /// Builds an assistant text message in the provider's format.
     ///
     /// - Parameter text: The text content
@@ -122,24 +146,23 @@ protocol AIProviderProtocol {
 /// Registry for AI provider implementations.
 final class AIProviderRegistry {
     static let shared = AIProviderRegistry()
-    
+
     private var providers: [AIProvider: AIProviderProtocol] = [:]
-    
+
     private init() {
         // Register default providers
         register(AnthropicProvider())
         register(OpenAIProvider())
         register(GeminiProvider())
     }
-    
+
     /// Registers a provider implementation.
     func register(_ provider: AIProviderProtocol) {
         providers[provider.provider] = provider
     }
-    
+
     /// Gets the provider implementation for a given provider type.
     func getProvider(for type: AIProvider) -> AIProviderProtocol? {
         providers[type]
     }
 }
-

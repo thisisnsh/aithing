@@ -19,36 +19,31 @@ import os
 @MainActor
 class GithubAuthManager: ObservableObject, OAuthManagerProtocol {
     typealias TokenType = GithubUser
-    
+
     // MARK: - Published Properties
-    
+
     @Published var user: GithubUser? = getGithubUser()
     @Published var enabled: Set<GithubTool> = getGithubTools()
-    
+
     var hasEnabledTools: Bool { !enabled.isEmpty }
-    
+
     // MARK: - Private Properties
-    
-    private let logger = Logger(
-        subsystem: "com.thisisnsh.mac.AIThing",
-        category: "GithubAuthManager"
-    )
-    
+
     private let callbackScheme = "oauth-aithing"
     private let callbackURLString = "oauth-aithing://oauth-callback-github"
     private var generating = false
     private(set) var oauth: OAuth2Swift?
-    
+
     // MARK: - Initialization
-    
+
     init() {
         Task { [weak self] in
             await self?.configureOAuth()
         }
     }
-    
+
     // MARK: - OAuth Configuration
-    
+
     /// Configures the OAuth client with credentials from Firestore
     func configureOAuth() async {
         let agent = await FirestoreManager().getManagedGitHubAgent()
@@ -63,9 +58,9 @@ class GithubAuthManager: ObservableObject, OAuthManagerProtocol {
         oauth.authorizeURLHandler = MyASWebAuthURLHandler(callbackScheme: callbackScheme)
         self.oauth = oauth
     }
-    
+
     // MARK: - OAuthManagerProtocol
-    
+
     /// Generates or refreshes a GitHub OAuth token
     /// - Parameter refresh: When true, attempts to refresh existing token first
     /// - Returns: The authenticated user if successful
@@ -73,16 +68,17 @@ class GithubAuthManager: ObservableObject, OAuthManagerProtocol {
         guard !generating else { return nil }
         generating = true
         defer { generating = false }
-        
+
         do {
             if refresh {
                 if let user = self.user, tokenIsValid(user) {
                     return user
                 }
-                
+
                 if let current = user,
-                   let refreshToken = current.refreshToken,
-                   !tokenIsValid(current) {
+                    let refreshToken = current.refreshToken,
+                    !tokenIsValid(current)
+                {
                     if let renewed = try await renewAccessToken(refreshToken: refreshToken) {
                         let profile = try await fetchProfile(accessToken: renewed.credential.oauthToken)
                         let merged = merge(profile: profile, credential: renewed.credential)
@@ -92,7 +88,7 @@ class GithubAuthManager: ObservableObject, OAuthManagerProtocol {
                     }
                 }
             }
-            
+
             let credential = try await authorizeInteractively()
             let profile = try await fetchProfile(accessToken: credential.oauthToken)
             let merged = merge(profile: profile, credential: credential)
@@ -106,40 +102,40 @@ class GithubAuthManager: ObservableObject, OAuthManagerProtocol {
             return nil
         }
     }
-    
+
     /// Clears the current authentication
     func resetToken() {
         user = nil
         setGithubUser(value: nil)
     }
-    
+
     // MARK: - Scope Management
-    
+
     /// Returns OAuth scopes based on enabled tools
     func additionalScopes() -> [String] {
         guard !enabled.isEmpty else { return [] }
-        
+
         var scopes = Set(enabled.flatMap { GithubToolModels.toolScopesMap[$0] ?? [] })
-        
+
         // Add default scopes
         scopes.insert(GithubToolModels.Scopes.readUser)
         scopes.insert(GithubToolModels.Scopes.readOrg)
         scopes.insert(GithubToolModels.Scopes.userEmail)
-        
+
         AnalyticsManager.shared.customEvent(
             view: .GithubOAuthManager,
             primary: .scope,
             secondary: String(describing: enabled),
             sev: .info
         )
-        
+
         return Array(scopes)
     }
-    
+
     /// Returns API capabilities based on enabled tools
     func enabledCapabilities() -> [String] {
         guard !enabled.isEmpty else { return [] }
-        
+
         var capabilities = enabled.flatMap { GithubToolModels.toolCapabilities[$0] ?? [] }
         capabilities.append(contentsOf: ["get_me", "get_team_members", "get_teams"])
         return capabilities
@@ -148,16 +144,16 @@ class GithubAuthManager: ObservableObject, OAuthManagerProtocol {
 
 // MARK: - Private Helpers
 
-private extension GithubAuthManager {
-    
-    func tokenIsValid(_ user: GithubUser) -> Bool {
+extension GithubAuthManager {
+
+    fileprivate func tokenIsValid(_ user: GithubUser) -> Bool {
         guard let exp = user.expiresAt else {
             return !user.accessToken.isEmpty
         }
         return Date() < exp.addingTimeInterval(-60)
     }
-    
-    func merge(profile: GithubUser, credential: OAuthSwiftCredential) -> GithubUser {
+
+    fileprivate func merge(profile: GithubUser, credential: OAuthSwiftCredential) -> GithubUser {
         var merged = profile
         merged.accessToken = credential.oauthToken
         if !credential.oauthRefreshToken.isEmpty {
@@ -166,18 +162,18 @@ private extension GithubAuthManager {
         merged.expiresAt = credential.oauthTokenExpiresAt
         return merged
     }
-    
-    func authorizeInteractively() async throws -> OAuthSwiftCredential {
+
+    fileprivate func authorizeInteractively() async throws -> OAuthSwiftCredential {
         guard let oauth = self.oauth else {
             throw GithubOAuthError.noClient
         }
-        
+
         guard let callbackURL = URL(string: callbackURLString) else {
             throw GithubOAuthError.notConfigured
         }
-        
+
         let scope = additionalScopes().joined(separator: " ")
-        
+
         return try await withCheckedThrowingContinuation { continuation in
             let _ = oauth.authorize(
                 withCallbackURL: callbackURL,
@@ -198,40 +194,41 @@ private extension GithubAuthManager {
             }
         }
     }
-    
-    func renewAccessToken(refreshToken: String) async throws -> OAuthSwift.TokenSuccess? {
+
+    fileprivate func renewAccessToken(refreshToken: String) async throws -> OAuthSwift.TokenSuccess? {
         try await withCheckedThrowingContinuation { continuation in
             guard let oauth = oauth else {
                 continuation.resume(throwing: GithubOAuthError.noClient)
                 return
             }
-            
+
             let _ = oauth.renewAccessToken(withRefreshToken: refreshToken) { result in
                 switch result {
                 case .success(let success):
                     continuation.resume(returning: success)
                 case .failure(let err):
-                    self.logger.error("GitHub refresh failed: \(err.localizedDescription)")
+                    logger.error("GitHub refresh failed: \(err.localizedDescription)")
                     continuation.resume(returning: nil)
                 }
             }
         }
     }
-    
-    func fetchProfile(accessToken: String) async throws -> GithubUser {
+
+    fileprivate func fetchProfile(accessToken: String) async throws -> GithubUser {
         let profile: GithubProfile = try await githubGET(path: "user", accessToken: accessToken)
-        
+
         var email = profile.email
         if email == nil {
             if let emails: [GithubEmail] = try? await githubGET(
                 path: "user/emails",
                 accessToken: accessToken
             ) {
-                email = emails.first(where: { $0.primary && $0.verified })?.email
+                email =
+                    emails.first(where: { $0.primary && $0.verified })?.email
                     ?? emails.first?.email
             }
         }
-        
+
         return GithubUser(
             accessToken: accessToken,
             refreshToken: nil,
@@ -243,18 +240,18 @@ private extension GithubAuthManager {
             avatarURL: profile.avatar_url.flatMap(URL.init(string:))
         )
     }
-    
-    func githubGET<T: Decodable>(path: String, accessToken: String) async throws -> T {
+
+    fileprivate func githubGET<T: Decodable>(path: String, accessToken: String) async throws -> T {
         try await withCheckedThrowingContinuation { continuation in
             guard let oauth = oauth else {
                 continuation.resume(throwing: GithubOAuthError.getFailed)
                 return
             }
-            
+
             let client = oauth.client
             let url = "https://api.github.com/\(path)"
             let headers = ["Accept": "application/vnd.github+json"]
-            
+
             let _ = client.get(url, headers: headers) { result in
                 switch result {
                 case .success(let response):
@@ -277,21 +274,20 @@ private extension GithubAuthManager {
 
 // MARK: - Private DTOs
 
-private extension GithubAuthManager {
-    
-    struct GithubProfile: Decodable {
+extension GithubAuthManager {
+
+    fileprivate struct GithubProfile: Decodable {
         let id: Int?
         let login: String?
         let name: String?
         let email: String?
         let avatar_url: String?
     }
-    
-    struct GithubEmail: Decodable {
+
+    fileprivate struct GithubEmail: Decodable {
         let email: String
         let primary: Bool
         let verified: Bool
         let visibility: String?
     }
 }
-

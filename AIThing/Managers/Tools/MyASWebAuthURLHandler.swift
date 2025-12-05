@@ -17,8 +17,6 @@ final class MyASWebAuthURLHandler: NSObject, OAuthSwiftURLHandlerType,
     private let callbackScheme: String
     private var authSession: ASWebAuthenticationSession?
 
-    let logger = Logger(subsystem: "com.thisisnsh.mac.AIThing", category: "MyASWebAuthURLHandler")
-
     init(callbackScheme: String) {
         self.callbackScheme = callbackScheme
     }

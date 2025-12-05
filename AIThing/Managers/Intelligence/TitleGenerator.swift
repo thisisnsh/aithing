@@ -28,12 +28,12 @@ func createTitle(context: TitleGenerationContext) async -> String {
     if !context.tabTitle.isEmpty && context.tabTitle != "New Chat" {
         return context.tabTitle
     }
-    
+
     // Skip if version checks fail
     if await shouldSkipTitleGeneration(firestoreManager: context.firestoreManager) {
         return context.tabTitle
     }
-    
+
     // Generate the title via API
     return await generateTitleViaAPI(context: context)
 }
@@ -49,12 +49,12 @@ private func shouldSkipTitleGeneration(firestoreManager: FirestoreManager) async
     if await firestoreManager.getBreakglass() {
         return true
     }
-    
+
     // Check if version is expired
     if await firestoreManager.getExpired() {
         return true
     }
-    
+
     return false
 }
 
@@ -65,40 +65,43 @@ private func shouldSkipTitleGeneration(firestoreManager: FirestoreManager) async
 private func generateTitleViaAPI(context: TitleGenerationContext) async -> String {
     // Determine the provider for the model
     let provider = context.provider
-    
+
     guard let providerImpl = AIProviderRegistry.shared.getProvider(for: provider) else {
         return context.tabTitle
     }
-    
+
     let prompt = buildTitlePrompt(query: context.query, response: context.response)
     let messages: [[String: Any]] = [
         [
             "role": "user",
-            "content": [["type": "text", "text": prompt]]
+            "content": [["type": "text", "text": prompt]],
         ]
     ]
-    
-    guard let request = providerImpl.buildRequest(
-        apiKey: context.apiKey,
-        model: context.model,
-        messages: messages,
-        tools: [],
-        systemMessages: [],
-        maxTokens: 32
-    ) else {
+
+    guard
+        let request = providerImpl.buildRequest(
+            apiKey: context.apiKey,
+            model: context.model,
+            messages: messages,
+            tools: [],
+            systemMessages: [],
+            maxTokens: 32,
+            stream: false
+        )
+    else {
         return context.tabTitle
     }
-    
+
     do {
         let (data, response) = try await URLSession.shared.data(for: request)
-        
+
         guard let httpResponse = response as? HTTPURLResponse,
-              (200..<300).contains(httpResponse.statusCode)
+            (200..<300).contains(httpResponse.statusCode)
         else {
             logger.error("Bad HTTP response for title generation")
             return context.tabTitle
         }
-        
+
         return parseTitleResponse(data: data, provider: provider) ?? context.tabTitle
     } catch {
         logger.error("Error generating title: \(error.localizedDescription)")
@@ -137,7 +140,7 @@ private func parseTitleResponse(data: Data, provider: AIProvider) -> String? {
     guard let json = try? JSONSerialization.jsonObject(with: data) as? [String: Any] else {
         return nil
     }
-    
+
     switch provider {
     case .anthropic:
         return parseAnthropicResponse(json: json)
@@ -152,21 +155,22 @@ private func parseAnthropicResponse(json: [String: Any]) -> String? {
     guard let contentArray = json["content"] as? [[String: Any]] else {
         return nil
     }
-    
+
     for item in contentArray {
         if let type = item["type"] as? String, type == "text",
-           let text = item["text"] as? String {
+            let text = item["text"] as? String
+        {
             return text.trimmingCharacters(in: .whitespacesAndNewlines)
         }
     }
     return nil
 }
 
-private func parseOpenAIResponse(json: [String: Any]) -> String? {
+private func parseOpenAIResponse(json: [String: Any]) -> String? {    
     guard let choices = json["choices"] as? [[String: Any]],
-          let firstChoice = choices.first,
-          let message = firstChoice["message"] as? [String: Any],
-          let content = message["content"] as? String
+        let firstChoice = choices.first,
+        let message = firstChoice["message"] as? [String: Any],
+        let content = message["content"] as? String
     else {
         return nil
     }
@@ -175,11 +179,11 @@ private func parseOpenAIResponse(json: [String: Any]) -> String? {
 
 private func parseGeminiResponse(json: [String: Any]) -> String? {
     guard let candidates = json["candidates"] as? [[String: Any]],
-          let firstCandidate = candidates.first,
-          let content = firstCandidate["content"] as? [String: Any],
-          let parts = content["parts"] as? [[String: Any]],
-          let firstPart = parts.first,
-          let text = firstPart["text"] as? String
+        let firstCandidate = candidates.first,
+        let content = firstCandidate["content"] as? [String: Any],
+        let parts = content["parts"] as? [[String: Any]],
+        let firstPart = parts.first,
+        let text = firstPart["text"] as? String
     else {
         return nil
     }

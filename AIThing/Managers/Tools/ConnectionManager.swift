@@ -17,52 +17,48 @@ import os
 /// Manages connections to MCP servers via stdio and HTTP transports.
 /// Handles client lifecycle, tool discovery, and tool execution.
 class ConnectionManager: ObservableObject {
-    
+
     // MARK: - Properties
-    
+
     /// Active MCP clients keyed by client name
     var clients: [String: Client] = [:]
-    
+
     /// Tool filters per client
     var filters: [String: [String]] = [:]
-    
+
     /// Reconnection state tracking
     var reconnecting: [String: Bool] = [:]
-    
+
     // MARK: - Stdio Connection Properties
-    
+
     var executableURL: [String: String] = [:]
     var arguments: [String: [String]] = [:]
     var serverInputPipe: [String: Pipe] = [:]
     var serverOutputPipe: [String: Pipe] = [:]
     var process: [String: Process] = [:]
-    
+
     // MARK: - HTTP Connection Properties
-    
+
     var httpURL: [String: String] = [:]
     var headers: [String: [String: String]] = [:]
-    
+
     // MARK: - Logging
-    
-    private let logger = os.Logger(
-        subsystem: "com.thisisnsh.mac.AIThing",
-        category: "ConnectionManager"
-    )
+
     private let loggingLogger = Logging.Logger(label: "com.thisisnsh.mac.AIThing")
-    
+
     // MARK: - Initialization
-    
+
     init() {}
-    
+
     // MARK: - Client Status
-    
+
     /// Checks if a client with the given name exists
     func clientExists(clientName: String) -> Bool {
         clients.keys.contains(clientName.lowercased())
     }
-    
+
     // MARK: - Stdio Connection
-    
+
     /// Connects to an MCP server via stdio transport
     /// - Parameters:
     ///   - clientName: Unique identifier for the client
@@ -71,14 +67,14 @@ class ConnectionManager: ObservableObject {
     /// - Returns: Empty string on success, error message on failure
     func connect(clientName: String, command: String, args: [String]) async -> String {
         let normalizedName = clientName.lowercased()
-        
+
         do {
             let client = createClient(name: normalizedName)
             let (inputPipe, outputPipe, proc) = createStdioComponents(
                 command: command,
                 args: args
             )
-            
+
             storeStdioConnection(
                 clientName: normalizedName,
                 client: client,
@@ -88,15 +84,15 @@ class ConnectionManager: ObservableObject {
                 outputPipe: outputPipe,
                 process: proc
             )
-            
+
             let transport = createStdioTransport(inputPipe: inputPipe, outputPipe: outputPipe)
-            
+
             try proc.run()
             try await client.connect(transport: transport)
-            
+
             logger.debug("Connected to MCP server via stdio: \(normalizedName)")
             logAnalytics(primary: .mcpStdio, clientName: normalizedName, isError: false)
-            
+
             return ""
         } catch {
             logAnalytics(primary: .mcpStdio, clientName: normalizedName, isError: true)
@@ -105,9 +101,9 @@ class ConnectionManager: ObservableObject {
             return error.localizedDescription
         }
     }
-    
+
     // MARK: - HTTP Connection
-    
+
     /// Connects to an MCP server via HTTP transport
     /// - Parameters:
     ///   - clientName: Unique identifier for the client
@@ -116,23 +112,23 @@ class ConnectionManager: ObservableObject {
     /// - Returns: Empty string on success, error message on failure
     func connect(clientName: String, url: String, authToken: String?) async -> String {
         let normalizedName = clientName.lowercased()
-        
+
         do {
             let client = createClient(name: normalizedName)
-            
+
             storeHTTPConnection(
                 clientName: normalizedName,
                 client: client,
                 url: url,
                 authToken: authToken
             )
-            
+
             let transport = try createHTTPTransport(url: url, authToken: authToken)
             try await client.connect(transport: transport)
-            
+
             logger.debug("Connected to MCP server via HTTP: \(normalizedName)")
             logAnalytics(primary: .mcpHTTP, clientName: normalizedName, isError: false)
-            
+
             return ""
         } catch {
             logAnalytics(primary: .mcpHTTP, clientName: normalizedName, isError: true)
@@ -141,9 +137,9 @@ class ConnectionManager: ObservableObject {
             return error.localizedDescription
         }
     }
-    
+
     // MARK: - Reconnection
-    
+
     /// Attempts to reconnect to an HTTP-based MCP server
     /// - Parameters:
     ///   - clientName: Client identifier to reconnect
@@ -152,7 +148,7 @@ class ConnectionManager: ObservableObject {
     /// - Returns: True if reconnection succeeded
     func reconnect(clientName: String, url: String, authToken: String) async -> Bool {
         let normalizedName = clientName.lowercased()
-        
+
         // Wait if another reconnection is in progress
         if reconnecting[normalizedName] ?? false {
             while reconnecting[normalizedName] ?? false {
@@ -161,24 +157,24 @@ class ConnectionManager: ObservableObject {
             }
             return true
         }
-        
+
         reconnecting[normalizedName] = true
         defer { reconnecting[normalizedName] = false }
-        
+
         logger.debug("Reconnecting: \(normalizedName)")
-        
+
         if let client = clients[normalizedName] {
             await client.disconnect()
         }
-        
+
         let result = await connect(clientName: normalizedName, url: url, authToken: authToken)
         logAnalytics(primary: .mcpReconnect, clientName: normalizedName, isError: !result.isEmpty)
-        
+
         return result.isEmpty
     }
-    
+
     // MARK: - Disconnection
-    
+
     /// Disconnects all active clients and releases resources
     /// - Returns: Empty string on success, error message on failure
     func disconnect() async -> String {
@@ -188,15 +184,15 @@ class ConnectionManager: ObservableObject {
                 await client.disconnect()
             }
             clients.removeAll()
-            
+
             // Cleanup HTTP resources
             httpURL.removeAll()
             headers.removeAll()
-            
+
             // Cleanup stdio resources
             terminateAllProcesses()
             closeAllPipes()
-            
+
             logAnalytics(primary: .mcpStop, clientName: "all", isError: false)
             return ""
         } catch {
@@ -205,9 +201,9 @@ class ConnectionManager: ObservableObject {
             return error.localizedDescription
         }
     }
-    
+
     // MARK: - Tool Operations
-    
+
     /// Retrieves available tools from a connected client
     /// - Parameters:
     ///   - clientName: Client identifier
@@ -215,16 +211,16 @@ class ConnectionManager: ObservableObject {
     /// - Returns: Array of tool definitions as dictionaries
     func getTools(clientName: String, filter: [String]) async -> [[String: Any]] {
         let normalizedName = clientName.lowercased()
-        
+
         guard let client = clients[normalizedName] else {
             return []
         }
-        
+
         do {
             filters[normalizedName] = filter
             let (tools, _) = try await client.listTools()
             let filteredTools = tools.filter { filter.isEmpty || filter.contains($0.name) }
-            
+
             logAnalytics(primary: .mcpTools, clientName: normalizedName, isError: false)
             return toolsToDictionaries(filteredTools)
         } catch {
@@ -233,7 +229,7 @@ class ConnectionManager: ObservableObject {
             return []
         }
     }
-    
+
     /// Executes a tool on a connected client
     /// - Parameters:
     ///   - clientName: Client identifier
@@ -242,25 +238,26 @@ class ConnectionManager: ObservableObject {
     /// - Returns: Array of response content blocks
     func callTools(clientName: String, name: String, input: String) async -> [[String: Any]] {
         let normalizedName = clientName.lowercased()
-        
+
         guard let client = clients[normalizedName] else {
             return []
         }
-        
+
         guard let value = try? parseJSONStringToValueObject(input),
-              case .object(let dict) = value else {
+            case .object(let dict) = value
+        else {
             return []
         }
-        
+
         do {
             let (content, isError) = try await client.callTool(name: name, arguments: dict)
-            
+
             if isError ?? false {
                 logAnalytics(primary: .mcpCallTools, clientName: normalizedName, isError: true)
                 logger.error("Tool call returned error")
                 return []
             }
-            
+
             let response = extractTextContent(from: content)
             logAnalytics(primary: .mcpCallTools, clientName: normalizedName, isError: false)
             return response
@@ -274,48 +271,48 @@ class ConnectionManager: ObservableObject {
 
 // MARK: - Private Helpers
 
-private extension ConnectionManager {
-    
-    func createClient(name: String) -> Client {
+extension ConnectionManager {
+
+    fileprivate func createClient(name: String) -> Client {
         Client(name: "AIThing for \(name)", version: "0.1.0")
     }
-    
-    func createStdioComponents(command: String, args: [String]) -> (Pipe, Pipe, Process) {
+
+    fileprivate func createStdioComponents(command: String, args: [String]) -> (Pipe, Pipe, Process) {
         let inputPipe = Pipe()
         let outputPipe = Pipe()
         let proc = Process()
-        
+
         proc.executableURL = URL(fileURLWithPath: command)
         proc.arguments = args
         proc.standardInput = inputPipe
         proc.standardOutput = outputPipe
-        
+
         return (inputPipe, outputPipe, proc)
     }
-    
-    func createStdioTransport(inputPipe: Pipe, outputPipe: Pipe) -> StdioTransport {
+
+    fileprivate func createStdioTransport(inputPipe: Pipe, outputPipe: Pipe) -> StdioTransport {
         let serverInput = FileDescriptor(rawValue: inputPipe.fileHandleForWriting.fileDescriptor)
         let serverOutput = FileDescriptor(rawValue: outputPipe.fileHandleForReading.fileDescriptor)
-        
+
         return StdioTransport(
             input: serverOutput,
             output: serverInput,
             logger: loggingLogger
         )
     }
-    
-    func createHTTPTransport(url: String, authToken: String?) throws -> any Transport {
+
+    fileprivate func createHTTPTransport(url: String, authToken: String?) throws -> any Transport {
         guard let endpoint = URL(string: url) else {
             throw ConnectionError.invalidURL
         }
-        
+
         let configuration = URLSessionConfiguration.default
         if let token = authToken {
             configuration.httpAdditionalHeaders = ["Authorization": "Bearer \(token)"]
         }
-        
+
         let isLegacySSE = url.hasSuffix("/sse/") || url.hasSuffix("/sse")
-        
+
         if isLegacySSE {
             return SSEClientTransport(
                 endpoint: endpoint,
@@ -333,8 +330,8 @@ private extension ConnectionManager {
             )
         }
     }
-    
-    func storeStdioConnection(
+
+    fileprivate func storeStdioConnection(
         clientName: String,
         client: Client,
         command: String,
@@ -350,8 +347,8 @@ private extension ConnectionManager {
         serverOutputPipe[clientName] = outputPipe
         self.process[clientName] = process
     }
-    
-    func storeHTTPConnection(
+
+    fileprivate func storeHTTPConnection(
         clientName: String,
         client: Client,
         url: String,
@@ -361,33 +358,33 @@ private extension ConnectionManager {
         httpURL[clientName] = url
         headers[clientName] = authToken.map { ["Authorization": "Bearer \($0)"] } ?? [:]
     }
-    
-    func cleanupStdioConnection(clientName: String) {
+
+    fileprivate func cleanupStdioConnection(clientName: String) {
         clients.removeValue(forKey: clientName)
         executableURL.removeValue(forKey: clientName)
         arguments.removeValue(forKey: clientName)
-        
+
         closePipes(for: clientName)
         terminateProcess(for: clientName)
     }
-    
-    func cleanupHTTPConnection(clientName: String) {
+
+    fileprivate func cleanupHTTPConnection(clientName: String) {
         clients.removeValue(forKey: clientName)
         httpURL.removeValue(forKey: clientName)
         headers.removeValue(forKey: clientName)
     }
-    
-    func closePipes(for clientName: String) {
+
+    fileprivate func closePipes(for clientName: String) {
         do {
             try serverInputPipe[clientName]?.fileHandleForReading.close()
             try serverOutputPipe[clientName]?.fileHandleForReading.close()
         } catch {}
-        
+
         serverInputPipe.removeValue(forKey: clientName)
         serverOutputPipe.removeValue(forKey: clientName)
     }
-    
-    func closeAllPipes() {
+
+    fileprivate func closeAllPipes() {
         for pipe in serverInputPipe.values {
             try? pipe.fileHandleForReading.close()
             try? pipe.fileHandleForWriting.close()
@@ -399,15 +396,15 @@ private extension ConnectionManager {
         serverInputPipe.removeAll()
         serverOutputPipe.removeAll()
     }
-    
-    func terminateProcess(for clientName: String) {
+
+    fileprivate func terminateProcess(for clientName: String) {
         if let proc = process[clientName], proc.isRunning {
             proc.terminate()
         }
         process.removeValue(forKey: clientName)
     }
-    
-    func terminateAllProcesses() {
+
+    fileprivate func terminateAllProcesses() {
         for proc in process.values where proc.isRunning {
             proc.terminate()
         }
@@ -415,8 +412,8 @@ private extension ConnectionManager {
         executableURL.removeAll()
         arguments.removeAll()
     }
-    
-    func extractTextContent(from content: [Tool.Content]) -> [[String: Any]] {
+
+    fileprivate func extractTextContent(from content: [Tool.Content]) -> [[String: Any]] {
         content.compactMap { item -> [String: Any]? in
             if case .text(let text) = item {
                 return ["type": "text", "text": text]
@@ -424,8 +421,8 @@ private extension ConnectionManager {
             return nil
         }
     }
-    
-    func logAnalytics(primary: AnalyticsManager.EventPrimary, clientName: String, isError: Bool) {
+
+    fileprivate func logAnalytics(primary: AnalyticsManager.EventPrimary, clientName: String, isError: Bool) {
         AnalyticsManager.shared.customEvent(
             view: .McpManager,
             primary: primary,
@@ -434,4 +431,3 @@ private extension ConnectionManager {
         )
     }
 }
-

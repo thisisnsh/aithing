@@ -18,11 +18,9 @@ struct AgentsTab: View {
     @Binding var agents: [AgentEntry]
 
     // MARK: - Constants & Closures
-    let addAgentEntry:
-        (_ type: String, _ name: String, _ primary: String, _ secondary: String) -> String
+    let addAgentEntry: (_ type: String, _ name: String, _ primary: String, _ secondary: String) -> String
     let saveAgents: () -> Void
     let deleteAgent: (AgentEntry) -> Void
-    let logger = Logger(subsystem: "com.thisisnsh.mac.AIThing", category: "AgentsTab")
 
     // MARK: - State
     @State var agentMaxCount: Int = 10
@@ -90,7 +88,7 @@ struct AgentsTab: View {
                                 if let agent = mcpAuthManagers.managers[manager],
                                     !(agent.server.custom ?? false)
                                 {
-                                    ManagedAgentRow(                                        
+                                    ManagedAgentRow(
                                         title: agent.server.name
                                     )
                                     .environmentObject(agent)
@@ -183,6 +181,11 @@ struct AgentsTab: View {
                                                 showToast = false
                                                 toastText = ""
                                             }
+                                        } else {
+                                            agentType = ""
+                                            agentName = ""
+                                            agentPrimary = ""
+                                            agentSecondary = ""
                                         }
                                     } else {
                                         toastText =

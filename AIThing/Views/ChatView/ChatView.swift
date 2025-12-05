@@ -7,6 +7,7 @@
 
 import AppKit
 import SwiftUI
+import os
 
 struct ChatView: View {
     // MARK: - Bindings
@@ -102,7 +103,7 @@ struct ChatView: View {
             AnalyticsManager.shared.screenView(screenName: .ChatView)
             setHistory(history)
         }
-        .onChange(of: history?.history.count) { _ in
+        .onChange(of: history?.history.count) { _ in            
             setHistory(history)
         }
     }
@@ -117,10 +118,7 @@ struct ChatView: View {
         items = parseHistory(history.history)
         items = items.filter { $0.role != .usage }
 
-        logger.debug("Chat total count: \(items.count)")
-
         if showFullChat {
-            logger.debug("Showing full chat")
             hasMoreChats = false
         } else {
             // Show last 2 conversations
@@ -131,7 +129,6 @@ struct ChatView: View {
             }
 
             let secondLastIndex = indices.count >= 2 ? indices[indices.count - 2] : 0
-            logger.debug("Showing chat from \(secondLastIndex + 1) position")
             items = Array(items[secondLastIndex...])
 
             hasMoreChats = secondLastIndex > 0

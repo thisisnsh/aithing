@@ -12,7 +12,6 @@ import os
 
 @MainActor
 final class HistoryStore: ObservableObject {
-    let logger = Logger(subsystem: "com.thisisnsh.mac.AIThing", category: "HistoryStore")
 
     // Keep a container per id (=> one SQLite per id)
     private var containers: [String: NSPersistentContainer] = [:]
@@ -23,7 +22,7 @@ final class HistoryStore: ObservableObject {
         async -> Bool
     {
         guard JSONSerialization.isValidJSONObject(history) else {
-            self.logger.error("store invalid JSON for id=\(id)")
+            logger.error("store invalid JSON for id=\(id)")
             return false
         }
         guard let container = await container(for: id) else { return false }
@@ -46,14 +45,14 @@ final class HistoryStore: ObservableObject {
                         mo.unseen = false
                     }
                 }
-                
+
                 mo.lastUpdated = Date().timeIntervalSince1970
                 mo.json = try JSONSerialization.data(withJSONObject: history, options: [])
 
                 try ctx.save()
                 return true
             } catch {
-                self.logger.error("store failed for id=\(id): \(error)")
+                logger.error("store failed for id=\(id): \(error)")
                 return false
             }
         }
@@ -88,7 +87,7 @@ final class HistoryStore: ObservableObject {
                     )
                     return [hist]
                 } catch {
-                    self.logger.error("getAll fetch failed for id=\(id): \(error)")
+                    logger.error("getAll fetch failed for id=\(id): \(error)")
                     return []
                 }
             }
@@ -133,7 +132,7 @@ final class HistoryStore: ObservableObject {
                     unseen: unseen
                 )
             } catch {
-                self.logger.error("get failed for id=\(id): \(error)")
+                logger.error("get failed for id=\(id): \(error)")
                 return nil
             }
         }
@@ -157,7 +156,7 @@ final class HistoryStore: ObservableObject {
                 try ctx.save()
                 return true
             } catch {
-                self.logger.error("setUnseen failed for id=\(id): \(error)")
+                logger.error("setUnseen failed for id=\(id): \(error)")
                 return false
             }
         }
@@ -181,7 +180,7 @@ final class HistoryStore: ObservableObject {
                 try ctx.save()
                 return true
             } catch {
-                self.logger.error("setTitle failed for id=\(id): \(error)")
+                logger.error("setTitle failed for id=\(id): \(error)")
                 return false
             }
         }
@@ -199,7 +198,7 @@ final class HistoryStore: ObservableObject {
         let psc = container.persistentStoreCoordinator
         if let store = psc.persistentStores.first {
             do { try psc.remove(store) } catch {
-                self.logger.error("remove store failed: \(error)")
+                logger.error("remove store failed: \(error)")
             }
         }
         Self.deleteStoreFiles(for: id)
@@ -214,7 +213,7 @@ final class HistoryStore: ObservableObject {
 
         let url = Self.storeURL(for: id)
         do { try Self.ensureParentDir(url) } catch {
-            self.logger.error("ensure dir failed: \(error)")
+            logger.error("ensure dir failed: \(error)")
             return nil
         }
 
@@ -235,7 +234,7 @@ final class HistoryStore: ObservableObject {
             }
         }
         if !ok {
-            self.logger.error("load store failed for id=\(id): \(String(describing: loadError))")
+            logger.error("load store failed for id=\(id): \(String(describing: loadError))")
             return nil
         }
         c.viewContext.automaticallyMergesChangesFromParent = true

@@ -24,7 +24,8 @@ final class GeminiProvider: AIProviderProtocol {
         messages: [[String: Any]],
         tools: [[String: Any]],
         systemMessages: [[String: Any]],
-        maxTokens: Int
+        maxTokens: Int,
+        stream: Bool
     ) -> URLRequest? {
         let urlString = "\(baseURL)/\(model):streamGenerateContent?alt=sse&key=\(apiKey)"
         guard let url = URL(string: urlString) else { return nil }

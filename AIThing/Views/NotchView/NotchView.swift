@@ -38,7 +38,6 @@ struct NotchView: View {
     let startSelectionPoll: () -> Void
     let stopSelectionPoll: () -> Void
     let setPanelVisibility: () -> Void
-    let logger = Logger(subsystem: "com.thisisnsh.mac.AIThing", category: "NotchView")
     let historyStore = HistoryStore()
     let internalToolProvider = InternalToolProvider()
     let cornerRadiusLeft: CGFloat = 38
@@ -410,4 +409,3 @@ struct NotchView: View {
         }
     }
 }
-

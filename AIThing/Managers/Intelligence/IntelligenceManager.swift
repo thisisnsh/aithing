@@ -141,7 +141,8 @@ private func executeModelCall(
             messages: processedMessages,
             tools: processedTools,
             systemMessages: systemMessages,
-            maxTokens: getOutputToken()
+            maxTokens: getOutputToken(),
+            stream: true
         )
     else {
         return await handleInvalidResponse(context: context)
@@ -218,14 +219,18 @@ private func executeModelCall(
         return handleStreamError(context: context, error: error)
     }
 
+    print("modelInput")
+    print(modelInput)
     await context.historyHandlers.storeHistory(context.tabId, modelInput)
 
     context.uiHandlers.setIsThinking(false)
     context.modelHandlers.setModelInput(modelInput)
 
-    context.historyHandlers.setHistory(
-        await context.historyHandlers.getHistory(context.tabId)
-    )
+    let history = await context.historyHandlers.getHistory(context.tabId)
+    print("history")
+    print(history)
+    context.historyHandlers.setHistory(history)
+
     context.modelHandlers.setModelOutput("")
     context.uiHandlers.setDisplayQuery("")
     context.uiHandlers.setToolCall("")
@@ -477,10 +482,14 @@ private func processResponseStream(
                 await accumulator.appendToolInput(input)
 
             case .contentBlockStop:
+                //                modelOutput = await accumulator.snapshotResponse()
+                //                context.modelHandlers.setModelOutput(modelOutput)
+                print("contentBlockStop called")
+
+            case .done(let stopReason):
                 modelOutput = await accumulator.snapshotResponse()
                 context.modelHandlers.setModelOutput(modelOutput)
 
-            case .done(let stopReason):
                 if let result = await handleStreamCompletion(
                     stopReason: stopReason,
                     context: context,
@@ -531,7 +540,6 @@ private func handleStreamCompletion(
     if !modelOutput.isEmpty {
         let assistantMessage = provider.buildAssistantTextMessage(text: modelOutput)
         modelInput.append(assistantMessage)
-
         var tabTitle = context.tabHandlers.getTabTitle()
         Task {
             if !context.query.isEmpty && (tabTitle.isEmpty || tabTitle == "New Chat") {

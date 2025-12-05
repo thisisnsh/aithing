@@ -43,7 +43,6 @@ struct IntelligenceView: View {
     let setTitle: (String, String) async -> Void
     let startSelectionPoll: () -> Void
     let stopSelectionPoll: () -> Void
-    let logger = Logger(subsystem: "com.thisisnsh.mac.AIThing", category: "IntelligenceView")
     let cornerRadius: CGFloat = 24
     let internalToolProvider = InternalToolProvider()
     let baseHeight: CGFloat = 24

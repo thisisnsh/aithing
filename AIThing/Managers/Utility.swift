@@ -11,7 +11,7 @@ import MCP
 import os
 
 /// Global logger instance for the application.
-let logger = Logger(subsystem: "com.thisisnsh.mac.AIThing", category: "Utility")
+let logger = Logger(subsystem: "com.thisisnsh.mac.AIThing", category: "AIThing")
 
 // MARK: - Tool Conversion
 
