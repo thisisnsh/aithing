@@ -6,9 +6,9 @@
     
     <dict>
         <key>id</key>
-        <string>claude-haiku-4-5-20251001</string>
+        <string>claude-opus-4-5-20251101</string>
         <key>name</key>
-        <string>Claude Haiku 4.5</string>
+        <string>Claude Opus 4.5</string>
         <key>provider</key>
         <string>anthropic</string>
     </dict>
@@ -24,9 +24,9 @@
     
     <dict>
         <key>id</key>
-        <string>claude-opus-4-5-20251101</string>
+        <string>claude-haiku-4-5-20251001</string>
         <key>name</key>
-        <string>Claude Opus 4.5</string>
+        <string>Claude Haiku 4.5</string>
         <key>provider</key>
         <string>anthropic</string>
     </dict>
@@ -35,9 +35,9 @@
     
     <dict>
         <key>id</key>
-        <string>gpt-5-nano-2025-08-07</string>
+        <string>gpt-5.1-2025-11-13</string>
         <key>name</key>
-        <string>GPT 5 Nano</string>
+        <string>GPT 5.1</string>
         <key>provider</key>
         <string>openai</string>
     </dict>
@@ -53,9 +53,9 @@
     
     <dict>
         <key>id</key>
-        <string>gpt-5.1-2025-11-13</string>
+        <string>gpt-5-nano-2025-08-07</string>
         <key>name</key>
-        <string>GPT 5.1</string>
+        <string>GPT 5 Nano</string>
         <key>provider</key>
         <string>openai</string>
     </dict>
@@ -64,9 +64,9 @@
     
     <dict>
         <key>id</key>
-        <string>gemini-2.5-flash</string>
+        <string>gemini-3-pro-preview</string>
         <key>name</key>
-        <string>Gemini 2.5 Flash</string>
+        <string>Gemini 3 Pro</string>
         <key>provider</key>
         <string>gemini</string>
     </dict>
@@ -82,9 +82,18 @@
     
     <dict>
         <key>id</key>
-        <string>gemini-3-pro-preview</string>
+        <string>gemini-2.5-flash</string>
         <key>name</key>
-        <string>Gemini 3 Pro</string>
+        <string>Gemini 2.5 Flash</string>
+        <key>provider</key>
+        <string>gemini</string>
+    </dict>
+    
+    <dict>
+        <key>id</key>
+        <string>gemini-2.5-flash-lite</string>
+        <key>name</key>
+        <string>Gemini 2.5 Flash Lite</string>
         <key>provider</key>
         <string>gemini</string>
     </dict>

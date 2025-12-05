@@ -80,12 +80,12 @@ private func generateTitleViaAPI(context: TitleGenerationContext) async -> Strin
             messages: messages,
             tools: [],
             systemMessages: [],
-            maxTokens: 32,
+            maxTokens: 1024,
             stream: false
         )
     else {
         return context.tabTitle
-    }
+    }    
 
     do {
         let (data, response) = try await URLSession.shared.data(for: request)
@@ -113,7 +113,7 @@ private func generateTitleViaAPI(context: TitleGenerationContext) async -> Strin
 private func buildTitlePrompt(query: String, response: String) -> String {
     """
     Create a title based on the user query and the AI's first response.
-    The title must contain exactly three words, each using alphanumeric characters only.
+    The title must contain less than 32 characters, each using alphanumeric characters only.
     Spaces between words are allowed. The title must not be a question.
     Output only the title.                
 

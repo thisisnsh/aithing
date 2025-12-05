@@ -30,10 +30,10 @@ final class GeminiProvider: AIProviderProtocol {
         let baseUrl = "https://generativelanguage.googleapis.com/v1beta/models/\(model):\(type)"
         guard var components = URLComponents(string: baseUrl) else { return nil }
 
-        components.queryItems = [
-            URLQueryItem(name: "key", value: apiKey),
-            URLQueryItem(name: "alt", value: "sse"),  // Server-Sent Events
-        ]
+        components.queryItems = [URLQueryItem(name: "key", value: apiKey)]
+        if stream {
+            components.queryItems?.append(URLQueryItem(name: "alt", value: "sse"))  // Server-Sent Events
+        }
 
         guard let url = components.url else { return nil }
 
@@ -66,8 +66,6 @@ final class GeminiProvider: AIProviderProtocol {
         guard line.starts(with: "data: ") else { return nil }
 
         let jsonString = line.replacingOccurrences(of: "data: ", with: "")
-
-        print(jsonString)
 
         // Gemini streams often end simply, but we check for empty JSON or errors
         if jsonString.trimmingCharacters(in: .whitespaces).isEmpty {
