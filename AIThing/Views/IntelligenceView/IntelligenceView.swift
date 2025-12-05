@@ -55,7 +55,7 @@ struct IntelligenceView: View {
     @State var isThinking: Bool = false
     @State var isThinkingText: LocalizedStringKey = "Responding..."
     @State var history: History?
-    @State var modelInput: [[String: Any]] = []
+    @State var modelInput: [ChatItem] = []
     @State var modelOutput: String = ""
     @State var modelContext: [DroppedContent] = []
     @State var toolCall: String = ""

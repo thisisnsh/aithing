@@ -11,22 +11,24 @@ import Foundation
 enum ChatRole {
     case user
     case assistant
-    case usage
-    case file
 }
 
 enum ChatPayload: Equatable {
-    case text(String)
-    case image([NSImage])
-    case toolUse(name: String)
-    case file(text: String, skipNextMessages: Bool, content: String)
+    case text(contents: [String])
+    case textWithName(name: String, contents: [String])
+    case imageBase64(name: String, media: String, images: [String])
+    case imageNSImage(name: String, media: String, images: [NSImage])
+    case toolUse(id: String, name: String, input: Any)
+    case toolResult(id: String, result: String)
 
     static func == (lhs: ChatPayload, rhs: ChatPayload) -> Bool {
         switch (lhs, rhs) {
         case (.text(let a), .text(let b)): return a == b
+        case (.textWithName(_, let a), .textWithName(_, let b)): return a == b
         case (.toolUse(let a), .toolUse(let b)): return a == b
-        case (.file(let a, _, _), .file(let b, _, _)): return a == b
-        case (.image, .image): return false  // NSImage not Equatable; treat as unequal
+        case (.imageBase64(_, _, let a), .imageBase64(_, _, let b)): return a == b
+        case (.imageNSImage(_, _, _), .imageBase64(_, _, _)): return false  // NSImage not Equatable; treat as unequal
+        case (.toolResult(_, _), .toolResult(_, _)): return false
         default: return false
         }
     }
@@ -40,9 +42,9 @@ enum ChatPayload: Equatable {
 struct ChatItem: Identifiable, Equatable {
     let id: UUID
     let role: ChatRole
-    var payload: ChatPayload
+    var payload: [ChatPayload]
 
-    init(id: UUID = UUID(), role: ChatRole, payload: ChatPayload) {
+    init(id: UUID = UUID(), role: ChatRole, payload: [ChatPayload]) {
         self.id = id
         self.role = role
         self.payload = payload
@@ -52,4 +54,3 @@ struct ChatItem: Identifiable, Equatable {
         lhs.id == rhs.id && lhs.role == rhs.role && lhs.payload == rhs.payload
     }
 }
-

@@ -6,6 +6,7 @@
 //
 
 import Foundation
+import MCP
 
 /// Provider implementation for Anthropic's Claude API.
 final class AnthropicProvider: AIProviderProtocol {
@@ -22,9 +23,9 @@ final class AnthropicProvider: AIProviderProtocol {
     func buildRequest(
         apiKey: String,
         model: String,
-        messages: [[String: Any]],
-        tools: [[String: Any]],
-        systemMessages: [[String: Any]],
+        messages: [ChatItem],
+        tools: [Tool],
+        systemMessages: [ChatPayload],
         maxTokens: Int,
         stream: Bool
     ) -> URLRequest? {
@@ -129,32 +130,30 @@ final class AnthropicProvider: AIProviderProtocol {
 
     // MARK: - Message Conversion
 
-    func convertMessages(_ messages: [[String: Any]]) -> [[String: Any]] {
-        // Anthropic uses the same format internally, just filter out special roles
-        messages.filter { message in
-            guard let role = message["role"] as? String else { return false }
-            return role == "user" || role == "assistant"
-        }
+    func convertMessages(_ messages: [ChatItem]) -> [[String: Any]] {
+        // Anthropic uses the same format internally
+        return []  // messages
     }
 
-    func convertTools(_ tools: [[String: Any]]) -> [[String: Any]] {
+    func convertTools(_ tools: [Tool]) -> [[String: Any]] {
         // Anthropic tools format is already compatible
-        tools
+        return []  // tools
     }
 
     // MARK: - Message Building
 
-    func buildToolResultMessage(toolUseId: String, result: [[String: Any]]) -> [String: Any] {
-        [
-            "role": "user",
-            "content": [
-                [
-                    "type": "tool_result",
-                    "tool_use_id": toolUseId,
-                    "content": result,
-                ]
-            ],
-        ]
+    func buildToolResultMessage(toolUseId: String, result: [ChatPayload]) -> [ChatItem] {
+        // Get first result as text
+        var resultString = ""
+        if let payload = result.first {
+            switch payload {
+            case .text(let contents):
+                resultString = contents.first ?? ""
+            default:
+                resultString = ""
+            }
+        }
+        return [ChatItem(role: .user, payload: .toolResult(id: toolUseId, result: resultString))]
     }
 
     func buildAssistantToolUseMessage(
@@ -162,27 +161,19 @@ final class AnthropicProvider: AIProviderProtocol {
         toolUseId: String,
         toolName: String,
         toolInput: Any
-    ) -> [String: Any] {
-        var content: [[String: Any]] = []
+    ) -> [ChatItem] {
+        var payload: [ChatPayload] = []
 
         if let text = text, !text.isEmpty {
-            content.append(["type": "text", "text": text])
+            payload.append(.text(contents: [text]))
         }
 
-        content.append([
-            "type": "tool_use",
-            "id": toolUseId,
-            "name": toolName,
-            "input": toolInput,
-        ])
+        payload.append(.toolUse(id: toolUseId, name: toolName, input: toolInput))
 
-        return ["role": "assistant", "content": content]
+        return ChatItem(role: .assistant, payload: payload)
     }
 
-    func buildAssistantTextMessage(text: String) -> [String: Any] {
-        [
-            "role": "assistant",
-            "content": [["type": "text", "text": text]],
-        ]
+    func buildAssistantTextMessage(text: String) -> [ChatItem] {
+        [ChatItem(role: .assistant, payload: [.text(contents: [text]))]]
     }
 }

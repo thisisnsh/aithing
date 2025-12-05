@@ -12,7 +12,7 @@ struct History: Identifiable, Equatable {
     let id: String
     let lastUpdated: String  // epoch seconds as String
     let title: String?
-    let history: [[String: Any]]
+    let history: [ChatItem]
     let unseen: Bool
 
     static func == (lhs: History, rhs: History) -> Bool {

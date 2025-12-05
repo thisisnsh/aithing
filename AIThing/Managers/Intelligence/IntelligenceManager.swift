@@ -6,6 +6,7 @@
 //
 
 import Foundation
+import MCP
 
 // MARK: - Public API
 
@@ -40,9 +41,9 @@ func callModel(context: ModelCallContext) async -> Bool {
 /// - Returns: `true` if successful, `false` otherwise
 private func executeModelCall(
     context: ModelCallContext,
-    modelInput: [[String: Any]],
+    modelInput: [ChatItem],
     modelOutput: String,
-    modelTools: [[String: Any]]
+    modelTools: [Tool]
 ) async -> Bool {
     let startTime = Date()
 
@@ -103,9 +104,8 @@ private func executeModelCall(
     if modelTools.isEmpty {
         modelTools = context.toolHandlers.getAllClientTools().values.flatMap { $0 }
         if context.query.starts(with: "@aithing") {
-            // InternalToolProvider.getTools() is not @MainActor, runs on current executor
-            let aiThingTools = context.services.internalToolProvider.getTools()
-            modelTools.append(contentsOf: aiThingTools)
+            let internalTools = context.services.internalToolProvider.getTools()
+            modelTools.append(contentsOf: internalTools)
         }
     }
 
@@ -131,7 +131,7 @@ private func executeModelCall(
 
     // Build request using provider
     let systemMessages = addCacheBlock(input: buildSystemMessages())
-    let processedMessages = addCacheBlock(input: nonUsageFileMessages(from: modelInput), isMessage: true)
+    let processedMessages = addCacheBlock(input: modelInput, isMessage: true)
     let processedTools = addCacheBlock(input: modelTools)
 
     guard
@@ -253,7 +253,7 @@ private func executeModelCall(
 /// - Returns: Count of files processed
 private func processInputContext(
     context: ModelCallContext,
-    modelInput: inout [[String: Any]],
+    modelInput: inout [ChatItem],
     modelContext: [DroppedContent]
 ) -> Int {
     var fileCount = 0
@@ -306,7 +306,7 @@ private func processInputContext(
 private func appendImageToInput(
     name: String,
     base64: String,
-    modelInput: inout [[String: Any]]
+    modelInput: inout [ChatItem]
 ) {
     AnalyticsManager.shared.customEvent(
         view: .IntelligenceManager,
@@ -314,26 +314,14 @@ private func appendImageToInput(
         secondary: "use image",
         sev: .info
     )
-    modelInput.append([
-        "role": "file",
-        "content": [["type": "file", "text": "File \(name)", "skip_next_messages": false]],
-    ])
-    modelInput.append([
-        "role": "user",
-        "content": [
-            [
-                "type": "image",
-                "source": ["type": "base64", "media_type": "image/jpeg", "data": base64],
-            ]
-        ],
-    ])
+    modelInput.append(ChatItem(role: .user, payload: .imageBase64(name: name, media: "image/jpeg", images: [base64])))
 }
 
 /// Appends a PDF file to the model input.
 private func appendPDFToInput(
     name: String,
     base64s: [String],
-    modelInput: inout [[String: Any]]
+    modelInput: inout [ChatItem]
 ) {
     AnalyticsManager.shared.customEvent(
         view: .IntelligenceManager,
@@ -341,18 +329,7 @@ private func appendPDFToInput(
         secondary: "use pdf",
         sev: .info
     )
-    modelInput.append([
-        "role": "file",
-        "content": [["type": "file", "text": "File \(name)", "skip_next_messages": false]],
-    ])
-    var content: [[String: Any]] = []
-    for base64 in base64s {
-        content.append([
-            "type": "image",
-            "source": ["type": "base64", "media_type": "image/jpeg", "data": base64],
-        ])
-    }
-    modelInput.append(["role": "user", "content": content])
+    modelInput.append(ChatItem(role: .user, payload: .imageBase64(name: name, media: "image/jpeg", images: base64s)))
 }
 
 /// Appends a text file to the model input.
@@ -367,10 +344,6 @@ private func appendTextToInput(
         secondary: "use text",
         sev: .info
     )
-    modelInput.append([
-        "role": "file",
-        "content": [["type": "file", "text": "File \(name)", "skip_next_messages": true]],
-    ])
     modelInput.append([
         "role": "user",
         "content": [["type": "text", "text": "```\n\(text)\n```"]],
@@ -389,10 +362,6 @@ private func appendSelectedTextToInput(
         sev: .info
     )
     modelInput.append([
-        "role": "file",
-        "content": [["type": "file", "text": "Selected Text", "skip_next_messages": true]],
-    ])
-    modelInput.append([
         "role": "user",
         "content": [["type": "text", "text": "```\n\(text)\n```"]],
     ])
@@ -410,10 +379,6 @@ private func appendAppContextToInput(
         sev: .info
     )
     let contextText = "\(appContext.appName)\(appContext.windowName.count > 0 ? ": " : "")\(appContext.windowName)"
-    modelInput.append([
-        "role": "file",
-        "content": [["type": "file", "text": contextText, "skip_next_messages": false]],
-    ])
     modelInput.append([
         "role": "user",
         "content": [
@@ -583,7 +548,7 @@ private func handleStreamCompletion(
 
         context.uiHandlers.setToolCall("Calling tool: \(finalToolUseName)...")
 
-        var result: [[String: Any]] = []
+        var result: [ChatPayload] = []
         if finalToolUseName.starts(with: "aithing_") {
             result = await context.services.internalToolProvider.callTools(
                 name: finalToolUseName,
@@ -800,19 +765,6 @@ private func trackUsage(
             filesAttached: fileCount
         )
         await firestoreManager.incrementUsage(user: appUser, usage: usage)
-        modelInput.append([
-            "role": "usage",
-            "content": [
-                [
-                    "type": "text",
-                    "text": """
-                    Total Usage:
-                    1 \(query.isEmpty ? "Agent Use" : "Query")
-                    \(fileCount) Attached Files
-                    """,
-                ]
-            ],
-        ])
     } else {
         AnalyticsManager.shared.customEvent(
             view: .IntelligenceManager,

@@ -6,6 +6,7 @@
 //
 
 import Foundation
+import MCP
 
 // MARK: - Tool Name Resolution
 
@@ -17,10 +18,10 @@ import Foundation
 ///   - toolName: The name of the tool to find
 ///   - allClientTools: Dictionary mapping client names to their tool definitions
 /// - Returns: The client name that owns the tool, or empty string if not found
-func getClientName(toolName: String, allClientTools: [String: [[String: Any]]]) -> String {
+func getClientName(toolName: String, allClientTools: [String: [Tool]]) -> String {
     for (clientName, tools) in allClientTools {
         for tool in tools {
-            if let name = tool["name"] as? String, name == toolName {
+            if tool.name == toolName {
                 return clientName
             }
         }
@@ -44,7 +45,7 @@ func addCacheBlock(input: [[String: Any]], isMessage: Bool = false) -> [[String:
     guard getCacheMessages() else {
         return input
     }
-    
+
     if isMessage {
         return addCacheBlockToMessage(input: input)
     } else {
@@ -85,12 +86,12 @@ func redactDataKeys(in object: Any) -> Any {
         }
         return newDict
     }
-    
+
     // If it's an array, process recursively
     if let array = object as? [Any] {
         return array.map { redactDataKeys(in: $0) }
     }
-    
+
     // Otherwise return unchanged
     return object
 }
@@ -103,14 +104,14 @@ func redactDataKeys(in object: Any) -> Any {
 /// - Returns: Updated array with cache control added to last message's content
 private func addCacheBlockToMessage(input: [[String: Any]]) -> [[String: Any]] {
     var updated = input
-    
+
     guard var last = input.last,
-          var contentArray = last["content"] as? [[String: Any]],
-          var lastContent = contentArray.last
+        var contentArray = last["content"] as? [[String: Any]],
+        var lastContent = contentArray.last
     else {
         return input
     }
-    
+
     lastContent["cache_control"] = [
         "type": "ephemeral",
         "ttl": "5m",
@@ -118,7 +119,7 @@ private func addCacheBlockToMessage(input: [[String: Any]]) -> [[String: Any]] {
     contentArray[contentArray.count - 1] = lastContent
     last["content"] = contentArray
     updated[updated.count - 1] = last
-    
+
     return updated
 }
 
@@ -128,16 +129,16 @@ private func addCacheBlockToMessage(input: [[String: Any]]) -> [[String: Any]] {
 /// - Returns: Updated array with cache control added to last item
 private func addCacheBlockToItem(input: [[String: Any]]) -> [[String: Any]] {
     var updated = input
-    
+
     guard var last = input.last else {
         return input
     }
-    
+
     last["cache_control"] = [
         "type": "ephemeral",
         "ttl": "5m",
     ]
     updated[updated.count - 1] = last
-    
+
     return updated
 }

@@ -178,28 +178,22 @@ class ConnectionManager: ObservableObject {
     /// Disconnects all active clients and releases resources
     /// - Returns: Empty string on success, error message on failure
     func disconnect() async -> String {
-        do {
-            // Disconnect all clients
-            for client in clients.values {
-                await client.disconnect()
-            }
-            clients.removeAll()
-
-            // Cleanup HTTP resources
-            httpURL.removeAll()
-            headers.removeAll()
-
-            // Cleanup stdio resources
-            terminateAllProcesses()
-            closeAllPipes()
-
-            logAnalytics(primary: .mcpStop, clientName: "all", isError: false)
-            return ""
-        } catch {
-            logAnalytics(primary: .mcpStop, clientName: "all", isError: true)
-            logger.error("Disconnection error: \(error.localizedDescription)")
-            return error.localizedDescription
+        // Disconnect all clients
+        for client in clients.values {
+            await client.disconnect()
         }
+        clients.removeAll()
+
+        // Cleanup HTTP resources
+        httpURL.removeAll()
+        headers.removeAll()
+
+        // Cleanup stdio resources
+        terminateAllProcesses()
+        closeAllPipes()
+
+        logAnalytics(primary: .mcpStop, clientName: "all", isError: false)
+        return ""
     }
 
     // MARK: - Tool Operations
@@ -236,7 +230,7 @@ class ConnectionManager: ObservableObject {
     ///   - name: Tool name to execute
     ///   - input: JSON string containing tool arguments
     /// - Returns: Array of response content blocks
-    func callTools(clientName: String, name: String, input: String) async -> [[String: Any]] {
+    func callTools(clientName: String, name: String, input: String) async -> [ChatPayload] {
         let normalizedName = clientName.lowercased()
 
         guard let client = clients[normalizedName] else {
@@ -413,10 +407,10 @@ extension ConnectionManager {
         arguments.removeAll()
     }
 
-    fileprivate func extractTextContent(from content: [Tool.Content]) -> [[String: Any]] {
-        content.compactMap { item -> [String: Any]? in
+    fileprivate func extractTextContent(from content: [Tool.Content]) -> [ChatPayload] {
+        content.compactMap { item -> ChatPayload? in
             if case .text(let text) = item {
-                return ["type": "text", "text": text]
+                return .text(contents: [text])
             }
             return nil
         }

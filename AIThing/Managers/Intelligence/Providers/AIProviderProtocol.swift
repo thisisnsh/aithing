@@ -6,6 +6,7 @@
 //
 
 import Foundation
+import MCP
 
 // MARK: - Stream Event
 
@@ -19,9 +20,6 @@ enum StreamEvent {
 
     /// Partial JSON input for tool use.
     case toolInput(String)
-
-    /// Content block completed.
-    case contentBlockStop
 
     /// Stream completed with a stop reason.
     case done(stopReason: StopReason)
@@ -86,9 +84,9 @@ protocol AIProviderProtocol {
     func buildRequest(
         apiKey: String,
         model: String,
-        messages: [[String: Any]],
-        tools: [[String: Any]],
-        systemMessages: [[String: Any]],
+        messages: [ChatItem],
+        tools: [Tool],
+        systemMessages: [ChatPayload],
         maxTokens: Int,
         stream: Bool
     ) -> URLRequest?
@@ -103,13 +101,13 @@ protocol AIProviderProtocol {
     ///
     /// - Parameter messages: Messages in the internal format
     /// - Returns: Messages converted to provider's format
-    func convertMessages(_ messages: [[String: Any]]) -> [[String: Any]]
+    func convertMessages(_ messages: [ChatItem]) -> [[String: Any]]
 
     /// Converts the internal tool format to the provider's expected format.
     ///
     /// - Parameter tools: Tools in the internal format
     /// - Returns: Tools converted to provider's format
-    func convertTools(_ tools: [[String: Any]]) -> [[String: Any]]
+    func convertTools(_ tools: [Tool]) -> [[String: Any]]
 
     /// Builds a tool result message in the provider's format.
     ///
@@ -117,7 +115,7 @@ protocol AIProviderProtocol {
     ///   - toolUseId: The ID of the tool use
     ///   - result: The tool execution result
     /// - Returns: A message dictionary in the provider's format
-    func buildToolResultMessage(toolUseId: String, result: [[String: Any]]) -> [String: Any]
+    func buildToolResultMessage(toolUseId: String, result: [ChatPayload]) -> [ChatItem]
 
     /// Builds an assistant message with tool use in the provider's format.
     ///
@@ -132,13 +130,13 @@ protocol AIProviderProtocol {
         toolUseId: String,
         toolName: String,
         toolInput: Any
-    ) -> [String: Any]
+    ) -> [ChatItem]
 
     /// Builds an assistant text message in the provider's format.
     ///
     /// - Parameter text: The text content
     /// - Returns: A message dictionary in the provider's format
-    func buildAssistantTextMessage(text: String) -> [String: Any]
+    func buildAssistantTextMessage(text: String) -> [ChatItem]
 }
 
 // MARK: - Provider Registry
@@ -151,9 +149,13 @@ final class AIProviderRegistry {
 
     private init() {
         // Register default providers
-        register(AnthropicProvider())
-        register(OpenAIProvider())
-        register(GeminiProvider())
+        providers[.anthropic] = AnthropicProvider()
+        providers[.openai] = AnthropicProvider()
+        providers[.gemini] = AnthropicProvider()
+
+        // register(AnthropicProvider())
+        // register(OpenAIProvider())
+        // register(GeminiProvider())
     }
 
     /// Registers a provider implementation.

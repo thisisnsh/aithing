@@ -29,7 +29,7 @@ final class InternalToolProvider: Sendable {
     // MARK: - Tool Discovery
 
     /// Returns all available internal tools as dictionary definitions
-    func getTools() -> [[String: Any]] {
+    func getTools() -> [Tool] {
         [createAutomationToolDefinition()]
     }
 
@@ -45,7 +45,7 @@ final class InternalToolProvider: Sendable {
         name: String,
         input: String,
         automationManager: AutomationManager
-    ) async -> [[String: Any]] {
+    ) async -> [ChatPayload] {
         guard let value = try? parseJSONStringToValueObject(input),
             case .object(let dict) = value
         else {
@@ -53,7 +53,7 @@ final class InternalToolProvider: Sendable {
         }
 
         let text = await executeCreateAutomation(dict: dict, automationManager: automationManager)
-        return [["type": "text", "text": text]]
+        return [.text(contents: [text])]
     }
 }
 
@@ -61,7 +61,8 @@ final class InternalToolProvider: Sendable {
 
 extension InternalToolProvider {
 
-    fileprivate func createAutomationToolDefinition() -> [String: Any] {
+    fileprivate func createAutomationToolDefinition() -> Tool {
+        
         [
             "name": "aithing_create_automation",
             "description": """

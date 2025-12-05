@@ -6,6 +6,7 @@
 //
 
 import Foundation
+import MCP
 
 // MARK: - Model Call Context
 
@@ -72,10 +73,10 @@ struct SelectionHandlers {
 /// Handlers for model state management
 struct ModelHandlers {
     /// Gets the current model input messages
-    let getModelInput: () -> [[String: Any]]
+    let getModelInput: () -> [ChatItem]
     
     /// Sets the model input messages
-    let setModelInput: @Sendable ([[String: Any]]) -> Void
+    let setModelInput: @Sendable ([ChatItem]) -> Void
     
     /// Gets the current model output
     let getModelOutput: () -> String
@@ -99,7 +100,7 @@ struct HistoryHandlers {
     let getHistory: (String) async -> History?
     
     /// Stores history for a tab ID
-    let storeHistory: (String, [[String: Any]]) async -> Void
+    let storeHistory: (String, [ChatItem]) async -> Void
     
     /// Sets the current history state
     let setHistory: (History?) -> Void
@@ -126,10 +127,10 @@ struct UIHandlers {
 /// Handlers for tool operations
 struct ToolHandlers {
     /// Gets all client tools organized by client name
-    let getAllClientTools: () -> [String: [[String: Any]]]
+    let getAllClientTools: () -> [String: [Tool]]
     
     /// Gets the tools being used in current execution
-    let getUsedTools: () -> [[String: Any]]
+    let getUsedTools: () -> [Tool]
     
     /// Gets the application context as base64 encoded image
     let getAppContextBase64: () -> AppContextModel?
