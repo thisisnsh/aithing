@@ -61,7 +61,7 @@ private func formatCurrentDate() -> String {
 /// - Returns: Dictionary containing identity information
 private func buildIdentityMessage() -> ChatPayload {
     .text(
-        content: """
+        text: """
             ## Identity  
             - Your name is **AI Thing**.  
             - You are an AI assistant with a special abilities. 
@@ -80,7 +80,7 @@ private func buildIdentityMessage() -> ChatPayload {
 /// - Parameter today: The formatted current date
 /// - Returns: Dictionary containing date/time information
 private func buildDateTimeMessage(today: String) -> ChatPayload {
-    .text(content: "## Current date-time and time-zone is \(today).")
+    .text(text: "## Current date-time and time-zone is \(today).")
 }
 
 /// Builds the behavior rules system message.
@@ -88,7 +88,7 @@ private func buildDateTimeMessage(today: String) -> ChatPayload {
 /// - Returns: Dictionary containing behavioral rules
 private func buildBehaviorMessage() -> ChatPayload {
     .text(
-        content: """
+        text: """
             ## Behavior Rules  
             - Act as an **agent**: perceive instructions, reason, and invoke tools when needed.  
             - Be **precise, context-aware**, and never guess if info is missing.    
@@ -102,7 +102,7 @@ private func buildBehaviorMessage() -> ChatPayload {
 /// - Returns: Dictionary containing answer style guidelines
 private func buildAnswerStyleMessage() -> ChatPayload {
     .text(
-        content: """
+        text: """
             ## Answer Style  
             - Keep answers **brief** by default.  
             - Only elaborate when explicitly asked.  

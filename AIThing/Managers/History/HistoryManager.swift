@@ -18,10 +18,11 @@ final class HistoryStore: ObservableObject {
 
     /// Idempotent: inserts when new, updates when existing. lastUpdated is set to now (epoch).
     @discardableResult
-    func store(id: String, history: [[String: Any]], unseen: Bool? = nil)
+    func store(id: String, history: [ChatItem], unseen: Bool? = nil)
         async -> Bool
     {
-        guard JSONSerialization.isValidJSONObject(history) else {
+        let jsonHistory = ChatItem.toDictionaries(history)
+        guard JSONSerialization.isValidJSONObject(jsonHistory) else {
             logger.error("store invalid JSON for id=\(id)")
             return false
         }
@@ -47,8 +48,8 @@ final class HistoryStore: ObservableObject {
                 }
 
                 mo.lastUpdated = Date().timeIntervalSince1970
-                mo.json = try JSONSerialization.data(withJSONObject: history, options: [])
-
+                mo.json = try JSONSerialization.data(withJSONObject: jsonHistory, options: [])
+                
                 try ctx.save()
                 return true
             } catch {
@@ -63,35 +64,47 @@ final class HistoryStore: ObservableObject {
         let urls = Self.existingStoreURLs()
         var results: [History] = []
 
-        for url in urls {
-            // open container for this file's id (derived from filename)
-            let id = Self.idFromStoreURL(url)
-            guard Self.storeExists(for: id) else { continue }
-            guard let container = await container(for: id) else { continue }
-            let ctx = container.viewContext
-            let items: [History] = await ctx.perform {
-                let req = NSFetchRequest<HistoryDocMO>(entityName: "HistoryDoc")
-                req.fetchLimit = 1
-                do {
-                    guard let mo = try ctx.fetch(req).first else { return [] }
-                    let obj =
-                        (try? JSONSerialization.jsonObject(with: mo.json, options: []))
-                        as? [[String: Any]] ?? []
-                    let unseen = (mo.value(forKey: "unseen") as? Bool) ?? false
-                    let hist = History(
-                        id: mo.id,
-                        lastUpdated: String(Int64(mo.lastUpdated)),
-                        title: mo.title,
-                        history: obj,
-                        unseen: unseen
-                    )
-                    return [hist]
-                } catch {
-                    logger.error("getAll fetch failed for id=\(id): \(error)")
-                    return []
+        // Use TaskGroup to process all URLs concurrently
+        results = await withTaskGroup(of: [History].self) { group in
+            for url in urls {
+                let id = Self.idFromStoreURL(url)
+                guard Self.storeExists(for: id) else { return [] }
+                group.addTask {
+                    // open container for this file's id (derived from filename)
+                    guard let container = await self.container(for: id) else { return [] }
+                    let ctx = container.viewContext
+                    let items: [History] = await ctx.perform {
+                        let req = NSFetchRequest<HistoryDocMO>(entityName: "HistoryDoc")
+                        req.fetchLimit = 1
+                        do {
+                            guard let mo = try ctx.fetch(req).first else { return [] }
+                            let obj =
+                                (try? JSONSerialization.jsonObject(with: mo.json, options: []))
+                                as? [[String: Any]] ?? []
+                            let unseen = (mo.value(forKey: "unseen") as? Bool) ?? false
+                            let hist = History(
+                                id: mo.id,
+                                lastUpdated: String(Int64(mo.lastUpdated)),
+                                title: mo.title,
+                                history: ChatItem.fromDictionaries(obj),
+                                unseen: unseen
+                            )
+                            return [hist]
+                        } catch {
+                            logger.error("getAll fetch failed for id=\(id): \(error)")
+                            return []
+                        }
+                    }
+                    return items
                 }
             }
-            results.append(contentsOf: items)
+            
+            // Collect all results from the group
+            for await items in group {
+                results.append(contentsOf: items)
+            }
+            
+            return results
         }
 
         results.sort { (lhs, rhs) in
@@ -128,7 +141,7 @@ final class HistoryStore: ObservableObject {
                     id: mo.id,
                     lastUpdated: String(Int64(mo.lastUpdated)),
                     title: mo.title,
-                    history: obj,
+                    history: ChatItem.fromDictionaries(obj),
                     unseen: unseen
                 )
             } catch {

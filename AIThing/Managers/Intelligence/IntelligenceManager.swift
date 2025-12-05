@@ -214,16 +214,12 @@ private func executeModelCall(
         return handleStreamError(context: context, error: error)
     }
 
-    print("modelInput")
-    print(modelInput)
     await context.historyHandlers.storeHistory(context.tabId, modelInput)
 
     context.uiHandlers.setIsThinking(false)
     context.modelHandlers.setModelInput(modelInput)
 
     let history = await context.historyHandlers.getHistory(context.tabId)
-    print("history")
-    print(history)
     context.historyHandlers.setHistory(history)
 
     context.modelHandlers.setModelOutput("")
@@ -287,7 +283,7 @@ private func processInputContext(
     }
 
     // Add actual query
-    modelInput.append(ChatItem(role: .user, payload: .text(content: buildQuery(query: context.query))))
+    modelInput.append(ChatItem(role: .user, payload: .text(text: buildQuery(query: context.query))))
 
     return fileCount
 }
@@ -338,7 +334,7 @@ private func appendTextToInput(
         secondary: "use text",
         sev: .info
     )
-    modelInput.append(ChatItem(role: .user, payload: .textWithName(name: name, content: "```\n\(text)\n```")))
+    modelInput.append(ChatItem(role: .user, payload: .textWithName(name: name, text: "```\n\(text)\n```")))
 }
 
 /// Appends selected text to the model input.
@@ -352,7 +348,7 @@ private func appendSelectedTextToInput(
         secondary: "use selection",
         sev: .info
     )
-    modelInput.append(ChatItem(role: .user, payload: .textWithName(name: "Selected Text", content: "```\n\(text)\n```")))
+    modelInput.append(ChatItem(role: .user, payload: .textWithName(name: "Selected Text", text: "```\n\(text)\n```")))
 }
 
 /// Appends application context screenshot to the model input.
@@ -523,7 +519,7 @@ private func handleStreamCompletion(
 
         context.uiHandlers.setToolCall("Calling tool: \(finalToolUseName)...")
 
-        var result: [ChatPayload] = []
+        var result: String = ""
         if finalToolUseName.starts(with: "aithing_") {
             result = await context.services.internalToolProvider.callTools(
                 name: finalToolUseName,

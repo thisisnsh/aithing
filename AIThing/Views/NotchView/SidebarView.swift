@@ -11,38 +11,43 @@ extension NotchView {
     func Sidebar() -> some View {
         ScrollView(.vertical, showsIndicators: false) {
             LazyVStack(alignment: .leading, spacing: 0) {
-                ForEach(Array(histories.enumerated()), id: \.offset) { (i, h) in
+                ForEach(Array(histories.enumerated()), id: \.offset) { (index, history) in
                     HoverableTabButton(
                         title: expandSidebar
-                            ? (h.title ?? createTitle(for: h.history, fallback: "Session #\(i + 1)"))
+                            ? (history.title ?? "Session #\(index + 1)")
                             : "",
-                        isActive: (focusedTabId == h.id) && !showSettings && showChatWindow,
+                        isActive: (focusedTabId == history.id) && !showSettings && showChatWindow,
                         action: {
                             open()
                             showSettings = false
-                            addTab(TabItem(id: h.id))
-                            focusedTabId = h.id
+                            addTab(TabItem(id: history.id))
+                            focusedTabId = history.id
                         },
                         deleteAction: {
                             Task {
-                                let isActive = focusedTabId == h.id
-                                await historyStore.delete(id: h.id)
-                                removeTab(id: h.id)
-                                histories = await historyStore.getAll(limit: 100)
+                                let isActive = focusedTabId == history.id
+                                await historyStore.delete(id: history.id)
+                                removeTab(id: history.id)
                                 if isActive {
-                                    if let history = histories.first {
-                                        addTab(TabItem(id: history.id))
-                                        focusedTabId = history.id
+                                    if index + 1 < histories.count {
+                                        let newHistory = histories[index + 1]
+                                        addTab(TabItem(id: newHistory.id))
+                                        focusedTabId = newHistory.id
+                                    } else if index - 1 >= 0 && index - 1 < histories.count {
+                                        let newHistory = histories[index - 1]
+                                        addTab(TabItem(id: newHistory.id))
+                                        focusedTabId = newHistory.id
                                     } else {
                                         let tabId = UUID().uuidString
                                         addTab(TabItem(id: tabId))
                                         focusedTabId = tabId
                                     }
                                 }
+                                histories = await historyStore.getAll(limit: 100)
                                 unseen = histories.contains(where: { $0.unseen == true })
                             }
                         },
-                        notification: h.unseen
+                        notification: history.unseen
                     )
                 }
 
@@ -59,4 +64,3 @@ extension NotchView {
         .frame(width: expandSidebar ? 200 : 60)
     }
 }
-

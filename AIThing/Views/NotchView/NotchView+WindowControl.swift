@@ -14,21 +14,6 @@ extension NotchView {
         unseen = histories.contains(where: { $0.unseen == true })
     }
 
-    func createTitle(for history: [[String: Any]], fallback: String) -> String {
-        for entry in history {
-            guard let content = entry["content"] as? [[String: Any]] else { continue }
-            for item in content {
-                if (item["type"] as? String) == "text",
-                    let text = item["text"] as? String,
-                    !text.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
-                {
-                    return String(text.prefix(60))
-                }
-            }
-        }
-        return fallback
-    }
-
     func close(initialClose: Bool = false) {
         AnalyticsManager.shared.customEvent(
             view: .NotchView,
@@ -138,11 +123,7 @@ extension NotchView {
         return await historyStore.get(id: tabId)
     }
 
-    func storeHistory(
-        tabId: String,
-        history: [[String: Any]],
-        unseen: Bool? = nil
-    ) async {
+    func storeHistory(tabId: String, history: [ChatItem], unseen: Bool? = nil) async {
         await historyStore.store(id: tabId, history: history, unseen: unseen)
     }
 
@@ -158,4 +139,3 @@ extension NotchView {
         }
     }
 }
-

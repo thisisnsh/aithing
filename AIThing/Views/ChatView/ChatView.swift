@@ -56,7 +56,7 @@ struct ChatView: View {
                         ChatBubble(
                             item: ChatItem(
                                 role: .user,
-                                payload: ChatPayload.text(query)
+                                payload: ChatPayload.text(text: query)
                             )
                         )
                     }
@@ -66,14 +66,14 @@ struct ChatView: View {
                         ChatBubble(
                             item: ChatItem(
                                 role: .assistant,
-                                payload: ChatPayload.text(modelOutput)
+                                payload: ChatPayload.text(text: modelOutput)
                             )
                         )
                     }
 
                     // Temporary Tool Calling...
                     if !toolCall.isEmpty {
-                        ExtraBubble(text: toolCall)
+                        ToolBubble(text: toolCall)
                             .frame(maxWidth: 500, alignment: .leading)
                     }
 
@@ -103,7 +103,7 @@ struct ChatView: View {
             AnalyticsManager.shared.screenView(screenName: .ChatView)
             setHistory(history)
         }
-        .onChange(of: history?.history.count) { _ in            
+        .onChange(of: history?.history.count) { _ in
             setHistory(history)
         }
     }
@@ -115,8 +115,51 @@ struct ChatView: View {
     private func setHistory(_ history: History?, showFullChat: Bool = false) {
         guard let history = history else { return }
 
-        items = parseHistory(history.history)
-        items = items.filter { $0.role != .usage }
+        items = []
+
+        for item in history.history {
+            // Ignore empty payload messages
+            if item.payloads.isEmpty {
+                continue
+            }
+
+            if item.payloads.count > 1 {
+                // Split item into multiple items by combining image payloads
+                // and separating other payloads. This is to show all images
+                // together in clubbed layout
+                var imagePayloads: [ChatPayload] = []
+
+                for payload in item.payloads {
+                    // Ignore tool result
+                    if case .toolResult = payload {
+                        continue
+                    }
+
+                    if payload.isImage {
+                        imagePayloads.append(payload)
+                        continue
+                    }
+
+                    // Add any contiguous images before adding non-image payload
+                    if !imagePayloads.isEmpty {
+                        items.append(ChatItem(role: item.role, payloads: imagePayloads))
+                        imagePayloads = []
+                    }
+                    items.append(ChatItem(role: item.role, payload: payload))
+
+                }
+
+                // Add any remaining images
+                if !imagePayloads.isEmpty {
+                    items.append(ChatItem(role: item.role, payloads: imagePayloads))
+                    imagePayloads = []
+                }
+            } else {
+                // Add item directly if it has one or less payloads
+                items.append(item)
+            }
+
+        }
 
         if showFullChat {
             hasMoreChats = false
@@ -125,7 +168,7 @@ struct ChatView: View {
             // From second last occurance of role = .user and payload.isText in items
 
             let indices = items.indices.filter {
-                items[$0].role == .user && items[$0].payload.isText
+                items[$0].role == .user && items[$0].payloads.last!.isText
             }
 
             let secondLastIndex = indices.count >= 2 ? indices[indices.count - 2] : 0
@@ -136,7 +179,7 @@ struct ChatView: View {
         }
 
         if let last = items.last, modelOutput.isEmpty {
-            showRefreshButton = last.role != .assistant || !last.payload.isText
+            showRefreshButton = last.role != .assistant || !last.payloads.last!.isText
         }
 
         AnalyticsManager.shared
@@ -148,4 +191,3 @@ struct ChatView: View {
             )
     }
 }
-

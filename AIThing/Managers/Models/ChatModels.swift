@@ -8,14 +8,14 @@
 import AppKit
 import Foundation
 
-enum ChatRole {
-    case user
-    case assistant
+enum ChatRole: String {
+    case user = "user"
+    case assistant = "assistant"
 }
 
 enum ChatPayload: Equatable {
-    case text(content: String)
-    case textWithName(name: String, content: String)
+    case text(text: String)
+    case textWithName(name: String, text: String)
     case imageBase64(name: String, media: String, image: String)
     case toolUse(id: String, name: String, input: Any)
     case toolResult(id: String, result: String)
@@ -33,6 +33,12 @@ enum ChatPayload: Equatable {
 
     var isText: Bool {
         if case .text = self { return true }
+        if case .textWithName = self { return true }
+        return false
+    }
+
+    var isImage: Bool {
+        if case .imageBase64 = self { return true }
         return false
     }
 }
@@ -47,7 +53,7 @@ struct ChatItem: Identifiable, Equatable {
         self.role = role
         self.payloads = payloads
     }
-    
+
     init(id: UUID = UUID(), role: ChatRole, payload: ChatPayload) {
         self.id = id
         self.role = role
@@ -61,123 +67,172 @@ struct ChatItem: Identifiable, Equatable {
 
 extension ChatItem {
     // MARK: - Serialization
-    
+
     /// Converts an array of ChatItems to an array of dictionaries
     static func toDictionaries(_ items: [ChatItem]) -> [[String: Any]] {
         return items.map { item in
-            var dict: [String: Any] = [
+            let dict: [String: Any] = [
                 "id": item.id.uuidString,
                 "role": item.role == .user ? "user" : "assistant",
                 "payloads": item.payloads.map { payload in
                     payloadToDictionary(payload)
-                }
+                },
             ]
             return dict
         }
     }
-    
+
     /// Converts an array of dictionaries back to ChatItems
-    static func fromDictionaries(_ dicts: [[String: Any]]) -> [ChatItem]? {
+    static func fromDictionaries(_ dicts: [[String: Any]]) -> [ChatItem] {
         var items: [ChatItem] = []
-        
+
         for dict in dicts {
-            guard let idString = dict["id"] as? String,
-                  let id = UUID(uuidString: idString),
-                  let roleString = dict["role"] as? String,
-                  let payloadDicts = dict["payloads"] as? [[String: Any]] else {
-                return nil
-            }
-            
+            let idString = dict["id"] as? String ?? ""  // Backward compatibility
+            let id = UUID(uuidString: idString) ?? UUID()
+
+            let roleString = dict["role"] as? String
+            if roleString != "user" && roleString != "assistant" { continue }
             let role: ChatRole = roleString == "user" ? .user : .assistant
-            
+
             var payloads: [ChatPayload] = []
-            for payloadDict in payloadDicts {
-                guard let payload = dictionaryToPayload(payloadDict) else {
-                    return nil
+
+            if let payloadDicts = dict["payloads"] as? [[String: Any]] {
+                for payloadDict in payloadDicts {
+                    guard let payload = dictionaryToPayload(payloadDict) else {
+                        continue
+                    }
+                    payloads.append(payload)
                 }
-                payloads.append(payload)
             }
-            
+
+            // Backward Compatibility: History stored before ChatItem was used in History
+            if let contentDicts = dict["content"] as? [[String: Any]] {
+                for payloadDict in contentDicts {
+                    guard let payload = backwardDictionaryToPayload(payloadDict) else {
+                        continue
+                    }
+                    payloads.append(payload)
+                }
+            }
+
             items.append(ChatItem(id: id, role: role, payloads: payloads))
         }
-        
+
         return items
     }
-    
+
     // MARK: - Private Helpers
-    
+
     private static func payloadToDictionary(_ payload: ChatPayload) -> [String: Any] {
         switch payload {
-        case .text(let content):
+        case .text(let text):
             return [
                 "type": "text",
-                "content": content
+                "text": text,
             ]
-            
-        case .textWithName(let name, let content):
+
+        case .textWithName(let name, let text):
             return [
                 "type": "textWithName",
                 "name": name,
-                "content": content
+                "text": text,
             ]
-            
+
         case .imageBase64(let name, let media, let image):
             return [
                 "type": "imageBase64",
                 "name": name,
                 "media": media,
-                "image": image
+                "image": image,
             ]
-            
+
         case .toolUse(let id, let name, let input):
             return [
                 "type": "toolUse",
                 "id": id,
                 "name": name,
-                "input": input
+                "input": input,
             ]
-            
+
         case .toolResult(let id, let result):
             return [
                 "type": "toolResult",
                 "id": id,
-                "result": result
+                "result": result,
             ]
         }
     }
-    
+
     private static func dictionaryToPayload(_ dict: [String: Any]) -> ChatPayload? {
         guard let type = dict["type"] as? String else { return nil }
-        
+
         switch type {
         case "text":
-            guard let content = dict["content"] as? String else { return nil }
-            return .text(content: content)
-            
+            guard let text = dict["text"] as? String else { return nil }
+            return .text(text: text)
+
         case "textWithName":
             guard let name = dict["name"] as? String,
-                  let content = dict["content"] as? String else { return nil }
-            return .textWithName(name: name, content: content)
-            
+                let text = dict["text"] as? String
+            else { return nil }
+            return .textWithName(name: name, text: text)
+
         case "imageBase64":
             guard let name = dict["name"] as? String,
-                  let media = dict["media"] as? String,
-                  let image = dict["image"] as? String else { return nil }
+                let media = dict["media"] as? String,
+                let image = dict["image"] as? String
+            else { return nil }
             return .imageBase64(name: name, media: media, image: image)
-            
+
         case "toolUse":
             guard let id = dict["id"] as? String,
-                  let name = dict["name"] as? String,
-                  let input = dict["input"] else { return nil }
+                let name = dict["name"] as? String,
+                let input = dict["input"]
+            else { return nil }
             return .toolUse(id: id, name: name, input: input)
-            
+
         case "toolResult":
             guard let id = dict["id"] as? String,
-                  let result = dict["result"] as? String else { return nil }
+                let result = dict["result"] as? String
+            else { return nil }
             return .toolResult(id: id, result: result)
-            
+
         default:
             return nil
         }
-    }        
+    }
+
+    private static func backwardDictionaryToPayload(_ dict: [String: Any]) -> ChatPayload? {
+        guard let type = dict["type"] as? String else { return nil }
+
+        switch type {
+        case "text":
+            guard let text = dict["text"] as? String else { return nil }
+            return .text(text: text)
+
+        case "image":
+            guard let source = dict["source"] as? [String: Any] else { return nil }
+            guard let media = source["media_type"] as? String,
+                let image = source["data"] as? String
+            else { return nil }
+            return .imageBase64(name: "", media: media, image: image)
+
+        case "tool_use":
+            guard let id = dict["id"] as? String,
+                let name = dict["name"] as? String,
+                let input = dict["input"]
+            else { return nil }
+            return .toolUse(id: id, name: name, input: input)
+
+        case "tool_result":
+            guard let id = dict["tool_use_id"] as? String,
+                let content = dict["content"] as? [String: Any]
+            else { return nil }
+            guard let result = content["text"] as? String else { return nil }
+            return .toolResult(id: id, result: result)
+
+        default:
+            return nil
+        }
+    }
 }

@@ -117,7 +117,7 @@ protocol AIProviderProtocol {
     ///   - toolUseId: The ID of the tool use
     ///   - result: The tool execution result
     /// - Returns: A message dictionary in the provider's format
-    func buildToolResultMessage(toolUseId: String, result: [ChatPayload]) -> [ChatItem]
+    func buildToolResultMessage(toolUseId: String, result: String) -> [ChatItem]
 
     /// Builds an assistant message with tool use in the provider's format.
     ///

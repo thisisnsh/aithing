@@ -45,15 +45,15 @@ final class InternalToolProvider: Sendable {
         name: String,
         input: String,
         automationManager: AutomationManager
-    ) async -> [ChatPayload] {
+    ) async -> String {
         guard let value = try? parseJSONStringToValueObject(input),
             case .object(let dict) = value
         else {
-            return []
+            return "Error parsing input JSON"
         }
 
         let text = await executeCreateAutomation(dict: dict, automationManager: automationManager)
-        return [.text(contents: [text])]
+        return text
     }
 }
 
@@ -62,52 +62,59 @@ final class InternalToolProvider: Sendable {
 extension InternalToolProvider {
 
     fileprivate func createAutomationToolDefinition() -> Tool {
-        
-        [
-            "name": "aithing_create_automation",
-            "description": """
-            Create recurring or one-off automations tasks inside AI Thing app. \
-            Use this tool only if execution time is provided.
-            """,
-            "input_schema": [
-                "type": "object",
-                "properties": [
-                    "title": [
-                        "type": "string",
-                        "description": """
-                        Title of the automation. This is only used to distinguish between \
-                        multiple automations. If it is not provided by the user, suggest a \
-                        value based on the instructions.
-                        """,
-                    ],
-                    "instructions": [
-                        "type": "string",
-                        "description": """
-                        Instructions of the automation. These are the prompts that the \
-                        automation runs when the time comes. These prompts are the ones \
-                        sent to LLM that then does the automations. Make sure the prompt \
-                        is small & clear for the AI.
-                        """,
-                    ],
-                    "executeTime": [
-                        "type": "string",
-                        "description": """
-                        Date time to execute the automation in yyyy-MM-dd HH:mm format. \
-                        If just time is provided use current date.
-                        """,
-                    ],
-                    "recurrence": [
-                        "type": "string",
-                        "description": """
-                        Recurrence schedule of the automation in dd-hh-mm format, where \
-                        dd is the days, hh is the hours, and mm is the minutes. For \
-                        one-off automations, keep this 00-00-00
-                        """,
-                    ],
-                ],
-                "required": ["title", "instructions", "executeTime", "recurrence"],
-            ],
-        ]
+        Tool(
+            name: "aithing_create_automation",
+            description: """
+                Create recurring or one-off automations tasks inside AI Thing app. \
+                Use this tool only if execution time is provided.
+                """,
+            inputSchema: .object([
+                "type": .string("object"),
+                "properties": .object([
+                    "title": .object([
+                        "type": .string("string"),
+                        "description": .string(
+                            """
+                            Title of the automation. This is only used to distinguish between \
+                            multiple automations. If it is not provided by the user, suggest a \
+                            value based on the instructions.
+                            """
+                        ),
+                    ]),
+                    "instructions": .object([
+                        "type": .string("string"),
+                        "description": .string(
+                            """
+                            Instructions of the automation. These are the prompts that the \
+                            automation runs when the time comes. These prompts are the ones \
+                            sent to LLM that then does the automations. Make sure the prompt \
+                            is small & clear for the AI.
+                            """
+                        ),
+                    ]),
+                    "executeTime": .object([
+                        "type": .string("string"),
+                        "description": .string(
+                            """
+                            Date time to execute the automation in yyyy-MM-dd HH:mm format. \
+                            If just time is provided use current date.
+                            """
+                        ),
+                    ]),
+                    "recurrence": .object([
+                        "type": .string("string"),
+                        "description": .string(
+                            """
+                            Recurrence schedule of the automation in dd-hh-mm format, where \
+                            dd is the days, hh is the hours, and mm is the minutes. For \
+                            one-off automations, keep this 00-00-00
+                            """
+                        ),
+                    ]),
+                ]),
+                "required": .array([.string("title"), .string("instructions"), .string("executeTime"), .string("recurrence")]),
+            ])
+        )
     }
 }
 

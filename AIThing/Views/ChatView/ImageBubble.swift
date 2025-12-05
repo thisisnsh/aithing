@@ -10,36 +10,48 @@ import SwiftUI
 
 struct ImageBubble: View {
     // MARK: - Constants
-    let image: [NSImage]
+    let payloads: [ChatPayload]
     let isUser: Bool
 
     // MARK: - State
     @State var index = 0
+    @State var images: [NSImage] = []
 
     // MARK: - Body
     var body: some View {
         ZStack {
-            if image.count > 2 {
-                ImageView(image: image[(index + 2) % image.count])
+            if images.count > 2 {
+                ImageView(image: images[(index + 2) % images.count])
                     .frame(maxWidth: .infinity, alignment: .trailing)
                     .scaleEffect(0.6, anchor: .trailing)
                     .offset(x: -160)
 
             }
 
-            if image.count > 1 {
-                ImageView(image: image[(index + 1) % image.count])
+            if images.count > 1 {
+                ImageView(image: images[(index + 1) % images.count])
                     .frame(maxWidth: .infinity, alignment: .trailing)
                     .scaleEffect(0.8, anchor: .trailing)
                     .offset(x: -80)
             }
 
-            ImageView(image: image[index % image.count])
-                .frame(maxWidth: .infinity, alignment: .trailing)
-                .scaleEffect(1, anchor: .trailing)
-                .onTapGesture {
-                    index = (index + 1) % image.count
+            if images.count > 0 {
+                ImageView(image: images[index % images.count])
+                    .frame(maxWidth: .infinity, alignment: .trailing)
+                    .scaleEffect(1, anchor: .trailing)
+                    .onTapGesture {
+                        index = (index + 1) % images.count
+                    }
+            }
+        }
+        .onAppear {
+            for payload in payloads {
+                if case .imageBase64(_, _, let image) = payload {
+                    if let nsImage = base64ToNSImage(image) {
+                        images.append(nsImage)
+                    }
                 }
+            }
         }
     }
 
@@ -62,4 +74,3 @@ struct ImageBubble: View {
             )
     }
 }
-

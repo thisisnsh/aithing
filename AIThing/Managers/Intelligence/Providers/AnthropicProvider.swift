@@ -30,7 +30,7 @@ final class AnthropicProvider: AIProviderProtocol {
         stream: Bool
     ) -> URLRequest? {
         guard let url = URL(string: apiURL) else { return nil }
-        
+
         var request = URLRequest(url: url)
         request.httpMethod = "POST"
         request.setValue("application/json", forHTTPHeaderField: "Content-Type")
@@ -41,7 +41,7 @@ final class AnthropicProvider: AIProviderProtocol {
         let systemMessages = addCacheBlock(input: convertSystemMessages(systemMessages))
         let processedMessages = addCacheBlock(input: convertMessages(messages), isMessage: true)
         let processedTools = addCacheBlock(input: convertTools(tools))
-        
+
         let body: [String: Any] = [
             "model": model,
             "stream": stream,
@@ -135,8 +135,30 @@ final class AnthropicProvider: AIProviderProtocol {
     // MARK: - Message Conversion
 
     func convertMessages(_ messages: [ChatItem]) -> [[String: Any]] {
-        // Anthropic uses the same format internally
-        return []  // messages
+        messages.map { message in
+            var content: [[String: Any]] = []
+            for payload in message.payloads {
+                switch payload {
+                case .text(let text):
+                    content.append(["type": "text", "text": text])
+                case .textWithName(_, let text):
+                    content.append(["type": "text", "text": text])
+                case .imageBase64(_, let media, let image):
+                    content.append(["type": "image", "source": ["type": "base64", "media_type": media, "data": image]])
+                case .toolUse(let id, let name, let input):
+                    content.append(["type": "tool_use", "id": id, "name": name, "input": input])
+                case .toolResult(let id, let result):
+                    content.append(["type": "tool_result", "tool_use_id": id, "content": result])
+                }
+            }
+
+            let dict: [String: Any] = [
+                "role": message.role.rawValue,
+                "content": content,
+            ]
+
+            return dict
+        }
     }
 
     func convertTools(_ tools: [Tool]) -> [[String: Any]] {
@@ -153,26 +175,22 @@ final class AnthropicProvider: AIProviderProtocol {
             return dict
         }
     }
-    
-    func convertSystemMessages(_ messages: [ChatPayload]) -> [[String : Any]] {
-        // toolsToDictionaries()
-        
+
+    func convertSystemMessages(_ messages: [ChatPayload]) -> [[String: Any]] {
+        messages.map { payload in
+            switch payload {
+            case .text(let text):
+                return ["type": "text", "text": text]
+            default:
+                return [:]
+            }
+        }
     }
 
     // MARK: - Message Building
 
-    func buildToolResultMessage(toolUseId: String, result: [ChatPayload]) -> [ChatItem] {
-        // Get first result as text
-        var resultString = ""
-        if let payload = result.first {
-            switch payload {
-            case .text(let contents):
-                resultString = contents.first ?? ""
-            default:
-                resultString = ""
-            }
-        }
-        return [ChatItem(role: .user, payload: [.toolResult(id: toolUseId, result: resultString)])]
+    func buildToolResultMessage(toolUseId: String, result: String) -> [ChatItem] {
+        return [ChatItem(role: .user, payload: .toolResult(id: toolUseId, result: result))]
     }
 
     func buildAssistantToolUseMessage(
@@ -181,18 +199,15 @@ final class AnthropicProvider: AIProviderProtocol {
         toolName: String,
         toolInput: Any
     ) -> [ChatItem] {
-        var payload: [ChatPayload] = []
-
+        var payloads: [ChatPayload] = []
         if let text = text, !text.isEmpty {
-            payload.append(.text(contents: [text]))
+            payloads.append(.text(text: text))
         }
-
-        payload.append(.toolUse(id: toolUseId, name: toolName, input: toolInput))
-
-        return ChatItem(role: .assistant, payload: payload)
+        payloads.append(.toolUse(id: toolUseId, name: toolName, input: toolInput))
+        return [ChatItem(role: .assistant, payloads: payloads)]
     }
 
     func buildAssistantTextMessage(text: String) -> [ChatItem] {
-        [ChatItem(role: .assistant, payload: [.text(content: text))]]
+        [ChatItem(role: .assistant, payload: .text(text: text))]
     }
 }

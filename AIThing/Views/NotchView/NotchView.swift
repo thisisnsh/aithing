@@ -5,6 +5,7 @@
 //  Created by Nishant Singh Hada on 10/31/25.
 //
 
+import MCP
 import Sparkle
 import SwiftUI
 import os
@@ -55,7 +56,7 @@ struct NotchView: View {
     @State var circularNotch = false
     @State var allModels: [ModelInfo] = []
     @State var agents: [AgentEntry] = []
-    @State var allClientTools: [String: [[String: Any]]] = [:]
+    @State var allClientTools: [String: [Tool]] = [:]
     @State var focusedTabId: String = ""
     @State var tabs: [String: TabItem] = [:]
     @State var tabOrder: [String] = []
@@ -312,22 +313,18 @@ struct NotchView: View {
 
             automationManager.onExecute = { (automation: Automation) async in
                 logger.debug("Called automation: \(automation.title)")
-                var modelInput: [[String: Any]] = []
+                var modelInput: [ChatItem] = []
                 var modelOutput: String = ""
                 let tabId = UUID().uuidString
-                var title = ""
-                var history: [[String: Any]] = []
+                var history: [ChatItem] = []
 
                 let context = ModelCallContext(
                     tabId: tabId,
                     query: automation.instructions,
                     tabHandlers: TabHandlers(
                         isTabRemoved: { false },
-                        getTabTitle: { title },
-                        setTabTitle: { newTitle in
-                            title = newTitle
-                            await self.setTitle(id: tabId, title: title)
-                        }
+                        getTabTitle: { "" },
+                        setTabTitle: { await self.setTitle(id: tabId, title: $0) }
                     ),
                     selectionHandlers: SelectionHandlers(
                         getSelectedText: { "" },
@@ -337,7 +334,7 @@ struct NotchView: View {
                     ),
                     modelHandlers: ModelHandlers(
                         getModelInput: { modelInput },
-                        setModelInput: { modelInput = $0 },
+                        setModelInput: { _ in },
                         getModelOutput: { modelOutput },
                         setModelOutput: { modelOutput = $0 },
                         getModelContext: { [] },

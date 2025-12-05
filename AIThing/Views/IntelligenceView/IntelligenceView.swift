@@ -25,7 +25,7 @@ struct IntelligenceView: View {
 
     // MARK: - Bindings
     @Binding var currentTabId: String
-    @Binding var allClientTools: [String: [[String: Any]]]
+    @Binding var allClientTools: [String: [Tool]]
     @Binding var allModels: [ModelInfo]
     @Binding var toastText: String
 
@@ -38,7 +38,7 @@ struct IntelligenceView: View {
     let isTabRemoved: () -> Bool
     let updateHistoryList: () async -> Void
     let getHistory: (String) async -> History?
-    let storeHistory: (String, [[String: Any]]) async -> Void
+    let storeHistory: (String, [ChatItem]) async -> Void
     let setUnseen: (String, Bool) async -> Void
     let setTitle: (String, String) async -> Void
     let startSelectionPoll: () -> Void

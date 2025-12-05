@@ -1,5 +1,5 @@
 //
-//  ExtraBubble.swift
+//  ToolBubble.swift
 //  AIThing
 //
 //  Extra bubble component for displaying tool calls and other messages.
@@ -7,7 +7,7 @@
 
 import SwiftUI
 
-struct ExtraBubble: View {
+struct ToolBubble: View {
     // MARK: - Constants
     let text: String
 

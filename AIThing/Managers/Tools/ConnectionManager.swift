@@ -230,17 +230,17 @@ class ConnectionManager: ObservableObject {
     ///   - name: Tool name to execute
     ///   - input: JSON string containing tool arguments
     /// - Returns: Array of response content blocks
-    func callTools(clientName: String, name: String, input: String) async -> [ChatPayload] {
+    func callTools(clientName: String, name: String, input: String) async -> String {
         let normalizedName = clientName.lowercased()
 
         guard let client = clients[normalizedName] else {
-            return []
+            return "Error: Client not connected"
         }
 
         guard let value = try? parseJSONStringToValueObject(input),
             case .object(let dict) = value
         else {
-            return []
+            return "Error parsing JSON input"
         }
 
         do {
@@ -249,7 +249,7 @@ class ConnectionManager: ObservableObject {
             if isError ?? false {
                 logAnalytics(primary: .mcpCallTools, clientName: normalizedName, isError: true)
                 logger.error("Tool call returned error")
-                return []
+                return "Tool call returned error"
             }
 
             let response = extractTextContent(from: content)
@@ -258,7 +258,7 @@ class ConnectionManager: ObservableObject {
         } catch {
             logAnalytics(primary: .mcpCallTools, clientName: normalizedName, isError: true)
             logger.error("Error calling tool: \(error.localizedDescription)")
-            return []
+            return "Error calling tool"
         }
     }
 }
@@ -407,13 +407,18 @@ extension ConnectionManager {
         arguments.removeAll()
     }
 
-    fileprivate func extractTextContent(from content: [Tool.Content]) -> [ChatPayload] {
-        content.compactMap { item -> ChatPayload? in
+    fileprivate func extractTextContent(from content: [Tool.Content]) -> String {
+        let strings = content.compactMap { item -> String? in
             if case .text(let text) = item {
-                return .text(contents: [text])
+                return text
             }
             return nil
         }
+        var result = ""
+        for string in strings {
+            result += string + " "
+        }
+        return result
     }
 
     fileprivate func logAnalytics(primary: AnalyticsManager.EventPrimary, clientName: String, isError: Bool) {

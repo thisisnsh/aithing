@@ -71,12 +71,7 @@ private func generateTitleViaAPI(context: TitleGenerationContext) async -> Strin
     }
 
     let prompt = buildTitlePrompt(query: context.query, response: context.response)
-    let messages: [[String: Any]] = [
-        [
-            "role": "user",
-            "content": [["type": "text", "text": prompt]],
-        ]
-    ]
+    let messages = [ChatItem(role: .user, payload: .text(text: prompt))]
 
     guard
         let request = providerImpl.buildRequest(
@@ -166,7 +161,7 @@ private func parseAnthropicResponse(json: [String: Any]) -> String? {
     return nil
 }
 
-private func parseOpenAIResponse(json: [String: Any]) -> String? {    
+private func parseOpenAIResponse(json: [String: Any]) -> String? {
     guard let choices = json["choices"] as? [[String: Any]],
         let firstChoice = choices.first,
         let message = firstChoice["message"] as? [String: Any],

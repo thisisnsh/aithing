@@ -10,13 +10,13 @@ import SwiftUI
 
 struct ToolsView: View {
     // MARK: - Bindings
-    @Binding var allClientTools: [String: [[String: Any]]]
+    @Binding var allClientTools: [String: [Tool]]
 
     // MARK: - Constants
     let cornerRadius: CGFloat
 
     // MARK: - State
-    @State var tools: [String: [[String: Any]]] = [:]
+    @State var tools: [String: [Tool]] = [:]
     @State var expandedHeadings: Set<String> = []
     @State var expandedNames: Set<String> = []
 
@@ -55,8 +55,8 @@ struct ToolsView: View {
                                     ForEach(Array(items.enumerated()), id: \.offset) {
                                         index,
                                         item in
-                                        let name = item["name"] as? String ?? "Unnamed"
-                                        let description = item["description"] as? String ?? ""
+                                        let name = item.name
+                                        let description = item.description
 
                                         // Unique ID per name within heading
                                         let nameID = "\(heading)-\(index)"

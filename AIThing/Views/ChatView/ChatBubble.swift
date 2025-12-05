@@ -21,29 +21,28 @@ struct ChatBubble: View, Equatable {
     var body: some View {
         HStack {
             if item.role == .assistant { Spacer().frame(width: 0) }
-            if item.role == .usage { Spacer().frame(width: 0) }
 
-            switch item.payload {
-            case .file(let name, _, let content):
-                FileBubble(file: name, content: content)
-                    .frame(maxWidth: 800, alignment: item.role == .file ? .trailing : .leading)
+            // It is guaranteed that all payloads will have same type
+            switch item.payloads.first! {
             case .text(let text):
-                if item.role != .usage {
-                    TextBubble(text: text, isUser: item.role == .user)
-                        .frame(maxWidth: 800, alignment: item.role == .user ? .trailing : .leading)
-                }
-            case .image(let image):
-                ImageBubble(image: image, isUser: item.role == .user)
+                TextBubble(text: text, isUser: item.role == .user)
+                    .frame(maxWidth: 800, alignment: item.role == .user ? .trailing : .leading)
+            case .textWithName(let name, let text):
+                FileBubble(file: name, content: text)
+                    .frame(maxWidth: 800, alignment: item.role == .user ? .trailing : .leading)
+            case .imageBase64(_, _, _):
+                ImageBubble(payloads: item.payloads, isUser: item.role == .user)
                     .frame(maxWidth: 300, alignment: item.role == .user ? .trailing : .leading)
-            case .toolUse(let name):
-                ExtraBubble(text: "Called tool: \(name)")
+            case .toolUse(_, let name, let input):
+                ToolBubble(text: "Called tool: \(name)\nInput: \(input)")
                     .frame(maxWidth: 800, alignment: .leading)
+            case .toolResult(_, _):
+                // Ignored. This will never be displayed
+                Color.clear.frame(width: 0, height: 0)
             }
 
-            if item.role == .file { Spacer().frame(width: 0) }
             if item.role == .user { Spacer().frame(width: 0) }
         }
         .frame(maxWidth: .infinity, alignment: item.role == .user ? .trailing : .leading)
     }
 }
-
