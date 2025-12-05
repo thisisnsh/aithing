@@ -30,7 +30,7 @@ final class AnthropicProvider: AIProviderProtocol {
         stream: Bool
     ) -> URLRequest? {
         guard let url = URL(string: apiURL) else { return nil }
-
+        
         var request = URLRequest(url: url)
         request.httpMethod = "POST"
         request.setValue("application/json", forHTTPHeaderField: "Content-Type")
@@ -38,13 +38,17 @@ final class AnthropicProvider: AIProviderProtocol {
         request.setValue(apiKey, forHTTPHeaderField: "x-api-key")
         request.setValue("extended-cache-ttl-2025-04-11", forHTTPHeaderField: "anthropic-beta")
 
+        let systemMessages = addCacheBlock(input: convertSystemMessages(systemMessages))
+        let processedMessages = addCacheBlock(input: convertMessages(messages), isMessage: true)
+        let processedTools = addCacheBlock(input: convertTools(tools))
+        
         let body: [String: Any] = [
             "model": model,
             "stream": stream,
             "max_tokens": maxTokens,
             "temperature": 0.7,
-            "messages": convertMessages(messages),
-            "tools": convertTools(tools),
+            "messages": processedMessages,
+            "tools": processedTools,
             "system": systemMessages,
         ]
 
@@ -136,8 +140,23 @@ final class AnthropicProvider: AIProviderProtocol {
     }
 
     func convertTools(_ tools: [Tool]) -> [[String: Any]] {
-        // Anthropic tools format is already compatible
-        return []  // tools
+        tools.map { tool in
+            var dict: [String: Any] = [
+                "name": tool.name,
+                "description": tool.description,
+            ]
+
+            if let inputSchema = tool.inputSchema {
+                dict["input_schema"] = inputSchema.stringified()
+            }
+
+            return dict
+        }
+    }
+    
+    func convertSystemMessages(_ messages: [ChatPayload]) -> [[String : Any]] {
+        // toolsToDictionaries()
+        
     }
 
     // MARK: - Message Building
@@ -153,7 +172,7 @@ final class AnthropicProvider: AIProviderProtocol {
                 resultString = ""
             }
         }
-        return [ChatItem(role: .user, payload: .toolResult(id: toolUseId, result: resultString))]
+        return [ChatItem(role: .user, payload: [.toolResult(id: toolUseId, result: resultString)])]
     }
 
     func buildAssistantToolUseMessage(

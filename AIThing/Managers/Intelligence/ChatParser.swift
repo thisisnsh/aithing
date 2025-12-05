@@ -75,10 +75,3 @@ func parseHistory(_ history: [[String: Any]]) -> [ChatItem] {
     }
     return items
 }
-
-func base64ToNSImage(_ base64: String) -> NSImage? {
-    guard let data = Data(base64Encoded: base64, options: [.ignoreUnknownCharacters]),
-        let img = NSImage(data: data)
-    else { return nil }
-    return img
-}

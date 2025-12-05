@@ -109,6 +109,8 @@ protocol AIProviderProtocol {
     /// - Returns: Tools converted to provider's format
     func convertTools(_ tools: [Tool]) -> [[String: Any]]
 
+    func convertSystemMessages(_ messages: [ChatPayload]) -> [[String: Any]]
+
     /// Builds a tool result message in the provider's format.
     ///
     /// - Parameters:

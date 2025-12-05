@@ -13,25 +13,21 @@ import os
 /// Global logger instance for the application.
 let logger = Logger(subsystem: "com.thisisnsh.mac.AIThing", category: "AIThing")
 
-// MARK: - Tool Conversion
+// MARK: - Image Parsing
 
-/// Converts MCP Tool objects to dictionary representations for JSON serialization.
-///
-/// - Parameter tools: Array of MCP Tool objects
-/// - Returns: Array of dictionaries containing tool name, description, and input schema
-func toolsToDictionaries(_ tools: [Tool]) -> [[String: Any]] {
-    tools.map { tool in
-        var dict: [String: Any] = [
-            "name": tool.name,
-            "description": tool.description,
-        ]
-
-        if let inputSchema = tool.inputSchema {
-            dict["input_schema"] = inputSchema.stringified()
-        }
-
-        return dict
+func nsImageToBase64(_ image: NSImage) -> String? {
+    guard let tiffData = image.tiffRepresentation,
+        let bitmapImage = NSBitmapImageRep(data: tiffData),
+        let pngData = bitmapImage.representation(using: .png, properties: [:])
+    else {
+        return nil
     }
+    return pngData.base64EncodedString()
+}
+
+func base64ToNSImage(_ base64String: String) -> NSImage? {
+    guard let data = Data(base64Encoded: base64String) else { return nil }
+    return NSImage(data: data)
 }
 
 // MARK: - JSON Parsing
@@ -47,7 +43,7 @@ func parseJSONStringToValueObject(_ json: String) throws -> Value {
     if json.isEmpty {
         return [:]
     }
-    
+
     let data = Data(json.utf8)
     let jsonObject = try JSONSerialization.jsonObject(with: data, options: [])
     return Value(fromDecoded: jsonObject)
@@ -65,13 +61,13 @@ func parseJSONStringToDictObject(_ json: String) -> [String: Any] {
         if json.isEmpty {
             return [:]
         }
-        
+
         let data = Data(json.utf8)
         let jsonObject = try JSONSerialization.jsonObject(with: data, options: [])
 
         let value = Value(fromDecoded: jsonObject)
 
-        guard case let .object(dict) = value else {
+        guard case .object(let dict) = value else {
             logger.error("JSON root is not an object.")
             return [:]
         }

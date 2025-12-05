@@ -203,7 +203,7 @@ class ConnectionManager: ObservableObject {
     ///   - clientName: Client identifier
     ///   - filter: Optional list of tool names to include (empty = all)
     /// - Returns: Array of tool definitions as dictionaries
-    func getTools(clientName: String, filter: [String]) async -> [[String: Any]] {
+    func getTools(clientName: String, filter: [String]) async -> [Tool] {
         let normalizedName = clientName.lowercased()
 
         guard let client = clients[normalizedName] else {
@@ -216,7 +216,7 @@ class ConnectionManager: ObservableObject {
             let filteredTools = tools.filter { filter.isEmpty || filter.contains($0.name) }
 
             logAnalytics(primary: .mcpTools, clientName: normalizedName, isError: false)
-            return toolsToDictionaries(filteredTools)
+            return filteredTools
         } catch {
             logAnalytics(primary: .mcpTools, clientName: normalizedName, isError: true)
             logger.error("Error getting tools: \(error.localizedDescription)")

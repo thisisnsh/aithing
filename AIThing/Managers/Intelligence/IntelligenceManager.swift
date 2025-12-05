@@ -130,17 +130,13 @@ private func executeModelCall(
     logRuntime(name: "runTimeContextBuild", startTime: startTime)
 
     // Build request using provider
-    let systemMessages = addCacheBlock(input: buildSystemMessages())
-    let processedMessages = addCacheBlock(input: modelInput, isMessage: true)
-    let processedTools = addCacheBlock(input: modelTools)
-
     guard
         let request = provider.buildRequest(
             apiKey: apiKey,
             model: model,
-            messages: processedMessages,
-            tools: processedTools,
-            systemMessages: systemMessages,
+            messages: modelInput,
+            tools: modelTools,
+            systemMessages: buildSystemMessages(),
             maxTokens: getOutputToken(),
             stream: true
         )
@@ -148,7 +144,7 @@ private func executeModelCall(
         return await handleInvalidResponse(context: context)
     }
 
-    logRequestDetails(apiKey: apiKey, model: model, provider: modelProvider, messagesCount: processedMessages.count, toolsCount: processedTools.count)
+    logRequestDetails(apiKey: apiKey, model: model, provider: modelProvider, messagesCount: modelInput.count, toolsCount: modelTools.count)
 
     do {
         let (stream, response) = try await URLSession.shared.bytes(for: request)
@@ -174,7 +170,6 @@ private func executeModelCall(
                 appUser: appUser,
                 query: context.query,
                 fileCount: fileCount,
-                modelInput: &modelInput,
                 firestoreManager: context.services.firestoreManager
             )
         }
@@ -292,12 +287,7 @@ private func processInputContext(
     }
 
     // Add actual query
-    modelInput.append([
-        "role": "user",
-        "content": [
-            ["type": "text", "text": buildQuery(query: context.query)]
-        ],
-    ])
+    modelInput.append(ChatItem(role: .user, payload: .text(content: buildQuery(query: context.query))))
 
     return fileCount
 }
@@ -314,7 +304,7 @@ private func appendImageToInput(
         secondary: "use image",
         sev: .info
     )
-    modelInput.append(ChatItem(role: .user, payload: .imageBase64(name: name, media: "image/jpeg", images: [base64])))
+    modelInput.append(ChatItem(role: .user, payload: .imageBase64(name: name, media: "image/jpeg", image: base64)))
 }
 
 /// Appends a PDF file to the model input.
@@ -329,14 +319,18 @@ private func appendPDFToInput(
         secondary: "use pdf",
         sev: .info
     )
-    modelInput.append(ChatItem(role: .user, payload: .imageBase64(name: name, media: "image/jpeg", images: base64s)))
+    var payloads: [ChatPayload] = []
+    for base64 in base64s {
+        payloads.append(.imageBase64(name: name, media: "image/jpeg", image: base64))
+    }
+    modelInput.append(ChatItem(role: .user, payloads: payloads))
 }
 
 /// Appends a text file to the model input.
 private func appendTextToInput(
     name: String,
     text: String,
-    modelInput: inout [[String: Any]]
+    modelInput: inout [ChatItem]
 ) {
     AnalyticsManager.shared.customEvent(
         view: .IntelligenceManager,
@@ -344,16 +338,13 @@ private func appendTextToInput(
         secondary: "use text",
         sev: .info
     )
-    modelInput.append([
-        "role": "user",
-        "content": [["type": "text", "text": "```\n\(text)\n```"]],
-    ])
+    modelInput.append(ChatItem(role: .user, payload: .textWithName(name: name, content: "```\n\(text)\n```")))
 }
 
 /// Appends selected text to the model input.
 private func appendSelectedTextToInput(
     text: String,
-    modelInput: inout [[String: Any]]
+    modelInput: inout [ChatItem]
 ) {
     AnalyticsManager.shared.customEvent(
         view: .IntelligenceManager,
@@ -361,16 +352,13 @@ private func appendSelectedTextToInput(
         secondary: "use selection",
         sev: .info
     )
-    modelInput.append([
-        "role": "user",
-        "content": [["type": "text", "text": "```\n\(text)\n```"]],
-    ])
+    modelInput.append(ChatItem(role: .user, payload: .textWithName(name: "Selected Text", content: "```\n\(text)\n```")))
 }
 
 /// Appends application context screenshot to the model input.
 private func appendAppContextToInput(
     appContext: AppContextModel,
-    modelInput: inout [[String: Any]]
+    modelInput: inout [ChatItem]
 ) {
     AnalyticsManager.shared.customEvent(
         view: .IntelligenceManager,
@@ -379,15 +367,7 @@ private func appendAppContextToInput(
         sev: .info
     )
     let contextText = "\(appContext.appName)\(appContext.windowName.count > 0 ? ": " : "")\(appContext.windowName)"
-    modelInput.append([
-        "role": "user",
-        "content": [
-            [
-                "type": "image",
-                "source": ["type": "base64", "media_type": "image/jpeg", "data": appContext.base64],
-            ]
-        ],
-    ])
+    modelInput.append(ChatItem(role: .user, payload: .imageBase64(name: contextText, media: "image/jpeg", image: appContext.base64)))
 }
 
 // MARK: - Stream Processing
@@ -414,9 +394,9 @@ private struct StreamProcessingResult {
 private func processResponseStream(
     stream: URLSession.AsyncBytes,
     context: ModelCallContext,
-    modelInput: inout [[String: Any]],
+    modelInput: inout [ChatItem],
     modelOutput: inout String,
-    modelTools: [[String: Any]],
+    modelTools: [Tool],
     model: String,
     apiKey: String,
     provider: AIProviderProtocol,
@@ -445,11 +425,6 @@ private func processResponseStream(
 
             case .toolInput(let input):
                 await accumulator.appendToolInput(input)
-
-            case .contentBlockStop:
-                //                modelOutput = await accumulator.snapshotResponse()
-                //                context.modelHandlers.setModelOutput(modelOutput)
-                print("contentBlockStop called")
 
             case .done(let stopReason):
                 modelOutput = await accumulator.snapshotResponse()
@@ -490,9 +465,9 @@ private func processResponseStream(
 private func handleStreamCompletion(
     stopReason: StopReason,
     context: ModelCallContext,
-    modelInput: inout [[String: Any]],
+    modelInput: inout [ChatItem],
     modelOutput: String,
-    modelTools: [[String: Any]],
+    modelTools: [Tool],
     accumulator: StreamAccumulator,
     finalToolUseId: String,
     finalToolUseName: String,
@@ -504,7 +479,7 @@ private func handleStreamCompletion(
     // Add assistant text message if there's output
     if !modelOutput.isEmpty {
         let assistantMessage = provider.buildAssistantTextMessage(text: modelOutput)
-        modelInput.append(assistantMessage)
+        modelInput.append(contentsOf: assistantMessage)
         var tabTitle = context.tabHandlers.getTabTitle()
         Task {
             if !context.query.isEmpty && (tabTitle.isEmpty || tabTitle == "New Chat") {
@@ -544,7 +519,7 @@ private func handleStreamCompletion(
         if !modelOutput.isEmpty {
             modelInput.removeLast()
         }
-        modelInput.append(assistantToolMessage)
+        modelInput.append(contentsOf: assistantToolMessage)
 
         context.uiHandlers.setToolCall("Calling tool: \(finalToolUseName)...")
 
@@ -579,7 +554,7 @@ private func handleStreamCompletion(
         logger.debug("Tool output: \(result)")
 
         let toolResultMessage = provider.buildToolResultMessage(toolUseId: finalToolUseId, result: result)
-        modelInput.append(toolResultMessage)
+        modelInput.append(contentsOf: toolResultMessage)
 
         logRuntime(name: "runTimeTools", startTime: toolStartTime)
 
@@ -601,9 +576,9 @@ private func handleStreamCompletion(
 /// Creates a context for recursive model calls after tool execution.
 private func createRecursiveContext(
     originalContext: ModelCallContext,
-    modelInput: [[String: Any]],
+    modelInput: [ChatItem],
     modelOutput: String,
-    modelTools: [[String: Any]]
+    modelTools: [Tool]
 ) -> ModelCallContext {
     let capturedInput = modelInput
     let capturedOutput = modelOutput
@@ -734,7 +709,7 @@ private func handleHTTPError(
 }
 
 /// Handles stream processing errors.
-private func handleStreamError(context: ModelCallContext, error: Error) -> Bool {
+private func handleStreamError(context: ModelCallContext, error: Swift.Error) -> Bool {
     context.uiHandlers.setIsThinking(false)
     context.modelHandlers.setModelOutput(
         "Error streaming response: \(error.localizedDescription)\n\nReport issue at help@aithing.dev"
@@ -755,7 +730,6 @@ private func trackUsage(
     appUser: AppUser?,
     query: String,
     fileCount: Int,
-    modelInput: inout [[String: Any]],
     firestoreManager: FirestoreManager
 ) async {
     if let appUser {
