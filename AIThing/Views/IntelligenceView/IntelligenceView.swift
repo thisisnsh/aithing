@@ -79,6 +79,7 @@ struct IntelligenceView: View {
     @State var hoverRed: Bool = false
     @State var hoverYellow: Bool = false
     @State var hoverGreen: Bool = false
+    @State var displayName = "Human"
 
     // MARK: - Focus State
     @FocusState var isFocused: Bool
@@ -234,6 +235,9 @@ struct IntelligenceView: View {
                             switch loginManager.authState {
                             case .signedIn(let user):
                                 loggedIn = true
+                                if let name = user.displayName, !name.isEmpty {
+                                    displayName = name
+                                }
                                 AnalyticsManager.shared.setUserId(user.uid)
                             default:
                                 loggedIn = false
@@ -267,8 +271,7 @@ struct IntelligenceView: View {
                             tabTitle = history.title ?? "New Chat"
                         } else {
                             tabTitle = "New Chat"
-                            let greeting = await firestoreManager.getGreeting() ?? ""
-                            if !greeting.isEmpty { modelOutput = greeting }
+                            await animateOutput("# \(timeBasedGreeting()), \(displayName)!\n\(timeBasedSubheading())", delay: 50)
                         }
 
                         let notification = await firestoreManager.getNotification() ?? ""

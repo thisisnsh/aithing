@@ -9,9 +9,9 @@ import AppKit
 import SwiftUI
 
 extension IntelligenceView {
-    
+
     // MARK: - Query Handling
-    
+
     /// Handles the submission and execution of a user query.
     ///
     /// This method:
@@ -24,7 +24,7 @@ extension IntelligenceView {
         showRefreshButton = false
         let trimmed = query.trimmingCharacters(in: .whitespacesAndNewlines)
         guard !trimmed.isEmpty else { return }
-        
+
         // Capture app context if enabled
         var appContextBase64: AppContextModel? = nil
         if appContextEnabled {
@@ -35,30 +35,30 @@ extension IntelligenceView {
                 return
             }
         }
-        
+
         // Prepare UI state
         prepareUIForQuery(trimmed)
-        
+
         AnalyticsManager.shared.customEvent(
             view: .IntelligenceView,
             primary: .query,
             secondary: "start",
             sev: .info
         )
-        
+
         // Build and execute the model call
         let context = buildModelCallContext(
             query: trimmed,
             appContextBase64: appContextBase64
         )
         let result = await callModel(context: context)
-        
+
         // Handle post-query state
         await handleQueryCompletion(result: result)
     }
-    
+
     // MARK: - Context Building
-    
+
     /// Builds the complete model call context from current state.
     ///
     /// - Parameters:
@@ -81,7 +81,7 @@ extension IntelligenceView {
             services: buildServices()
         )
     }
-    
+
     /// Builds tab handlers for the model call context.
     private func buildTabHandlers() -> TabHandlers {
         TabHandlers(
@@ -93,7 +93,7 @@ extension IntelligenceView {
             }
         )
     }
-    
+
     /// Builds selection handlers for the model call context.
     private func buildSelectionHandlers() -> SelectionHandlers {
         SelectionHandlers(
@@ -103,7 +103,7 @@ extension IntelligenceView {
             setSelectionEnabled: { [self] enabled in selectionEnabled = enabled }
         )
     }
-    
+
     /// Builds model state handlers for the model call context.
     private func buildModelHandlers() -> ModelHandlers {
         ModelHandlers(
@@ -116,7 +116,7 @@ extension IntelligenceView {
             getAllModels: { [self] in allModels }
         )
     }
-    
+
     /// Builds history handlers for the model call context.
     private func buildHistoryHandlers() -> HistoryHandlers {
         HistoryHandlers(
@@ -126,7 +126,7 @@ extension IntelligenceView {
             updateHistoryList: { [self] in await updateHistoryList() }
         )
     }
-    
+
     /// Builds UI handlers for the model call context.
     private func buildUIHandlers() -> UIHandlers {
         UIHandlers(
@@ -136,7 +136,7 @@ extension IntelligenceView {
             animateOutput: { [self] content in await animateOutput(content) }
         )
     }
-    
+
     /// Builds tool handlers for the model call context.
     ///
     /// - Parameter appContextBase64: Optional app context screenshot
@@ -148,7 +148,7 @@ extension IntelligenceView {
             getAppContextBase64: { appContextBase64 }
         )
     }
-    
+
     /// Builds service dependencies for the model call context.
     private func buildServices() -> ModelCallServices {
         ModelCallServices(
@@ -159,9 +159,9 @@ extension IntelligenceView {
             internalToolProvider: internalToolProvider
         )
     }
-    
+
     // MARK: - UI State Management
-    
+
     /// Prepares the UI state before executing a query.
     ///
     /// - Parameter trimmedQuery: The trimmed query string
@@ -174,7 +174,7 @@ extension IntelligenceView {
         inputHeight = baseHeight
         showSavedQueries = false
     }
-    
+
     /// Handles cleanup after query completion.
     ///
     /// - Parameter result: Whether the query was successful
@@ -183,24 +183,24 @@ extension IntelligenceView {
             logger.debug("Stop the query after tab removal")
             return
         }
-        
+
         // Update unseen status based on tab visibility
         if !isTabShowing() {
             await setUnseen(tabId, true)
         } else {
             await setUnseen(tabId, false)
         }
-        
+
         // Reset app context state
         resetAppContext()
-        
+
         AnalyticsManager.shared.customEvent(
             view: .IntelligenceView,
             primary: .query,
             secondary: "end",
             sev: .info
         )
-        
+
         // Reset selection and UI state
         viewModel.selectedText = ""
         selectedText = ""
@@ -208,12 +208,12 @@ extension IntelligenceView {
         displayQuery = ""
         toolCall = ""
         isThinking = false
-        
+
         if result {
             modelOutput = ""
         }
     }
-    
+
     /// Resets the app context state to defaults.
     private func resetAppContext() {
         appContext.refresh()
@@ -222,9 +222,9 @@ extension IntelligenceView {
         selectedAppName = ""
         selectedWindowName = ""
     }
-    
+
     // MARK: - App Context Capture
-    
+
     /// Captures the current app context as a screenshot.
     ///
     /// - Parameters:
@@ -235,12 +235,12 @@ extension IntelligenceView {
         if !appContextEnabled || appName.isEmpty {
             return nil
         }
-        
+
         let (image, error) = captureWindow(
             appName: appName,
             windowTitle: windowName
         )
-        
+
         if let image = image {
             let thumb = image.resized(maxDimension: 1024)
             guard let data = thumb.jpegData() else {
@@ -253,20 +253,20 @@ extension IntelligenceView {
                 base64: data.base64EncodedString()
             )
         }
-        
+
         if let error = error {
             toastText = ""
             toastText = error
         }
         return nil
     }
-    
+
     // MARK: - Output Animation
-    
+
     /// Animates the output text word by word.
     ///
     /// - Parameter content: The content to animate
-    func animateOutput(_ content: String) async {
+    func animateOutput(_ content: String, delay: Int = 10) async {
         var partial = ""
         for text in content.split(separator: " ") {
             partial += String(text) + " "
@@ -274,14 +274,14 @@ extension IntelligenceView {
                 modelOutput = partial + " " + shimmerPlaceholder()
             }
             do {
-                try await Task.sleep(for: .milliseconds(10))
+                try await Task.sleep(for: .milliseconds(delay))
             } catch {}
         }
         modelOutput = partial
     }
-    
+
     // MARK: - Date Formatting
-    
+
     /// Formats an epoch timestamp to a localized date string.
     ///
     /// - Parameters:
@@ -299,4 +299,3 @@ extension IntelligenceView {
         }
     }
 }
-

@@ -39,7 +39,7 @@ final class FirestoreManager: ObservableObject {
     }
 
     private enum Document {
-        static let configs = "Configs-2.0.9"
+        static let configs = "Configs-2.1"
         static let managedGitHubAgent = "managed_aithing_github"
     }
 
@@ -74,11 +74,6 @@ extension FirestoreManager {
     /// Fetches the notification message from system config
     func getNotification() async -> String? {
         await fetchConfigValue(key: ConfigKey.notification, analyticsKey: "get_notification")
-    }
-
-    /// Fetches the greeting message from system config
-    func getGreeting() async -> String? {
-        await fetchConfigValue(key: ConfigKey.greeting, analyticsKey: "get_greeting")
     }
 
     // MARK: - Private Config Helpers

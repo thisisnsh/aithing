@@ -117,3 +117,71 @@ class Debouncer {
         }
     }
 }
+
+// MARK: - Time based greetings
+
+func timeBasedGreeting() -> String {
+    let hour = Calendar.current.component(.hour, from: Date())
+
+    switch hour {
+    case 5..<12:
+        return "Good morning"
+    case 12..<17:
+        return "Good afternoon"
+    case 17..<22:
+        return "Good evening"
+    default:
+        return "Hello"
+    }
+}
+
+func timeBasedSubheading() -> String {
+    let hour = Calendar.current.component(.hour, from: Date())
+
+    let morning = [
+        "What big thing can I take off your plate this morning?",
+        "What can I kickstart for you today?",
+        "What challenge can I tackle to power up your day?",
+        "What early win can I secure for you this morning?",
+        "What can I automate so your day starts smoother?",
+        "What goal can I help you move closer to right now?",
+    ]
+
+    let afternoon = [
+        "What can I take over so your afternoon runs smoother?",
+        "What challenge can I eliminate for you today?",
+        "What can I automate, solve, or build right now?",
+        "What task can I handle so you can stay in flow?",
+        "What’s the next thing you want me to make easier?",
+        "What progress can I push forward for you this afternoon?",
+    ]
+
+    let evening = [
+        "What big thing can I take off your plate tonight?",
+        "What can I wrap up so your evening stays peaceful?",
+        "What challenge can I tackle before the day ends?",
+        "What can I automate or solve for you this evening?",
+        "What task can I finish so you don’t have to?",
+        "What mission am I taking on for you tonight?",
+    ]
+
+    let night = [
+        "What can I handle while you wind down for the night?",
+        "What final task can I take off your plate before you rest?",
+        "What can I automate to make tomorrow easier?",
+        "What late-night challenge can I solve for you?",
+        "What can I take care of while you recharge?",
+        "What should I work on so you can relax tonight?",
+    ]
+
+    switch hour {
+    case 5..<12:
+        return morning.randomElement() ?? ""
+    case 12..<17:
+        return afternoon.randomElement() ?? ""
+    case 17..<22:
+        return evening.randomElement() ?? ""
+    default:
+        return night.randomElement() ?? ""
+    }
+}
