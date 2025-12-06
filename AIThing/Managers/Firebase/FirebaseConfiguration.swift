@@ -42,10 +42,7 @@ final class FirebaseConfiguration {
 
     private init() {
         self.isConfigured = Self.validateConfiguration()
-        logConfigurationStatus()
-        if !isConfigured {
-            logger.info("Firebase operations will be skipped - Firebase not configured")
-        }
+        logConfigurationStatus()        
     }
 
     // MARK: - Public Methods

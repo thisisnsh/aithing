@@ -36,88 +36,90 @@ struct AgentsTab: View {
     // MARK: - Body
     var body: some View {
         VStack(alignment: .leading, spacing: 16) {
-            GroupBox(
-                label: Text("Managed Agents")
-                    .font(.system(size: 10, weight: .medium))
-                    .padding(.bottom, 4)
-            ) {
-                VStack(alignment: .leading) {
-                    Text(
-                        """
-                        Learn what you can do with [Managed Agents](https://aithing.dev/features/multiple-agents#managed-agents).
-                        """
-                    )
-                    .font(.system(size: 10, weight: .medium))
-                    .padding(.vertical, 4)
-                    .foregroundStyle(.secondary)
-
-                    GroupBox {
-                        GoogleManagedAgentRow(
-                            subheading: $googleAgentAccount,
-                            title: "Google Workspace"
+            if FirebaseConfiguration.shared.isConfigured {
+                GroupBox(
+                    label: Text("Managed Agents")
+                        .font(.system(size: 10, weight: .medium))
+                        .padding(.bottom, 4)
+                ) {
+                    VStack(alignment: .leading) {
+                        Text(
+                            """
+                            Learn what you can do with [Managed Agents](https://aithing.dev/features/multiple-agents#managed-agents).
+                            """
                         )
-                        .environmentObject(googleAuthManager)
-                        .environmentObject(mcpAuthManagers)
-                        Divider()
-                        GithubManagedAgentRow(
-                            subheading: $githubAgentAccount,
-                            title: "GitHub"
-                        )
-                        .environmentObject(githubAuthManager)
-                        .environmentObject(mcpAuthManagers)
-                    }
+                        .font(.system(size: 10, weight: .medium))
+                        .padding(.vertical, 4)
+                        .foregroundStyle(.secondary)
 
-                    GroupBox {
-                        VStack(alignment: .leading) {
-                            ForEach(
-                                mcpAuthManagers.managers.keys.sorted { lhs, rhs in
-                                    let lhsEnabled =
-                                        mcpAuthManagers.managers[lhs]?.enabled ?? false
-                                    let rhsEnabled =
-                                        mcpAuthManagers.managers[rhs]?.enabled ?? false
-                                    if lhsEnabled != rhsEnabled {
-                                        // enabled managers come first
-                                        return lhsEnabled && !rhsEnabled
-                                    } else {
-                                        // if both are enabled or both disabled, sort by key
-                                        return lhs < rhs
-                                    }
-                                },
-                                id: \.self
-                            ) { manager in
-                                if let agent = mcpAuthManagers.managers[manager],
-                                    !(agent.server.custom ?? false)
-                                {
-                                    ManagedAgentRow(
-                                        title: agent.server.name
-                                    )
-                                    .environmentObject(agent)
-                                    Divider()
-                                }
-                            }
-
-                            Text(
-                                "Request more managed agents via help@aithing.dev."
+                        GroupBox {
+                            GoogleManagedAgentRow(
+                                subheading: $googleAgentAccount,
+                                title: "Google Workspace"
                             )
-                            .font(.system(size: 10, weight: .medium))
-                            .padding(4)
-                            .foregroundStyle(.secondary)
+                            .environmentObject(googleAuthManager)
+                            .environmentObject(mcpAuthManagers)
+                            Divider()
+                            GithubManagedAgentRow(
+                                subheading: $githubAgentAccount,
+                                title: "GitHub"
+                            )
+                            .environmentObject(githubAuthManager)
+                            .environmentObject(mcpAuthManagers)
+                        }
+
+                        GroupBox {
+                            VStack(alignment: .leading) {
+                                ForEach(
+                                    mcpAuthManagers.managers.keys.sorted { lhs, rhs in
+                                        let lhsEnabled =
+                                            mcpAuthManagers.managers[lhs]?.enabled ?? false
+                                        let rhsEnabled =
+                                            mcpAuthManagers.managers[rhs]?.enabled ?? false
+                                        if lhsEnabled != rhsEnabled {
+                                            // enabled managers come first
+                                            return lhsEnabled && !rhsEnabled
+                                        } else {
+                                            // if both are enabled or both disabled, sort by key
+                                            return lhs < rhs
+                                        }
+                                    },
+                                    id: \.self
+                                ) { manager in
+                                    if let agent = mcpAuthManagers.managers[manager],
+                                        !(agent.server.custom ?? false)
+                                    {
+                                        ManagedAgentRow(
+                                            title: agent.server.name
+                                        )
+                                        .environmentObject(agent)
+                                        Divider()
+                                    }
+                                }
+
+                                Text(
+                                    "Request more managed agents via help@aithing.dev."
+                                )
+                                .font(.system(size: 10, weight: .medium))
+                                .padding(4)
+                                .foregroundStyle(.secondary)
+                            }
                         }
                     }
                 }
                 .padding(4)
-            }
 
-            .onAppear {
-                Task {
-                    if googleAuthManager.enabled.count > 0 {
-                        if let user = googleAuthManager.user {
-                            googleAgentAccount = user.profile?.name ?? ""
+                .onAppear {
+                    Task {
+                        if googleAuthManager.enabled.count > 0 {
+                            if let user = googleAuthManager.user {
+                                googleAgentAccount = user.profile?.name ?? ""
+                            }
                         }
-                    }
-                    if githubAuthManager.enabled.count > 0 {
-                        if let user = githubAuthManager.user {
-                            githubAgentAccount = user.name ?? ""
+                        if githubAuthManager.enabled.count > 0 {
+                            if let user = githubAuthManager.user {
+                                githubAgentAccount = user.name ?? ""
+                            }
                         }
                     }
                 }
@@ -202,7 +204,7 @@ struct AgentsTab: View {
                                         .frame(maxWidth: .infinity)
                                         .frame(height: 32)
                                         .background(Color.black.opacity(0.2))
-                                        .clipShape(RoundedRectangle(cornerRadius: 16))
+                                        .clipShape(RoundedRectangle(cornerRadius: 8))
                                 }
                                 .buttonStyle(.plain)
                                 .padding(4)
@@ -277,7 +279,7 @@ private struct AddAgentForm: View {
                 .frame(maxWidth: .infinity)
             }
             .background(Color.black.opacity(0.2))
-            .clipShape(RoundedRectangle(cornerRadius: 16))
+            .clipShape(RoundedRectangle(cornerRadius: 8))
             .padding(.bottom, 8)
 
             HStack {
@@ -288,7 +290,7 @@ private struct AddAgentForm: View {
                     .padding(.horizontal, 8)
                     .frame(height: 32)
                     .background(Color.black.opacity(0.2))
-                    .clipShape(RoundedRectangle(cornerRadius: 16))
+                    .clipShape(RoundedRectangle(cornerRadius: 8))
                     .font(.system(size: 12, weight: .medium))
                     .textFieldStyle(.plain)
             }
@@ -306,7 +308,7 @@ private struct AddAgentForm: View {
                 .padding(.horizontal, 8)
                 .frame(height: 32)
                 .background(Color.black.opacity(0.2))
-                .clipShape(RoundedRectangle(cornerRadius: 16))
+                .clipShape(RoundedRectangle(cornerRadius: 8))
                 .font(.system(size: 12, weight: .medium))
                 .textFieldStyle(.plain)
             }
@@ -324,7 +326,7 @@ private struct AddAgentForm: View {
                     .padding(.horizontal, 8)
                     .frame(height: 32)
                     .background(Color.black.opacity(0.2))
-                    .clipShape(RoundedRectangle(cornerRadius: 16))
+                    .clipShape(RoundedRectangle(cornerRadius: 8))
                     .font(.system(size: 12, weight: .medium))
                     .textFieldStyle(.plain)
                 }
@@ -341,7 +343,7 @@ private struct AddAgentForm: View {
                     .padding(.horizontal, 8)
                     .frame(height: 32)
                     .background(Color.black.opacity(0.2))
-                    .clipShape(RoundedRectangle(cornerRadius: 16))
+                    .clipShape(RoundedRectangle(cornerRadius: 8))
                     .font(.system(size: 12, weight: .medium))
                     .textFieldStyle(.plain)
                 }
