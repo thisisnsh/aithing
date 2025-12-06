@@ -17,27 +17,27 @@ private enum StorageKey {
     static let modelName = "ModelName"
     static let outputToken = "OutputToken"
     static let apiKeys = "APIKeys"
-    
+
     // Caching & Screenshots
     static let cacheMessages = "CacheMessages"
     static let useCapturedScreenshots = "UseCapturedScreenshots"
     static let preferencesShowInScreenshot = "PreferencesShowInScreenshot"
     static let preferencesCaptureFullScreen = "PreferencesCaptureFullScreen"
-    
+
     // UI State
     static let selectedTab = "SelectedTab"
-    
+
     // Agents & Queries
     static let agentEntries = "AgentEntries"
     static let savedQueries = "SavedQueries"
-    
+
     // GitHub
     static let githubTools = "GithubTools"
     static let githubUser = "GithubUser"
-    
+
     // Google
     static let googleTools = "GoogleTools"
-    
+
     // MCP (Dynamic keys)
     static func mcpEnabled(clientName: String) -> String { "McpEnabled-\(clientName)" }
     static func mcpToken(clientName: String) -> String { "McpToken-\(clientName)" }
@@ -80,30 +80,30 @@ func setOutputToken(value: Int) {
 struct APIKeys: Codable, Equatable {
     var anthropic: String
     var openai: String
-    var gemini: String
-    
-    init(anthropic: String = "", openai: String = "", gemini: String = "") {
+    var google: String
+
+    init(anthropic: String = "", openai: String = "", google: String = "") {
         self.anthropic = anthropic
         self.openai = openai
-        self.gemini = gemini
+        self.google = google
     }
-    
+
     /// Gets the API key for a specific provider.
     func key(for provider: AIProvider) -> String {
         switch provider {
         case .anthropic: return anthropic
         case .openai: return openai
-        case .gemini: return gemini
+        case .google: return google
         }
     }
-    
+
     /// Returns a new APIKeys with the key updated for the given provider.
     func with(key: String, for provider: AIProvider) -> APIKeys {
         var copy = self
         switch provider {
         case .anthropic: copy.anthropic = key
         case .openai: copy.openai = key
-        case .gemini: copy.gemini = key
+        case .google: copy.google = key
         }
         return copy
     }
@@ -114,7 +114,7 @@ struct APIKeys: Codable, Equatable {
 /// - Returns: The APIKeys object, with empty strings for unset keys
 func getAPIKeys() -> APIKeys {
     guard let data = UserDefaults.standard.data(forKey: StorageKey.apiKeys),
-          let decoded = try? JSONDecoder().decode(APIKeys.self, from: data)
+        let decoded = try? JSONDecoder().decode(APIKeys.self, from: data)
     else { return APIKeys() }
     return decoded
 }
@@ -230,7 +230,7 @@ func setSelectedTab(value: SettingsTab) {
 /// - Returns: Array of agent entries, empty array if none stored
 func getAgentEntries() -> [AgentEntry] {
     guard let data = UserDefaults.standard.data(forKey: StorageKey.agentEntries),
-          let decoded = try? JSONDecoder().decode([AgentEntry].self, from: data)
+        let decoded = try? JSONDecoder().decode([AgentEntry].self, from: data)
     else { return [] }
     return decoded
 }
@@ -249,7 +249,7 @@ func setAgentEntries(value: [AgentEntry]) {
 /// - Returns: Array of saved queries, empty array if none stored
 func getSavedQueries() -> [SavedQuery] {
     guard let data = UserDefaults.standard.data(forKey: StorageKey.savedQueries),
-          let decoded = try? JSONDecoder().decode([SavedQuery].self, from: data)
+        let decoded = try? JSONDecoder().decode([SavedQuery].self, from: data)
     else { return [] }
     return decoded
 }
@@ -270,7 +270,7 @@ func setSavedQueries(value: [SavedQuery]) {
 /// - Returns: Set of enabled GitHub tools, empty set if none stored
 func getGithubTools() -> Set<GithubTool> {
     guard let data = UserDefaults.standard.data(forKey: StorageKey.githubTools),
-          let decoded = try? JSONDecoder().decode(Set<GithubTool>.self, from: data)
+        let decoded = try? JSONDecoder().decode(Set<GithubTool>.self, from: data)
     else { return [] }
     return decoded
 }
@@ -289,7 +289,7 @@ func setGithubTools(value: Set<GithubTool>) {
 /// - Returns: The GitHub user if authenticated, nil otherwise
 func getGithubUser() -> GithubUser? {
     guard let data = UserDefaults.standard.data(forKey: StorageKey.githubUser),
-          let decoded = try? JSONDecoder().decode(GithubUser.self, from: data)
+        let decoded = try? JSONDecoder().decode(GithubUser.self, from: data)
     else { return nil }
     return decoded
 }
@@ -310,7 +310,7 @@ func setGithubUser(value: GithubUser?) {
 /// - Returns: Set of enabled Google tools, empty set if none stored
 func getGoogleTools() -> Set<GoogleTool> {
     guard let data = UserDefaults.standard.data(forKey: StorageKey.googleTools),
-          let decoded = try? JSONDecoder().decode(Set<GoogleTool>.self, from: data)
+        let decoded = try? JSONDecoder().decode(Set<GoogleTool>.self, from: data)
     else { return [] }
     return decoded
 }
@@ -352,7 +352,7 @@ func setMcpEnabled(value: Bool, clientName: String?) {
 func getMcpToken(clientName: String?) -> McpToken? {
     guard let clientName = clientName else { return nil }
     guard let data = UserDefaults.standard.data(forKey: StorageKey.mcpToken(clientName: clientName)),
-          let decoded = try? JSONDecoder().decode(McpToken.self, from: data)
+        let decoded = try? JSONDecoder().decode(McpToken.self, from: data)
     else { return nil }
     return decoded
 }

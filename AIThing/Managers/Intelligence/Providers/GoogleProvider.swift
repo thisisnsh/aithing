@@ -1,5 +1,5 @@
 //
-//  GeminiProvider.swift
+//  GoogleProvider.swift
 //  AIThing
 //
 //  Google Gemini API provider implementation.
@@ -9,11 +9,11 @@ import Foundation
 import MCP
 
 /// Provider implementation for Google's Gemini API.
-final class GeminiProvider: AIProviderProtocol {
+final class GoogleProvider: AIProviderProtocol {
 
     // MARK: - Properties
 
-    let provider: AIProvider = .gemini  // Assuming .gemini exists in your AIProvider enum
+    let provider: AIProvider = .google  // Assuming .google exists in your AIProvider enum
 
     // MARK: - Request Building
 

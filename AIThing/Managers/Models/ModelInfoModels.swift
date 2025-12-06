@@ -13,14 +13,14 @@ import Foundation
 enum AIProvider: String, Codable, CaseIterable {
     case anthropic
     case openai
-    case gemini    
+    case google    
 
     /// Display name for the provider.
     var displayName: String {
         switch self {
         case .anthropic: return "Anthropic"
         case .openai: return "OpenAI"
-        case .gemini: return "Google"
+        case .google: return "Google"
         }
     }
 }

@@ -36,6 +36,7 @@ final class FirestoreManager: ObservableObject {
         static let system = "System"
         static let profiles = "Profiles"
         static let agents = "Agents"
+        static let models = "Models-2"
     }
 
     private enum Document {
@@ -177,7 +178,7 @@ extension FirestoreManager {
             try db.collection(Collection.profiles)
                 .document(user.uid)
                 .setData(from: profile)
-            
+
             return profile
         } catch {
             logger.error("[FirestoreManager] Error creating profile for ID \(user.uid): \(error.localizedDescription)")
@@ -209,7 +210,15 @@ extension FirestoreManager {
         var allModels: [ModelInfo] = []
 
         // Load from Firestore
-        // Removed this logic in > 2.0.8. All models come from Models.plist now.
+        if isEnabled, let db {
+            do {
+                let snapshot = try await db.collection(Collection.models).getDocuments()
+                let firestoreModels = snapshot.documents.compactMap { try? $0.data(as: ModelInfo.self) }
+                allModels.append(contentsOf: firestoreModels)
+            } catch {
+                logger.error("[FirestoreManager] Error fetching models: \(error.localizedDescription)")
+            }
+        }
 
         // Load from local plist
         let localModels = loadLocalModels()
@@ -219,11 +228,17 @@ extension FirestoreManager {
     }
 
     private func sortModels(_ models: [ModelInfo]) -> [ModelInfo] {
-        models.sorted {
-            if $0.provider == $1.provider {
-                return $0.name.localizedCompare($1.name) == .orderedAscending
+        let providerOrder: [AIProvider: Int] = [
+            .anthropic: 0,
+            .openai: 1,
+            .google: 2,
+        ]
+
+        return models.sorted { a, b in
+            if a.provider == b.provider {
+                return a.name.localizedCompare(b.name) == .orderedAscending
             }
-            return $0.provider.displayName < $1.provider.displayName
+            return providerOrder[a.provider, default: 99] < providerOrder[b.provider, default: 99]
         }
     }
 

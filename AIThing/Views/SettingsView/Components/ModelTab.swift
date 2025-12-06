@@ -20,7 +20,7 @@ struct ModelTab: View {
     // MARK: - Focus State
     @FocusState private var anthropicFieldFocused: Bool
     @FocusState private var openAIFieldFocused: Bool
-    @FocusState private var geminiFieldFocused: Bool
+    @FocusState private var googleFieldFocused: Bool
 
     // MARK: - Computed Properties
 
@@ -147,14 +147,14 @@ struct ModelTab: View {
         switch provider {
         case .anthropic: return _anthropicFieldFocused
         case .openai: return _openAIFieldFocused
-        case .gemini: return _geminiFieldFocused
+        case .google: return _googleFieldFocused
         }
     }
 
     private func clearFocus() {
         anthropicFieldFocused = false
         openAIFieldFocused = false
-        geminiFieldFocused = false
+        googleFieldFocused = false
     }
 
     private func billingLink(for provider: AIProvider) -> AttributedString {
@@ -164,7 +164,7 @@ struct ModelTab: View {
             urlString = "https://console.anthropic.com/settings/billing"
         case .openai:
             urlString = "https://platform.openai.com/account/billing"
-        case .gemini:
+        case .google:
             urlString = "https://aistudio.google.com/app/billing"
         }
         return try! AttributedString(markdown: "Billed by [\(provider.displayName)](\(urlString))")
@@ -174,7 +174,7 @@ struct ModelTab: View {
         switch provider {
         case .anthropic: return "sk-ant-..."
         case .openai: return "sk-..."
-        case .gemini: return "AIza..."
+        case .google: return "AIza..."
         }
     }
 
@@ -185,7 +185,7 @@ struct ModelTab: View {
             urlString = "https://console.anthropic.com/settings/billing"
         case .openai:
             urlString = "https://platform.openai.com/account/billing"
-        case .gemini:
+        case .google:
             urlString = "https://aistudio.google.com/app/billing"
         }
         return try! AttributedString(markdown: "Get your API key at [\(provider.displayName)](\(urlString))")

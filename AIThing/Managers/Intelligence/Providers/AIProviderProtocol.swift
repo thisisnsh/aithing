@@ -46,13 +46,13 @@ enum StopReason {
         switch string {
         // Anthropic: "end_turn"
         // OpenAI:    "stop"
-        // Gemini:    "STOP"
+        // Google:    "STOP"
         case "end_turn", "stop", "STOP":
             self = .endTurn
 
         // Anthropic: "max_tokens"
         // OpenAI:    "length"
-        // Gemini:    "MAX_TOKENS"
+        // Google:    "MAX_TOKENS"
         case "max_tokens", "length", "MAX_TOKENS":
             self = .maxTokens
 
@@ -156,7 +156,7 @@ final class AIProviderRegistry {
         // Register default providers
         register(AnthropicProvider())
         register(OpenAIProvider())
-        register(GeminiProvider())
+        register(GoogleProvider())
     }
 
     /// Registers a provider implementation.

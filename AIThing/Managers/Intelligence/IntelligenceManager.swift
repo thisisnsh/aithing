@@ -382,7 +382,7 @@ private func processResponseStream(
                     modelOutput = await accumulator.snapshotResponse()
                     context.modelHandlers.setModelOutput(modelOutput + " " + shimmerPlaceholder())
                 }
-            
+
             case .endText(let text):
                 await accumulator.appendResponse(text)
                 modelOutput = await accumulator.snapshotResponse()
@@ -408,12 +408,12 @@ private func processResponseStream(
             case .toolUseStart(let id, let name):
                 finalToolUseId = id
                 finalToolUseName = name
-                
+
             case .toolUse(let id, let name, let input):
                 finalToolUseId = id
                 finalToolUseName = name
                 await accumulator.appendToolInput(input)
-                
+
                 modelOutput = await accumulator.snapshotResponse()
                 context.modelHandlers.setModelOutput(modelOutput)
 
@@ -433,7 +433,7 @@ private func processResponseStream(
                 ) {
                     return StreamProcessingResult(recursiveResult: result)
                 }
-                
+
             case .toolInput(let input):
                 await accumulator.appendToolInput(input)
 
@@ -625,7 +625,7 @@ private func handleMissingAPIKey(context: ModelCallContext, provider: AIProvider
         keyUrl = "https://console.anthropic.com/settings/keys"
     case .openai:
         keyUrl = "https://platform.openai.com/api-keys"
-    case .gemini:
+    case .google:
         keyUrl = "https://aistudio.google.com/app/apikey"
     }
 
@@ -669,7 +669,7 @@ private func handleHTTPError(
             limitsUrl = "https://console.anthropic.com/settings/limits"
         case .openai:
             limitsUrl = "https://platform.openai.com/account/limits"
-        case .gemini:
+        case .google:
             limitsUrl = "https://aistudio.google.com/app/billing"
         }
 

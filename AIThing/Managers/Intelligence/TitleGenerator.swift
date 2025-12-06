@@ -85,7 +85,7 @@ private func generateTitleViaAPI(context: TitleGenerationContext) async -> Strin
         )
     else {
         return context.tabTitle
-    }    
+    }
 
     do {
         let (data, response) = try await URLSession.shared.data(for: request)
@@ -141,8 +141,8 @@ private func parseTitleResponse(data: Data, provider: AIProvider) -> String? {
         return parseAnthropicResponse(json: json)
     case .openai:
         return parseOpenAIResponse(json: json)
-    case .gemini:
-        return parseGeminiResponse(json: json)
+    case .google:
+        return parseGoogleResponse(json: json)
     }
 }
 
@@ -172,7 +172,7 @@ private func parseOpenAIResponse(json: [String: Any]) -> String? {
     return content.trimmingCharacters(in: .whitespacesAndNewlines)
 }
 
-private func parseGeminiResponse(json: [String: Any]) -> String? {
+private func parseGoogleResponse(json: [String: Any]) -> String? {
     guard let candidates = json["candidates"] as? [[String: Any]],
         let firstCandidate = candidates.first,
         let content = firstCandidate["content"] as? [String: Any],
