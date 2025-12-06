@@ -373,6 +373,7 @@ struct NotchView: View {
                 }
 
                 await updateHistoryList()
+                showNotification(title: "Automation Complete", body: automation.title)
             }
         }
     }

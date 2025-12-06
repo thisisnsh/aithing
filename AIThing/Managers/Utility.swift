@@ -8,6 +8,7 @@
 import AppKit
 import Foundation
 import MCP
+import UserNotifications
 import os
 
 /// Global logger instance for the application.
@@ -183,5 +184,54 @@ func timeBasedSubheading() -> String {
         return evening.randomElement() ?? ""
     default:
         return night.randomElement() ?? ""
+    }
+}
+
+// MARK: - Automation Notification
+
+func showNotification(title: String, body: String) {
+    let center = UNUserNotificationCenter.current()
+
+    // Check current authorization status
+    center.getNotificationSettings { settings in
+        switch settings.authorizationStatus {
+        case .authorized, .provisional:
+            // Permission already granted, show notification
+            sendNotification(title: title, body: body)
+
+        case .notDetermined:
+            // Permission not asked yet, request it
+            center.requestAuthorization(options: [.alert, .sound, .badge]) { granted, error in
+                if granted {
+                    // Permission granted, show notification
+                    sendNotification(title: title, body: body)
+                }
+                // If denied, do nothing
+            }
+
+        case .denied:
+            // Permission denied, do nothing
+            break
+
+        @unknown default:
+            break
+        }
+    }
+}
+
+private func sendNotification(title: String, body: String) {
+    let content = UNMutableNotificationContent()
+    content.title = title
+    content.body = body
+    content.sound = .default
+
+    // Trigger notification immediately
+    let trigger = UNTimeIntervalNotificationTrigger(timeInterval: 1, repeats: false)
+    let request = UNNotificationRequest(identifier: UUID().uuidString, content: content, trigger: trigger)
+
+    UNUserNotificationCenter.current().add(request) { error in
+        if let error = error {
+            print("Error showing notification: \(error.localizedDescription)")
+        }
     }
 }

@@ -166,7 +166,7 @@ extension IntelligenceView {
     ///
     /// - Parameter trimmedQuery: The trimmed query string
     private func prepareUIForQuery(_ trimmedQuery: String) {
-        displayQuery = trimmedQuery
+        displayQuery = buildQuery(query: trimmedQuery)
         modelOutput = ""
         isThinking = true
         toolCall = ""
