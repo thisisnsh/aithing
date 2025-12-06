@@ -18,6 +18,9 @@ struct ChatView: View {
     @Binding var showRefreshButton: Bool
     @Binding var isThinking: Bool
 
+    // MARK: - Constants
+    private let debouncer = Debouncer()
+
     // MARK: - State
     @State var scrollToBottom: Bool = true
     @State var hasMoreChats: Bool = false
@@ -89,7 +92,9 @@ struct ChatView: View {
                     }
                 }
                 .onChange(of: modelOutput) { _ in
-                    scrollToBottomFunc(proxy)
+                    debouncer.debounce(delay: 0.43) {
+                        scrollToBottomFunc(proxy)
+                    }
                 }
                 .onChange(of: query) { _ in
                     scrollToBottomFunc(proxy)

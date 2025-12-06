@@ -105,3 +105,15 @@ func dictObjectToJSONString(_ dict: [String: Any]) -> String {
         return ""
     }
 }
+
+class Debouncer {
+    private var task: Task<Void, Never>?
+
+    func debounce(delay: Double, action: @escaping () -> Void) {
+        task?.cancel()
+        task = Task {
+            try? await Task.sleep(nanoseconds: UInt64(delay * 1_000_000_000))
+            action()
+        }
+    }
+}
