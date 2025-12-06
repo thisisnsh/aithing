@@ -16,7 +16,7 @@ extension NotchView {
                         title: expandSidebar
                             ? (history.title ?? "Session #\(index + 1)")
                             : "",
-                        isActive: (focusedTabId == history.id) && !showSettings && showChatWindow,
+                        isActive: (focusedTabId == history.id) && !showSettings && isExpanded,
                         action: {
                             open()
                             showSettings = false

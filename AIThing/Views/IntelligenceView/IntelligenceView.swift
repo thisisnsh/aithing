@@ -32,8 +32,6 @@ struct IntelligenceView: View {
     // MARK: - Constants & Closures
     let tabId: String
     let close: () -> Void
-    let minimize: () -> Void
-    let expand: () -> Void
     let isTabShowing: () -> Bool
     let isTabRemoved: () -> Bool
     let updateHistoryList: () async -> Void

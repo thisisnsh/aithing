@@ -21,17 +21,13 @@ extension NotchView {
             secondary: "close",
             sev: .info
         )
-        windowSize = WindowSize.notchIsCollapsed
-        (width, height) = updateWindowSize(windowSize)
-        lastExpandedWindowSize =
-            expandSidebar
-            ? WindowSize.sidebarIsExpanded : WindowSize.sidebarIsCollapsed
+        windowSize = WindowSize.collapsed
+        (width, height) = updateWindowSize(windowSize)        
         screenshotMonitor.updateKnownFiles()
         screenshotMonitor.close()
         stopSelectionPoll()
-        if !initialClose {
-            Task { await refreshManagedAgents(forceRefresh: false) }
-        }
+        showDragIcon = false
+        if !initialClose { Task { await refreshManagedAgents(forceRefresh: false) } }
     }
 
     func open() {
@@ -41,50 +37,13 @@ extension NotchView {
             secondary: "open",
             sev: .info
         )
-        if windowSize == WindowSize.sidebarIsExpanded
-            || windowSize == WindowSize.sidebarIsCollapsed
-        {
-            windowSize = WindowSize.chatIsShown
-        } else {
-            windowSize = lastExpandedWindowSize
-        }
+        windowSize = WindowSize.expanded
         (width, height) = updateWindowSize(windowSize)
-        lastExpandedWindowSize = windowSize
         gainFocus()
         screenshotMonitor.updateKnownFiles()
         screenshotMonitor.open()
+        showDragIcon = true
         Task { await refreshManagedAgents(forceRefresh: false) }
-    }
-
-    func minimize() {
-        AnalyticsManager.shared.customEvent(
-            view: .NotchView,
-            primary: .function,
-            secondary: "minimize",
-            sev: .info
-        )
-        windowSize = WindowSize.notchIsCollapsed
-        (width, height) = updateWindowSize(windowSize)
-        screenshotMonitor.updateKnownFiles()
-        screenshotMonitor.close()
-        stopSelectionPoll()
-        Task { await refreshManagedAgents(forceRefresh: false) }
-    }
-
-    func maximize() {
-        AnalyticsManager.shared.customEvent(
-            view: .NotchView,
-            primary: .function,
-            secondary: "maximize",
-            sev: .info
-        )
-        if windowSize == WindowSize.chatIsShown {
-            windowSize = WindowSize.chatIsExpanded
-        } else {
-            windowSize = WindowSize.chatIsShown
-        }
-        (width, height) = updateWindowSize(windowSize)
-        lastExpandedWindowSize = windowSize
     }
 
     func sidebarToggle() {
@@ -95,28 +54,6 @@ extension NotchView {
             sev: .info
         )
         expandSidebar.toggle()
-
-        if windowSize == WindowSize.sidebarIsExpanded {
-            windowSize = WindowSize.sidebarIsCollapsed
-        } else if windowSize == WindowSize.sidebarIsCollapsed {
-            windowSize = WindowSize.sidebarIsExpanded
-        }
-
-        (width, height) = updateWindowSize(windowSize)
-        lastExpandedWindowSize = windowSize
-    }
-
-    func dragViewY(multiplier: CGFloat) {
-        if windowSize == WindowSize.notchIsCollapsed {
-            return
-        }
-        if windowSize == WindowSize.chatIsExpanded {
-            toastText = ""
-            toastText = "Can not reposition AI Thing when it is expanded."
-            return
-        }
-        let offset: CGFloat = 16
-        modifyWindowTopOffset(offset * multiplier, lastExpandedWindowSize)
     }
 
     func getHistory(tabId: String) async -> History? {

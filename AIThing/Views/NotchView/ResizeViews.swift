@@ -14,8 +14,6 @@ extension NotchView {
                 .fill(.clear)
                 .frame(width: 8)
                 .onHover { inside in
-                    if windowSize == WindowSize.chatIsExpanded { return }
-
                     resizeHoverTask?.cancel()
                     resizeHoverTask = Task { @MainActor in
                         try? await Task.sleep(nanoseconds: 150_000_000)
@@ -54,7 +52,7 @@ extension NotchView {
                             if roundedX != lastAppliedX {
                                 lastAppliedX = roundedX
                                 let size = CGSize(width: roundedX, height: 0)
-                                (width, height) = modifyWindowBaseSize(size, lastExpandedWindowSize)
+                                (width, height) = modifyWindowSize(size, windowSize)
                                 AnalyticsManager.shared
                                     .customEvent(
                                         view: .NotchView,
@@ -68,7 +66,6 @@ extension NotchView {
                         .onEnded { _ in
                             smoothedX = 0
                             lastAppliedX = 0
-                            modifyWindowOriginalSize()
                             NSCursor.arrow.set()
                         }
                 )
@@ -82,8 +79,6 @@ extension NotchView {
                 .fill(.clear)
                 .frame(height: 8)
                 .onHover { inside in
-                    if windowSize == WindowSize.chatIsExpanded { return }
-
                     resizeHoverTask?.cancel()
                     resizeHoverTask = Task { @MainActor in
                         try? await Task.sleep(nanoseconds: 150_000_000)
@@ -122,7 +117,7 @@ extension NotchView {
                             if roundedY != lastAppliedY {
                                 lastAppliedY = roundedY
                                 let size = CGSize(width: 0, height: roundedY)
-                                (width, height) = modifyWindowBaseSize(size, lastExpandedWindowSize)
+                                (width, height) = modifyWindowSize(size, windowSize)
                                 AnalyticsManager.shared
                                     .customEvent(
                                         view: .NotchView,
@@ -134,8 +129,7 @@ extension NotchView {
                         }
                         .onEnded { _ in
                             smoothedY = 0
-                            lastAppliedY = 0
-                            modifyWindowOriginalSize()
+                            lastAppliedY = 0                            
                             NSCursor.arrow.set()
                         }
                 )

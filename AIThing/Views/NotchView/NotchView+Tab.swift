@@ -38,7 +38,7 @@ extension NotchView {
     }
 
     func isTabShowing(tabId: String) -> Bool {
-        return tabId == self.focusedTabId && showChatWindow && !showSettings
+        return tabId == self.focusedTabId && isExpanded && !showSettings
     }
 
     func isTabRemoved(tabId: String) -> Bool {

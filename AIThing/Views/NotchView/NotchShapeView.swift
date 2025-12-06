@@ -13,7 +13,7 @@ extension NotchView {
         NotchShape(
             width: width,
             height: height,
-            cornerRadiusLeft: showChatWindow ? cornerRadiusLeft : 16,
+            cornerRadiusLeft: isExpanded ? cornerRadiusLeft : 16,
             cornerRadiusRight: 16,
             circularNotch: circularNotch
         )
@@ -23,7 +23,7 @@ extension NotchView {
     private var notchGradientOverlay: some View {
         LinearGradient(
             gradient: Gradient(colors: [
-                Color.black.opacity(showChatWindow ? 0.3 : 1.0),
+                Color.black.opacity(isExpanded ? 0.3 : 1.0),
                 Color.black.opacity(1.0),
             ]),
             startPoint: .leading,

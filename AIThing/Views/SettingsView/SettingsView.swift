@@ -17,8 +17,6 @@ struct SettingsView: View {
 
     // MARK: - Constants & Closures
     let close: () -> Void
-    let minimize: () -> Void
-    let expand: () -> Void
     let setPanelVisibility: () -> Void
     let getManagedAgents: () async -> Void
     let updater: SPUUpdater
@@ -127,12 +125,6 @@ struct SettingsView: View {
                 .foregroundStyle(hoverRed ? .red.opacity(0.5) : .red)
                 .onTapGesture { isPresented = false }
                 .onHover { hoverRed = $0 }
-
-            Circle()
-                .frame(width: 12, height: 12)
-                .foregroundStyle(hoverYellow ? .yellow.opacity(0.5) : .yellow)
-                .onTapGesture { minimize() }
-                .onHover { hoverYellow = $0 }
 
             Text(selectedTab.rawValue)
                 .font(.system(size: 12, weight: .medium))

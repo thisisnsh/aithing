@@ -32,8 +32,6 @@ extension NotchView {
             toastText: $toastText,
             tabId: tab.id,
             close: { close() },
-            minimize: { minimize() },
-            expand: { maximize() },
             isTabShowing: { isTabShowing(tabId: tab.id) },
             isTabRemoved: { isTabRemoved(tabId: tab.id) },
             updateHistoryList: { await updateHistoryList() },
@@ -44,7 +42,7 @@ extension NotchView {
             startSelectionPoll: { self.startSelectionPoll() },
             stopSelectionPoll: { self.stopSelectionPoll() }
         )        
-        .opacity(showChatWindow && !showSettings && !focusedTabId.isEmpty ? 1 : 0)
+        .opacity(isExpanded && !showSettings && !focusedTabId.isEmpty ? 1 : 0)
         .environmentObject(connectionManager)
         .environmentObject(loginManager)
         .environmentObject(firestoreManager)

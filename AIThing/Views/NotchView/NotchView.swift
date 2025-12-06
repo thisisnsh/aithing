@@ -30,9 +30,7 @@ struct NotchView: View {
     // MARK: - Constants & Closures
     let updater: SPUUpdater
     let updateWindowSize: (WindowSize) -> (CGFloat, CGFloat)
-    let modifyWindowBaseSize: (CGSize, WindowSize) -> (CGFloat, CGFloat)
-    let modifyWindowOriginalSize: () -> Void
-    let modifyWindowTopOffset: (CGFloat, WindowSize) -> Void
+    let modifyWindowSize: (CGSize, WindowSize) -> (CGFloat, CGFloat)
     let gainFocus: () -> Void
     let isTouchingRightEdge: () -> Bool
     let windowMoveable: (Bool) -> Void
@@ -50,8 +48,7 @@ struct NotchView: View {
     // MARK: - State
     @State var width: CGFloat = 0
     @State var height: CGFloat = 0
-    @State var windowSize = WindowSize.notchIsCollapsed
-    @State var lastExpandedWindowSize = WindowSize.sidebarIsExpanded
+    @State var windowSize = WindowSize.collapsed
     @State var hoverTask: Task<Void, Never>?
     @State var circularNotch = false
     @State var allModels: [ModelInfo] = []
@@ -79,13 +76,7 @@ struct NotchView: View {
     @State var resizeHoverTask: Task<Void, Never>?
 
     // MARK: - Computed Properties
-    var showChatWindow: Bool {
-        windowSize.rawValue >= WindowSize.chatIsShown.rawValue
-    }
-
-    var expandNotch: Bool {
-        windowSize.rawValue >= WindowSize.sidebarIsCollapsed.rawValue
-    }
+    var isExpanded: Bool { windowSize == .expanded }
 
     // MARK: - Body
     var body: some View {
@@ -93,12 +84,12 @@ struct NotchView: View {
             NotchShapeExt()
 
             HStack(spacing: 0) {
-                if showChatWindow {
+                if isExpanded {
                     ResizeViewX()
                 }
 
                 VStack(spacing: 0) {
-                    if showChatWindow && showSettings {
+                    if isExpanded && showSettings {
                         SettingsView(
                             isPresented: $showSettings,
                             allModels: $allModels,
@@ -106,11 +97,6 @@ struct NotchView: View {
                                 showSettings = false
                                 close()
                             },
-                            minimize: {
-                                showSettings = false
-                                minimize()
-                            },
-                            expand: { maximize() },
                             setPanelVisibility: { self.setPanelVisibility() },
                             getManagedAgents: getManagedAgents,
                             updater: updater
@@ -130,19 +116,25 @@ struct NotchView: View {
                         tabView: { tabView(tab: $0) }
                     )
 
-                    if showChatWindow {
+                    if isExpanded {
                         ResizeViewY()
                     }
                 }
 
                 VStack(alignment: expandSidebar ? .leading : .center, spacing: 0) {
                     HStack {
-                        if !expandNotch || expandSidebar {
+                        if !isExpanded || expandSidebar {
                             ZStack(alignment: .topLeading) {
                                 LogoShape()
                                     .fill(.white)
                                     .scaledToFit()
                                     .frame(height: 32)
+                                    .contentShape(Rectangle())
+                                    .onTapGesture {
+                                        if !isExpanded {
+                                            open()
+                                        }
+                                    }
 
                                 if unseen {
                                     Circle().fill(.red)
@@ -151,7 +143,7 @@ struct NotchView: View {
                             }
                         }
 
-                        if expandNotch, expandSidebar {
+                        if isExpanded, expandSidebar {
                             Spacer()
 
                             Image(systemName: "rectangle.grid.3x1.fill")
@@ -166,9 +158,9 @@ struct NotchView: View {
                         }
                     }
                     .padding(.top, 8)
-                    .padding(.horizontal, expandNotch && expandSidebar ? 16 : 0)
+                    .padding(.horizontal, isExpanded && expandSidebar ? 16 : 0)
 
-                    if expandNotch {
+                    if isExpanded {
                         Divider().opacity(0)
 
                         HoverableTabButton(
@@ -233,11 +225,11 @@ struct NotchView: View {
 
                     Spacer()
                 }
-                .frame(width: expandNotch ? (expandSidebar ? 200 : 60) : 60)
+                .frame(width: isExpanded ? (expandSidebar ? 200 : 60) : 60)
             }
             .padding(.vertical, 24)
 
-            if !toastText.isEmpty, showChatWindow {
+            if !toastText.isEmpty, isExpanded {
                 Toast()
                     .onAppear {
                         DispatchQueue.main.asyncAfter(deadline: .now() + 5) {
@@ -267,7 +259,12 @@ struct NotchView: View {
         .frame(width: width, height: height)
         .onAppear {
             AnalyticsManager.shared.screenView(screenName: .NotchView)
+            // Reset the view and start with closed notch
             close(initialClose: true)
+            showSettings = false
+            let tabId = UUID().uuidString
+            addTab(TabItem(id: tabId))
+            focusedTabId = tabId
         }
         .onChange(of: showSettings) { _ in
             // Refresh when settings is closed
@@ -281,17 +278,15 @@ struct NotchView: View {
                 }
             }
         }
-        .onChange(of: viewModel.refresh) { _ in
-            (width, height) = updateWindowSize(lastExpandedWindowSize)
-        }
-        .onChange(of: viewModel.toggle) { _ in
-            if windowSize == WindowSize.notchIsCollapsed {
+        .onChange(of: viewModel.openClose) { _ in
+            if windowSize == WindowSize.collapsed {
                 open()
             } else {
-                minimize()
+                close()
             }
         }
         .onChange(of: viewModel.move) { _ in
+            // Set curve on right edge if not touching it
             circularNotch = !isTouchingRightEdge()
         }
         .task {
@@ -378,30 +373,6 @@ struct NotchView: View {
                 }
 
                 await updateHistoryList()
-            }
-        }
-        .onHover { hovering in
-            hoverTask?.cancel()  // cancel any pending hover change
-            hoverTask = Task { @MainActor in
-                // delay a bit before applying the hover state
-                try? await Task.sleep(nanoseconds: 150_000_000)  // 150ms
-                guard !Task.isCancelled else { return }
-
-                showDragIcon = hovering
-
-                if windowSize != WindowSize.chatIsShown {
-                    if hovering {
-                        if windowSize == WindowSize.notchIsCollapsed {
-                            open()
-                        }
-                    } else {
-                        if windowSize == WindowSize.sidebarIsExpanded
-                            || windowSize == WindowSize.sidebarIsCollapsed
-                        {
-                            close()
-                        }
-                    }
-                }
             }
         }
     }

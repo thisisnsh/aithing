@@ -19,15 +19,6 @@ extension IntelligenceView {
                 }
                 .onHover { hoverRed = $0 }
 
-            Circle()
-                .frame(width: 12, height: 12)
-                .foregroundStyle(hoverYellow ? .yellow.opacity(0.5) : .yellow)
-                .onTapGesture {
-                    selectionEnabled = false
-                    minimize()
-                }
-                .onHover { hoverYellow = $0 }
-
             TextField("Enter Title", text: $tabTitle)
                 .focused($isFocused)
                 .onSubmit {

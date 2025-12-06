@@ -21,14 +21,12 @@ import SwiftUI
 class AppDelegate: NSObject, NSApplicationDelegate {
     private var floatingWindow: NonActivatingPanel!
 
-    private var originalWidth: CGFloat = 660
-    private var originalHeight: CGFloat = 600
     private var width: CGFloat = 660
     private var height: CGFloat = 600
     private var shadowBuffer: CGFloat = 32
 
     private var previousTopY: CGFloat = 0
-    private var lastWindowSize: WindowSize = .notchIsCollapsed
+    private var lastWindowSize: WindowSize = .collapsed
 
     private var upHotKey: HotKey?
     private var downHotKey: HotKey?
@@ -76,7 +74,7 @@ class AppDelegate: NSObject, NSApplicationDelegate {
             object: floatingWindow,
             queue: .main
         ) { notification in
-            self.viewModel.toggleMove()
+            self.viewModel.triggerMove()
         }
 
         // Only configure Firebase if GoogleService-Info.plist has valid values
@@ -114,8 +112,8 @@ extension AppDelegate {
     private func setupGlobalHotKeys() {
         spaceHotKey = HotKey(key: .space, modifiers: [.control, .option])
         spaceHotKeyAnother = HotKey(key: .space, modifiers: [.control])
-        spaceHotKey?.keyDownHandler = { self.viewModel.toggleDimensions() }
-        spaceHotKeyAnother?.keyDownHandler = { self.viewModel.toggleDimensions() }
+        spaceHotKey?.keyDownHandler = { self.viewModel.triggerOpenClose() }
+        spaceHotKeyAnother?.keyDownHandler = { self.viewModel.triggerOpenClose() }
     }
 
     private func setupNotchWindow() {
@@ -124,7 +122,7 @@ extension AppDelegate {
         let screenFrame = screen.visibleFrame
 
         // Create a borderless, floating window on the right side
-        let (windowWidth, windowHeight) = getWindowSize(windowSize: .notchIsCollapsed)
+        let (windowWidth, windowHeight) = getWindowSize(windowSize: .collapsed)
         let xPosition = screenFrame.maxX - windowWidth
         let yPosition = screenFrame.midY - (windowHeight / 2)
 
@@ -144,14 +142,8 @@ extension AppDelegate {
         let notchView = NotchView(
             viewModel: viewModel,
             updater: updaterController.updater,
-            updateWindowSize: {
-                return self.updateWindowSize(windowSize: $0)
-            },
-            modifyWindowBaseSize: {
-                return self.modifyWindowBaseSize(size: $0, windowSize: $1)
-            },
-            modifyWindowOriginalSize: { self.modifyWindowOriginalSize() },
-            modifyWindowTopOffset: { self.modifyWindowTopOffset(offset: $0, windowSize: $1) },
+            updateWindowSize: { return self.updateWindowSize(windowSize: $0) },
+            modifyWindowSize: { return self.modifyWindowSize(size: $0, windowSize: $1) },
             gainFocus: { self.gainFocus() },
             isTouchingRightEdge: { return self.isTouchingRightEdge() },
             windowMoveable: { self.windowMoveable($0) },
@@ -177,56 +169,23 @@ extension AppDelegate {
         floatingWindow?.gainFocus()
     }
 
-    private func modifyWindowBaseSize(size: CGSize, windowSize: WindowSize) -> (CGFloat, CGFloat) {
-        let newWidth = max(560, originalWidth + size.width)
-        let newHeight = max(600, originalHeight + size.height)
-
-        self.width = newWidth
-        self.height = newHeight
+    /// Modify the window size during resizing
+    private func modifyWindowSize(size: CGSize, windowSize: WindowSize) -> (CGFloat, CGFloat) {
+        width = max(560, width + size.width)
+        height = max(600, height + size.height)
         return updateWindowSize(windowSize: windowSize)
-    }
-
-    private func modifyWindowOriginalSize() {
-        originalWidth = width
-        originalHeight = height
-    }
-
-    private func modifyWindowTopOffset(offset: CGFloat, windowSize: WindowSize) {
-        if windowSize == .chatIsExpanded {
-            return
-        }
-        _ = updateWindowSize(windowSize: windowSize, offsetTopY: offset)
     }
 
     private func getWindowSize(windowSize: WindowSize) -> (CGFloat, CGFloat) {
         switch windowSize {
-        case .notchIsCollapsed:
+        case .collapsed:
             return (60 + shadowBuffer, 100 + shadowBuffer + shadowBuffer)
-        case .sidebarIsCollapsed:
-            return (60 + shadowBuffer, 160 + shadowBuffer + shadowBuffer)
-        case .sidebarIsExpanded:
-            return (200 + shadowBuffer, 600 + shadowBuffer + shadowBuffer)
-        case .chatIsShown:
+        case .expanded:
             return (width + shadowBuffer, height + shadowBuffer + shadowBuffer)
-        case .chatIsExpanded:
-            if let screen = NSScreen.main {
-                return (
-                    min(screen.visibleFrame.maxX * 0.5, 1000) + shadowBuffer,
-                    min(screen.visibleFrame.maxY * 0.8, 1000) + shadowBuffer + shadowBuffer
-                )
-            }
-            return (860 + shadowBuffer, 600 + shadowBuffer + shadowBuffer)
         }
     }
 
-    private func updateWindowSize(
-        windowSize: WindowSize,
-        offsetTopY: CGFloat = 0,
-        resetY: Bool = false,
-    ) -> (
-        CGFloat,
-        CGFloat
-    ) {
+    private func updateWindowSize(windowSize: WindowSize, offsetTopY: CGFloat = 0, resetY: Bool = false) -> (CGFloat, CGFloat) {
         // Calculate new position to keep top-right corner fixed
         guard let screen = floatingWindow.screen ?? NSScreen.main else {
             return getWindowSize(windowSize: windowSize)
@@ -240,47 +199,40 @@ extension AppDelegate {
         // Calculate Y position to keep top-right corner fixed
         // When expanding, we need to move the origin down
         let currentTopY = floatingWindow.frame.origin.y + floatingWindow.frame.height
+        var newX = xPosition + 2
         var newY = currentTopY - windowHeight + offsetTopY
 
-        if windowSize == .chatIsExpanded {
-            previousTopY = currentTopY
-            newY = screenFrame.midY - (windowHeight / 2)
-        } else if previousTopY != 0 {
+        if previousTopY != 0 {
             newY = previousTopY - windowHeight + offsetTopY
             previousTopY = 0
         }
 
         floatingWindow.setFrame(
-            NSRect(x: xPosition + 2, y: newY, width: windowWidth, height: windowHeight),
+            NSRect(x: newX, y: newY, width: windowWidth, height: windowHeight),
             display: false,
             animate: false
         )
 
         let outOfBoundsEdges = outOfBoundsEdges()
         if !outOfBoundsEdges.isEmpty {
+
             if outOfBoundsEdges.contains(.top) {
-                floatingWindow.setFrame(
-                    NSRect(
-                        x: xPosition + 2,
-                        y: screenFrame.maxY - windowHeight,
-                        width: windowWidth,
-                        height: windowHeight
-                    ),
-                    display: false,
-                    animate: false
-                )
+                newY = screenFrame.maxY - windowHeight
             } else if outOfBoundsEdges.contains(.bottom) {
-                floatingWindow.setFrame(
-                    NSRect(
-                        x: xPosition + 2,
-                        y: screenFrame.minY,
-                        width: windowWidth,
-                        height: windowHeight
-                    ),
-                    display: false,
-                    animate: false
-                )
+                newY = screenFrame.minY
             }
+
+            if outOfBoundsEdges.contains(.left) {
+                newX = screenFrame.minX
+            } else if outOfBoundsEdges.contains(.right) {
+                newX = xPosition + 2
+            }
+
+            floatingWindow.setFrame(
+                NSRect(x: newX, y: newY, width: windowWidth, height: windowHeight),
+                display: false,
+                animate: false
+            )
         }
 
         lastWindowSize = windowSize
