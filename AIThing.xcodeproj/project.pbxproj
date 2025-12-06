@@ -51,16 +51,6 @@
 			path = AIThing;
 			sourceTree = "<group>";
 		};
-		AAF11CDC2E22DE1700E2743E /* AIThingTests */ = {
-			isa = PBXFileSystemSynchronizedRootGroup;
-			path = AIThingTests;
-			sourceTree = "<group>";
-		};
-		AAF11CE62E22DE1700E2743E /* AIThingUITests */ = {
-			isa = PBXFileSystemSynchronizedRootGroup;
-			path = AIThingUITests;
-			sourceTree = "<group>";
-		};
 /* End PBXFileSystemSynchronizedRootGroup section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -104,8 +94,6 @@
 			children = (
 				AAF11D0B2E22F5AB00E2743E /* README.md */,
 				AAF11CCD2E22DE1500E2743E /* AIThing */,
-				AAF11CDC2E22DE1700E2743E /* AIThingTests */,
-				AAF11CE62E22DE1700E2743E /* AIThingUITests */,
 				AAF11CCC2E22DE1500E2743E /* Products */,
 			);
 			sourceTree = "<group>";
@@ -169,9 +157,6 @@
 			dependencies = (
 				AAF11CDB2E22DE1700E2743E /* PBXTargetDependency */,
 			);
-			fileSystemSynchronizedGroups = (
-				AAF11CDC2E22DE1700E2743E /* AIThingTests */,
-			);
 			name = AIThingTests;
 			packageProductDependencies = (
 			);
@@ -191,9 +176,6 @@
 			);
 			dependencies = (
 				AAF11CE52E22DE1700E2743E /* PBXTargetDependency */,
-			);
-			fileSystemSynchronizedGroups = (
-				AAF11CE62E22DE1700E2743E /* AIThingUITests */,
 			);
 			name = AIThingUITests;
 			packageProductDependencies = (

@@ -49,14 +49,6 @@ final class FirebaseConfiguration {
 
     private func logConfigurationStatus() {
         guard !isConfigured else { return }
-
-        logger.warning(
-            """
-            ⚠️ Firebase is not configured. \
-            GoogleService-Info.plist has empty or missing values. \
-            Login and managed agents will be disabled (no-op mode).
-            """
-        )
     }
 
     /// Validates that GoogleService-Info.plist contains all essential non-empty values

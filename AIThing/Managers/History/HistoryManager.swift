@@ -49,7 +49,7 @@ final class HistoryStore: ObservableObject {
 
                 mo.lastUpdated = Date().timeIntervalSince1970
                 mo.json = try JSONSerialization.data(withJSONObject: jsonHistory, options: [])
-                
+
                 try ctx.save()
                 return true
             } catch {
@@ -98,12 +98,12 @@ final class HistoryStore: ObservableObject {
                     return items
                 }
             }
-            
+
             // Collect all results from the group
             for await items in group {
                 results.append(contentsOf: items)
             }
-            
+
             return results
         }
 
@@ -188,6 +188,7 @@ final class HistoryStore: ObservableObject {
                 req.fetchLimit = 1
                 guard let mo = try ctx.fetch(req).first else { return false }
                 guard mo.title != title else { return false }
+                if title.isEmpty { return false }                
                 mo.title = title
                 // Do NOT modify lastUpdated here; this is a view-state flag.
                 try ctx.save()
