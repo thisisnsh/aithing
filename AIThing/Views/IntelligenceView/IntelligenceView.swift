@@ -238,10 +238,8 @@ struct IntelligenceView: View {
                                 if let name = user.displayName, !name.isEmpty {
                                     displayName = name
                                 }
-                                AnalyticsManager.shared.setUserId(user.uid)
                             default:
                                 loggedIn = false
-                                AnalyticsManager.shared.setUserId(nil)
                             }
                         }
 
@@ -298,13 +296,6 @@ struct IntelligenceView: View {
                                     let results = await DragFileManager.processPaths([ss.url])
                                     for r in results {
                                         modelContext.insert(r, at: 0)
-                                        AnalyticsManager.shared
-                                            .customEvent(
-                                                view: .IntelligenceView,
-                                                primary: .file,
-                                                secondary: "screenshot",
-                                                sev: .info
-                                            )
                                     }
                                     screenshotMonitor.updateKnownFiles()
                                 }
@@ -317,13 +308,6 @@ struct IntelligenceView: View {
                                 let results = await DragFileManager.processPaths(urls)
                                 for r in results {
                                     modelContext.insert(r, at: 0)
-                                    AnalyticsManager.shared
-                                        .customEvent(
-                                            view: .IntelligenceView,
-                                            primary: .file,
-                                            secondary: "add",
-                                            sev: .info
-                                        )
                                 }
                             }
                         }
@@ -339,9 +323,6 @@ struct IntelligenceView: View {
             } else {
                 Color.clear.frame(width: 0, height: 0)
             }
-        }
-        .onAppear {
-            AnalyticsManager.shared.screenView(screenName: .IntelligenceView)
         }
     }
 }

@@ -81,13 +81,6 @@ final class MCPAuthManager: ObservableObject, Identifiable, OAuthManagerProtocol
         do {
             try await fetchWellKnownUrls()
 
-            AnalyticsManager.shared.customEvent(
-                view: .McpOAuthManager,
-                primary: .url,
-                secondary: server.url,
-                sev: .info
-            )
-
             // Try to use existing valid token
             if refresh {
                 if let user = self.user, tokenIsValid(user) {

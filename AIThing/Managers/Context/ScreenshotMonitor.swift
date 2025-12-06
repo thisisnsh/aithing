@@ -113,14 +113,7 @@ class ScreenshotMonitor: ObservableObject {
                     }
                 }
             }
-        } catch {
-            AnalyticsManager.shared.customEvent(
-                view: .ScreenshotMonitor,
-                primary: .function,
-                secondary: "getScreenshotDirectory",
-                sev: .error
-            )
-        }
+        } catch { }
 
         // Fallback to Desktop
         return FileManager.default.urls(for: .desktopDirectory, in: .userDomainMask).first!

@@ -38,36 +38,38 @@ struct AccountTab: View {
     // MARK: - Body
     var body: some View {
         VStack(alignment: .leading, spacing: 16) {
-            GroupBox(label: title("Login")) {
-                VStack(alignment: .leading) {
-                    Button {
-                        Task { await signIn() }
-                    } label: {
-                        HStack {
-                            switch authState {
-                            case .signedIn(let user):
-                                Text(user.displayName ?? "Logged In")
-                                    .font(.system(size: 14, weight: .medium))
-                                Spacer()
-                                Button {
-                                    Task { await signOut() }
-                                } label: {
-                                    Text("Log Out").font(.system(size: 10, weight: .medium))
-                                }
-                                .buttonStyle(.plain)
+            if FirebaseConfiguration.shared.isConfigured {
+                GroupBox(label: title("Login")) {
+                    VStack(alignment: .leading) {
+                        Button {
+                            Task { await signIn() }
+                        } label: {
+                            HStack {
+                                switch authState {
+                                case .signedIn(let user):
+                                    Text(user.displayName ?? "Logged In")
+                                        .font(.system(size: 14, weight: .medium))
+                                    Spacer()
+                                    Button {
+                                        Task { await signOut() }
+                                    } label: {
+                                        Text("Log Out").font(.system(size: 10, weight: .medium))
+                                    }
+                                    .buttonStyle(.plain)
 
-                            default:
-                                Text("Google").font(.system(size: 14, weight: .medium))
-                                Spacer()
-                                Image(systemName: "chevron.right")
-                                    .frame(width: 10, height: 10)
+                                default:
+                                    Text("Google").font(.system(size: 14, weight: .medium))
+                                    Spacer()
+                                    Image(systemName: "chevron.right")
+                                        .frame(width: 10, height: 10)
+                                }
                             }
                         }
+                        .buttonStyle(.plain)
+                        .padding(4)
                     }
-                    .buttonStyle(.plain)
                     .padding(4)
                 }
-                .padding(4)
             }
 
             GroupBox(label: title("Usage")) {
@@ -143,18 +145,6 @@ struct AccountTab: View {
                     .buttonStyle(.plain)
                     .font(.system(size: 14, weight: .medium))
                     .padding(4)
-                    .onHover { perform in
-                        if perform {
-                            AnalyticsManager.shared
-                                .customEvent(
-                                    view: .SettingsAccountsTab,
-                                    primary: .bugReport,
-                                    secondary: "",
-                                    sev: .info
-                                )
-                        }
-                    }
-
                 }
                 .padding(4)
                 .frame(maxWidth: .infinity, alignment: .leading)
@@ -189,4 +179,3 @@ struct AccountTab: View {
         .opacity(0.5)
     }
 }
-

@@ -127,19 +127,10 @@ struct ToolsView: View {
         .background(.white.opacity(0.1))
         .clipShape(RoundedRectangle(cornerRadius: 16))
         .onAppear {
-            AnalyticsManager.shared.screenView(screenName: .ToolsView)
             Task {
                 for t in allClientTools.keys {
                     tools[formatManagedString(t)] = allClientTools[t]
-                }
-
-                AnalyticsManager.shared
-                    .customEvent(
-                        view: .ToolsView,
-                        primary: .count,
-                        secondary: "\(tools.count)",
-                        sev: .info
-                    )
+                }                
             }
         }
     }

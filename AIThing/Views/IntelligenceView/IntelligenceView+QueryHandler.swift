@@ -39,13 +39,6 @@ extension IntelligenceView {
         // Prepare UI state
         prepareUIForQuery(trimmed)
 
-        AnalyticsManager.shared.customEvent(
-            view: .IntelligenceView,
-            primary: .query,
-            secondary: "start",
-            sev: .info
-        )
-
         // Build and execute the model call
         let context = buildModelCallContext(
             query: trimmed,
@@ -193,13 +186,6 @@ extension IntelligenceView {
 
         // Reset app context state
         resetAppContext()
-
-        AnalyticsManager.shared.customEvent(
-            view: .IntelligenceView,
-            primary: .query,
-            secondary: "end",
-            sev: .info
-        )
 
         // Reset selection and UI state
         viewModel.selectedText = ""

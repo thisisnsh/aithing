@@ -75,12 +75,6 @@ private func handleBreakglass(context: ValidationContext) async {
         For updates, please contact help@aithing.dev.
         """
     )
-    AnalyticsManager.shared.customEvent(
-        view: .IntelligenceManager,
-        primary: .query,
-        secondary: "breakglass",
-        sev: .error
-    )
 }
 
 /// Handles the version expired state.
@@ -93,12 +87,6 @@ private func handleExpired(context: ValidationContext) async {
         Current version has expired.
         Please [upgrade the version](https://aithing.dev/upgrade) to enjoy new features and continue using the app.
         """
-    )
-    AnalyticsManager.shared.customEvent(
-        view: .IntelligenceManager,
-        primary: .query,
-        secondary: "version expired",
-        sev: .error
     )
 }
 
@@ -119,7 +107,6 @@ private func validateSignedInUser(
             return nil
         }
         
-        AnalyticsManager.shared.setUserId(user.uid)
         return user
     }
     
@@ -138,12 +125,6 @@ private func handleBlockedUser(context: LoginValidationContext) async {
         Please contact help@aithing.dev for more information.
         """
     )
-    AnalyticsManager.shared.customEvent(
-        view: .IntelligenceManager,
-        primary: .query,
-        secondary: "version blocked",
-        sev: .error
-    )
 }
 
 /// Handles profile fetch error state.
@@ -157,12 +138,6 @@ private func handleProfileError(context: LoginValidationContext) async {
         Report issue at help@aithing.dev
         """
     )
-    AnalyticsManager.shared.customEvent(
-        view: .IntelligenceManager,
-        primary: .query,
-        secondary: "profile error",
-        sev: .error
-    )
 }
 
 /// Handles not signed in state.
@@ -172,11 +147,5 @@ private func handleNotSignedIn(context: LoginValidationContext) async {
     context.setIsThinking(false)
     await context.animateOutput(
         "Please log in from Settings to continue. [How?](https://aithing.dev/getstarted)"
-    )
-    AnalyticsManager.shared.customEvent(
-        view: .IntelligenceManager,
-        primary: .query,
-        secondary: "no login",
-        sev: .error
     )
 }

@@ -53,13 +53,6 @@ extension NotchView {
                                 lastAppliedX = roundedX
                                 let size = CGSize(width: roundedX, height: 0)
                                 (width, height) = modifyWindowSize(size, windowSize)
-                                AnalyticsManager.shared
-                                    .customEvent(
-                                        view: .NotchView,
-                                        primary: .dragLeft,
-                                        secondary: "\(roundedX)",
-                                        sev: .info
-                                    )
                             }
 
                         }
@@ -117,14 +110,7 @@ extension NotchView {
                             if roundedY != lastAppliedY {
                                 lastAppliedY = roundedY
                                 let size = CGSize(width: 0, height: roundedY)
-                                (width, height) = modifyWindowSize(size, windowSize)
-                                AnalyticsManager.shared
-                                    .customEvent(
-                                        view: .NotchView,
-                                        primary: .dragDown,
-                                        secondary: "\(roundedY)",
-                                        sev: .info
-                                    )
+                                (width, height) = modifyWindowSize(size, windowSize)                                
                             }
                         }
                         .onEnded { _ in

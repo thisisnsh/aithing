@@ -90,13 +90,6 @@ extension NotchView {
                 )
             }
 
-            AnalyticsManager.shared.customEvent(
-                view: .NotchView,
-                primary: .agentLoad,
-                secondary: "\(name) \(primary)",
-                sev: .info
-            )
-
             logger.debug("Added Agent: \(name)")
 
             if connectRc.isEmpty {
@@ -109,8 +102,6 @@ extension NotchView {
         }
 
         if !failure.isEmpty {
-            AnalyticsManager.shared
-                .customEvent(view: .NotchView, primary: .agentLoad, secondary: failure, sev: .error)
             return "Failed to start agents\n" + failure
         }
 

@@ -109,14 +109,12 @@ private func executeModelCall(
         }
     }
 
-    logToolAnalytics(model: model, toolCount: modelTools.count)
-
     // Get API key for the provider
     guard let apiKey = getAPIKey(for: modelProvider), !apiKey.isEmpty else {
         return await handleMissingAPIKey(context: context, provider: modelProvider)
     }
 
-    logRuntime(name: "runTimeValidations", startTime: startTime)
+    logRuntime(name: "RunTime Validations", startTime: startTime)
 
     var fileCount = 0
     if !context.query.isEmpty {
@@ -127,7 +125,7 @@ private func executeModelCall(
         )
     }
 
-    logRuntime(name: "runTimeContextBuild", startTime: startTime)
+    logRuntime(name: "RunTime ContextBuild", startTime: startTime)
 
     // Build request using provider
     guard
@@ -149,7 +147,7 @@ private func executeModelCall(
     do {
         let (stream, response) = try await URLSession.shared.bytes(for: request)
 
-        logRuntime(name: "runTimeResponse", startTime: startTime)
+        logRuntime(name: "RunTime Response", startTime: startTime)
 
         guard let httpResponse = response as? HTTPURLResponse else {
             return await handleInvalidResponse(context: context)
@@ -190,7 +188,7 @@ private func executeModelCall(
         // Update sidebar
         Task { await context.historyHandlers.updateHistoryList() }
 
-        logRuntime(name: "runTimeResponseParseStart", startTime: startTime)
+        logRuntime(name: "RunTime ResponseParseStart", startTime: startTime)
 
         let streamResult = await processResponseStream(
             stream: stream,
@@ -208,7 +206,7 @@ private func executeModelCall(
             return recursiveResult
         }
 
-        logRuntime(name: "runTimeResponseParseEnd", startTime: startTime)
+        logRuntime(name: "RunTime ResponseParseEnd", startTime: startTime)
 
     } catch {
         return handleStreamError(context: context, error: error)
@@ -228,7 +226,7 @@ private func executeModelCall(
 
     Task { await context.historyHandlers.updateHistoryList() }
 
-    logRuntime(name: "runTimeEnd", startTime: startTime)
+    logRuntime(name: "RunTime End", startTime: startTime)
 
     return true
 }
@@ -294,12 +292,6 @@ private func appendImageToInput(
     base64: String,
     modelInput: inout [ChatItem]
 ) {
-    AnalyticsManager.shared.customEvent(
-        view: .IntelligenceManager,
-        primary: .file,
-        secondary: "use image",
-        sev: .info
-    )
     modelInput.append(ChatItem(role: .user, payload: .imageBase64(name: name, media: "image/jpeg", image: base64)))
 }
 
@@ -309,12 +301,6 @@ private func appendPDFToInput(
     base64s: [String],
     modelInput: inout [ChatItem]
 ) {
-    AnalyticsManager.shared.customEvent(
-        view: .IntelligenceManager,
-        primary: .file,
-        secondary: "use pdf",
-        sev: .info
-    )
     var payloads: [ChatPayload] = []
     for base64 in base64s {
         payloads.append(.imageBase64(name: name, media: "image/jpeg", image: base64))
@@ -328,12 +314,6 @@ private func appendTextToInput(
     text: String,
     modelInput: inout [ChatItem]
 ) {
-    AnalyticsManager.shared.customEvent(
-        view: .IntelligenceManager,
-        primary: .file,
-        secondary: "use text",
-        sev: .info
-    )
     modelInput.append(ChatItem(role: .user, payload: .textWithName(name: name, text: "```\n\(text)\n```")))
 }
 
@@ -342,12 +322,6 @@ private func appendSelectedTextToInput(
     text: String,
     modelInput: inout [ChatItem]
 ) {
-    AnalyticsManager.shared.customEvent(
-        view: .IntelligenceManager,
-        primary: .file,
-        secondary: "use selection",
-        sev: .info
-    )
     modelInput.append(ChatItem(role: .user, payload: .textWithName(name: "Selected Text", text: "```\n\(text)\n```")))
 }
 
@@ -356,12 +330,6 @@ private func appendAppContextToInput(
     appContext: AppContextModel,
     modelInput: inout [ChatItem]
 ) {
-    AnalyticsManager.shared.customEvent(
-        view: .IntelligenceManager,
-        primary: .file,
-        secondary: "use application context",
-        sev: .info
-    )
     let contextText = "\(appContext.appName)\(appContext.windowName.count > 0 ? ": " : "")\(appContext.windowName)"
     modelInput.append(ChatItem(role: .user, payload: .imageBase64(name: contextText, media: "image/jpeg", image: appContext.base64)))
 }
@@ -538,7 +506,7 @@ private func handleStreamCompletion(
                 )
                 tabTitle = await createTitle(context: titleContext)
                 await context.tabHandlers.setTabTitle(tabTitle)
-                logRuntime(name: "runTimeTitle", startTime: startTimeTitle)
+                logRuntime(name: "RunTime Title", startTime: startTimeTitle)
             }
         }
     }
@@ -584,13 +552,6 @@ private func handleStreamCompletion(
             )
         }
 
-        AnalyticsManager.shared.customEvent(
-            view: .IntelligenceManager,
-            primary: .tool,
-            secondary: finalToolUseName,
-            sev: .info
-        )
-
         logger.info("Called tool: \(finalToolUseName)")
         let snapshotToolInput = await accumulator.snapshotToolInput()
         logger.info("Tool input: \(parseJSONStringToDictObject(snapshotToolInput))")
@@ -599,7 +560,7 @@ private func handleStreamCompletion(
         let toolResultMessage = provider.buildToolResultMessage(toolUseId: finalToolUseId, toolName: finalToolUseName, result: result)
         modelInput.append(contentsOf: toolResultMessage)
 
-        logRuntime(name: "runTimeTools", startTime: toolStartTime)
+        logRuntime(name: "RunTime Tools", startTime: toolStartTime)
 
         // Create recursive context with empty query and updated state
         let recursiveContext = createRecursiveContext(
@@ -675,12 +636,6 @@ private func handleMissingAPIKey(context: ModelCallContext, provider: AIProvider
         For setup instructions, visit: https://aithing.dev/getstarted
         """
     )
-    AnalyticsManager.shared.customEvent(
-        view: .IntelligenceManager,
-        primary: .query,
-        secondary: "no api key",
-        sev: .error
-    )
     return false
 }
 
@@ -688,12 +643,6 @@ private func handleMissingAPIKey(context: ModelCallContext, provider: AIProvider
 private func handleInvalidResponse(context: ModelCallContext) async -> Bool {
     context.uiHandlers.setIsThinking(false)
     await context.uiHandlers.animateOutput("Invalid response\n\nReport issue at help@aithing.dev")
-    AnalyticsManager.shared.customEvent(
-        view: .IntelligenceManager,
-        primary: .query,
-        secondary: "invalid response",
-        sev: .error
-    )
     return false
 }
 
@@ -731,21 +680,9 @@ private func handleHTTPError(
             Learn more: \(limitsUrl)
             """
         )
-        AnalyticsManager.shared.customEvent(
-            view: .IntelligenceManager,
-            primary: .query,
-            secondary: "rate limit reached",
-            sev: .error
-        )
     } else {
         await context.uiHandlers.animateOutput(
             "Error \(statusCode)\n\n```\n\(error)\n```\n\nReport issue at help@aithing.dev"
-        )
-        AnalyticsManager.shared.customEvent(
-            view: .IntelligenceManager,
-            primary: .query,
-            secondary: "error response",
-            sev: .error
         )
     }
     return false
@@ -756,12 +693,6 @@ private func handleStreamError(context: ModelCallContext, error: Swift.Error) ->
     context.uiHandlers.setIsThinking(false)
     context.modelHandlers.setModelOutput(
         "Error streaming response: \(error.localizedDescription)\n\nReport issue at help@aithing.dev"
-    )
-    AnalyticsManager.shared.customEvent(
-        view: .IntelligenceManager,
-        primary: .query,
-        secondary: "error streaming",
-        sev: .error
     )
     return false
 }
@@ -782,58 +713,15 @@ private func trackUsage(
             filesAttached: fileCount
         )
         await firestoreManager.incrementUsage(user: appUser, usage: usage)
-    } else {
-        AnalyticsManager.shared.customEvent(
-            view: .IntelligenceManager,
-            primary: .query,
-            secondary: "usage not calculated",
-            sev: .error
-        )
     }
 }
 
 // MARK: - Logging Helpers
 
-/// Logs tool-related analytics events.
-private func logToolAnalytics(model: String, toolCount: Int) {
-    AnalyticsManager.shared.customEvent(
-        view: .IntelligenceManager,
-        primary: .model,
-        secondary: "model",
-        sev: .info
-    )
-    AnalyticsManager.shared.customEvent(
-        view: .IntelligenceManager,
-        primary: .count,
-        secondary: "\(toolCount)",
-        sev: .info
-    )
-}
-
 /// Logs runtime metrics.
 private func logRuntime(name: String, startTime: Date) {
     let runtime = Date().timeIntervalSince(startTime) * 1000
-    logger.debug("Metrics \(name): \(runtime) ms")
-
-    let primary: AnalyticsManager.EventPrimary
-    switch name {
-    case "runTimeValidations": primary = .runTimeValidations
-    case "runTimeContextBuild": primary = .runTimeContextBuild
-    case "runTimeResponse": primary = .runTimeResponse
-    case "runTimeResponseParseStart": primary = .runTimeResponseParseStart
-    case "runTimeResponseParseEnd": primary = .runTimeResponseParseEnd
-    case "runTimeTitle": primary = .runTimeTitle
-    case "runTimeTools": primary = .runTimeTools
-    case "runTimeEnd": primary = .runTimeEnd
-    default: return
-    }
-
-    AnalyticsManager.shared.customEvent(
-        view: .IntelligenceManager,
-        primary: primary,
-        secondary: "\(runtime)ms",
-        sev: .info
-    )
+    logger.debug("\(name): \(runtime) ms")
 }
 
 /// Logs request details for debugging.

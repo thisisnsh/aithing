@@ -105,7 +105,6 @@ struct ChatView: View {
             }
         }
         .onAppear {
-            AnalyticsManager.shared.screenView(screenName: .ChatView)
             setHistory(history)
         }
         .onChange(of: history?.history.count) { _ in
@@ -186,13 +185,5 @@ struct ChatView: View {
         if let last = items.last, modelOutput.isEmpty {
             showRefreshButton = last.role != .assistant || !last.payloads.last!.isText
         }
-
-        AnalyticsManager.shared
-            .customEvent(
-                view: .ChatView,
-                primary: .count,
-                secondary: "\(items.count)",
-                sev: .info
-            )
     }
 }

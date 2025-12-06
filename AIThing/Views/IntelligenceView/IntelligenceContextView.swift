@@ -25,13 +25,6 @@ extension IntelligenceView {
                                 big: modelContext.count == 1,
                                 onDelete: { index in
                                     modelContext.remove(at: index)
-                                    AnalyticsManager.shared
-                                        .customEvent(
-                                            view: .IntelligenceView,
-                                            primary: .file,
-                                            secondary: "remove",
-                                            sev: .info
-                                        )
                                 },
                                 cornerRadius: cornerRadius
                             )
@@ -45,13 +38,6 @@ extension IntelligenceView {
                                 big: false,
                                 onDelete: { index in
                                     modelContext.remove(at: index)
-                                    AnalyticsManager.shared
-                                        .customEvent(
-                                            view: .IntelligenceView,
-                                            primary: .file,
-                                            secondary: "remove",
-                                            sev: .info
-                                        )
                                 },
                                 cornerRadius: cornerRadius
                             )
@@ -65,13 +51,6 @@ extension IntelligenceView {
                                 big: false,
                                 onDelete: { index in
                                     modelContext.remove(at: index)
-                                    AnalyticsManager.shared
-                                        .customEvent(
-                                            view: .IntelligenceView,
-                                            primary: .file,
-                                            secondary: "remove",
-                                            sev: .info
-                                        )
                                 },
                                 cornerRadius: cornerRadius
                             )
@@ -215,22 +194,7 @@ extension IntelligenceView {
                     if !selectionEnabled {
                         selectedText = ""
                         viewModel.selectedText = ""
-                        AnalyticsManager.shared
-                            .customEvent(
-                                view: .IntelligenceView,
-                                primary: .selection,
-                                secondary: "remove",
-                                sev: .info
-                            )
-                    }
-
-                    AnalyticsManager.shared
-                        .customEvent(
-                            view: .IntelligenceView,
-                            primary: .selection,
-                            secondary: "\(selectionEnabled)",
-                            sev: .info
-                        )
+                    }                    
                 }) {
                     HStack(alignment: .bottom) {
                         Image(

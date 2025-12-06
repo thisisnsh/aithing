@@ -91,11 +91,8 @@ class ConnectionManager: ObservableObject {
             try await client.connect(transport: transport)
 
             logger.info("Connected to MCP server via stdio: \(normalizedName)")
-            logAnalytics(primary: .mcpStdio, clientName: normalizedName, isError: false)
-
             return ""
         } catch {
-            logAnalytics(primary: .mcpStdio, clientName: normalizedName, isError: true)
             logger.error("Stdio connection error: \(error.localizedDescription)")
             cleanupStdioConnection(clientName: normalizedName)
             return error.localizedDescription
@@ -127,11 +124,8 @@ class ConnectionManager: ObservableObject {
             try await client.connect(transport: transport)
 
             logger.info("Connected to MCP server via HTTP: \(normalizedName)")
-            logAnalytics(primary: .mcpHTTP, clientName: normalizedName, isError: false)
-
             return ""
         } catch {
-            logAnalytics(primary: .mcpHTTP, clientName: normalizedName, isError: true)
             logger.error("HTTP connection error: \(error.localizedDescription)")
             cleanupHTTPConnection(clientName: normalizedName)
             return error.localizedDescription
@@ -168,7 +162,6 @@ class ConnectionManager: ObservableObject {
         }
 
         let result = await connect(clientName: normalizedName, url: url, authToken: authToken)
-        logAnalytics(primary: .mcpReconnect, clientName: normalizedName, isError: !result.isEmpty)
 
         return result.isEmpty
     }
@@ -192,7 +185,6 @@ class ConnectionManager: ObservableObject {
         terminateAllProcesses()
         closeAllPipes()
 
-        logAnalytics(primary: .mcpStop, clientName: "all", isError: false)
         return ""
     }
 
@@ -215,10 +207,8 @@ class ConnectionManager: ObservableObject {
             let (tools, _) = try await client.listTools()
             let filteredTools = tools.filter { filter.isEmpty || filter.contains($0.name) }
 
-            logAnalytics(primary: .mcpTools, clientName: normalizedName, isError: false)
             return filteredTools
         } catch {
-            logAnalytics(primary: .mcpTools, clientName: normalizedName, isError: true)
             logger.error("Error getting tools: \(error.localizedDescription)")
             return []
         }
@@ -247,16 +237,13 @@ class ConnectionManager: ObservableObject {
             let (content, isError) = try await client.callTool(name: name, arguments: dict)
 
             if isError ?? false {
-                logAnalytics(primary: .mcpCallTools, clientName: normalizedName, isError: true)
                 logger.error("Tool call returned error")
                 return "Tool call returned error"
             }
 
             let response = extractTextContent(from: content)
-            logAnalytics(primary: .mcpCallTools, clientName: normalizedName, isError: false)
             return response
         } catch {
-            logAnalytics(primary: .mcpCallTools, clientName: normalizedName, isError: true)
             logger.error("Error calling tool: \(error.localizedDescription)")
             return "Error calling tool"
         }
@@ -419,14 +406,5 @@ extension ConnectionManager {
             result += string + " "
         }
         return result
-    }
-
-    fileprivate func logAnalytics(primary: AnalyticsManager.EventPrimary, clientName: String, isError: Bool) {
-        AnalyticsManager.shared.customEvent(
-            view: .McpManager,
-            primary: primary,
-            secondary: clientName,
-            sev: isError ? .error : .info
-        )
     }
 }

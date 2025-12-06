@@ -62,14 +62,7 @@ class AutomationManager: ObservableObject {
     /// The automation will be immediately scheduled if enabled.
     ///
     /// - Parameter config: The automation configuration
-    func createAutomation(config: AutomationConfig) {
-        AnalyticsManager.shared.customEvent(
-            view: .AutomationManager,
-            primary: .create,
-            secondary: config.title,
-            sev: .info
-        )
-        
+    func createAutomation(config: AutomationConfig) {        
         // Remove existing automation with same id if exists
         var insertIndex = 0
         if let index = automations.firstIndex(where: { $0.id == config.id }) {

@@ -45,14 +45,6 @@ final class FirebaseConfiguration {
         logConfigurationStatus()        
     }
 
-    // MARK: - Public Methods
-
-    /// Logs a debug message when a Firebase operation is skipped due to missing configuration
-    func logSkipped(operation: String) {
-        // Enable if Firebase is required
-        // logger.info("Firebase operation '\(operation)' skipped - Firebase not configured")
-    }
-
     // MARK: - Private Methods
 
     private func logConfigurationStatus() {
@@ -62,7 +54,7 @@ final class FirebaseConfiguration {
             """
             ⚠️ Firebase is not configured. \
             GoogleService-Info.plist has empty or missing values. \
-            Firebase features will be disabled (no-op mode).
+            Login and managed agents will be disabled (no-op mode).
             """
         )
     }

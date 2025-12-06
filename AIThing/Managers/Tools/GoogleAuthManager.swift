@@ -92,13 +92,6 @@ class GoogleAuthManager: ObservableObject, OAuthManagerProtocol {
             scopes.insert(scope)
         }
 
-        AnalyticsManager.shared.customEvent(
-            view: .GoogleOAuthManager,
-            primary: .scope,
-            secondary: String(describing: enabled),
-            sev: .info
-        )
-
         return Array(scopes)
     }
 

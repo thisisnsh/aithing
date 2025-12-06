@@ -69,12 +69,6 @@ enum Entry: Codable, Identifiable, Equatable {
         {
             self = .command(name: name, command: command, arguments: arguments)
         } else {
-            AnalyticsManager.shared.customEvent(
-                view: .McpManager,
-                primary: .mcpInit,
-                secondary: "unrecognized_json_structure",
-                sev: .error
-            )
             throw DecodingError.dataCorrupted(
                 .init(codingPath: [], debugDescription: "Unrecognized JSON structure")
             )

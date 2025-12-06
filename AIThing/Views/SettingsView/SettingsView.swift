@@ -110,7 +110,6 @@ struct SettingsView: View {
                 .task {
                     await getManagedAgents()
                     await getUsageData()
-                    AnalyticsManager.shared.screenView(screenName: .SettingsView)
                 }
             }
         } else {
@@ -141,7 +140,6 @@ struct SettingsView: View {
                     setSelectedTab(value: selectedTab)
                     saveModels()
                     saveAgents()
-                    AnalyticsManager.shared.screenView(screenName: .SettingsAccountsTab)
                 }) {
                     Label("Account", systemImage: "person.fill")
                         .labelStyle(.iconOnly)
@@ -153,7 +151,6 @@ struct SettingsView: View {
                     setSelectedTab(value: selectedTab)
                     saveModels()
                     saveAgents()
-                    AnalyticsManager.shared.screenView(screenName: .SettingsModelTab)
                 }) {
                     Label("Models", systemImage: "sparkles.2")
                         .labelStyle(.iconOnly)
@@ -163,7 +160,6 @@ struct SettingsView: View {
                     setSelectedTab(value: selectedTab)
                     saveModels()
                     saveAgents()
-                    AnalyticsManager.shared.screenView(screenName: .SettingsAgentsTab)
                 }) {
                     Label("Agents", systemImage: "pointer.arrow.ipad")
                         .labelStyle(.iconOnly)
@@ -173,7 +169,6 @@ struct SettingsView: View {
                     setSelectedTab(value: selectedTab)
                     saveModels()
                     saveAgents()
-                    AnalyticsManager.shared.screenView(screenName: .SettingsPreferencesTab)
                 }) {
                     Label("Preferences", systemImage: "keyboard.fill")
                         .labelStyle(.iconOnly)
@@ -183,7 +178,6 @@ struct SettingsView: View {
                     setSelectedTab(value: selectedTab)
                     saveModels()
                     saveAgents()
-                    AnalyticsManager.shared.screenView(screenName: .SettingsAutomationsTab)
                 }) {
                     Label("Automations", systemImage: "clock.fill")
                         .labelStyle(.iconOnly)
@@ -204,22 +198,12 @@ struct SettingsView: View {
 
     func signIn() async {
         await loginManager.signInWithGoogle()
-
-        switch loginManager.authState {
-        case .signedIn(let user):
-            AnalyticsManager.shared.setUserId(user.uid)
-        default:
-            AnalyticsManager.shared.setUserId(nil)
-        }
-
         await getUsageData()
-        AnalyticsManager.shared.login(method: .google)
     }
 
     func signOut() async {
         loginManager.signOut()
         usageData = Usage()
-        AnalyticsManager.shared.setUserId(nil)
     }
 
     func getUsageData() async {
@@ -295,12 +279,6 @@ struct SettingsView: View {
         let newAgent = AgentEntry(id: UUID(), entry: entry, isEnabled: true)
         agents.append(newAgent)
 
-        AnalyticsManager.shared.customEvent(
-            view: .SettingsView,
-            primary: .agentAdd,
-            secondary: "\(name) \(primary)",
-            sev: .info
-        )
         saveAgents()
         return ""
     }

@@ -122,13 +122,6 @@ class GithubAuthManager: ObservableObject, OAuthManagerProtocol {
         scopes.insert(GithubToolModels.Scopes.readOrg)
         scopes.insert(GithubToolModels.Scopes.userEmail)
 
-        AnalyticsManager.shared.customEvent(
-            view: .GithubOAuthManager,
-            primary: .scope,
-            secondary: String(describing: enabled),
-            sev: .info
-        )
-
         return Array(scopes)
     }
 

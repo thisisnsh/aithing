@@ -277,7 +277,6 @@ struct NotchView: View {
         }
         .frame(width: width, height: height)
         .onAppear {
-            AnalyticsManager.shared.screenView(screenName: .NotchView)
             // Reset the view and start with closed notch
             close(initialClose: true)
             showSettings = false
@@ -309,15 +308,7 @@ struct NotchView: View {
             circularNotch = !isTouchingRightEdge()
         }
         .task {
-            switch loginManager.authState {
-            case .signedIn(let user):
-                AnalyticsManager.shared.setUserId(user.uid)
-            default:
-                AnalyticsManager.shared.setUserId(nil)
-            }
-
             histories = await historyStore.getAll(limit: 100)
-
             allModels = await firestoreManager.getModelInfos()
 
             let rc1 = await refreshLocalAgents()

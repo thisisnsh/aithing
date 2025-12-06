@@ -81,7 +81,6 @@ final class AuthenticationManager: ObservableObject {
     /// Signs out the current user
     func signOut() {
         guard isFirebaseEnabled else {
-            FirebaseConfiguration.shared.logSkipped(operation: "signOut")
             return
         }
 
@@ -101,7 +100,6 @@ final class AuthenticationManager: ObservableObject {
 
     private func setupAuthStateListener() {
         guard isFirebaseEnabled else {
-            FirebaseConfiguration.shared.logSkipped(operation: "setupAuthStateListener")
             authState = .signedOut
             return
         }
@@ -117,8 +115,7 @@ final class AuthenticationManager: ObservableObject {
         }
     }
 
-    private func handleFirebaseNotConfigured() {
-        FirebaseConfiguration.shared.logSkipped(operation: "signInWithGoogle")
+    private func handleFirebaseNotConfigured() {        
         authState = .error(
             "Firebase is not configured. Please add valid credentials to GoogleService-Info.plist"
         )

@@ -63,24 +63,23 @@ extension FirestoreManager {
 
     /// Fetches the breakglass flag from system config
     func getBreakglass() async -> Bool {
-        await fetchConfigValue(key: ConfigKey.breakglass, analyticsKey: "get_breakglass") ?? false
+        await fetchConfigValue(key: ConfigKey.breakglass) ?? false
     }
 
     /// Fetches the expired flag from system config
     func getExpired() async -> Bool {
-        await fetchConfigValue(key: ConfigKey.expired, analyticsKey: "get_expired") ?? false
+        await fetchConfigValue(key: ConfigKey.expired) ?? false
     }
 
     /// Fetches the notification message from system config
     func getNotification() async -> String? {
-        await fetchConfigValue(key: ConfigKey.notification, analyticsKey: "get_notification")
+        await fetchConfigValue(key: ConfigKey.notification)
     }
 
     // MARK: - Private Config Helpers
 
-    private func fetchConfigValue<T>(key: String, analyticsKey: String) async -> T? {
+    private func fetchConfigValue<T>(key: String) async -> T? {
         guard isEnabled, let db else {
-            FirebaseConfiguration.shared.logSkipped(operation: analyticsKey)
             return nil
         }
 
@@ -95,10 +94,8 @@ extension FirestoreManager {
                 return nil
             }
 
-            logAnalytics(operation: analyticsKey, success: true)
             return value
         } catch {
-            logAnalytics(operation: analyticsKey, success: false)
             logger.error("[FirestoreManager] Error fetching \(key): \(error.localizedDescription)")
             return nil
         }
@@ -112,7 +109,6 @@ extension FirestoreManager {
     /// Fetches or creates a profile for the given user
     func getProfile(user: AppUser) async -> Profile? {
         guard isEnabled, let db else {
-            FirebaseConfiguration.shared.logSkipped(operation: "getProfile")
             return createDefaultProfile(for: user)
         }
 
@@ -159,12 +155,10 @@ extension FirestoreManager {
                 .getDocument()
 
             if let profile = try? snapshot.data(as: Profile.self) {
-                logAnalytics(operation: "get_profile", success: true)
                 return profile
             }
             return nil
         } catch {
-            logAnalytics(operation: "get_profile", success: false)
             logger.error("[FirestoreManager] Error fetching profile for ID \(userId): \(error.localizedDescription)")
             return nil
         }
@@ -183,10 +177,9 @@ extension FirestoreManager {
             try db.collection(Collection.profiles)
                 .document(user.uid)
                 .setData(from: profile)
-            logAnalytics(operation: "create_profile", success: true)
+            
             return profile
         } catch {
-            logAnalytics(operation: "create_profile", success: false)
             logger.error("[FirestoreManager] Error creating profile for ID \(user.uid): \(error.localizedDescription)")
             return nil
         }
@@ -194,7 +187,6 @@ extension FirestoreManager {
 
     private func updateProfileField(userId: String, updates: [String: Any], analyticsKey: String) async {
         guard isEnabled, let db else {
-            FirebaseConfiguration.shared.logSkipped(operation: analyticsKey)
             return
         }
 
@@ -202,9 +194,7 @@ extension FirestoreManager {
             try await db.collection(Collection.profiles)
                 .document(userId)
                 .updateData(updates)
-            logAnalytics(operation: analyticsKey, success: true)
         } catch {
-            logAnalytics(operation: analyticsKey, success: false)
             logger.error("[FirestoreManager] Error updating \(analyticsKey) for ID \(userId): \(error.localizedDescription)")
         }
     }
@@ -273,7 +263,6 @@ extension FirestoreManager {
     /// Fetches the managed GitHub agent credentials
     func getManagedGitHubAgent() async -> ManagedGitHubAgent? {
         guard isEnabled, let db else {
-            FirebaseConfiguration.shared.logSkipped(operation: "getManagedGitHubAgent")
             return nil
         }
 
@@ -283,12 +272,10 @@ extension FirestoreManager {
                 .getDocument()
 
             if let agent = try? snapshot.data(as: ManagedGitHubAgent.self) {
-                logAnalytics(operation: "get_managed_github_agent", success: true)
                 return agent
             }
             return nil
         } catch {
-            logAnalytics(operation: "get_managed_github_agent", success: false)
             logger.error("[FirestoreManager] Error fetching managed GitHub agent: \(error.localizedDescription)")
             return nil
         }
@@ -297,7 +284,6 @@ extension FirestoreManager {
     /// Fetches all managed MCP agents
     func getManagedAgents() async -> [McpServer] {
         guard isEnabled, let db else {
-            FirebaseConfiguration.shared.logSkipped(operation: "getManagedAgents")
             return []
         }
 
@@ -316,27 +302,11 @@ extension FirestoreManager {
                 )
             }
 
-            logAnalytics(operation: "get_managed_agents", success: true)
             return agents
         } catch {
-            logAnalytics(operation: "get_managed_agents", success: false)
             logger.error("[FirestoreManager] Error fetching managed agents: \(error.localizedDescription)")
             return []
         }
-    }
-}
-
-// MARK: - Analytics Helper
-
-extension FirestoreManager {
-
-    fileprivate func logAnalytics(operation: String, success: Bool) {
-        AnalyticsManager.shared.customEvent(
-            view: .FirebaseManager,
-            primary: .firebase,
-            secondary: operation,
-            sev: success ? .info : .error
-        )
     }
 }
 

@@ -15,12 +15,6 @@ extension NotchView {
     }
 
     func close(initialClose: Bool = false) {
-        AnalyticsManager.shared.customEvent(
-            view: .NotchView,
-            primary: .function,
-            secondary: "close",
-            sev: .info
-        )
         windowSize = WindowSize.collapsed
         (width, height) = updateWindowSize(windowSize)        
         screenshotMonitor.updateKnownFiles()
@@ -31,12 +25,6 @@ extension NotchView {
     }
 
     func open() {
-        AnalyticsManager.shared.customEvent(
-            view: .NotchView,
-            primary: .function,
-            secondary: "open",
-            sev: .info
-        )
         windowSize = WindowSize.expanded
         (width, height) = updateWindowSize(windowSize)
         gainFocus()
@@ -47,12 +35,6 @@ extension NotchView {
     }
 
     func sidebarToggle() {
-        AnalyticsManager.shared.customEvent(
-            view: .NotchView,
-            primary: .function,
-            secondary: "sidebarToggle",
-            sev: .info
-        )
         expandSidebar.toggle()
     }
 
