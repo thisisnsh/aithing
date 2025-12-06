@@ -110,6 +110,7 @@ struct ModelTab: View {
         HStack(spacing: 8) {
             VStack(alignment: .leading, spacing: 2) {
                 Text(info.name).font(.system(size: 14, weight: .medium))
+                Text(info.id).font(.system(size: 10, weight: .medium)).opacity(0.5)
             }
             Spacer()
             Toggle(
@@ -178,7 +179,7 @@ struct ModelTab: View {
         }
     }
 
-    private func keyInstructions(for provider: AIProvider) -> AttributedString {
+    func keyInstructions(for provider: AIProvider) -> AttributedString {
         let urlString: String
         switch provider {
         case .anthropic:

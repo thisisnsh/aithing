@@ -32,7 +32,7 @@ struct PreferencesTab: View {
                 VStack(alignment: .leading) {
 
                     HStack {
-                        VStack(alignment: .leading) {
+                        VStack(alignment: .leading, spacing: 2) {
                             Text("5-Minute Prompt Cache")
                                 .font(.system(size: 14, weight: .medium))
                             Text(
@@ -64,7 +64,7 @@ struct PreferencesTab: View {
                     Divider()
 
                     HStack {
-                        VStack(alignment: .leading) {
+                        VStack(alignment: .leading, spacing: 2) {
                             Text("Maximum Output Tokens")
                                 .font(.system(size: 14, weight: .medium))
                             Text(
@@ -134,7 +134,7 @@ struct PreferencesTab: View {
                     Divider()
 
                     HStack {
-                        VStack(alignment: .leading) {
+                        VStack(alignment: .leading, spacing: 2) {
                             Text("Use Captured Screenshots")
                                 .font(.system(size: 14, weight: .medium))
                             Text(
@@ -158,7 +158,7 @@ struct PreferencesTab: View {
                                         screenshotMonitor.initialize()
                                     } else {
                                         screenshotMonitor.deinitialize()
-                                    }                                    
+                                    }
                                 }
                             )
                         )
@@ -220,4 +220,3 @@ private struct PreferenceToggleRow: View {
         }
     }
 }
-

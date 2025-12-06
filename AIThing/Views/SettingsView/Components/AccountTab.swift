@@ -70,41 +70,41 @@ struct AccountTab: View {
                     }
                     .padding(4)
                 }
-            }
 
-            GroupBox(label: title("Usage")) {
-                HStack(alignment: .bottom) {
+                GroupBox(label: title("Usage")) {
                     HStack(alignment: .bottom) {
-                        Text("\(usageData.query)")
-                            .font(.system(size: 14, weight: .medium))
-                        Text(usageData.query > 1 ? "Queries" : "Query")
-                            .font(.system(size: 10, weight: .medium))
-                            .opacity(0.5)
+                        HStack(alignment: .bottom) {
+                            Text("\(usageData.query)")
+                                .font(.system(size: 14, weight: .medium))
+                            Text(usageData.query > 1 ? "Queries" : "Query")
+                                .font(.system(size: 10, weight: .medium))
+                                .opacity(0.5)
+                        }
+                        .padding(4)
+                        Spacer()
+                        Divider()
+                        HStack(alignment: .bottom) {
+                            Text("\(usageData.agentUse)")
+                                .font(.system(size: 14, weight: .medium))
+                            Text(usageData.agentUse > 1 ? "Agent Uses" : "Agent Use")
+                                .font(.system(size: 10, weight: .medium))
+                                .opacity(0.5)
+                        }
+                        .padding(4)
+                        Spacer()
+                        Divider()
+                        HStack(alignment: .bottom) {
+                            Text("\(usageData.filesAttached)")
+                                .font(.system(size: 14, weight: .medium))
+                            Text(usageData.filesAttached > 1 ? "Attached Files" : "Attached File")
+                                .font(.system(size: 10, weight: .medium))
+                                .opacity(0.5)
+                        }
+                        .padding(4)
+                        Spacer()
                     }
                     .padding(4)
-                    Spacer()
-                    Divider()
-                    HStack(alignment: .bottom) {
-                        Text("\(usageData.agentUse)")
-                            .font(.system(size: 14, weight: .medium))
-                        Text(usageData.agentUse > 1 ? "Agent Uses" : "Agent Use")
-                            .font(.system(size: 10, weight: .medium))
-                            .opacity(0.5)
-                    }
-                    .padding(4)
-                    Spacer()
-                    Divider()
-                    HStack(alignment: .bottom) {
-                        Text("\(usageData.filesAttached)")
-                            .font(.system(size: 14, weight: .medium))
-                        Text(usageData.filesAttached > 1 ? "Attached Files" : "Attached File")
-                            .font(.system(size: 10, weight: .medium))
-                            .opacity(0.5)
-                    }
-                    .padding(4)
-                    Spacer()
                 }
-                .padding(4)
             }
 
             GroupBox(label: title("Shortcuts")) {
@@ -126,7 +126,7 @@ struct AccountTab: View {
                         .padding(4)
                         Divider()
                     }
-                    Text("Stuck? Check https://aithing.dev")
+                    Text("Reach out at help@aithing.dev or visit [aithing.dev](https://aithing.dev) for help.")
                         .font(.system(size: 10, weight: .medium))
                         .padding(4)
                 }

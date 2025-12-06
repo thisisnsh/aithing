@@ -249,11 +249,10 @@ struct IntelligenceView: View {
                             showGetStarted = true
                         } else if apiKey.isEmpty {
                             getStarted =
-                                "Please add the API key to continue. [How?](https://aithing.dev/getstarted)"
+                                "Please add the API key to continue. [How?](https://aithing.dev/faq#3-how-to-get-api-keys)"
                             showGetStarted = true
                         } else if !loggedIn {
-                            getStarted =
-                                "Please log in to continue. [How?](https://aithing.dev/getstarted)"
+                            getStarted = "Please log in from Settings to continue."
                             showGetStarted = true
                         } else {
                             getStarted = ""
