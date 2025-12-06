@@ -144,6 +144,7 @@ extension AppDelegate {
             updater: updaterController.updater,
             updateWindowSize: { return self.updateWindowSize(windowSize: $0) },
             modifyWindowSize: { return self.modifyWindowSize(size: $0, windowSize: $1) },
+            ignoresMouseEvents: { self.ignoresMouseEvents($0) },
             gainFocus: { self.gainFocus() },
             isTouchingRightEdge: { return self.isTouchingRightEdge() },
             windowMoveable: { self.windowMoveable($0) },
@@ -163,6 +164,10 @@ extension AppDelegate {
 extension AppDelegate {
     private func windowMoveable(_ value: Bool) {
         floatingWindow?.isMovableByWindowBackground = value
+    }
+
+    private func ignoresMouseEvents(_ value: Bool) {
+        floatingWindow?.ignoresMouseEvents = value
     }
 
     private func gainFocus() {

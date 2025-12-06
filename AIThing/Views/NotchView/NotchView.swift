@@ -31,6 +31,7 @@ struct NotchView: View {
     let updater: SPUUpdater
     let updateWindowSize: (WindowSize) -> (CGFloat, CGFloat)
     let modifyWindowSize: (CGSize, WindowSize) -> (CGFloat, CGFloat)
+    let ignoresMouseEvents: (Bool) -> Void
     let gainFocus: () -> Void
     let isTouchingRightEdge: () -> Bool
     let windowMoveable: (Bool) -> Void
@@ -81,181 +82,199 @@ struct NotchView: View {
     // MARK: - Body
     var body: some View {
         ZStack {
-            NotchShapeExt()
-
-            HStack(spacing: 0) {
-                if isExpanded {
-                    ResizeViewX()
+            Color.clear.frame(height: shadowBuffer + 16)
+                .frame(maxHeight: .infinity, alignment: .top)
+                .onHover { hover in
+                    ignoresMouseEvents(hover)
+                }
+            Color.clear.frame(height: shadowBuffer + 16)
+                .frame(maxHeight: .infinity, alignment: .bottom)
+                .onHover { hover in
+                    ignoresMouseEvents(hover)
+                }
+            Color.clear.frame(width: shadowBuffer)
+                .frame(maxWidth: .infinity, alignment: .leading)
+                .onHover { hover in
+                    ignoresMouseEvents(hover)
                 }
 
-                VStack(spacing: 0) {
-                    if isExpanded && showSettings {
-                        SettingsView(
-                            isPresented: $showSettings,
-                            allModels: $allModels,
-                            close: {
-                                showSettings = false
-                                close()
-                            },
-                            setPanelVisibility: { self.setPanelVisibility() },
-                            getManagedAgents: getManagedAgents,
-                            updater: updater
-                        )
-                        .environmentObject(loginManager)
-                        .environmentObject(firestoreManager)
-                        .environmentObject(googleAuthManager)
-                        .environmentObject(githubAuthManager)
-                        .environmentObject(mcpAuthManagers)
-                        .environmentObject(automationManager)
-                        .environmentObject(screenshotMonitor)
-                    }
+            ZStack {
+                NotchShapeExt()
 
-                    TabContainer(
-                        tabOrder: tabOrder,
-                        tabs: tabs,
-                        tabView: { tabView(tab: $0) }
-                    )
-
+                HStack(spacing: 0) {
                     if isExpanded {
-                        ResizeViewY()
+                        ResizeViewX()
                     }
-                }
 
-                VStack(alignment: expandSidebar ? .leading : .center, spacing: 0) {
-                    HStack {
-                        if !isExpanded || expandSidebar {
-                            ZStack(alignment: .topLeading) {
-                                LogoShape()
-                                    .fill(.white)
-                                    .scaledToFit()
-                                    .frame(height: 32)
-                                    .contentShape(Rectangle())
-                                    .onTapGesture {
-                                        if !isExpanded {
-                                            open()
+                    VStack(spacing: 0) {
+                        if isExpanded && showSettings {
+                            SettingsView(
+                                isPresented: $showSettings,
+                                allModels: $allModels,
+                                close: {
+                                    showSettings = false
+                                    close()
+                                },
+                                setPanelVisibility: { self.setPanelVisibility() },
+                                getManagedAgents: getManagedAgents,
+                                updater: updater
+                            )
+                            .environmentObject(loginManager)
+                            .environmentObject(firestoreManager)
+                            .environmentObject(googleAuthManager)
+                            .environmentObject(githubAuthManager)
+                            .environmentObject(mcpAuthManagers)
+                            .environmentObject(automationManager)
+                            .environmentObject(screenshotMonitor)
+                        }
+
+                        TabContainer(
+                            tabOrder: tabOrder,
+                            tabs: tabs,
+                            tabView: { tabView(tab: $0) }
+                        )
+
+                        if isExpanded {
+                            ResizeViewY()
+                        }
+                    }
+
+                    VStack(alignment: expandSidebar ? .leading : .center, spacing: 0) {
+                        HStack {
+                            if !isExpanded || expandSidebar {
+                                ZStack(alignment: .topLeading) {
+                                    LogoShape()
+                                        .fill(.white)
+                                        .scaledToFit()
+                                        .frame(height: 32)
+                                        .contentShape(Rectangle())
+                                        .onTapGesture {
+                                            if !isExpanded {
+                                                open()
+                                            }
                                         }
-                                    }
 
-                                if unseen {
-                                    Circle().fill(.red)
-                                        .frame(width: 4, height: 4)
+                                    if unseen {
+                                        Circle().fill(.red)
+                                            .frame(width: 4, height: 4)
+                                    }
                                 }
                             }
+
+                            if isExpanded, expandSidebar {
+                                Spacer()
+
+                                Image(systemName: "rectangle.grid.3x1.fill")
+                                    .resizable()
+                                    .frame(width: 14, height: 14)
+                                    .padding(8)
+                                    .background(hoverSidebar ? Color.white.opacity(0.1) : .clear)
+                                    .cornerRadius(8)
+                                    .onHover { hoverSidebar = $0 }
+                                    .onTapGesture { sidebarToggle() }
+                                    .rotationEffect(Angle(degrees: 270))
+                            }
                         }
+                        .padding(.top, 8)
+                        .padding(.horizontal, isExpanded && expandSidebar ? 16 : 0)
 
-                        if isExpanded, expandSidebar {
-                            Spacer()
+                        if isExpanded {
+                            Divider().opacity(0)
 
-                            Image(systemName: "rectangle.grid.3x1.fill")
-                                .resizable()
-                                .frame(width: 14, height: 14)
-                                .padding(8)
-                                .background(hoverSidebar ? Color.white.opacity(0.1) : .clear)
-                                .cornerRadius(8)
-                                .onHover { hoverSidebar = $0 }
-                                .onTapGesture { sidebarToggle() }
-                                .rotationEffect(Angle(degrees: 270))
-                        }
-                    }
-                    .padding(.top, 8)
-                    .padding(.horizontal, isExpanded && expandSidebar ? 16 : 0)
-
-                    if isExpanded {
-                        Divider().opacity(0)
-
-                        HoverableTabButton(
-                            title: "New Chat",
-                            isActive: false,
-                            action: {
-                                open()
-                                showSettings = false
-                                let tabId = UUID().uuidString
-                                addTab(TabItem(id: tabId))
-                                focusedTabId = tabId
-                            },
-                            deleteAction: {},
-                            image: "plus.circle.fill",
-                            isDeletable: false,
-                            isExpanded: expandSidebar
-                        )
-                        .padding(.top, expandSidebar ? 8 : 0)
-
-                        HoverableTabButton(
-                            title: "Settings",
-                            isActive: showSettings,
-                            action: {
-                                open()
-                                if focusedTabId.isEmpty {
+                            HoverableTabButton(
+                                title: "New Chat",
+                                isActive: false,
+                                action: {
+                                    open()
+                                    showSettings = false
                                     let tabId = UUID().uuidString
                                     addTab(TabItem(id: tabId))
                                     focusedTabId = tabId
-                                }
-                                showSettings.toggle()
-                            },
-                            deleteAction: {},
-                            image: "gearshape.fill",
-                            isDeletable: false,
-                            isExpanded: expandSidebar
-                        )
-
-                        if !expandSidebar {
-                            HoverableTabButton(
-                                title: "Expand Sidebar",
-                                isActive: false,
-                                action: {
-                                    sidebarToggle()
                                 },
                                 deleteAction: {},
-                                image: "rectangle.grid.1x2.fill",
+                                image: "plus.circle.fill",
                                 isDeletable: false,
-                                isExpanded: expandSidebar,
-                                rotateImage: Angle(degrees: 270)
+                                isExpanded: expandSidebar
                             )
-                        }
+                            .padding(.top, expandSidebar ? 8 : 0)
 
-                        if expandSidebar {
-                            if histories.count > 0 {
-                                Divider().opacity(0).padding(.vertical, 8)
+                            HoverableTabButton(
+                                title: "Settings",
+                                isActive: showSettings,
+                                action: {
+                                    open()
+                                    if focusedTabId.isEmpty {
+                                        let tabId = UUID().uuidString
+                                        addTab(TabItem(id: tabId))
+                                        focusedTabId = tabId
+                                    }
+                                    showSettings.toggle()
+                                },
+                                deleteAction: {},
+                                image: "gearshape.fill",
+                                isDeletable: false,
+                                isExpanded: expandSidebar
+                            )
+
+                            if !expandSidebar {
+                                HoverableTabButton(
+                                    title: "Expand Sidebar",
+                                    isActive: false,
+                                    action: {
+                                        sidebarToggle()
+                                    },
+                                    deleteAction: {},
+                                    image: "rectangle.grid.1x2.fill",
+                                    isDeletable: false,
+                                    isExpanded: expandSidebar,
+                                    rotateImage: Angle(degrees: 270)
+                                )
                             }
 
-                            Sidebar()
-                                .padding(.bottom, expandSidebar ? -16 : 0)
-                        }
-                    }
+                            if expandSidebar {
+                                if histories.count > 0 {
+                                    Divider().opacity(0).padding(.vertical, 8)
+                                }
 
-                    Spacer()
+                                Sidebar()
+                                    .padding(.bottom, expandSidebar ? -16 : 0)
+                            }
+                        }
+
+                        Spacer()
+                    }
+                    .frame(width: isExpanded ? (expandSidebar ? 200 : 60) : 60)
                 }
-                .frame(width: isExpanded ? (expandSidebar ? 200 : 60) : 60)
-            }
-            .padding(.vertical, 24)
+                .padding(.vertical, 24)
 
-            if !toastText.isEmpty, isExpanded {
-                Toast()
-                    .onAppear {
-                        DispatchQueue.main.asyncAfter(deadline: .now() + 5) {
-                            self.toastText = ""
+                if !toastText.isEmpty, isExpanded {
+                    Toast()
+                        .onAppear {
+                            DispatchQueue.main.asyncAfter(deadline: .now() + 5) {
+                                self.toastText = ""
+                            }
                         }
-                    }
-                    .frame(maxHeight: .infinity, alignment: .top)
-                    .padding(32)
-            }
+                        .frame(maxHeight: .infinity, alignment: .top)
+                        .padding(32)
+                }
 
-            if showDragIcon {
-                Image(systemName: "square.grid.3x2.fill")
-                    .resizable()
-                    .scaledToFit()
-                    .frame(width: 12)
-                    .shadow(color: .black, radius: 4)
-                    .onHover { hover in
-                        windowMoveable(hover)
-                    }
-                    .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topTrailing)
-                    .padding(.horizontal, 24)
+                if showDragIcon {
+                    Image(systemName: "square.grid.3x2.fill")
+                        .resizable()
+                        .scaledToFit()
+                        .frame(width: 12)
+                        .shadow(color: .black, radius: 4)
+                        .onHover { hover in
+                            windowMoveable(hover)
+                            ignoresMouseEvents(!hover)
+                        }
+                        .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topTrailing)
+                        .padding(.horizontal, 24)
+                }
             }
-
+            .padding(.leading, shadowBuffer)
+            .padding(.vertical, shadowBuffer)
         }
-        .padding(.leading, shadowBuffer)
-        .padding(.vertical, shadowBuffer)
         .frame(width: width, height: height)
         .onAppear {
             AnalyticsManager.shared.screenView(screenName: .NotchView)
