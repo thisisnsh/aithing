@@ -2,7 +2,7 @@
 //  TitleGenerator.swift
 //  AIThing
 //
-//  Helper function for generating chat titles.
+//  Created by Nishant Singh Hada on 12/4/25.
 //
 
 import Foundation

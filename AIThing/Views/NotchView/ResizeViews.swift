@@ -2,7 +2,7 @@
 //  ResizeViews.swift
 //  AIThing
 //
-//  Resize handle views for horizontal and vertical resizing.
+//  Created by Nishant Singh Hada on 10/31/25.
 //
 
 import SwiftUI

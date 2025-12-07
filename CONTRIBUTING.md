@@ -1,210 +1,153 @@
-<!--
-  CONTRIBUTING.md
-  AIThing
-  
-  Created by Nishant Singh Hada on December 2025.
-  https://aithing.dev
--->
-
 # Contributing to AI Thing
 
-Thank you for your interest in contributing to AI Thing! We welcome contributions from the community and are grateful for any help you can provide.
-
-## Table of Contents
-
-- [Code of Conduct](#code-of-conduct)
-- [Getting Started](#getting-started)
-- [How to Contribute](#how-to-contribute)
-- [Development Setup](#development-setup)
-- [Pull Request Process](#pull-request-process)
-- [Style Guidelines](#style-guidelines)
-- [Reporting Bugs](#reporting-bugs)
-- [Requesting Features](#requesting-features)
-
-## Code of Conduct
-
-This project adheres to the [Contributor Covenant Code of Conduct](CODE_OF_CONDUCT.md). By participating, you are expected to uphold this code. Please report unacceptable behavior to help@aithing.dev.
+Thank you for your interest in contributing to AI Thing! We're excited to have you as part of our community.
 
 ## Getting Started
 
-1. Fork the repository on GitHub
-2. Clone your fork locally
-3. Set up the development environment (see [Development Setup](#development-setup))
-4. Create a new branch for your contribution
-5. Make your changes
-6. Submit a pull request
+### Before You Begin
+
+1. **Star the repository** ⭐ - Show your support for the project!
+2. **Check existing issues** - See if someone else has already reported the issue or requested the feature
+3. **Read the README** - Familiarize yourself with the project's goals and features
 
 ## How to Contribute
 
-There are many ways to contribute to AI Thing:
+### 1. Open an Issue First
 
-- **Report bugs** - Help us identify and fix issues
-- **Suggest features** - Share ideas for new functionality
-- **Improve documentation** - Help make our docs clearer and more comprehensive
-- **Submit pull requests** - Contribute code fixes or new features
-- **Add LLM provider support** - Help expand our multi-provider capabilities
-- **Create MCP tools** - Build new tools and agents for the ecosystem
+Before making any changes, please **open an issue** to discuss your proposed contribution. This helps us:
+- Avoid duplicate work
+- Ensure your contribution aligns with the project's direction
+- Provide feedback and guidance early in the process
+
+**Issue Types:**
+- 🐛 **Bug Report** - Something isn't working as expected
+- ✨ **Feature Request** - Suggest a new feature or enhancement
+- 📚 **Documentation** - Improvements to documentation
+- ❓ **Question** - General questions about the project
+
+### 2. Make a Pull Request
+
+Once your issue has been discussed and approved:
+
+1. **Fork the repository** to your GitHub account
+2. **Clone your fork** locally:
+   ```bash
+   git clone https://github.com/YOUR_USERNAME/aithing-mac.git
+   cd aithing-mac
+   ```
+
+3. **Create a new branch** for your changes:
+   ```bash
+   git checkout -b fix/issue-123-description
+   # or
+   git checkout -b feature/issue-123-description
+   ```
+
+4. **Make your changes** following our coding guidelines (see below)
+
+5. **Commit your changes** with a clear message:
+   ```bash
+   git commit -m "Fix: Description of fix (closes #123)"
+   # or
+   git commit -m "Feature: Description of feature (closes #123)"
+   ```
+
+6. **Push to your fork**:
+   ```bash
+   git push origin your-branch-name
+   ```
+
+7. **Open a Pull Request** on GitHub:
+   - Reference the issue number in your PR title: `Fix: Description (closes #123)`
+   - Provide a clear description of what your PR does
+   - Link to the original issue in the PR description
 
 ## Development Setup
 
 ### Prerequisites
 
-- macOS 13.0 (Ventura) or later
-- Xcode 15.0 or later
-- Git
+- **Xcode** with Swift
 
-### Setup Steps
+### Setting Up the Project
 
-1. **Clone the repository:**
-   ```bash
-   git clone https://github.com/thisisnsh/AIThing.git
-   cd AIThing
-   ```
-
-2. **Open in Xcode:**
-   ```bash
-   open AIThing.xcodeproj
-   ```
-
-3. **Configure signing:**
-   - Select the AIThing target
-   - Go to Signing & Capabilities
-   - Select your development team
-
-4. **Build and run:**
-   - Press `Cmd+R` to build and run the project
+1. Open `AIThing.xcodeproj` in Xcode
+2. Wait for Swift Package Manager to resolve dependencies
+3. Build and run the project (`⌘R`)
 
 ### Project Structure
 
 ```
 AIThing/
-├── AIThingApp.swift          # App entry point
-├── AppDelegate.swift         # Window management and hotkeys
-├── Managers/
-│   ├── Intelligence/         # LLM integration
-│   ├── Models/               # Data models
-│   ├── Tools/                # MCP and OAuth
-│   └── Extensions/           # Swift extensions
-└── Views/
-    ├── ChatView/             # Chat interface
-    ├── NotchView/            # Floating window
-    └── Components/           # Reusable components
+├── Managers/          # Business logic and core functionality
+│   ├── Automation/    # Automation handling
+│   ├── Context/       # App context and screen capture
+│   ├── Firebase/      # Authentication and storage
+│   ├── Intelligence/  # AI provider integrations
+│   └── Tools/         # OAuth and external tool integrations
+├── Views/             # SwiftUI views
+│   ├── ChatView/      # Chat interface components
+│   ├── IntelligenceView/  # Main intelligence interface
+│   ├── NotchView/     # Notch UI and window management
+│   └── SettingsView/  # Settings interface
+└── Models/            # Data models
 ```
 
-## Pull Request Process
+## Coding Guidelines
 
-1. **Create a feature branch:**
-   ```bash
-   git checkout -b feature/your-feature-name
-   ```
-
-2. **Make your changes:**
-   - Write clear, concise commit messages
-   - Keep commits focused and atomic
-   - Add tests if applicable
-
-3. **Test your changes:**
-   - Ensure the app builds without warnings
-   - Test the functionality on your local machine
-   - Verify existing features still work
-
-4. **Submit the pull request:**
-   - Push your branch to your fork
-   - Create a pull request against the `main` branch
-   - Fill out the PR template completely
-   - Link any related issues
-
-5. **Address review feedback:**
-   - Respond to comments promptly
-   - Make requested changes
-   - Re-request review when ready
-
-### PR Requirements
-
-- All tests must pass
-- Code must build without warnings
-- Follow the style guidelines
-- Include documentation for new features
-- Update README.md if necessary
-
-## Style Guidelines
-
-### Swift Code Style
+### Swift Style
 
 - Follow [Swift API Design Guidelines](https://swift.org/documentation/api-design-guidelines/)
 - Use meaningful variable and function names
-- Keep functions focused and concise
 - Add comments for complex logic
-- Use `// MARK:` comments to organize code sections
+- Keep functions small and focused on a single responsibility
 
 ### SwiftUI Best Practices
 
-- Extract reusable views into separate files
-- Use `@State`, `@Binding`, `@StateObject` appropriately
-- Keep view bodies simple and readable
-- Use view modifiers consistently
+- Use `@State`, `@Binding`, `@ObservedObject`, and `@EnvironmentObject` appropriately
+- Extract reusable components into separate views
+- Use view modifiers for styling consistency
 
-### Code Organization
+### Code Quality
 
-```swift
-// MARK: - Properties
-// MARK: - Initialization
-// MARK: - Body (for SwiftUI views)
-// MARK: - Methods
-// MARK: - Private Methods
-```
+- Ensure your code builds without warnings
+- Test your changes thoroughly on macOS
+- Verify that existing functionality still works
 
-### Naming Conventions
+## Pull Request Guidelines
 
-- **Types:** PascalCase (e.g., `ChatMessage`, `IntelligenceManager`)
-- **Variables/Functions:** camelCase (e.g., `sendMessage`, `currentUser`)
-- **Constants:** camelCase (e.g., `maxTokens`, `defaultModel`)
+### What Makes a Good PR?
 
-## Reporting Bugs
+✅ **DO:**
+- Reference the issue number in your PR title and description
+- Keep changes focused on solving one issue
+- Write clear commit messages
+- Test your changes thoroughly
+- Update documentation if needed
+- Add comments for complex code
 
-When reporting bugs, please include:
+❌ **DON'T:**
+- Submit PRs without an associated issue
+- Mix multiple unrelated changes in one PR
+- Submit incomplete or work-in-progress code
+- Break existing functionality
 
-1. **Description:** Clear description of the bug
-2. **Steps to Reproduce:** Detailed steps to reproduce the issue
-3. **Expected Behavior:** What you expected to happen
-4. **Actual Behavior:** What actually happened
-5. **Environment:**
-   - macOS version
-   - AI Thing version
-   - Any relevant configuration
-6. **Screenshots/Logs:** If applicable
+### PR Review Process
 
-Use the [Bug Report template](.github/ISSUE_TEMPLATE/bug_report.md) when creating issues.
-
-## Requesting Features
-
-When requesting features, please include:
-
-1. **Problem Statement:** What problem does this solve?
-2. **Proposed Solution:** Your idea for the feature
-3. **Alternatives Considered:** Other approaches you've thought about
-4. **Additional Context:** Mockups, examples, or references
-
-Use the [Feature Request template](.github/ISSUE_TEMPLATE/feature_request.md) when creating issues.
-
-## Adding LLM Provider Support
-
-AI Thing is designed to support multiple LLM providers. To add a new provider:
-
-1. Create a new manager in `Managers/Intelligence/`
-2. Implement the required protocol methods
-3. Add configuration UI in Settings
-4. Update documentation
-5. Submit a PR with tests
+1. A maintainer will review your PR
+2. They may request changes or ask questions
+3. Once approved, your PR will be merged
+4. Your contribution will be included in the next release! 🎉
 
 ## Questions?
 
-- **General questions:** Open a [GitHub Discussion](https://github.com/thisisnsh/AIThing/discussions)
-- **Bug reports:** Open a [GitHub Issue](https://github.com/thisisnsh/AIThing/issues)
-- **Security issues:** See [SECURITY.md](SECURITY.md)
-- **Email:** help@aithing.dev
+If you have any questions about contributing, feel free to:
+- Open an issue with the "question" label
+- Email us at **[help@aithing.dev](mailto:help@aithing.dev)**
+
+## Code of Conduct
+
+We are committed to providing a welcoming and inclusive experience for everyone. Please be respectful and constructive in all interactions.
 
 ---
 
-Thank you for contributing to AI Thing!
-
+Thank you for contributing to AI Thing! Your efforts help make this project better for everyone. 🚀

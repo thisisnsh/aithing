@@ -2,7 +2,7 @@
 //  InternalToolProvider.swift
 //  AIThing
 //
-//  Provides internal/native tools that are built into the app.
+//  Created by Nishant Singh Hada on 12/6/25.
 //
 
 import Foundation

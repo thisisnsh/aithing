@@ -17,7 +17,16 @@ import ServiceManagement
 import Sparkle
 import SwiftUI
 
-// MARK: - AppDelegate
+// MARK: - App Delegate
+
+/// Main application delegate managing the window, hotkeys, and global state.
+///
+/// Responsibilities:
+/// - Creates and manages the floating notch window
+/// - Registers global keyboard shortcuts
+/// - Handles selected text monitoring
+/// - Initializes Firebase and other services
+/// - Manages window positioning and sizing
 class AppDelegate: NSObject, NSApplicationDelegate {
     private var floatingWindow: NonActivatingPanel!
 
@@ -46,6 +55,14 @@ class AppDelegate: NSObject, NSApplicationDelegate {
         userDriverDelegate: nil
     )
 
+    /// Called when the application finishes launching.
+    ///
+    /// Sets up:
+    /// - Logging system
+    /// - Firebase configuration (if available)
+    /// - Global hotkeys for opening/closing the window
+    /// - The floating notch window
+    /// - Launch-at-login service
     func applicationDidFinishLaunching(_ notification: Notification) {
         NSApp.setActivationPolicy(.accessory)  // background-style app
 
@@ -89,16 +106,27 @@ class AppDelegate: NSObject, NSApplicationDelegate {
         try? SMAppService.mainApp.register()
     }
 
+    /// Handles screen configuration changes (resolution, arrangement, etc.).
+    ///
+    /// Resets the window position to ensure it remains visible.
     @objc private func handleScreenChange() {
         _ = updateWindowSize(windowSize: lastWindowSize, resetY: true)
     }
 
+    /// Called when any application becomes active.
+    ///
+    /// Refreshes the app context to track the newly active application.
     @objc func appDidActivate(_ note: Notification) {
         DispatchQueue.main.async {
             self.appContext.refresh()
         }
     }
 
+    /// Handles URL scheme callbacks for OAuth flows.
+    ///
+    /// - Parameters:
+    ///   - application: The application instance
+    ///   - urls: URLs to handle (OAuth callback URLs)
     func application(_ application: NSApplication, open urls: [URL]) {
         for url in urls { OAuthSwift.handle(url: url) }
     }
@@ -108,7 +136,14 @@ class AppDelegate: NSObject, NSApplicationDelegate {
     }
 }
 
+// MARK: - Setup
+
 extension AppDelegate {
+    /// Registers global keyboard shortcuts for the application.
+    ///
+    /// Registers:
+    /// - Ctrl+Option+Space: Toggle window open/close
+    /// - Ctrl+Space: Toggle window open/close (alternative)
     private func setupGlobalHotKeys() {
         spaceHotKey = HotKey(key: .space, modifiers: [.control, .option])
         spaceHotKeyAnother = HotKey(key: .space, modifiers: [.control])
@@ -116,6 +151,11 @@ extension AppDelegate {
         spaceHotKeyAnother?.keyDownHandler = { self.viewModel.triggerOpenClose() }
     }
 
+    /// Creates and configures the main floating window.
+    ///
+    /// Initializes the window on the right side of the screen with
+    /// the collapsed size, sets up the SwiftUI view hierarchy, and
+    /// configures window visibility for screenshots.
     private func setupNotchWindow() {
         // Get screen dimensions
         guard let screen = NSScreen.main else { return }
@@ -161,26 +201,46 @@ extension AppDelegate {
     }
 }
 
+// MARK: - Window Management
+
 extension AppDelegate {
+    /// Sets whether the window can be moved by dragging its background.
+    ///
+    /// - Parameter value: Whether window should be moveable
     private func windowMoveable(_ value: Bool) {
         floatingWindow?.isMovableByWindowBackground = value
     }
 
+    /// Sets whether the window ignores mouse events (click-through).
+    ///
+    /// - Parameter value: Whether to ignore mouse events
     private func ignoresMouseEvents(_ value: Bool) {
         floatingWindow?.ignoresMouseEvents = value
     }
 
+    /// Brings the floating window to the front and makes it key.
     private func gainFocus() {
         floatingWindow?.gainFocus()
     }
 
-    /// Modify the window size during resizing
+    /// Modifies the window size during resizing.
+    ///
+    /// Updates the stored width and height based on the delta, enforcing minimum sizes.
+    ///
+    /// - Parameters:
+    ///   - size: The size delta to apply
+    ///   - windowSize: The target window size state
+    /// - Returns: Tuple of (width, height) for the updated window
     private func modifyWindowSize(size: CGSize, windowSize: WindowSize) -> (CGFloat, CGFloat) {
         width = max(560, width + size.width)
         height = max(600, height + size.height)
         return updateWindowSize(windowSize: windowSize)
     }
 
+    /// Gets the dimensions for the specified window size state.
+    ///
+    /// - Parameter windowSize: The window size state (collapsed or expanded)
+    /// - Returns: Tuple of (width, height) including shadow buffer
     private func getWindowSize(windowSize: WindowSize) -> (CGFloat, CGFloat) {
         switch windowSize {
         case .collapsed:
@@ -190,6 +250,13 @@ extension AppDelegate {
         }
     }
 
+    /// Updates the window size and position while keeping the top-right corner fixed.
+    ///
+    /// - Parameters:
+    ///   - windowSize: The target window size state
+    ///   - offsetTopY: Optional Y offset to apply
+    ///   - resetY: Whether to reset the Y position tracking
+    /// - Returns: Tuple of (width, height) for the updated window
     private func updateWindowSize(windowSize: WindowSize, offsetTopY: CGFloat = 0, resetY: Bool = false) -> (CGFloat, CGFloat) {
         // Calculate new position to keep top-right corner fixed
         guard let screen = floatingWindow.screen ?? NSScreen.main else {
@@ -244,6 +311,9 @@ extension AppDelegate {
         return (windowWidth, windowHeight)
     }
 
+    /// Determines which edges of the window are outside the visible screen bounds.
+    ///
+    /// - Returns: Set of edges that are out of bounds
     private func outOfBoundsEdges() -> Set<OutOfBoundsEdge> {
         var edges = Set<OutOfBoundsEdge>()
         guard let screen = floatingWindow.screen ?? NSScreen.main else { return edges }
@@ -268,6 +338,9 @@ extension AppDelegate {
         return edges
     }
 
+    /// Checks if the window is touching or past the right edge of the screen.
+    ///
+    /// - Returns: `true` if the window's right edge is at or beyond the screen's right edge
     private func isTouchingRightEdge() -> Bool {
         guard let screen = floatingWindow.screen ?? NSScreen.main else { return false }
         let windowFrame = floatingWindow.frame
@@ -277,8 +350,10 @@ extension AppDelegate {
         return windowFrame.maxX >= screenFrame.maxX
     }
 
-    /// Sets the panel visibility in screenshots based on user preferences
-    /// Uses readOnly sharing type to show the panel, or none to hide it from screenshots
+    /// Sets the panel visibility in screenshots based on user preferences.
+    ///
+    /// Uses `.readOnly` sharing type to show the panel in screenshots,
+    /// or `.none` to hide it from screenshots.
     private func setPanelVisibility() {
         if let floatingWindow = floatingWindow {
             floatingWindow.sharingType = getPreferencesShowInScreenshot() ? .readOnly : .none
@@ -286,9 +361,12 @@ extension AppDelegate {
     }
 }
 
+// MARK: - Text Selection Monitoring
+
 extension AppDelegate {
-    /// Put any bundle IDs you want to ignore here.
-    /// Example values shown; change/remove as needed.
+    /// Bundle IDs of apps to exclude from text selection monitoring.
+    ///
+    /// Add apps here that shouldn't trigger text selection detection.
     private var excludedBundleIDs: Set<String> {
         [
             "com.thisisnsh.mac.AIThing",
@@ -297,11 +375,16 @@ extension AppDelegate {
         ]
     }
 
+    /// Stops monitoring for text selection changes.
     private func stopSelectionPoll() {
         viewModel.updateSelectionPolling(value: false)
         pollingTimer?.cancel()
     }
 
+    /// Starts monitoring for text selection changes every 500ms.
+    ///
+    /// Requests accessibility permissions if not already granted.
+    /// Skips monitoring when the frontmost app is in the excluded list.
     private func startSelectionPoll() {
         viewModel.updateSelectionPolling(value: true)
         pollingTimer?.cancel()
@@ -342,7 +425,10 @@ extension AppDelegate {
         timer.resume()
     }
 
-    /// Main-actor isolate this since it touches UI state (e.g. view models).
+    /// Attempts to retrieve currently selected text using multiple methods.
+    ///
+    /// Tries accessibility API first, then falls back to menu action copy.
+    /// Updates the view model with any non-empty selection found.
     @MainActor
     private func setupSelection() async {
         do {
@@ -376,7 +462,16 @@ extension AppDelegate {
     }
 }
 
+// MARK: - First Mouse Hosting View
+
+/// Custom NSHostingView that accepts first mouse clicks.
+///
+/// Allows the window to respond to clicks even when it's not the active window,
+/// without activating the app.
 final class FirstMouseHostingView<Content: View>: NSHostingView<Content> {
+    /// Accepts the first mouse click even when the window is not active.
     override func acceptsFirstMouse(for event: NSEvent?) -> Bool { true }
+    
+    /// Accepts first responder status for keyboard input.
     override var acceptsFirstResponder: Bool { true }
 }

@@ -2,7 +2,7 @@
 //  SystemMessages.swift
 //  AIThing
 //
-//  Helper functions for building system messages and queries.
+//  Created by Nishant Singh Hada on 12/4/25.
 //
 
 import Foundation

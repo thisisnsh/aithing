@@ -2,7 +2,7 @@
 //  NSImage+Extensions.swift
 //  AIThing
 //
-//  NSImage extension utilities.
+//  Created by Nishant Singh Hada.
 //
 
 import AppKit

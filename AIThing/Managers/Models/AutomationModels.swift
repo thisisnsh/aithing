@@ -2,7 +2,7 @@
 //  AutomationModels.swift
 //  AIThing
 //
-//  Models for automation functionality.
+//  Created by Nishant Singh Hada on 11/10/25.
 //
 
 import Foundation

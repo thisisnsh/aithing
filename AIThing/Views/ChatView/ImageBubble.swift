@@ -2,7 +2,7 @@
 //  ImageBubble.swift
 //  AIThing
 //
-//  Image bubble component for displaying image messages.
+//  Created by Nishant Singh Hada on 8/15/25.
 //
 
 import AppKit

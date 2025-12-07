@@ -2,7 +2,7 @@
 //  CacheHelpers.swift
 //  AIThing
 //
-//  Helper functions for cache block handling and utility.
+//  Created by Nishant Singh Hada on 12/5/25.
 //
 
 import Foundation

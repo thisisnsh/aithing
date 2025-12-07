@@ -2,7 +2,7 @@
 //  PDFDocument+Extensions.swift
 //  AIThing
 //
-//  PDFDocument extension utilities.
+//  Created by Nishant Singh Hada.
 //
 
 import Foundation

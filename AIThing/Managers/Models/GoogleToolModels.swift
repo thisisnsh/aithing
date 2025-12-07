@@ -2,7 +2,7 @@
 //  GoogleToolModels.swift
 //  AIThing
 //
-//  Configuration for Google OAuth scopes and tool capabilities.
+//  Created by Nishant Singh Hada on 12/5/25.
 //
 
 import Foundation

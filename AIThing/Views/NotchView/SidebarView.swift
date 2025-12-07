@@ -2,7 +2,7 @@
 //  SidebarView.swift
 //  AIThing
 //
-//  Sidebar component showing chat history.
+//  Created by Nishant Singh Hada on 10/31/25.
 //
 
 import SwiftUI

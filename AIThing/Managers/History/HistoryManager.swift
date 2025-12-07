@@ -59,7 +59,10 @@ final class HistoryStore: ObservableObject {
         }
     }
 
-    /// Return all History objects from all per-id stores, newest first.
+    /// Returns all chat histories from all stores, sorted by most recent first.
+    ///
+    /// - Parameter limit: Optional maximum number of histories to return
+    /// - Returns: Array of History objects sorted by lastUpdated timestamp
     func getAll(limit: Int? = nil) async -> [History] {
         let urls = Self.existingStoreURLs()
         var results: [History] = []

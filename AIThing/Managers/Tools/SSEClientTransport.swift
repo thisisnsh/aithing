@@ -3,7 +3,7 @@
 //  AIThing
 //
 //  Created by Nishant Singh Hada on 9/13/25.
-// https://github.com/modelcontextprotocol/swift-sdk/blob/5978c719d99fb85b1c65c31e47c82c1331c24830/Sources/MCP/Base/Transports/SSEClientTransport.swift
+//  Forked from https://github.com/modelcontextprotocol/swift-sdk/blob/5978c719d99fb85b1c65c31e47c82c1331c24830/Sources/MCP/Base/Transports/SSEClientTransport.swift
 //
 
 import Foundation

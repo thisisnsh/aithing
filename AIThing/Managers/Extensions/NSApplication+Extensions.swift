@@ -2,7 +2,7 @@
 //  NSApplication+Extensions.swift
 //  AIThing
 //
-//  NSApplication extension utilities.
+//  Created by Nishant Singh Hada.
 //
 
 import AppKit

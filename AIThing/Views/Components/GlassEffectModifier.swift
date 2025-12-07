@@ -2,7 +2,7 @@
 //  GlassEffectModifier.swift
 //  AIThing
 //
-//  Provides cross-version glass effect support for macOS 26.0+.
+//  Created by Nishant Singh Hada on 12/5/25.
 //
 
 import SwiftUI

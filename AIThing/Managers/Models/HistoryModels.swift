@@ -2,7 +2,7 @@
 //  HistoryModels.swift
 //  AIThing
 //
-//  Models for chat history.
+//  Created by Nishant Singh Hada on 8/14/25.
 //
 
 import CoreData

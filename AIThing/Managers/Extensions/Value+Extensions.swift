@@ -2,7 +2,7 @@
 //  Value+Extensions.swift
 //  AIThing
 //
-//  MCP Value extension utilities.
+//  Created by Nishant Singh Hada.
 //
 
 import Foundation

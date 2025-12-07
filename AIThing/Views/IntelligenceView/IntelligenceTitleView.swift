@@ -2,7 +2,7 @@
 //  IntelligenceTitleView.swift
 //  AIThing
 //
-//  Title view component for IntelligenceView.
+//  Created by Nishant Singh Hada on 11/1/25.
 //
 
 import SwiftUI

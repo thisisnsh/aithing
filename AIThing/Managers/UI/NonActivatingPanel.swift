@@ -7,10 +7,26 @@
 
 import AppKit
 
+// MARK: - Non-Activating Panel Delegate
+
+/// Delegate protocol for receiving notifications about panel movements.
 protocol NonActivatingPanelDelegate: AnyObject {
+    /// Called when the panel's frame changes.
+    ///
+    /// - Parameter panel: The panel that moved
     func panelDidMove(_ panel: NonActivatingPanel)
 }
 
+// MARK: - Non-Activating Panel
+
+/// A floating panel that can become key but doesn't activate the app.
+///
+/// This panel type is used for the main UI window. It:
+/// - Floats above other windows at status bar level
+/// - Can become key to receive keyboard input
+/// - Doesn't activate the app when clicked
+/// - Appears on all spaces
+/// - Doesn't participate in window cycling
 class NonActivatingPanel: NSPanel {
     override var canBecomeKey: Bool { true }
     override var canBecomeMain: Bool { false }
@@ -18,6 +34,9 @@ class NonActivatingPanel: NSPanel {
     weak var panelDelegate: NonActivatingPanelDelegate?
     private var frameObserver: NSKeyValueObservation?
 
+    /// Creates a new non-activating panel with the specified content rect.
+    ///
+    /// - Parameter contentRect: The initial frame for the panel
     init(contentRect: NSRect) {
         super.init(
             contentRect: contentRect,
@@ -50,6 +69,10 @@ class NonActivatingPanel: NSPanel {
         }
     }
 
+    /// Activates the app and brings this panel to the front.
+    ///
+    /// Makes the panel key and orders it front, activating the app
+    /// and ignoring other apps in the process.
     func gainFocus() {
         // Bring the app forward if it's not active
         NSApp.activate(ignoringOtherApps: true)

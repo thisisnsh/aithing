@@ -2,7 +2,7 @@
 //  AuthModels.swift
 //  AIThing
 //
-//  Models for authentication.
+//  Created by Nishant Singh Hada on 8/8/25.
 //
 
 import FirebaseAuth

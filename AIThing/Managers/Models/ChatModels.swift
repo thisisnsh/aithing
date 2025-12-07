@@ -2,22 +2,40 @@
 //  ChatModels.swift
 //  AIThing
 //
-//  Models for chat functionality.
+//  Created by Nishant Singh Hada on 12/5/25.
 //
 
 import AppKit
 import Foundation
 
+// MARK: - Chat Role
+
+/// The role of a participant in a chat conversation.
 enum ChatRole: String {
+    /// The user's messages
     case user = "user"
+    
+    /// The AI assistant's messages
     case assistant = "assistant"
 }
 
+// MARK: - Chat Payload
+
+/// The different types of content that can be included in a chat message.
 enum ChatPayload: Equatable {
+    /// Plain text content
     case text(text: String)
+    
+    /// Text content with an associated name
     case textWithName(name: String, text: String)
+    
+    /// Base64-encoded image with metadata
     case imageBase64(name: String, media: String, image: String)
+    
+    /// Tool invocation with parameters
     case toolUse(id: String, name: String, input: [String: Any])
+    
+    /// Result returned from a tool execution
     case toolResult(id: String, name: String, result: String)
 
     static func == (lhs: ChatPayload, rhs: ChatPayload) -> Bool {
@@ -31,29 +49,49 @@ enum ChatPayload: Equatable {
         }
     }
 
+    /// Whether this payload represents text content.
     var isText: Bool {
         if case .text = self { return true }
         if case .textWithName = self { return true }
         return false
     }
 
+    /// Whether this payload represents an image.
     var isImage: Bool {
         if case .imageBase64 = self { return true }
         return false
     }
 }
 
+// MARK: - Chat Item
+
+/// Represents a single message in a chat conversation.
+///
+/// A chat item has a role (user or assistant) and one or more payloads
+/// containing the actual content (text, images, tool calls, etc.).
 struct ChatItem: Identifiable, Equatable {
     let id: UUID
     let role: ChatRole
     var payloads: [ChatPayload]
 
+    /// Creates a chat item with multiple payloads.
+    ///
+    /// - Parameters:
+    ///   - id: Unique identifier (auto-generated if not provided)
+    ///   - role: The message sender's role
+    ///   - payloads: Array of content payloads
     init(id: UUID = UUID(), role: ChatRole, payloads: [ChatPayload]) {
         self.id = id
         self.role = role
         self.payloads = payloads
     }
 
+    /// Creates a chat item with a single payload.
+    ///
+    /// - Parameters:
+    ///   - id: Unique identifier (auto-generated if not provided)
+    ///   - role: The message sender's role
+    ///   - payload: Single content payload
     init(id: UUID = UUID(), role: ChatRole, payload: ChatPayload) {
         self.id = id
         self.role = role
@@ -68,7 +106,10 @@ struct ChatItem: Identifiable, Equatable {
 extension ChatItem {
     // MARK: - Serialization
 
-    /// Converts an array of ChatItems to an array of dictionaries
+    /// Converts an array of ChatItems to an array of dictionaries for persistence.
+    ///
+    /// - Parameter items: The chat items to serialize
+    /// - Returns: Array of dictionaries representing the chat items
     static func toDictionaries(_ items: [ChatItem]) -> [[String: Any]] {
         return items.map { item in
             let dict: [String: Any] = [
@@ -82,7 +123,10 @@ extension ChatItem {
         }
     }
 
-    /// Converts an array of dictionaries back to ChatItems
+    /// Converts an array of dictionaries back to ChatItems from persistence.
+    ///
+    /// - Parameter dicts: The dictionaries to deserialize
+    /// - Returns: Array of reconstructed chat items
     static func fromDictionaries(_ dicts: [[String: Any]]) -> [ChatItem] {
         var items: [ChatItem] = []
 

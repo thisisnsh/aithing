@@ -2,7 +2,7 @@
 //  SettingsModels.swift
 //  AIThing
 //
-//  Models for settings functionality.
+//  Created by Nishant Singh Hada on 12/5/25.
 //
 
 import Foundation

@@ -2,7 +2,7 @@
 //  ValidationHelpers.swift
 //  AIThing
 //
-//  Helper functions for validating Firebase configs and login.
+//  Created by Nishant Singh Hada on 12/5/25.
 //
 
 import Foundation

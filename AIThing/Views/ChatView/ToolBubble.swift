@@ -2,7 +2,7 @@
 //  ToolBubble.swift
 //  AIThing
 //
-//  Extra bubble component for displaying tool calls and other messages.
+//  Created by Nishant Singh Hada on 8/15/25.
 //
 
 import SwiftUI

@@ -2,7 +2,7 @@
 //  ChatBubble.swift
 //  AIThing
 //
-//  Chat bubble component for displaying messages.
+//  Created by Nishant Singh Hada on 8/15/25.
 //
 
 import AppKit

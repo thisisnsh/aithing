@@ -2,7 +2,7 @@
 //  TextBubble.swift
 //  AIThing
 //
-//  Text bubble component for displaying text messages.
+//  Created by Nishant Singh Hada on 8/15/25.
 //
 
 import SwiftUI

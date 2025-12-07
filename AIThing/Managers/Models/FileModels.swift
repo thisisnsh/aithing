@@ -2,7 +2,7 @@
 //  FileModels.swift
 //  AIThing
 //
-//  Models for file handling.
+//  Created by Nishant Singh Hada on 8/23/25.
 //
 
 import AppKit

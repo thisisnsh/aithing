@@ -2,7 +2,7 @@
 //  WindowModels.swift
 //  AIThing
 //
-//  Models for window management.
+//  Created by Nishant Singh Hada on 12/4/25.
 //
 
 import Foundation

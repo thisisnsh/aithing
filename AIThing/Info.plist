@@ -3,7 +3,7 @@
 <plist version="1.0">
 <dict>
 	<key>NSAccessibilityUsageDescription</key>
-	<string>AI Thing needs accessibility access to detect text selection and show the floating window at the cursor location.</string>
+	<string>AI Thing needs accessibility access to detect text selection.</string>
 	<key>NSScreenCaptureUsageDescription</key>
 	<string>This app needs screen recording permission to capture screenshots.</string>
 	<key>CFBundleURLTypes</key>
@@ -33,23 +33,6 @@
 			</array>
 		</dict>
 	</array>
-	<key>GOOGLE_ANALYTICS_REGISTRATION_WITH_AD_NETWORK_ENABLED</key>
-	<false/>
-	<key>NSAppTransportSecurity</key>
-	<dict>
-		<key>NSExceptionDomains</key>
-		<dict>
-			<key>anthropic.com</key>
-			<dict>
-				<key>NSExceptionRequiresForwardSecrecy</key>
-				<false/>
-				<key>NSIncludesSubdomains</key>
-				<true/>
-				<key>NSTemporaryExceptionAllowsInsecureHTTPLoads</key>
-				<false/>
-			</dict>
-		</dict>
-	</dict>
 	<key>SUPublicEDKey</key>
 	<string>MvgCWQ5S7mssgjCSAS7S5WLphDngqqSoDtZKW2kPtuY=</string>
 	<key>SUFeedURL</key>
@@ -62,7 +45,5 @@
 	<true/>
 	<key>SUAutomaticallyUpdate</key>
 	<false/>
-	<key>CFBundleVersion</key>
-	<string>2.1.0</string>
 </dict>
 </plist>

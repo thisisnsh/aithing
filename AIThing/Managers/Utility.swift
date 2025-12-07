@@ -16,6 +16,10 @@ let logger = Logger(subsystem: "com.thisisnsh.mac.AIThing", category: "AIThing")
 
 // MARK: - Image Parsing
 
+/// Converts an NSImage to a base64-encoded PNG string.
+///
+/// - Parameter image: The image to convert
+/// - Returns: Base64-encoded PNG string, or nil if conversion fails
 func nsImageToBase64(_ image: NSImage) -> String? {
     guard let tiffData = image.tiffRepresentation,
         let bitmapImage = NSBitmapImageRep(data: tiffData),
@@ -26,6 +30,10 @@ func nsImageToBase64(_ image: NSImage) -> String? {
     return pngData.base64EncodedString()
 }
 
+/// Converts a base64-encoded string to an NSImage.
+///
+/// - Parameter base64String: The base64-encoded image data
+/// - Returns: The decoded NSImage, or nil if decoding fails
 func base64ToNSImage(_ base64String: String) -> NSImage? {
     guard let data = Data(base64Encoded: base64String) else { return nil }
     return NSImage(data: data)
@@ -82,6 +90,12 @@ func parseJSONStringToDictObject(_ json: String) -> [String: Any] {
     }
 }
 
+/// Converts a dictionary to a pretty-printed JSON string.
+///
+/// Handles MCP Value types and removes nil values before serialization.
+///
+/// - Parameter dict: The dictionary to convert
+/// - Returns: Pretty-printed JSON string, or empty string on failure
 func dictObjectToJSONString(_ dict: [String: Any]) -> String {
     // Step 1: Convert dictionary into JSON-safe values
     let jsonSafe = dict.mapValues { Value(fromDecoded: $0).toJSONSafeObject() }
@@ -107,9 +121,20 @@ func dictObjectToJSONString(_ dict: [String: Any]) -> String {
     }
 }
 
+/// Utility class for debouncing rapid actions.
+///
+/// Delays execution of an action until a quiet period has elapsed.
 class Debouncer {
     private var task: Task<Void, Never>?
 
+    /// Debounces an action with the specified delay.
+    ///
+    /// Cancels any pending action and schedules a new one. The action will only
+    /// execute if no new calls to `debounce` occur within the delay period.
+    ///
+    /// - Parameters:
+    ///   - delay: Delay in seconds before executing the action
+    ///   - action: The action to execute after the delay
     func debounce(delay: Double, action: @escaping () -> Void) {
         task?.cancel()
         task = Task {
@@ -121,6 +146,9 @@ class Debouncer {
 
 // MARK: - Time based greetings
 
+/// Returns a time-appropriate greeting based on the current hour.
+///
+/// - Returns: "Good morning", "Good afternoon", "Good evening", or "Hello"
 func timeBasedGreeting() -> String {
     let hour = Calendar.current.component(.hour, from: Date())
 
@@ -136,6 +164,11 @@ func timeBasedGreeting() -> String {
     }
 }
 
+/// Returns a random time-appropriate subheading based on the current hour.
+///
+/// Provides engaging prompts that change throughout the day.
+///
+/// - Returns: A randomly selected subheading appropriate for the current time
 func timeBasedSubheading() -> String {
     let hour = Calendar.current.component(.hour, from: Date())
 
@@ -189,6 +222,14 @@ func timeBasedSubheading() -> String {
 
 // MARK: - Automation Notification
 
+/// Shows a system notification with the given title and body.
+///
+/// Requests notification permission if not already granted.
+/// Silently fails if permission is denied.
+///
+/// - Parameters:
+///   - title: The notification title
+///   - body: The notification body text
 func showNotification(title: String, body: String) {
     let center = UNUserNotificationCenter.current()
 
@@ -219,6 +260,11 @@ func showNotification(title: String, body: String) {
     }
 }
 
+/// Sends a notification immediately (internal helper).
+///
+/// - Parameters:
+///   - title: The notification title
+///   - body: The notification body text
 private func sendNotification(title: String, body: String) {
     let content = UNMutableNotificationContent()
     content.title = title

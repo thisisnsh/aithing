@@ -2,7 +2,7 @@
 //  TabContainerView.swift
 //  AIThing
 //
-//  Tab container and tab view components.
+//  Created by Nishant Singh Hada on 10/31/25.
 //
 
 import SwiftUI

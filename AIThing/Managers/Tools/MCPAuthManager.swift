@@ -2,7 +2,7 @@
 //  MCPAuthManager.swift
 //  AIThing
 //
-//  Handles MCP server OAuth authentication.
+//  Created by Nishant Singh Hada on 12/5/25.    
 //
 
 import AppKit

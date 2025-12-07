@@ -2,7 +2,7 @@
 //  OpenAIProvider.swift
 //  AIThing
 //
-//  OpenAI Chat Completions API provider implementation.
+//  Created by Nishant Singh Hada on 12/5/25.
 //
 
 import Foundation

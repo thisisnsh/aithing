@@ -2,7 +2,7 @@
 //  IntelligenceView+QueryHandler.swift
 //  AIThing
 //
-//  Query handling extension for IntelligenceView.
+//  Created by Nishant Singh Hada on 11/1/25.
 //
 
 import AppKit

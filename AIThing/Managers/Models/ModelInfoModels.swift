@@ -2,7 +2,7 @@
 //  ModelInfoModels.swift
 //  AIThing
 //
-//  Models for AI model information.
+//  Created by Nishant Singh Hada on 12/5/25.
 //
 
 import Foundation

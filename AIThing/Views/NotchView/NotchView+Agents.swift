@@ -2,7 +2,7 @@
 //  NotchView+Agents.swift
 //  AIThing
 //
-//  AI/Agent management extension for NotchView.
+//  Created by Nishant Singh Hada on 10/31/25.
 //
 
 import SwiftUI

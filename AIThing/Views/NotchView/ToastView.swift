@@ -2,7 +2,7 @@
 //  ToastView.swift
 //  AIThing
 //
-//  Toast notification view component.
+//  Created by Nishant Singh Hada on 10/31/25.
 //
 
 import SwiftUI

@@ -2,7 +2,7 @@
 //  AppContextModels.swift
 //  AIThing
 //
-//  Models for application context.
+//  Created by Nishant Singh Hada on 12/4/25.
 //
 
 import AppKit

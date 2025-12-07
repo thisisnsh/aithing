@@ -1,3 +1,10 @@
+//
+//  SettingsView.swift
+//  AIThing
+//
+//  Created by Nishant Singh Hada on 8/13/25.
+//
+
 import Sparkle
 import SwiftUI
 

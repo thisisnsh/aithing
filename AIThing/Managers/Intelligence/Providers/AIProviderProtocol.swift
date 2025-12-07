@@ -2,7 +2,7 @@
 //  AIProviderProtocol.swift
 //  AIThing
 //
-//  Protocol defining the interface for AI provider implementations.
+//  Created by Nishant Singh Hada on 12/5/25.
 //
 
 import Foundation

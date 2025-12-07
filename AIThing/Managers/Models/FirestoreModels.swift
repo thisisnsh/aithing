@@ -2,7 +2,7 @@
 //  FirestoreModels.swift
 //  AIThing
 //
-//  Models for Firestore data.
+//  Created by Nishant Singh Hada on 6/21/25.
 //
 
 import Foundation

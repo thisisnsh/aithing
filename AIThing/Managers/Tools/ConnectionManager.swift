@@ -2,7 +2,7 @@
 //  ConnectionManager.swift
 //  AIThing
 //
-//  Manages MCP server connections via stdio and HTTP transports.
+//  Created by Nishant Singh Hada on 9/13/25.
 //
 
 import Foundation

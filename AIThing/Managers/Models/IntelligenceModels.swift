@@ -2,7 +2,7 @@
 //  IntelligenceModels.swift
 //  AIThing
 //
-//  Models for intelligence/model call functionality.
+//  Created by Nishant Singh Hada on 12/5/25.
 //
 
 import Foundation

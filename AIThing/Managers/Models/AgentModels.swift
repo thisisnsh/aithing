@@ -2,7 +2,7 @@
 //  AgentModels.swift
 //  AIThing
 //
-//  Models for agent/MCP functionality.
+//  Created by Nishant Singh Hada.
 //
 
 import Foundation

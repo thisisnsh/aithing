@@ -2,7 +2,7 @@
 //  FileBubble.swift
 //  AIThing
 //
-//  File bubble component for displaying file attachments.
+//  Created by Nishant Singh Hada on 8/15/25.
 //
 
 import SwiftUI

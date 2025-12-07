@@ -2,7 +2,7 @@
 //  OAuthManagerProtocol.swift
 //  AIThing
 //
-//  Protocol defining the interface for OAuth managers.
+//  Created by Nishant Singh Hada on 12/5/25.
 //
 
 import Foundation

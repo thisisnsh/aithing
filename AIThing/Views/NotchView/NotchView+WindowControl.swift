@@ -2,7 +2,7 @@
 //  NotchView+WindowControl.swift
 //  AIThing
 //
-//  Window control and utility extension for NotchView.
+//  Created by Nishant Singh Hada on 10/31/25.
 //
 
 import SwiftUI
