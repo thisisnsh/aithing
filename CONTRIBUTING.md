@@ -32,7 +32,7 @@ Once your issue has been discussed and approved:
 1. **Fork the repository** to your GitHub account
 2. **Clone your fork** locally:
    ```bash
-   git clone https://github.com/YOUR_USERNAME/aithing-mac.git
+   git clone https://github.com/aithing-lab/aithing-mac.git
    cd aithing-mac
    ```
 
