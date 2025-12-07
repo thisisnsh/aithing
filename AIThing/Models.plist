@@ -1,0 +1,111 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<array>
+    
+<!--
+Add custom models here. Each model entry should have the following structure:
+
+<dict>
+    <key>id</key>
+    <string>model-id-here</string>
+    <key>name</key>
+    <string>Display Name</string>
+    <key>provider</key>
+    <string>anthropic</string>
+</dict>
+
+Available providers: anthropic, openai, google
+-->
+
+    <!-- Anthropic -->
+    
+<!--    <dict>-->
+<!--        <key>id</key>-->
+<!--        <string>claude-opus-4-5-20251101</string>-->
+<!--        <key>name</key>-->
+<!--        <string>Claude Opus 4.5</string>-->
+<!--        <key>provider</key>-->
+<!--        <string>anthropic</string>-->
+<!--    </dict>-->
+    
+    <dict>
+        <key>id</key>
+        <string>claude-sonnet-4-5-20250929</string>
+        <key>name</key>
+        <string>Claude Sonnet 4.5</string>
+        <key>provider</key>
+        <string>anthropic</string>
+    </dict>
+    
+<!--    <dict>-->
+<!--        <key>id</key>-->
+<!--        <string>claude-haiku-4-5-20251001</string>-->
+<!--        <key>name</key>-->
+<!--        <string>Claude Haiku 4.5</string>-->
+<!--        <key>provider</key>-->
+<!--        <string>anthropic</string>-->
+<!--    </dict>-->
+        
+    <!-- OpenAI -->
+    
+<!--    <dict>-->
+<!--        <key>id</key>-->
+<!--        <string>gpt-5.1-2025-11-13</string>-->
+<!--        <key>name</key>-->
+<!--        <string>GPT 5.1</string>-->
+<!--        <key>provider</key>-->
+<!--        <string>openai</string>-->
+<!--    </dict>-->
+<!--    -->
+<!--    <dict>-->
+<!--        <key>id</key>-->
+<!--        <string>gpt-5-mini-2025-08-07</string>-->
+<!--        <key>name</key>-->
+<!--        <string>GPT 5 Mini</string>-->
+<!--        <key>provider</key>-->
+<!--        <string>openai</string>-->
+<!--    </dict>-->
+<!--    -->
+<!--    <dict>-->
+<!--        <key>id</key>-->
+<!--        <string>gpt-5-nano-2025-08-07</string>-->
+<!--        <key>name</key>-->
+<!--        <string>GPT 5 Nano</string>-->
+<!--        <key>provider</key>-->
+<!--        <string>openai</string>-->
+<!--    </dict>-->
+    
+    <!-- Google -->
+    
+<!--    <dict>-->
+<!--        <key>id</key>-->
+<!--        <string>gemini-3-pro-preview</string>-->
+<!--        <key>name</key>-->
+<!--        <string>Gemini 3 Pro</string>-->
+<!--        <key>provider</key>-->
+<!--        <string>google</string>-->
+<!--    </dict>-->
+<!--    -->
+<!--    <dict>-->
+<!--        <key>id</key>-->
+<!--        <string>gemini-2.5-pro</string>-->
+<!--        <key>name</key>-->
+<!--        <string>Gemini 2.5 Pro</string>-->
+<!--        <key>provider</key>-->
+<!--        <string>google</string>-->
+<!--    </dict>-->
+<!--    -->
+<!--    <dict>-->
+<!--        <key>id</key>-->
+<!--        <string>gemini-2.5-flash</string>-->
+<!--        <key>name</key>-->
+<!--        <string>Gemini 2.5 Flash</string>-->
+<!--        <key>provider</key>-->
+<!--        <string>google</string>-->
+<!--    </dict>-->
+    
+    
+</array>
+</plist>
+

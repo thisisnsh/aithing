@@ -1,0 +1,742 @@
+// !$*UTF8*$!
+{
+	archiveVersion = 1;
+	classes = {
+	};
+	objectVersion = 77;
+	objects = {
+
+/* Begin PBXBuildFile section */
+		AA04A4B22EBFF62000482561 /* CoreXLSX in Frameworks */ = {isa = PBXBuildFile; productRef = AA04A4B12EBFF62000482561 /* CoreXLSX */; };
+		AA45F8FF2E6114F2001DAE39 /* OAuthSwift in Frameworks */ = {isa = PBXBuildFile; productRef = AA45F8FE2E6114F2001DAE39 /* OAuthSwift */; };
+		AA476E432E4D4813006F62F8 /* FirebaseFirestore in Frameworks */ = {isa = PBXBuildFile; productRef = AA476E422E4D4813006F62F8 /* FirebaseFirestore */; };
+		AA89AC282E888E73000EBE24 /* SelectedTextKit in Frameworks */ = {isa = PBXBuildFile; productRef = AA89AC272E888E73000EBE24 /* SelectedTextKit */; };
+		AAC6B5882ECFFA4800CA3EF5 /* Sparkle in Frameworks */ = {isa = PBXBuildFile; productRef = AAC6B5872ECFFA4800CA3EF5 /* Sparkle */; };
+		AAEFEA6E2E46B42400C47995 /* FirebaseAnalytics in Frameworks */ = {isa = PBXBuildFile; productRef = AAEFEA6D2E46B42400C47995 /* FirebaseAnalytics */; };
+		AAEFEA702E46B42400C47995 /* FirebaseAuth in Frameworks */ = {isa = PBXBuildFile; productRef = AAEFEA6F2E46B42400C47995 /* FirebaseAuth */; };
+		AAEFEA792E46C3E600C47995 /* GoogleSignIn in Frameworks */ = {isa = PBXBuildFile; productRef = AAEFEA782E46C3E600C47995 /* GoogleSignIn */; };
+		AAF11D042E22DE9100E2743E /* HotKey in Frameworks */ = {isa = PBXBuildFile; productRef = AAF11D032E22DE9100E2743E /* HotKey */; };
+		AAF11D0C2E22F5AB00E2743E /* README.md in Resources */ = {isa = PBXBuildFile; fileRef = AAF11D0B2E22F5AB00E2743E /* README.md */; };
+		AAF11D172E2306C800E2743E /* MarkdownUI in Frameworks */ = {isa = PBXBuildFile; productRef = AAF11D162E2306C800E2743E /* MarkdownUI */; };
+		AAF11D652E241EDA00E2743E /* MCP in Frameworks */ = {isa = PBXBuildFile; productRef = AAF11D642E241EDA00E2743E /* MCP */; };
+/* End PBXBuildFile section */
+
+/* Begin PBXContainerItemProxy section */
+		AAF11CDA2E22DE1700E2743E /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = AAF11CC32E22DE1500E2743E /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = AAF11CCA2E22DE1500E2743E;
+			remoteInfo = AIThing;
+		};
+		AAF11CE42E22DE1700E2743E /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = AAF11CC32E22DE1500E2743E /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = AAF11CCA2E22DE1500E2743E;
+			remoteInfo = AIThing;
+		};
+/* End PBXContainerItemProxy section */
+
+/* Begin PBXFileReference section */
+		AAF11CCB2E22DE1500E2743E /* AIThing.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = AIThing.app; sourceTree = BUILT_PRODUCTS_DIR; };
+		AAF11CD92E22DE1700E2743E /* AIThingTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = AIThingTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
+		AAF11CE32E22DE1700E2743E /* AIThingUITests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = AIThingUITests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
+		AAF11D0B2E22F5AB00E2743E /* README.md */ = {isa = PBXFileReference; lastKnownFileType = net.daringfireball.markdown; path = README.md; sourceTree = "<group>"; };
+/* End PBXFileReference section */
+
+/* Begin PBXFileSystemSynchronizedRootGroup section */
+		AAF11CCD2E22DE1500E2743E /* AIThing */ = {
+			isa = PBXFileSystemSynchronizedRootGroup;
+			path = AIThing;
+			sourceTree = "<group>";
+		};
+/* End PBXFileSystemSynchronizedRootGroup section */
+
+/* Begin PBXFrameworksBuildPhase section */
+		AAF11CC82E22DE1500E2743E /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				AA45F8FF2E6114F2001DAE39 /* OAuthSwift in Frameworks */,
+				AAF11D652E241EDA00E2743E /* MCP in Frameworks */,
+				AAEFEA702E46B42400C47995 /* FirebaseAuth in Frameworks */,
+				AAF11D042E22DE9100E2743E /* HotKey in Frameworks */,
+				AAEFEA6E2E46B42400C47995 /* FirebaseAnalytics in Frameworks */,
+				AAF11D172E2306C800E2743E /* MarkdownUI in Frameworks */,
+				AAEFEA792E46C3E600C47995 /* GoogleSignIn in Frameworks */,
+				AAC6B5882ECFFA4800CA3EF5 /* Sparkle in Frameworks */,
+				AA89AC282E888E73000EBE24 /* SelectedTextKit in Frameworks */,
+				AA04A4B22EBFF62000482561 /* CoreXLSX in Frameworks */,
+				AA476E432E4D4813006F62F8 /* FirebaseFirestore in Frameworks */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		AAF11CD62E22DE1700E2743E /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		AAF11CE02E22DE1700E2743E /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXFrameworksBuildPhase section */
+
+/* Begin PBXGroup section */
+		AAF11CC22E22DE1500E2743E = {
+			isa = PBXGroup;
+			children = (
+				AAF11D0B2E22F5AB00E2743E /* README.md */,
+				AAF11CCD2E22DE1500E2743E /* AIThing */,
+				AAF11CCC2E22DE1500E2743E /* Products */,
+			);
+			sourceTree = "<group>";
+		};
+		AAF11CCC2E22DE1500E2743E /* Products */ = {
+			isa = PBXGroup;
+			children = (
+				AAF11CCB2E22DE1500E2743E /* AIThing.app */,
+				AAF11CD92E22DE1700E2743E /* AIThingTests.xctest */,
+				AAF11CE32E22DE1700E2743E /* AIThingUITests.xctest */,
+			);
+			name = Products;
+			sourceTree = "<group>";
+		};
+/* End PBXGroup section */
+
+/* Begin PBXNativeTarget section */
+		AAF11CCA2E22DE1500E2743E /* AIThing */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = AAF11CED2E22DE1700E2743E /* Build configuration list for PBXNativeTarget "AIThing" */;
+			buildPhases = (
+				AAF11CC72E22DE1500E2743E /* Sources */,
+				AAF11CC82E22DE1500E2743E /* Frameworks */,
+				AAF11CC92E22DE1500E2743E /* Resources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+			);
+			fileSystemSynchronizedGroups = (
+				AAF11CCD2E22DE1500E2743E /* AIThing */,
+			);
+			name = AIThing;
+			packageProductDependencies = (
+				AAF11D032E22DE9100E2743E /* HotKey */,
+				AAF11D162E2306C800E2743E /* MarkdownUI */,
+				AAF11D642E241EDA00E2743E /* MCP */,
+				AAEFEA6D2E46B42400C47995 /* FirebaseAnalytics */,
+				AAEFEA6F2E46B42400C47995 /* FirebaseAuth */,
+				AAEFEA782E46C3E600C47995 /* GoogleSignIn */,
+				AA476E422E4D4813006F62F8 /* FirebaseFirestore */,
+				AA45F8FE2E6114F2001DAE39 /* OAuthSwift */,
+				AA89AC272E888E73000EBE24 /* SelectedTextKit */,
+				AA04A4B12EBFF62000482561 /* CoreXLSX */,
+				AAC6B5872ECFFA4800CA3EF5 /* Sparkle */,
+			);
+			productName = AIThing;
+			productReference = AAF11CCB2E22DE1500E2743E /* AIThing.app */;
+			productType = "com.apple.product-type.application";
+		};
+		AAF11CD82E22DE1700E2743E /* AIThingTests */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = AAF11CF02E22DE1700E2743E /* Build configuration list for PBXNativeTarget "AIThingTests" */;
+			buildPhases = (
+				AAF11CD52E22DE1700E2743E /* Sources */,
+				AAF11CD62E22DE1700E2743E /* Frameworks */,
+				AAF11CD72E22DE1700E2743E /* Resources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+				AAF11CDB2E22DE1700E2743E /* PBXTargetDependency */,
+			);
+			name = AIThingTests;
+			packageProductDependencies = (
+			);
+			productName = AIThingTests;
+			productReference = AAF11CD92E22DE1700E2743E /* AIThingTests.xctest */;
+			productType = "com.apple.product-type.bundle.unit-test";
+		};
+		AAF11CE22E22DE1700E2743E /* AIThingUITests */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = AAF11CF32E22DE1700E2743E /* Build configuration list for PBXNativeTarget "AIThingUITests" */;
+			buildPhases = (
+				AAF11CDF2E22DE1700E2743E /* Sources */,
+				AAF11CE02E22DE1700E2743E /* Frameworks */,
+				AAF11CE12E22DE1700E2743E /* Resources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+				AAF11CE52E22DE1700E2743E /* PBXTargetDependency */,
+			);
+			name = AIThingUITests;
+			packageProductDependencies = (
+			);
+			productName = AIThingUITests;
+			productReference = AAF11CE32E22DE1700E2743E /* AIThingUITests.xctest */;
+			productType = "com.apple.product-type.bundle.ui-testing";
+		};
+/* End PBXNativeTarget section */
+
+/* Begin PBXProject section */
+		AAF11CC32E22DE1500E2743E /* Project object */ = {
+			isa = PBXProject;
+			attributes = {
+				BuildIndependentTargetsInParallel = 1;
+				LastSwiftUpdateCheck = 1640;
+				LastUpgradeCheck = 1640;
+				TargetAttributes = {
+					AAF11CCA2E22DE1500E2743E = {
+						CreatedOnToolsVersion = 16.4;
+					};
+					AAF11CD82E22DE1700E2743E = {
+						CreatedOnToolsVersion = 16.4;
+						TestTargetID = AAF11CCA2E22DE1500E2743E;
+					};
+					AAF11CE22E22DE1700E2743E = {
+						CreatedOnToolsVersion = 16.4;
+						TestTargetID = AAF11CCA2E22DE1500E2743E;
+					};
+				};
+			};
+			buildConfigurationList = AAF11CC62E22DE1500E2743E /* Build configuration list for PBXProject "AIThing" */;
+			developmentRegion = en;
+			hasScannedForEncodings = 0;
+			knownRegions = (
+				en,
+				Base,
+			);
+			mainGroup = AAF11CC22E22DE1500E2743E;
+			minimizedProjectReferenceProxies = 1;
+			packageReferences = (
+				AAF11D022E22DE9100E2743E /* XCRemoteSwiftPackageReference "HotKey" */,
+				AAF11D152E2306C800E2743E /* XCRemoteSwiftPackageReference "swift-markdown-ui" */,
+				AAF11D632E241EDA00E2743E /* XCRemoteSwiftPackageReference "swift-sdk" */,
+				AAEFEA6C2E46B42400C47995 /* XCRemoteSwiftPackageReference "firebase-ios-sdk" */,
+				AAEFEA772E46C3E600C47995 /* XCRemoteSwiftPackageReference "GoogleSignIn-iOS" */,
+				AA45F8FD2E6114F2001DAE39 /* XCRemoteSwiftPackageReference "OAuthSwift" */,
+				AA89AC262E888E73000EBE24 /* XCRemoteSwiftPackageReference "SelectedTextKit" */,
+				AA04A4B02EBFF62000482561 /* XCRemoteSwiftPackageReference "CoreXLSX" */,
+				AAC6B5862ECFFA4800CA3EF5 /* XCRemoteSwiftPackageReference "Sparkle" */,
+			);
+			preferredProjectObjectVersion = 77;
+			productRefGroup = AAF11CCC2E22DE1500E2743E /* Products */;
+			projectDirPath = "";
+			projectRoot = "";
+			targets = (
+				AAF11CCA2E22DE1500E2743E /* AIThing */,
+				AAF11CD82E22DE1700E2743E /* AIThingTests */,
+				AAF11CE22E22DE1700E2743E /* AIThingUITests */,
+			);
+		};
+/* End PBXProject section */
+
+/* Begin PBXResourcesBuildPhase section */
+		AAF11CC92E22DE1500E2743E /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				AAF11D0C2E22F5AB00E2743E /* README.md in Resources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		AAF11CD72E22DE1700E2743E /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		AAF11CE12E22DE1700E2743E /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXResourcesBuildPhase section */
+
+/* Begin PBXSourcesBuildPhase section */
+		AAF11CC72E22DE1500E2743E /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		AAF11CD52E22DE1700E2743E /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		AAF11CDF2E22DE1700E2743E /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXSourcesBuildPhase section */
+
+/* Begin PBXTargetDependency section */
+		AAF11CDB2E22DE1700E2743E /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = AAF11CCA2E22DE1500E2743E /* AIThing */;
+			targetProxy = AAF11CDA2E22DE1700E2743E /* PBXContainerItemProxy */;
+		};
+		AAF11CE52E22DE1700E2743E /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = AAF11CCA2E22DE1500E2743E /* AIThing */;
+			targetProxy = AAF11CE42E22DE1700E2743E /* PBXContainerItemProxy */;
+		};
+/* End PBXTargetDependency section */
+
+/* Begin XCBuildConfiguration section */
+		AAF11CEB2E22DE1700E2743E /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_SEARCH_USER_PATHS = NO;
+				ASSETCATALOG_COMPILER_GENERATE_SWIFT_ASSET_SYMBOL_EXTENSIONS = YES;
+				CLANG_ANALYZER_NONNULL = YES;
+				CLANG_ANALYZER_NUMBER_OBJECT_CONVERSION = YES_AGGRESSIVE;
+				CLANG_CXX_LANGUAGE_STANDARD = "gnu++20";
+				CLANG_ENABLE_MODULES = YES;
+				CLANG_ENABLE_OBJC_ARC = YES;
+				CLANG_ENABLE_OBJC_WEAK = YES;
+				CLANG_WARN_BLOCK_CAPTURE_AUTORELEASING = YES;
+				CLANG_WARN_BOOL_CONVERSION = YES;
+				CLANG_WARN_COMMA = YES;
+				CLANG_WARN_CONSTANT_CONVERSION = YES;
+				CLANG_WARN_DEPRECATED_OBJC_IMPLEMENTATIONS = YES;
+				CLANG_WARN_DIRECT_OBJC_ISA_USAGE = YES_ERROR;
+				CLANG_WARN_DOCUMENTATION_COMMENTS = YES;
+				CLANG_WARN_EMPTY_BODY = YES;
+				CLANG_WARN_ENUM_CONVERSION = YES;
+				CLANG_WARN_INFINITE_RECURSION = YES;
+				CLANG_WARN_INT_CONVERSION = YES;
+				CLANG_WARN_NON_LITERAL_NULL_CONVERSION = YES;
+				CLANG_WARN_OBJC_IMPLICIT_RETAIN_SELF = YES;
+				CLANG_WARN_OBJC_LITERAL_CONVERSION = YES;
+				CLANG_WARN_OBJC_ROOT_CLASS = YES_ERROR;
+				CLANG_WARN_QUOTED_INCLUDE_IN_FRAMEWORK_HEADER = YES;
+				CLANG_WARN_RANGE_LOOP_ANALYSIS = YES;
+				CLANG_WARN_STRICT_PROTOTYPES = YES;
+				CLANG_WARN_SUSPICIOUS_MOVE = YES;
+				CLANG_WARN_UNGUARDED_AVAILABILITY = YES_AGGRESSIVE;
+				CLANG_WARN_UNREACHABLE_CODE = YES;
+				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
+				COPY_PHASE_STRIP = NO;
+				DEBUG_INFORMATION_FORMAT = dwarf;
+				DEVELOPMENT_TEAM = 983LBM5U6B;
+				ENABLE_STRICT_OBJC_MSGSEND = YES;
+				ENABLE_TESTABILITY = YES;
+				ENABLE_USER_SCRIPT_SANDBOXING = YES;
+				GCC_C_LANGUAGE_STANDARD = gnu17;
+				GCC_DYNAMIC_NO_PIC = NO;
+				GCC_NO_COMMON_BLOCKS = YES;
+				GCC_OPTIMIZATION_LEVEL = 0;
+				GCC_PREPROCESSOR_DEFINITIONS = (
+					"DEBUG=1",
+					"$(inherited)",
+				);
+				GCC_WARN_64_TO_32_BIT_CONVERSION = YES;
+				GCC_WARN_ABOUT_RETURN_TYPE = YES_ERROR;
+				GCC_WARN_UNDECLARED_SELECTOR = YES;
+				GCC_WARN_UNINITIALIZED_AUTOS = YES_AGGRESSIVE;
+				GCC_WARN_UNUSED_FUNCTION = YES;
+				GCC_WARN_UNUSED_VARIABLE = YES;
+				LOCALIZATION_PREFERS_STRING_CATALOGS = YES;
+				MACOSX_DEPLOYMENT_TARGET = 15.5;
+				MTL_ENABLE_DEBUG_INFO = INCLUDE_SOURCE;
+				MTL_FAST_MATH = YES;
+				ONLY_ACTIVE_ARCH = YES;
+				SDKROOT = macosx;
+				SWIFT_ACTIVE_COMPILATION_CONDITIONS = "DEBUG $(inherited)";
+				SWIFT_OPTIMIZATION_LEVEL = "-Onone";
+			};
+			name = Debug;
+		};
+		AAF11CEC2E22DE1700E2743E /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_SEARCH_USER_PATHS = NO;
+				ASSETCATALOG_COMPILER_GENERATE_SWIFT_ASSET_SYMBOL_EXTENSIONS = YES;
+				CLANG_ANALYZER_NONNULL = YES;
+				CLANG_ANALYZER_NUMBER_OBJECT_CONVERSION = YES_AGGRESSIVE;
+				CLANG_CXX_LANGUAGE_STANDARD = "gnu++20";
+				CLANG_ENABLE_MODULES = YES;
+				CLANG_ENABLE_OBJC_ARC = YES;
+				CLANG_ENABLE_OBJC_WEAK = YES;
+				CLANG_WARN_BLOCK_CAPTURE_AUTORELEASING = YES;
+				CLANG_WARN_BOOL_CONVERSION = YES;
+				CLANG_WARN_COMMA = YES;
+				CLANG_WARN_CONSTANT_CONVERSION = YES;
+				CLANG_WARN_DEPRECATED_OBJC_IMPLEMENTATIONS = YES;
+				CLANG_WARN_DIRECT_OBJC_ISA_USAGE = YES_ERROR;
+				CLANG_WARN_DOCUMENTATION_COMMENTS = YES;
+				CLANG_WARN_EMPTY_BODY = YES;
+				CLANG_WARN_ENUM_CONVERSION = YES;
+				CLANG_WARN_INFINITE_RECURSION = YES;
+				CLANG_WARN_INT_CONVERSION = YES;
+				CLANG_WARN_NON_LITERAL_NULL_CONVERSION = YES;
+				CLANG_WARN_OBJC_IMPLICIT_RETAIN_SELF = YES;
+				CLANG_WARN_OBJC_LITERAL_CONVERSION = YES;
+				CLANG_WARN_OBJC_ROOT_CLASS = YES_ERROR;
+				CLANG_WARN_QUOTED_INCLUDE_IN_FRAMEWORK_HEADER = YES;
+				CLANG_WARN_RANGE_LOOP_ANALYSIS = YES;
+				CLANG_WARN_STRICT_PROTOTYPES = YES;
+				CLANG_WARN_SUSPICIOUS_MOVE = YES;
+				CLANG_WARN_UNGUARDED_AVAILABILITY = YES_AGGRESSIVE;
+				CLANG_WARN_UNREACHABLE_CODE = YES;
+				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
+				COPY_PHASE_STRIP = NO;
+				DEBUG_INFORMATION_FORMAT = "dwarf-with-dsym";
+				DEVELOPMENT_TEAM = 983LBM5U6B;
+				ENABLE_NS_ASSERTIONS = NO;
+				ENABLE_STRICT_OBJC_MSGSEND = YES;
+				ENABLE_USER_SCRIPT_SANDBOXING = YES;
+				GCC_C_LANGUAGE_STANDARD = gnu17;
+				GCC_NO_COMMON_BLOCKS = YES;
+				GCC_WARN_64_TO_32_BIT_CONVERSION = YES;
+				GCC_WARN_ABOUT_RETURN_TYPE = YES_ERROR;
+				GCC_WARN_UNDECLARED_SELECTOR = YES;
+				GCC_WARN_UNINITIALIZED_AUTOS = YES_AGGRESSIVE;
+				GCC_WARN_UNUSED_FUNCTION = YES;
+				GCC_WARN_UNUSED_VARIABLE = YES;
+				LOCALIZATION_PREFERS_STRING_CATALOGS = YES;
+				MACOSX_DEPLOYMENT_TARGET = 15.5;
+				MTL_ENABLE_DEBUG_INFO = NO;
+				MTL_FAST_MATH = YES;
+				SDKROOT = macosx;
+				SWIFT_COMPILATION_MODE = wholemodule;
+			};
+			name = Release;
+		};
+		AAF11CEE2E22DE1700E2743E /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
+				ASSETCATALOG_COMPILER_INCLUDE_ALL_APPICON_ASSETS = YES;
+				CODE_SIGN_ENTITLEMENTS = AIThing/AIThing.entitlements;
+				CODE_SIGN_IDENTITY = "Apple Development";
+				CODE_SIGN_STYLE = Automatic;
+				COMBINE_HIDPI_IMAGES = YES;
+				CURRENT_PROJECT_VERSION = 9;
+				DEVELOPMENT_TEAM = 983LBM5U6B;
+				ENABLE_HARDENED_RUNTIME = YES;
+				ENABLE_PREVIEWS = YES;
+				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_FILE = AIThing/Info.plist;
+				INFOPLIST_KEY_CFBundleDisplayName = "AI Thing";
+				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.utilities";
+				INFOPLIST_KEY_NSAppleEventsUsageDescription = "This app uses Apple Events to capture the screen.";
+				INFOPLIST_KEY_NSCameraUsageDescription = "This app captures the screen.";
+				INFOPLIST_KEY_NSHumanReadableCopyright = "";
+				INFOPLIST_KEY_NSMicrophoneUsageDescription = "This app may access audio if needed.";
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/../Frameworks",
+				);
+				MACOSX_DEPLOYMENT_TARGET = 13.0;
+				MARKETING_VERSION = 2.1;
+				PRODUCT_BUNDLE_IDENTIFIER = com.thisisnsh.mac.AIThing;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				PROVISIONING_PROFILE_SPECIFIER = "";
+				REGISTER_APP_GROUPS = YES;
+				SWIFT_EMIT_LOC_STRINGS = YES;
+				SWIFT_VERSION = 5.0;
+			};
+			name = Debug;
+		};
+		AAF11CEF2E22DE1700E2743E /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
+				ASSETCATALOG_COMPILER_INCLUDE_ALL_APPICON_ASSETS = YES;
+				CODE_SIGN_ENTITLEMENTS = AIThing/AIThing.entitlements;
+				CODE_SIGN_IDENTITY = "Apple Development";
+				CODE_SIGN_STYLE = Automatic;
+				COMBINE_HIDPI_IMAGES = YES;
+				CURRENT_PROJECT_VERSION = 9;
+				DEVELOPMENT_TEAM = 983LBM5U6B;
+				ENABLE_HARDENED_RUNTIME = YES;
+				ENABLE_PREVIEWS = YES;
+				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_FILE = AIThing/Info.plist;
+				INFOPLIST_KEY_CFBundleDisplayName = "AI Thing";
+				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.utilities";
+				INFOPLIST_KEY_NSAppleEventsUsageDescription = "This app uses Apple Events to capture the screen.";
+				INFOPLIST_KEY_NSCameraUsageDescription = "This app captures the screen.";
+				INFOPLIST_KEY_NSHumanReadableCopyright = "";
+				INFOPLIST_KEY_NSMicrophoneUsageDescription = "This app may access audio if needed.";
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/../Frameworks",
+				);
+				MACOSX_DEPLOYMENT_TARGET = 13.0;
+				MARKETING_VERSION = 2.1;
+				PRODUCT_BUNDLE_IDENTIFIER = com.thisisnsh.mac.AIThing;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				PROVISIONING_PROFILE_SPECIFIER = "";
+				REGISTER_APP_GROUPS = YES;
+				SWIFT_EMIT_LOC_STRINGS = YES;
+				SWIFT_VERSION = 5.0;
+			};
+			name = Release;
+		};
+		AAF11CF12E22DE1700E2743E /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				BUNDLE_LOADER = "$(TEST_HOST)";
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				DEVELOPMENT_TEAM = 983LBM5U6B;
+				GENERATE_INFOPLIST_FILE = YES;
+				MACOSX_DEPLOYMENT_TARGET = 15.5;
+				MARKETING_VERSION = 1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = com.thisisnsh.mac.AIThingTests;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SWIFT_EMIT_LOC_STRINGS = NO;
+				SWIFT_VERSION = 5.0;
+				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/AIThing.app/$(BUNDLE_EXECUTABLE_FOLDER_PATH)/AIThing";
+			};
+			name = Debug;
+		};
+		AAF11CF22E22DE1700E2743E /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				BUNDLE_LOADER = "$(TEST_HOST)";
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				DEVELOPMENT_TEAM = 983LBM5U6B;
+				GENERATE_INFOPLIST_FILE = YES;
+				MACOSX_DEPLOYMENT_TARGET = 15.5;
+				MARKETING_VERSION = 1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = com.thisisnsh.mac.AIThingTests;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SWIFT_EMIT_LOC_STRINGS = NO;
+				SWIFT_VERSION = 5.0;
+				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/AIThing.app/$(BUNDLE_EXECUTABLE_FOLDER_PATH)/AIThing";
+			};
+			name = Release;
+		};
+		AAF11CF42E22DE1700E2743E /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				DEVELOPMENT_TEAM = 983LBM5U6B;
+				GENERATE_INFOPLIST_FILE = YES;
+				MARKETING_VERSION = 1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = com.thisisnsh.mac.AIThingUITests;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SWIFT_EMIT_LOC_STRINGS = NO;
+				SWIFT_VERSION = 5.0;
+				TEST_TARGET_NAME = AIThing;
+			};
+			name = Debug;
+		};
+		AAF11CF52E22DE1700E2743E /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				DEVELOPMENT_TEAM = 983LBM5U6B;
+				GENERATE_INFOPLIST_FILE = YES;
+				MARKETING_VERSION = 1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = com.thisisnsh.mac.AIThingUITests;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SWIFT_EMIT_LOC_STRINGS = NO;
+				SWIFT_VERSION = 5.0;
+				TEST_TARGET_NAME = AIThing;
+			};
+			name = Release;
+		};
+/* End XCBuildConfiguration section */
+
+/* Begin XCConfigurationList section */
+		AAF11CC62E22DE1500E2743E /* Build configuration list for PBXProject "AIThing" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				AAF11CEB2E22DE1700E2743E /* Debug */,
+				AAF11CEC2E22DE1700E2743E /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+		AAF11CED2E22DE1700E2743E /* Build configuration list for PBXNativeTarget "AIThing" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				AAF11CEE2E22DE1700E2743E /* Debug */,
+				AAF11CEF2E22DE1700E2743E /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+		AAF11CF02E22DE1700E2743E /* Build configuration list for PBXNativeTarget "AIThingTests" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				AAF11CF12E22DE1700E2743E /* Debug */,
+				AAF11CF22E22DE1700E2743E /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+		AAF11CF32E22DE1700E2743E /* Build configuration list for PBXNativeTarget "AIThingUITests" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				AAF11CF42E22DE1700E2743E /* Debug */,
+				AAF11CF52E22DE1700E2743E /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+/* End XCConfigurationList section */
+
+/* Begin XCRemoteSwiftPackageReference section */
+		AA04A4B02EBFF62000482561 /* XCRemoteSwiftPackageReference "CoreXLSX" */ = {
+			isa = XCRemoteSwiftPackageReference;
+			repositoryURL = "https://github.com/CoreOffice/CoreXLSX";
+			requirement = {
+				kind = upToNextMajorVersion;
+				minimumVersion = 0.14.2;
+			};
+		};
+		AA45F8FD2E6114F2001DAE39 /* XCRemoteSwiftPackageReference "OAuthSwift" */ = {
+			isa = XCRemoteSwiftPackageReference;
+			repositoryURL = "https://github.com/OAuthSwift/OAuthSwift.git";
+			requirement = {
+				kind = upToNextMajorVersion;
+				minimumVersion = 2.2.0;
+			};
+		};
+		AA89AC262E888E73000EBE24 /* XCRemoteSwiftPackageReference "SelectedTextKit" */ = {
+			isa = XCRemoteSwiftPackageReference;
+			repositoryURL = "https://github.com/tisfeng/SelectedTextKit.git";
+			requirement = {
+				kind = upToNextMajorVersion;
+				minimumVersion = 2.6.0;
+			};
+		};
+		AAC6B5862ECFFA4800CA3EF5 /* XCRemoteSwiftPackageReference "Sparkle" */ = {
+			isa = XCRemoteSwiftPackageReference;
+			repositoryURL = "https://github.com/sparkle-project/Sparkle";
+			requirement = {
+				kind = upToNextMajorVersion;
+				minimumVersion = 2.8.1;
+			};
+		};
+		AAEFEA6C2E46B42400C47995 /* XCRemoteSwiftPackageReference "firebase-ios-sdk" */ = {
+			isa = XCRemoteSwiftPackageReference;
+			repositoryURL = "https://github.com/firebase/firebase-ios-sdk";
+			requirement = {
+				kind = upToNextMajorVersion;
+				minimumVersion = 12.1.0;
+			};
+		};
+		AAEFEA772E46C3E600C47995 /* XCRemoteSwiftPackageReference "GoogleSignIn-iOS" */ = {
+			isa = XCRemoteSwiftPackageReference;
+			repositoryURL = "https://github.com/google/GoogleSignIn-iOS";
+			requirement = {
+				kind = upToNextMajorVersion;
+				minimumVersion = 9.0.0;
+			};
+		};
+		AAF11D022E22DE9100E2743E /* XCRemoteSwiftPackageReference "HotKey" */ = {
+			isa = XCRemoteSwiftPackageReference;
+			repositoryURL = "https://github.com/soffes/HotKey";
+			requirement = {
+				branch = main;
+				kind = branch;
+			};
+		};
+		AAF11D152E2306C800E2743E /* XCRemoteSwiftPackageReference "swift-markdown-ui" */ = {
+			isa = XCRemoteSwiftPackageReference;
+			repositoryURL = "https://github.com/gonzalezreal/swift-markdown-ui";
+			requirement = {
+				kind = upToNextMajorVersion;
+				minimumVersion = 2.4.1;
+			};
+		};
+		AAF11D632E241EDA00E2743E /* XCRemoteSwiftPackageReference "swift-sdk" */ = {
+			isa = XCRemoteSwiftPackageReference;
+			repositoryURL = "https://github.com/modelcontextprotocol/swift-sdk.git";
+			requirement = {
+				kind = upToNextMajorVersion;
+				minimumVersion = 0.9.0;
+			};
+		};
+/* End XCRemoteSwiftPackageReference section */
+
+/* Begin XCSwiftPackageProductDependency section */
+		AA04A4B12EBFF62000482561 /* CoreXLSX */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = AA04A4B02EBFF62000482561 /* XCRemoteSwiftPackageReference "CoreXLSX" */;
+			productName = CoreXLSX;
+		};
+		AA45F8FE2E6114F2001DAE39 /* OAuthSwift */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = AA45F8FD2E6114F2001DAE39 /* XCRemoteSwiftPackageReference "OAuthSwift" */;
+			productName = OAuthSwift;
+		};
+		AA476E422E4D4813006F62F8 /* FirebaseFirestore */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = AAEFEA6C2E46B42400C47995 /* XCRemoteSwiftPackageReference "firebase-ios-sdk" */;
+			productName = FirebaseFirestore;
+		};
+		AA89AC272E888E73000EBE24 /* SelectedTextKit */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = AA89AC262E888E73000EBE24 /* XCRemoteSwiftPackageReference "SelectedTextKit" */;
+			productName = SelectedTextKit;
+		};
+		AAC6B5872ECFFA4800CA3EF5 /* Sparkle */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = AAC6B5862ECFFA4800CA3EF5 /* XCRemoteSwiftPackageReference "Sparkle" */;
+			productName = Sparkle;
+		};
+		AAEFEA6D2E46B42400C47995 /* FirebaseAnalytics */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = AAEFEA6C2E46B42400C47995 /* XCRemoteSwiftPackageReference "firebase-ios-sdk" */;
+			productName = FirebaseAnalytics;
+		};
+		AAEFEA6F2E46B42400C47995 /* FirebaseAuth */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = AAEFEA6C2E46B42400C47995 /* XCRemoteSwiftPackageReference "firebase-ios-sdk" */;
+			productName = FirebaseAuth;
+		};
+		AAEFEA782E46C3E600C47995 /* GoogleSignIn */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = AAEFEA772E46C3E600C47995 /* XCRemoteSwiftPackageReference "GoogleSignIn-iOS" */;
+			productName = GoogleSignIn;
+		};
+		AAF11D032E22DE9100E2743E /* HotKey */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = AAF11D022E22DE9100E2743E /* XCRemoteSwiftPackageReference "HotKey" */;
+			productName = HotKey;
+		};
+		AAF11D162E2306C800E2743E /* MarkdownUI */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = AAF11D152E2306C800E2743E /* XCRemoteSwiftPackageReference "swift-markdown-ui" */;
+			productName = MarkdownUI;
+		};
+		AAF11D642E241EDA00E2743E /* MCP */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = AAF11D632E241EDA00E2743E /* XCRemoteSwiftPackageReference "swift-sdk" */;
+			productName = MCP;
+		};
+/* End XCSwiftPackageProductDependency section */
+	};
+	rootObject = AAF11CC32E22DE1500E2743E /* Project object */;
+}
