@@ -1,22 +1,23 @@
-# AI Thing
+# AI Thing for Mac 
 
-*Welcome to the saying "Just used that AI Thing..."*
+[AI Thing](https://aithing.dev) is a privacy-first AI automation tool that lets AI agents handle complex and repetitive tasks in parallel and in the background, so you can focus on what truly matters. Download [**Latest**](https://aithing.dev/latest) version.
 
-[![Star on GitHub](https://img.shields.io/github/stars/aithing-lab/aithing-mac?style=social)](https://github.com/aithing-lab/aithing-mac)
+It is now fully [open source](https://github.com/aithing-lab/aithing-mac) — please give it a star! ⭐
 
-> **⭐ If you find AI Thing useful, please star this repository to show your support!**
+![summary](https://download.aithing.dev/summary-transparent.png)
 
-![summary](https://download.aithing.dev/summary.png)
+Features
 
-Let AI handle simple, complex, or repetitive tasks in the background — so you can **focus on what only you can do**.
+- **Complex Tasks**: Run automations that span multiple apps and tools
+- **Privacy-First**: Everything stays local by default — your conversations, files, and API keys
+- **BYOK Models**: Use your own API keys for full control and flexibility
+- **Multiple Agents**: Connect powerful agents like Google Workspace, GitHub, Notion, Asana, and more
+- **Background Automations**: Set up recurring or one-off automations that run on your schedule
+- and a lot more...
 
-Download [**Latest**](https://get.aithing.dev) version. 
+### Contributing
 
----
-
-## Contributing
-
-We welcome contributions from the community! 🎉
+We welcome contributions from the community! 🎉 
 
 Please read our [CONTRIBUTING.md](CONTRIBUTING.md) guide to get started. 
 
@@ -28,20 +29,12 @@ Please read our [CONTRIBUTING.md](CONTRIBUTING.md) guide to get started.
 
 Together, we can make AI Thing even better!
 
----
+### Support
 
-## Support
-
-Have questions? Email us at **[help@aithing.dev](mailto:help@aithing.dev)**.
+Have questions? Email at **[help@aithing.dev](mailto:help@aithing.dev)**.
 
 Found a bug or have a feature request? [Open an issue](https://github.com/aithing-lab/aithing-mac/issues/new).
 
----
-
-## License
+### License
 
 See [LICENSE](LICENSE) for details.
-
----
-
-**⭐ Don't forget to star this repository if you find it useful!**
