@@ -101,6 +101,7 @@ class AppDelegate: NSObject, NSApplicationDelegate {
 
         setupGlobalHotKeys()
         setupNotchWindow()
+        NSApplication.forceDarkMode()
 
         // Launch app on login
         try? SMAppService.mainApp.register()
@@ -471,7 +472,7 @@ extension AppDelegate {
 final class FirstMouseHostingView<Content: View>: NSHostingView<Content> {
     /// Accepts the first mouse click even when the window is not active.
     override func acceptsFirstMouse(for event: NSEvent?) -> Bool { true }
-    
+
     /// Accepts first responder status for keyboard input.
     override var acceptsFirstResponder: Bool { true }
 }

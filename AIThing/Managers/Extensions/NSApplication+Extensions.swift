@@ -12,5 +12,8 @@ extension NSApplication {
     var keyWindow: NSWindow? {
         return NSApplication.shared.windows.first { $0.isKeyWindow }
     }
-}
 
+    static func forceDarkMode() {
+        NSApp.appearance = NSAppearance(named: .darkAqua)
+    }
+}
