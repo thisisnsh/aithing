@@ -37,8 +37,6 @@ struct SettingsView: View {
     @State var apiKeys: APIKeys = getAPIKeys()
     @State var modelSelected: String = getModel() ?? ""
     @State var agents: [AgentEntry] = getAgentEntries()
-    @State var preferencesShowInScreenshot = getPreferencesShowInScreenshot()
-    @State var preferencesCaptureFullScreen = getPreferencesCaptureFullScreen()
     @State var usageData: Usage = Usage()
 
     // MARK: - Focus State
@@ -90,15 +88,8 @@ struct SettingsView: View {
                                 .environmentObject(mcpAuthManagers)
 
                             case .preferences:
-                                PreferencesTab(
-                                    preferencesShowInScreenshot: $preferencesShowInScreenshot,
-                                    preferencesCaptureFullScreen: $preferencesCaptureFullScreen,
-                                    setPreferencesShowInScreenshot: setPreferencesShowInScreenshot,
-                                    setPreferencesCaptureFullScreen:
-                                        setPreferencesCaptureFullScreen,
-                                    setPanelVisibility: setPanelVisibility
-                                )
-                                .environmentObject(screenshotMonitor)
+                                PreferencesTab(setPanelVisibility: setPanelVisibility)
+                                    .environmentObject(screenshotMonitor)
 
                             case .automations:
                                 AutomationTab()

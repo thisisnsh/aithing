@@ -22,7 +22,7 @@ private enum StorageKey {
     static let cacheMessages = "CacheMessages"
     static let useCapturedScreenshots = "UseCapturedScreenshots"
     static let preferencesShowInScreenshot = "PreferencesShowInScreenshot"
-    static let preferencesCaptureFullScreen = "PreferencesCaptureFullScreen"
+    static let preferencesOpenAtLogin = "PreferencesOpenAtLogin"
 
     // UI State
     static let selectedTab = "SelectedTab"
@@ -185,23 +185,18 @@ func setPreferencesShowInScreenshot(value: Bool) {
     UserDefaults.standard.set(value, forKey: StorageKey.preferencesShowInScreenshot)
 }
 
-/// Gets whether to capture full screen instead of focused window.
+/// Gets whether the app should open at login
 ///
-/// Currently disabled (always returns false).
-///
-/// - Returns: Always returns `false`
-func getPreferencesCaptureFullScreen() -> Bool {
-    // Currently disabled
-    return false
+/// - Returns: `true` if panel should open at login
+func getPreferencesOpenAtLogin() -> Bool {
+    UserDefaults.standard.bool(forKey: StorageKey.preferencesOpenAtLogin)
 }
 
-/// Sets whether to capture full screen instead of focused window.
+/// Sets whether the app should open at login
 ///
-/// Note: Setting has no effect as this feature is currently disabled.
-///
-/// - Parameter value: Whether to capture full screen
-func setPreferencesCaptureFullScreen(value: Bool) {
-    UserDefaults.standard.set(value, forKey: StorageKey.preferencesCaptureFullScreen)
+/// - Parameter value: Whether to open the app at login
+func setPreferencesOpenAtLogin(value: Bool) {
+    UserDefaults.standard.set(value, forKey: StorageKey.preferencesOpenAtLogin)
 }
 
 // MARK: - UI State
