@@ -21,6 +21,7 @@ struct AccountTab: View {
             "Show / Hide AI Thing (Alternate)", "Alternate shortcut",
             "Control (⌃) + Option (⌥) + Space"
         ),
+        ("Quit AI Thing", "Terminate all activity", "Command (⌘) + Q"),
     ]
 
     // MARK: - Computed Properties
@@ -145,11 +146,24 @@ struct AccountTab: View {
                     .buttonStyle(.plain)
                     .font(.system(size: 14, weight: .medium))
                     .padding(4)
+
+                    Divider()
+
+                    Button {
+                        NSApplication.shared.terminate(nil)
+                    } label: {
+                        HStack {
+                            Text("Quit")
+                                .font(.system(size: 14, weight: .medium))
+                            Spacer()
+                        }
+                    }
+                    .buttonStyle(.plain)
+                    .padding(4)
                 }
                 .padding(4)
                 .frame(maxWidth: .infinity, alignment: .leading)
             }
-
         }
         .frame(maxWidth: .infinity, alignment: .leading)
     }

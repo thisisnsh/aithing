@@ -62,6 +62,7 @@ struct NotchView: View {
     @State var unseen: Bool = false
     @State var showDragIcon = false
     @State var showSettings = false
+    @State var selectedTab: SettingsTab = getSelectedTab()
     @State var toastText = ""
     @State var hoverSidebar = false
     @State var expandSidebar = false
@@ -111,10 +112,8 @@ struct NotchView: View {
                             SettingsView(
                                 isPresented: $showSettings,
                                 allModels: $allModels,
-                                close: {
-                                    showSettings = false
-                                    close()
-                                },
+                                selectedTab: $selectedTab,
+                                close: { showSettings = false },
                                 setPanelVisibility: { self.setPanelVisibility() },
                                 getManagedAgents: getManagedAgents,
                                 updater: updater
@@ -161,7 +160,7 @@ struct NotchView: View {
                                 }
                             }
 
-                            if isExpanded, expandSidebar {
+                            if isExpanded, expandSidebar, !showSettings {
                                 Spacer()
 
                                 Image(systemName: "rectangle.grid.3x1.fill")
@@ -198,23 +197,86 @@ struct NotchView: View {
                             )
                             .padding(.top, expandSidebar ? 8 : 0)
 
-                            HoverableTabButton(
-                                title: "Settings",
-                                isActive: showSettings,
-                                action: {
-                                    open()
-                                    if focusedTabId.isEmpty {
-                                        let tabId = UUID().uuidString
-                                        addTab(TabItem(id: tabId))
-                                        focusedTabId = tabId
-                                    }
-                                    showSettings.toggle()
-                                },
-                                deleteAction: {},
-                                image: "gearshape.fill",
-                                isDeletable: false,
-                                isExpanded: expandSidebar
-                            )
+                            if showSettings {
+                                HoverableTabButton(
+                                    title: "Account",
+                                    isActive: selectedTab == .account,
+                                    action: {
+                                        selectedTab = .account
+                                    },
+                                    deleteAction: {},
+                                    image: "person.fill",
+                                    isDeletable: false,
+                                    isExpanded: expandSidebar
+                                )
+
+                                HoverableTabButton(
+                                    title: "Models",
+                                    isActive: selectedTab == .models,
+                                    action: {
+                                        selectedTab = .models
+                                    },
+                                    deleteAction: {},
+                                    image: "sparkles.2",
+                                    isDeletable: false,
+                                    isExpanded: expandSidebar
+                                )
+
+                                HoverableTabButton(
+                                    title: "Agents",
+                                    isActive: selectedTab == .agents,
+                                    action: {
+                                        selectedTab = .agents
+                                    },
+                                    deleteAction: {},
+                                    image: "pointer.arrow.ipad",
+                                    isDeletable: false,
+                                    isExpanded: expandSidebar
+                                )
+
+                                HoverableTabButton(
+                                    title: "Automations",
+                                    isActive: selectedTab == .automations,
+                                    action: {
+                                        selectedTab = .automations
+                                    },
+                                    deleteAction: {},
+                                    image: "clock.fill",
+                                    isDeletable: false,
+                                    isExpanded: expandSidebar
+                                )
+
+                                HoverableTabButton(
+                                    title: "Preferences",
+                                    isActive: selectedTab == .preferences,
+                                    action: {
+                                        selectedTab = .preferences
+                                    },
+                                    deleteAction: {},
+                                    image: "keyboard.fill",
+                                    isDeletable: false,
+                                    isExpanded: expandSidebar
+                                )
+                            } else {
+                                HoverableTabButton(
+                                    title: "Settings",
+                                    isActive: showSettings,
+                                    action: {
+                                        open()
+                                        if focusedTabId.isEmpty {
+                                            let tabId = UUID().uuidString
+                                            addTab(TabItem(id: tabId))
+                                            focusedTabId = tabId
+                                        }
+                                        showSettings.toggle()
+                                        expandSidebar = true
+                                    },
+                                    deleteAction: {},
+                                    image: "gearshape.fill",
+                                    isDeletable: false,
+                                    isExpanded: expandSidebar
+                                )
+                            }
 
                             if !expandSidebar {
                                 HoverableTabButton(
@@ -231,13 +293,10 @@ struct NotchView: View {
                                 )
                             }
 
-                            if expandSidebar {
-                                if histories.count > 0 {
-                                    Divider().opacity(0).padding(.vertical, 8)
-                                }
+                            Divider().padding(.top, 8)
 
-                                Sidebar()
-                                    .padding(.bottom, expandSidebar ? -16 : 0)
+                            if expandSidebar {
+                                Sidebar().padding(.bottom, -16)
                             }
                         }
 

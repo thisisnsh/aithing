@@ -67,7 +67,7 @@ struct HoverableTabButton: View {
                     Image(systemName: image)
                         .resizable()
                         .aspectRatio(contentMode: .fit)
-                        .frame(height: 14)
+                        .frame(width: 14, height: 14)
                         .rotationEffect(rotateImage)
                 }
 

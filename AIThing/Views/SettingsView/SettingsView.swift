@@ -21,6 +21,7 @@ struct SettingsView: View {
     // MARK: - Bindings
     @Binding var isPresented: Bool
     @Binding var allModels: [ModelInfo]
+    @Binding var selectedTab: SettingsTab
 
     // MARK: - Constants & Closures
     let close: () -> Void
@@ -30,7 +31,6 @@ struct SettingsView: View {
     let cornerRadius: CGFloat = 24
 
     // MARK: - State
-    @State var selectedTab: SettingsTab = getSelectedTab()
     @State var hoverRed: Bool = false
     @State var hoverYellow: Bool = false
     @State var hoverGreen: Bool = false
@@ -114,6 +114,11 @@ struct SettingsView: View {
                     saveModels()
                     saveAgents()
                 }
+                .onChange(of: selectedTab) { _ in
+                    setSelectedTab(value: selectedTab)
+                    saveModels()
+                    saveAgents()
+                }
                 .task {
                     await getManagedAgents()
                     await getUsageData()
@@ -132,7 +137,7 @@ struct SettingsView: View {
                 .onTapGesture { isPresented = false }
                 .onHover { hoverRed = $0 }
 
-            Text(selectedTab.rawValue)
+            Text("Settings")
                 .font(.system(size: 12, weight: .medium))
                 .foregroundStyle(.white)
                 .padding(.leading, 8)
@@ -140,58 +145,6 @@ struct SettingsView: View {
             Spacer()
 
             CheckForUpdatesButton(updater: updater)
-
-            ControlGroup {
-                Button(action: {
-                    selectedTab = .account
-                    setSelectedTab(value: selectedTab)
-                    saveModels()
-                    saveAgents()
-                }) {
-                    Label("Account", systemImage: "person.fill")
-                        .labelStyle(.iconOnly)
-                }
-                .padding(.leading, 8)
-
-                Button(action: {
-                    selectedTab = .models
-                    setSelectedTab(value: selectedTab)
-                    saveModels()
-                    saveAgents()
-                }) {
-                    Label("Models", systemImage: "sparkles.2")
-                        .labelStyle(.iconOnly)
-                }
-                Button(action: {
-                    selectedTab = .agents
-                    setSelectedTab(value: selectedTab)
-                    saveModels()
-                    saveAgents()
-                }) {
-                    Label("Agents", systemImage: "pointer.arrow.ipad")
-                        .labelStyle(.iconOnly)
-                }
-                Button(action: {
-                    selectedTab = .preferences
-                    setSelectedTab(value: selectedTab)
-                    saveModels()
-                    saveAgents()
-                }) {
-                    Label("Preferences", systemImage: "keyboard.fill")
-                        .labelStyle(.iconOnly)
-                }
-                Button(action: {
-                    selectedTab = .automations
-                    setSelectedTab(value: selectedTab)
-                    saveModels()
-                    saveAgents()
-                }) {
-                    Label("Automations", systemImage: "clock.fill")
-                        .labelStyle(.iconOnly)
-                }
-                .padding(.trailing, 8)
-            }
-            .cornerRadius(16)
         }
         .frame(height: 16)
     }
@@ -299,4 +252,3 @@ struct SettingsView: View {
         }
     }
 }
-

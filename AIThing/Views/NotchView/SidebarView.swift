@@ -60,6 +60,7 @@ extension NotchView {
 
                 Color.clear.frame(height: 16)
             }
+            .padding(.vertical, 8)
         }
         .frame(width: expandSidebar ? 200 : 60)
     }
