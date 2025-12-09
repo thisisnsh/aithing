@@ -5,22 +5,20 @@
 //  Created by Nishant Singh Hada on 8/13/25.
 //
 
+import ServiceManagement
 import SwiftUI
 
 struct PreferencesTab: View {
     // MARK: - Environment Objects
     @EnvironmentObject var screenshotMonitor: ScreenshotMonitor
 
-    // MARK: - Bindings
-    @Binding var preferencesShowInScreenshot: Bool
-    @Binding var preferencesCaptureFullScreen: Bool
-
     // MARK: - Constants & Closures
-    let setPreferencesShowInScreenshot: (Bool) -> Void
-    let setPreferencesCaptureFullScreen: (Bool) -> Void
     let setPanelVisibility: () -> Void
 
     // MARK: - State
+
+    @State var preferencesShowInScreenshot = getPreferencesShowInScreenshot()
+    @State var preferencesOpenAtLogin = getPreferencesOpenAtLogin()
     @State var outputToken = getOutputToken()
     @State var cacheMessage = getCacheMessages()
     @State var useCapturedScreenshots = getUseCapturedScreenshots()
@@ -127,8 +125,24 @@ struct PreferencesTab: View {
                         iconOff: "",
                         title: "Show in Screenshot",
                         onChange: { newValue in
-                            setPreferencesShowInScreenshot(newValue)
+                            setPreferencesShowInScreenshot(value: newValue)
                             setPanelVisibility()
+                        }
+                    )
+                    Divider()
+
+                    PreferenceToggleRow(
+                        isOn: $preferencesOpenAtLogin,
+                        iconOn: "",
+                        iconOff: "",
+                        title: "Open at Login",
+                        onChange: { newValue in
+                            setPreferencesOpenAtLogin(value: newValue)
+                            if newValue {
+                                try? SMAppService.mainApp.register()
+                            } else {
+                                try? SMAppService.mainApp.unregister()
+                            }
                         }
                     )
                     Divider()

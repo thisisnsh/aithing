@@ -103,8 +103,12 @@ class AppDelegate: NSObject, NSApplicationDelegate {
         setupNotchWindow()
         NSApplication.forceDarkMode()
 
-        // Launch app on login
-        try? SMAppService.mainApp.register()
+        // Launch app on login if enabled
+        if getPreferencesOpenAtLogin() {
+            try? SMAppService.mainApp.register()
+        } else {
+            try? SMAppService.mainApp.unregister()
+        }
     }
 
     /// Handles screen configuration changes (resolution, arrangement, etc.).
