@@ -1,0 +1,104 @@
+---
+title: "Privacy"
+description: "Our commitment to keeping your data safe"
+---
+
+## Privacy-First by Design
+
+[AI Thing](https://aithing.dev) assumes **everything on your screen is sensitive**, and anything outside your system is treated as insecure.
+
+We believe privacy is not a premium feature—it’s for everyone.
+
+<Tip>AI Thing is now fully [open source](https://github.com/aithing-lab/aithing-mac) — give the project a star to support!</Tip>
+
+### How Privacy Works in [AI Thing](https://aithing.dev)
+
+- **No Continuous Capture**  
+  Never records your screen or listens in the background.
+
+- **Selective Context Only**  
+  Context (like part of your screen or an open app) is only captured when you explicitly choose to.
+  
+- **Secure Access**   
+  No API keys, tokens, or sensitive user information are stored on our servers; everything remains local to your system.
+
+- **Transparency**  
+  Before any file or text is sent to a model, you see exactly what will be shared in the preview.
+
+- **Local History**  
+  No conversation is stored on our servers. All conversations are stored locally on your system.
+
+- **Secure Files**  
+  Files are not persisted on our servers. They are encoded on your system and used only within your active tab.
+
+- **Local Privacy Checks (Coming Soon)**  
+  On-device models will scan shared content for sensitive data before it leaves your system.
+
+### Data We Collect 
+
+<Note>You can avoid providing any information by cloning the [open-source](https://github.com/aithing-lab/aithing-mac) repo and building your own version.</Note>
+
+- **What We Collect:**  
+  - Your name and email when you download and sign in (via Firebase Authentication).  
+  - Three usage metrics: number of uses **with agents**, **without agents**, and **number of files** used in conversations.  
+
+- **Why We Collect It:**  
+  - Name and email: To identify users and provide account-related functionality.  
+  - Usage metrics: To understand overall usage patterns and improve the product.  
+
+- **What We Don’t Do**:  
+  - We do **not** sell your data.  
+  - We do **not** collect or store any **conversations, images, or API keys** that you use within [AI Thing](https://aithing.dev).  
+  - We do **not** collect any usage data from outside [AI Thing](https://aithing.dev).
+
+- **Where Your Data Lives**:  
+  - All **configurations**, **API keys**, and **conversation history** are stored **locally on your system**, not on our servers. This ensures your sensitive data and personal conversations remain entirely under your control.  
+
+### BYOK Models
+
+<Note>AI may make mistakes — review carefully before performing irreversible actions.</Note>
+
+Please review each provider’s privacy policy:
+
+- **Anthropic** [Privacy Policy](https://privacy.anthropic.com)  
+
+- **OpenAI** [Privacy Policy](https://openai.com/policies/privacy-policy)  
+
+- **Google Gemini** [Privacy Policy](https://support.google.com/gemini/answer/13594961?hl=en#privacy_notice)
+
+
+### Managed Agents
+
+- **Google Workspace**:
+  - **Access**:
+    - Access to your Google Account is managed through authentication tokens.
+    - Tokens are stored only in memory within the [AI Thing](https://aithing.dev) app and in temporary in-memory sessions on the server. They are never stored permanently.
+    - Each time an action is performed, the token is transmitted from the app to the agent’s server using encryption.
+  - **Retention**: 
+    - We retain the tokens (that expire every hour) in memory only until they are needed to complete the requested action. 
+    - No Google data is persisted on our servers or stored beyond the active session.
+    - No user data or access credentials (tokens) are shared, transferred, or disclosed to third parties, or persisted anywhere.
+    - With a strict one-hour expiration policy, access tokens expire and are refreshed only if the user uses the Google agent.
+  - **Deletion**:
+    - You can revoke [AI Thing](https://aithing.dev)’s access to your Google account at any time via [Google Account](https://accounts.google.com). 
+    - Once revoked, [AI Thing](https://aithing.dev) immediately loses access, and any in-memory tokens are permanently discarded.  
+  - **Note**: AI can make mistakes. Perform irreversible actions carefully.
+
+- **Others**: 
+  - Refer to individual agent's privacy policies.
+
+### MacOS Permissions
+
+- **Finder Access**:  
+  Used to retrieve screenshots taken by the user while **AI Thing** is open, enabling [selective context](features/selective-context#3-use-mac’s-native-screenshot-shortcuts).
+
+- **Screen Capture Permission**:  
+  Allows [AI Thing](https://aithing.dev) to capture the screen when the user clicks the app’s context button, supporting [selective context](features/selective-context#1-use-context-from-any-application).
+
+- **Accessibility Permission**:  
+  Required to capture selected text when the user uses the *Text Selection* feature for [selective context](features/selective-context#2-use-“selected-text”-from-any-application).
+
+
+---
+
+Have questions? Email us at **help@aithing.dev**.
