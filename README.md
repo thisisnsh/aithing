@@ -1,4 +1,4 @@
-# AI Thing for Mac 
+# AI Thing
 
 [AI Thing](https://aithing.dev) is a privacy-first AI automation tool that lets AI agents handle complex and repetitive tasks in parallel and in the background, so you can focus on what truly matters. Download [**Latest**](https://aithing.dev/latest) version.
 
