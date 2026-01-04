@@ -1,0 +1,34 @@
+[package]
+name = "aithing-app"
+version = "1.0.0"
+description = "AI-powered assistant visible on top of all apps"
+authors = ["AIThing"]
+edition = "2021"
+
+[lib]
+name = "aithing_app_lib"
+crate-type = ["staticlib", "cdylib", "rlib"]
+
+[build-dependencies]
+tauri-build = { version = "2", features = [] }
+
+[dependencies]
+tauri = { version = "2", features = ["macos-private-api"] }
+tauri-plugin-opener = "2"
+tauri-plugin-store = "2"
+tauri-plugin-process = "2"
+tauri-plugin-global-shortcut = "2"
+serde = { version = "1", features = ["derive"] }
+serde_json = "1"
+
+# State management
+once_cell = "1.19"
+parking_lot = "0.12"
+
+# macOS-specific dependencies
+[target.'cfg(target_os = "macos")'.dependencies]
+tauri-nspanel = { git = "https://github.com/ahkohd/tauri-nspanel", branch = "v2.1" }
+
+# Windows-specific dependencies
+[target.'cfg(target_os = "windows")'.dependencies]
+windows = { version = "0.58", features = ["Win32_UI_WindowsAndMessaging", "Win32_Foundation"] }

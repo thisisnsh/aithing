@@ -1,0 +1,70 @@
+{
+  "$schema": "https://schema.tauri.app/config/2",
+  "productName": "AIThing",
+  "version": "1.0.0",
+  "identifier": "com.thisisnsh.aithing",
+  "build": {
+    "frontendDist": "../src"
+  },
+  "app": {
+    "withGlobalTauri": true,
+    "macOSPrivateApi": true,
+    "windows": [
+      {
+        "title": "AIThing",
+        "label": "main",
+        "theme": "Dark",
+        "acceptFirstMouse": true,
+        "alwaysOnTop": true,
+        "center": true,
+        "decorations": false,
+        "focus": false,
+        "fullscreen": false,
+        "shadow": true,
+        "resizable": true,
+        "skipTaskbar": true,
+        "transparent": true,
+        "visibleOnAllWorkspaces": true,
+        "contentProtected": false,
+        "height": 600,
+        "width": 660,
+        "minHeight": 400,
+        "minWidth": 400
+      }
+    ],
+    "security": {
+      "csp": null
+    }
+  },
+  "bundle": {
+    "active": true,
+    "targets": [
+      "dmg",
+      "app",
+      "msi",
+      "nsis"
+    ],
+    "icon": [
+      "icons/32x32.png",
+      "icons/128x128.png",
+      "icons/128x128@2x.png",
+      "icons/icon.icns",
+      "icons/icon.ico"
+    ],
+    "category": "Productivity",
+    "shortDescription": "AI-powered assistant visible on top of all apps",
+    "longDescription": "AI-powered assistant that stays visible on top of all applications, even in fullscreen mode.",
+    "macOS": {
+      "minimumSystemVersion": "11.0"
+    },
+    "windows": {
+      "certificateThumbprint": null,
+      "digestAlgorithm": "sha256",
+      "timestampUrl": "",
+      "webviewInstallMode": {
+        "type": "downloadBootstrapper"
+      }
+    },
+    "publisher": "AIThing"
+  }
+}
