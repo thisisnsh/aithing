@@ -1,44 +1,37 @@
 # AI Thing
 
-[AI Thing](https://aithing.dev) is a privacy-first AI automation tool that lets AI agents handle complex and repetitive tasks in parallel and in the background, so you can focus on what truly matters. Download [**Latest**](https://aithing.dev/latest) version.
+**Reimagining AI Thing.**
 
-It is now fully [open source](https://github.com/aithing-lab/aithing-mac) — please give it a star! ⭐
+[AI Thing](https://aithing.dev) is being rebuilt from the ground up as a cross-platform desktop app for macOS and Windows. This repository is where that happens, in the open.
 
-![summary](https://download.aithing.dev/summary-transparent.png)
+Looking for the original macOS app? See [v1](v1/README.md).
 
-### Features
+## Repository
 
-Get all the features other platforms charge for, **without the payment plans**.
+| Folder | What it is |
+| --- | --- |
+| [`aithing-desktop`](aithing-desktop) | The new desktop app, built with [Tauri](https://tauri.app) for macOS and Windows |
+| [`aithing-website`](aithing-website) | Website and docs for [aithing.dev](https://aithing.dev) |
+| [`v1`](v1/README.md) | The original Swift macOS app |
 
-- **Privacy First**: Everything stays local — your conversations, files, and API keys
-- **BYOK Models**: Use your API keys for frontier Anthropic, OpenAI and Gemini models
-- **Model Switching**: Switch between multiple models in a single conversation
-- **Multiple Agents**: Connect powerful agents like Google Workspace, GitHub, Notion, Asana, and more
-- **MCP Servers**: Bring your own MCP servers (remote or local)
-- **Background Automations**: Set up recurring or one-off automations that run on your schedule
-- **Complex Tasks**: Run complex tasks that span multiple apps and tools
-- and a lot more...
+## Getting started
 
-### Contributing
+You need [Node.js](https://nodejs.org) 20+ and [Rust](https://www.rust-lang.org/tools/install).
 
-We welcome contributions from the community! 🎉 
+```bash
+cd aithing-desktop
+npm install
+npm run tauri dev
+```
 
-Please read our [CONTRIBUTING.md](CONTRIBUTING.md) guide to get started. 
+## Contributing
 
-**Before making any changes:**
-1. **Star this repository** ⭐ if you haven't already
-2. Open an issue to discuss your proposed contribution
-3. Wait for approval before starting work
-4. Submit a PR that references the issue
+Contributions are welcome — bug fixes, features, docs, ideas. See [CONTRIBUTING.md](CONTRIBUTING.md).
 
-Together, we can make AI Thing even better!
+## Support
 
-### Support
+Questions? Email **[help@aithing.dev](mailto:help@aithing.dev)** or [open an issue](https://github.com/thisisnsh/aithing/issues/new).
 
-Have questions? Email at **[help@aithing.dev](mailto:help@aithing.dev)**.
+## License
 
-Found a bug or have a feature request? [Open an issue](https://github.com/aithing-lab/aithing-mac/issues/new).
-
-### License
-
-See [LICENSE](LICENSE) for details.
+See [LICENSE](LICENSE).
