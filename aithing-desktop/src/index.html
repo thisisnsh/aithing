@@ -8,6 +8,33 @@
     <script type="module" src="./main.js"></script>
   </head>
   <body>
-    <main id="app"></main>
+    <main id="app">
+      <label class="field">
+        <span>API key</span>
+        <input id="api-key" type="password" placeholder="TypeSafe API key" autocomplete="off" spellcheck="false" />
+      </label>
+
+      <div class="grid">
+        <label class="field">
+          <span>State <small>text or JSON</small></span>
+          <textarea id="state" spellcheck="false"></textarea>
+        </label>
+
+        <label class="field">
+          <span>Input <small>questions JSON</small></span>
+          <textarea id="input" spellcheck="false"></textarea>
+        </label>
+      </div>
+
+      <div class="actions">
+        <button id="run" type="button">Run jev</button>
+        <span id="status"></span>
+      </div>
+
+      <label class="field output">
+        <span>Output</span>
+        <textarea id="output" readonly spellcheck="false"></textarea>
+      </label>
+    </main>
   </body>
 </html>
