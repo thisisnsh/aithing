@@ -1,153 +1,55 @@
 # Contributing to AI Thing
 
-Thank you for your interest in contributing to AI Thing! We're excited to have you as part of our community.
+Thanks for your interest in AI Thing! We're reimagining it in the open, and everyone is welcome to help. That includes first-time contributors.
 
-## Getting Started
+## Ways to contribute
 
-### Before You Begin
+- **Fix a bug** or build a feature
+- **Report a bug** or suggest an idea by [opening an issue](https://github.com/thisisnsh/aithing/issues/new)
+- **Improve the docs**, from typos to guides
+- **Share feedback** on the direction of the new app
+- **Review pull requests** and help test changes
 
-1. **Star the repository** ⭐ - Show your support for the project!
-2. **Check existing issues** - See if someone else has already reported the issue or requested the feature
-3. **Read the README** - Familiarize yourself with the project's goals and features
+You don't need permission to start. Small fixes can go straight to a pull request. For larger changes, we suggest opening an issue first. That way we can agree on the approach before you spend a lot of time on it.
 
-## How to Contribute
+## Development setup
 
-### 1. Open an Issue First
+You need [Node.js](https://nodejs.org) 20+ and [Rust](https://www.rust-lang.org/tools/install). See the [Tauri prerequisites](https://v2.tauri.app/start/prerequisites/) for anything else your OS needs.
 
-Before making any changes, please **open an issue** to discuss your proposed contribution. This helps us:
-- Avoid duplicate work
-- Ensure your contribution aligns with the project's direction
-- Provide feedback and guidance early in the process
-
-**Issue Types:**
-- 🐛 **Bug Report** - Something isn't working as expected
-- ✨ **Feature Request** - Suggest a new feature or enhancement
-- 📚 **Documentation** - Improvements to documentation
-- ❓ **Question** - General questions about the project
-
-### 2. Make a Pull Request
-
-Once your issue has been discussed and approved:
-
-1. **Fork the repository** to your GitHub account
-2. **Clone your fork** locally:
-   ```bash
-   git clone https://github.com/aithing-lab/aithing-mac.git
-   cd aithing-mac
-   ```
-
-3. **Create a new branch** for your changes:
-   ```bash
-   git checkout -b fix/issue-123-description
-   # or
-   git checkout -b feature/issue-123-description
-   ```
-
-4. **Make your changes** following our coding guidelines (see below)
-
-5. **Commit your changes** with a clear message:
-   ```bash
-   git commit -m "Fix: Description of fix (closes #123)"
-   # or
-   git commit -m "Feature: Description of feature (closes #123)"
-   ```
-
-6. **Push to your fork**:
-   ```bash
-   git push origin your-branch-name
-   ```
-
-7. **Open a Pull Request** on GitHub:
-   - Reference the issue number in your PR title: `Fix: Description (closes #123)`
-   - Provide a clear description of what your PR does
-   - Link to the original issue in the PR description
-
-## Development Setup
-
-### Prerequisites
-
-- **Xcode** with Swift
-
-### Setting Up the Project
-
-1. Open `AIThing.xcodeproj` in Xcode
-2. Wait for Swift Package Manager to resolve dependencies
-3. Build and run the project (`⌘R`)
-
-### Project Structure
-
-```
-AIThing/
-├── Managers/          # Business logic and core functionality
-│   ├── Automation/    # Automation handling
-│   ├── Context/       # App context and screen capture
-│   ├── Firebase/      # Authentication and storage
-│   ├── Intelligence/  # AI provider integrations
-│   └── Tools/         # OAuth and external tool integrations
-├── Views/             # SwiftUI views
-│   ├── ChatView/      # Chat interface components
-│   ├── IntelligenceView/  # Main intelligence interface
-│   ├── NotchView/     # Notch UI and window management
-│   └── SettingsView/  # Settings interface
-└── Models/            # Data models
+```bash
+git clone https://github.com/<your-username>/aithing.git
+cd aithing/aithing-desktop
+npm install
+npm run tauri dev
 ```
 
-## Coding Guidelines
+| Folder | What it is |
+| --- | --- |
+| `aithing-desktop/src` | Frontend (HTML, CSS, JavaScript, built with Vite) |
+| `aithing-desktop/src-tauri` | Rust backend and Tauri config |
+| `aithing-website` | Website and docs |
+| `v1` | The original Swift macOS app (see [v1/README.md](v1/README.md)) |
 
-### Swift Style
+## Making a pull request
 
-- Follow [Swift API Design Guidelines](https://swift.org/documentation/api-design-guidelines/)
-- Use meaningful variable and function names
-- Add comments for complex logic
-- Keep functions small and focused on a single responsibility
+1. Fork the repository and create a branch from `main`
+2. Make your changes and check that the app still runs
+3. Write a clear commit message that says what changed and why
+4. Open a pull request that describes your change, and link any related issue
 
-### SwiftUI Best Practices
+Keep each pull request focused on one change. Pull requests are easier to review that way. Draft pull requests are welcome if you want early feedback.
 
-- Use `@State`, `@Binding`, `@ObservedObject`, and `@EnvironmentObject` appropriately
-- Extract reusable components into separate views
-- Use view modifiers for styling consistency
+## Guidelines
 
-### Code Quality
+- Match the style of the code around your change
+- Keep changes small and easy to review
+- Test on macOS and Windows if you can. Otherwise, say in the pull request which OS you tested on.
+- Update docs when behavior changes
 
-- Ensure your code builds without warnings
-- Test your changes thoroughly on macOS
-- Verify that existing functionality still works
+## Questions
 
-## Pull Request Guidelines
+Open an issue or email **[help@aithing.dev](mailto:help@aithing.dev)**.
 
-### What Makes a Good PR?
+## Code of conduct
 
-✅ **DO:**
-- Reference the issue number in your PR title and description
-- Keep changes focused on solving one issue
-- Write clear commit messages
-- Test your changes thoroughly
-- Update documentation if needed
-- Add comments for complex code
-
-❌ **DON'T:**
-- Submit PRs without an associated issue
-- Mix multiple unrelated changes in one PR
-- Submit incomplete or work-in-progress code
-- Break existing functionality
-
-### PR Review Process
-
-1. A maintainer will review your PR
-2. They may request changes or ask questions
-3. Once approved, your PR will be merged
-4. Your contribution will be included in the next release! 🎉
-
-## Questions?
-
-If you have any questions about contributing, feel free to:
-- Open an issue with the "question" label
-- Email us at **[help@aithing.dev](mailto:help@aithing.dev)**
-
-## Code of Conduct
-
-We are committed to providing a welcoming and inclusive experience for everyone. Please be respectful and constructive in all interactions.
-
----
-
-Thank you for contributing to AI Thing! Your efforts help make this project better for everyone. 🚀
+Be kind, respectful and constructive. We want AI Thing to be a welcoming place for everyone.
